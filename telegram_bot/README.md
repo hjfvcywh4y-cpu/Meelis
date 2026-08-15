@@ -1,10 +1,10 @@
-# Telegram-бот + DeepSeek
+# Telegram-бот + Google Gemini (бесплатный API)
 
-Бот отвечает через [DeepSeek API](https://api-docs.deepseek.com/) (OpenAI-compatible).
+Бот отвечает через [Gemini API](https://ai.google.dev/) (OpenAI-compatible endpoint).
 
 ## Возможности
 
-- текстовый чат с DeepSeek (с памятью диалога)
+- текстовый чат с Gemini (с памятью диалога)
 - `/start` — приветствие
 - `/help` — список команд
 - `/clear` — очистить историю
@@ -12,8 +12,8 @@
 
 ## Быстрый старт
 
-1. Создайте бота у [@BotFather](https://t.me/BotFather) и получите токен.
-2. Создайте API-ключ на [platform.deepseek.com](https://platform.deepseek.com).
+1. Токен бота от [@BotFather](https://t.me/BotFather).
+2. Бесплатный ключ Gemini: [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
 3. Установите зависимости:
 
 ```bash
@@ -28,7 +28,7 @@ pip install -r requirements.txt
 ```bash
 cp .env.example .env
 # TELEGRAM_TOKEN=...
-# DEEPSEEK_API_KEY=...
+# GEMINI_API_KEY=...
 ```
 
 5. Запустите:
@@ -41,22 +41,21 @@ python bot.py
 
 Самый простой вариант — [Railway](https://railway.app).
 
-1. Зарегистрируйтесь на [railway.app](https://railway.app) (можно через GitHub).
-2. **New Project** → **Deploy from GitHub repo** → выберите этот репозиторий.
-3. Root Directory: `telegram_bot`.
-4. Variables:
-   - `TELEGRAM_TOKEN` — токен от @BotFather
-   - `DEEPSEEK_API_KEY` — ключ с platform.deepseek.com
-5. Дождитесь деплоя.
+1. New Project → Deploy from GitHub repo.
+2. Root Directory: `telegram_bot`.
+3. Variables:
+   - `TELEGRAM_TOKEN`
+   - `GEMINI_API_KEY`
+4. Дождитесь деплоя.
 
-### Docker (любой VPS)
+### Docker
 
 ```bash
 cd telegram_bot
 docker build -t telegram-bot .
 docker run -d --restart unless-stopped \
   -e TELEGRAM_TOKEN="ваш_токен" \
-  -e DEEPSEEK_API_KEY="ваш_ключ" \
+  -e GEMINI_API_KEY="ваш_ключ" \
   telegram-bot
 ```
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Telegram-бот с DeepSeek (OpenAI-compatible API)."""
+"""Telegram-бот с Google Gemini (OpenAI-compatible API)."""
 
 from __future__ import annotations
 
@@ -28,13 +28,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com").rstrip("/")
-DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-v4-flash")
+GEMINI_BASE_URL = os.getenv(
+    "GEMINI_BASE_URL",
+    "https://generativelanguage.googleapis.com/v1beta/openai/",
+).rstrip("/") + "/"
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 SYSTEM_PROMPT = os.getenv(
-    "DEEPSEEK_SYSTEM_PROMPT",
+    "GEMINI_SYSTEM_PROMPT",
     "Ты полезный ассистент в Telegram. Отвечай кратко и по делу, на языке пользователя.",
 )
-MAX_HISTORY = int(os.getenv("DEEPSEEK_MAX_HISTORY", "20"))
+MAX_HISTORY = int(os.getenv("GEMINI_MAX_HISTORY", "20"))
 
 # chat_id -> deque[{"role": "...", "content": "..."}]
 _histories: dict[int, deque[dict[str, str]]] = defaultdict(
@@ -47,20 +50,20 @@ _client: AsyncOpenAI | None = None
 def get_client() -> AsyncOpenAI:
     global _client
     if _client is None:
-        api_key = os.getenv("DEEPSEEK_API_KEY", "").strip()
+        api_key = os.getenv("GEMINI_API_KEY", "").strip()
         if not api_key:
-            raise RuntimeError("Не задан DEEPSEEK_API_KEY")
-        _client = AsyncOpenAI(api_key=api_key, base_url=DEEPSEEK_BASE_URL)
+            raise RuntimeError("Не задан GEMINI_API_KEY")
+        _client = AsyncOpenAI(api_key=api_key, base_url=GEMINI_BASE_URL)
     return _client
 
 
-async def ask_deepseek(chat_id: int, user_text: str) -> str:
+async def ask_gemini(chat_id: int, user_text: str) -> str:
     history = _histories[chat_id]
     history.append({"role": "user", "content": user_text})
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}, *history]
     response = await get_client().chat.completions.create(
-        model=DEEPSEEK_MODEL,
+        model=GEMINI_MODEL,
         messages=messages,
     )
     reply = (response.choices[0].message.content or "").strip()
@@ -85,7 +88,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     name = user.first_name if user else "друг"
     await update.message.reply_text(
         f"Привет, {name}!\n\n"
-        "Я бот на базе DeepSeek. Просто напишите сообщение — отвечу.\n"
+        "Я бот на базе Google Gemini. Просто напишите сообщение — отвечу.\n"
         "Команды: /help, /clear, /ping"
     )
 
@@ -97,7 +100,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "/help — эта справка\n"
         "/clear — очистить историю диалога\n"
         "/ping — проверка, что бот жив\n\n"
-        "Любое текстовое сообщение уходит в DeepSeek."
+        "Любое текстовое сообщение уходит в Gemini."
     )
 
 
@@ -122,12 +125,12 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     await update.message.chat.send_action(ChatAction.TYPING)
     try:
-        reply = await ask_deepseek(update.effective_chat.id, text)
+        reply = await ask_gemini(update.effective_chat.id, text)
     except Exception:
-        logger.exception("Ошибка DeepSeek API")
+        logger.exception("Ошибка Gemini API")
         await update.message.reply_text(
-            "Не удалось получить ответ от DeepSeek. "
-            "Проверьте DEEPSEEK_API_KEY и баланс на platform.deepseek.com."
+            "Не удалось получить ответ от Gemini. "
+            "Проверьте GEMINI_API_KEY на https://aistudio.google.com/apikey."
         )
         return
 
@@ -141,7 +144,7 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 def main() -> None:
     token = os.getenv("TELEGRAM_TOKEN", "").strip()
-    deepseek_key = os.getenv("DEEPSEEK_API_KEY", "").strip()
+    gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
 
     if not token:
         logger.error(
@@ -149,14 +152,13 @@ def main() -> None:
             "Скопируйте .env.example в .env и вставьте токен от @BotFather."
         )
         sys.exit(1)
-    if not deepseek_key:
+    if not gemini_key:
         logger.error(
-            "Не задан DEEPSEEK_API_KEY. "
-            "Возьмите ключ на https://platform.deepseek.com и добавьте в .env."
+            "Не задан GEMINI_API_KEY. "
+            "Возьмите ключ на https://aistudio.google.com/apikey и добавьте в .env."
         )
         sys.exit(1)
 
-    # Прогреваем клиент при старте
     get_client()
 
     app = Application.builder().token(token).build()
@@ -167,7 +169,7 @@ def main() -> None:
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
     app.add_error_handler(error_handler)
 
-    logger.info("Бот запущен (DeepSeek model=%s)", DEEPSEEK_MODEL)
+    logger.info("Бот запущен (Gemini model=%s)", GEMINI_MODEL)
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
