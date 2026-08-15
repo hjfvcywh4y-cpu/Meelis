@@ -1,10 +1,10 @@
-# https://railway.app — удобный круглосуточный хостинг
-# Root Directory в настройках сервиса: telegram_bot
+# Root Directory must be: telegram_bot
 
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
+startCommand = "python bot.py"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
