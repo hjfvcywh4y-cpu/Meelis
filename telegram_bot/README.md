@@ -1,68 +1,46 @@
-# Telegram-бот + Google Gemini (бесплатный API)
+# Telegram-бот-наставник по нейросетям
 
-Бот отвечает через [Gemini API](https://ai.google.dev/) (OpenAI-compatible endpoint).
+Учит пользоваться ИИ с нуля: выбор из 15 нейросетей, установка, использование,
+промпты, текст/картинки/видео. Свободные вопросы отвечает через бесплатный Gemini.
+
+## Для канала
+
+В посте укажите ссылку на бота:
+
+```text
+https://t.me/lDera_bot
+```
+
+или `@lDera_bot`. Люди нажимают ссылку → **Start** → видят приветствие и меню выбора.
+
+В @BotFather полезно задать:
+- `/setdescription` — короткое описание
+- `/setabouttext` — «О боте»
+- `/setuserpic` — аватар
 
 ## Возможности
 
-- текстовый чат с Gemini (с памятью диалога)
-- `/start` — приветствие
-- `/help` — список команд
-- `/clear` — очистить историю
-- `/ping` — проверка работоспособности
+После `/start`:
+1. Выбор нейросети (15 шт.)
+2. Текст / картинки / видео
+3. Урок по промптам
+4. Как общаться с ИИ
+5. Спросить наставника (Gemini)
 
-## Быстрый старт
+У каждой нейросети: установка → использование → пример промпта.
 
-1. Токен бота от [@BotFather](https://t.me/BotFather).
-2. Бесплатный ключ Gemini: [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
-3. Установите зависимости:
+## Запуск
 
 ```bash
 cd telegram_bot
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-```
-
-4. Настройте переменные:
-
-```bash
-cp .env.example .env
-# TELEGRAM_TOKEN=...
-# GEMINI_API_KEY=...
-```
-
-5. Запустите:
-
-```bash
+cp .env.example .env   # TELEGRAM_TOKEN + GEMINI_API_KEY
 python bot.py
 ```
 
-## Круглосуточная работа (без вашего ПК)
+## Переменные
 
-Самый простой вариант — [Railway](https://railway.app).
-
-1. New Project → Deploy from GitHub repo.
-2. Root Directory: `telegram_bot`.
-3. Variables:
-   - `TELEGRAM_TOKEN`
-   - `GEMINI_API_KEY`
-4. Дождитесь деплоя.
-
-### Docker
-
-```bash
-cd telegram_bot
-docker build -t telegram-bot .
-docker run -d --restart unless-stopped \
-  -e TELEGRAM_TOKEN="ваш_токен" \
-  -e GEMINI_API_KEY="ваш_ключ" \
-  telegram-bot
-```
-
-## Файлы
-
-- `bot.py` — код бота
-- `requirements.txt` — зависимости
-- `Dockerfile` — образ для облака / VPS
-- `railway.toml` — настройки для Railway
-- `.env.example` — пример переменных окружения
+- `TELEGRAM_TOKEN` — от @BotFather
+- `GEMINI_API_KEY` — https://aistudio.google.com/apikey
