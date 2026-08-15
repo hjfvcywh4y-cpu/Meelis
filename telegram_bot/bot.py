@@ -24,9 +24,12 @@ from telegram.ext import (
 from lessons import (
     CATEGORY_INTRO,
     CHAT_LESSON,
+    CHOOSE_GUIDE,
+    IMAGE_STRATEGY,
     NETWORK_ORDER,
     NETWORKS,
     PROMPTS_LESSON,
+    START_GUIDE,
 )
 
 load_dotenv()
@@ -68,10 +71,12 @@ SYSTEM_PROMPT = os.getenv(
     os.getenv(
         "GEMINI_SYSTEM_PROMPT",
         (
-            "Ты дружелюбный наставник по нейросетям в Telegram. "
-            "Объясняй просто, по шагам, на русском. "
-            "Помогай с установкой, использованием и промптами. "
-            "Не выдумывай оплату/лимиты как факты — говори осторожно."
+            "Ты дружелюбный наставник по нейросетям для людей из МЛМ/сетевого бизнеса. "
+            "Объясняй просто, по шагам, на русском, с эмодзи умеренно. "
+            "Помогай с регистрацией (в т.ч. из РФ через VPN), промптами, "
+            "постами, возражениями, картинками и видео. "
+            "Не обещай доход и не дави на продажи. "
+            "Не выдумывай оплату/лимиты как точные факты — говори осторожно."
         ),
     ),
 )
@@ -179,20 +184,54 @@ def split_message(text: str, limit: int = 3900) -> list[str]:
     return chunks
 
 
+async def send_long_message(
+    message,
+    text: str,
+    reply_markup: InlineKeyboardMarkup | None = None,
+    edit: bool = False,
+) -> None:
+    chunks = split_message(text)
+    if edit and message is not None:
+        await message.edit_text(
+            chunks[0],
+            reply_markup=reply_markup if len(chunks) == 1 else None,
+            disable_web_page_preview=True,
+        )
+        for i, chunk in enumerate(chunks[1:], start=1):
+            markup = reply_markup if i == len(chunks) - 1 else None
+            await message.reply_text(
+                chunk,
+                reply_markup=markup,
+                disable_web_page_preview=True,
+            )
+        return
+
+    for i, chunk in enumerate(chunks):
+        markup = reply_markup if i == len(chunks) - 1 else None
+        await message.reply_text(
+            chunk,
+            reply_markup=markup,
+            disable_web_page_preview=True,
+        )
+
+
 def main_menu_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("1. Выбрать нейросеть", callback_data="menu:nets")],
+            [InlineKeyboardButton("🚀 С чего начать", callback_data="menu:startguide")],
+            [InlineKeyboardButton("🧭 Какую нейросеть выбрать", callback_data="menu:choose")],
+            [InlineKeyboardButton("🤖 Выбрать нейросеть (15)", callback_data="menu:nets")],
             [
-                InlineKeyboardButton("2. Текст", callback_data="menu:cat:text"),
-                InlineKeyboardButton("3. Картинки", callback_data="menu:cat:image"),
+                InlineKeyboardButton("📝 Текст", callback_data="menu:cat:text"),
+                InlineKeyboardButton("🖼️ Картинки", callback_data="menu:cat:image"),
             ],
             [
-                InlineKeyboardButton("4. Видео", callback_data="menu:cat:video"),
-                InlineKeyboardButton("5. Промпты", callback_data="menu:prompts"),
+                InlineKeyboardButton("🎬 Видео", callback_data="menu:cat:video"),
+                InlineKeyboardButton("✍️ Промпты МЛМ", callback_data="menu:prompts"),
             ],
-            [InlineKeyboardButton("6. Как общаться с ИИ", callback_data="menu:chat")],
-            [InlineKeyboardButton("7. Спросить наставника", callback_data="menu:ask")],
+            [InlineKeyboardButton("🎨 Стратегия картинок", callback_data="menu:imagestrategy")],
+            [InlineKeyboardButton("💬 Как общаться с ИИ", callback_data="menu:chat")],
+            [InlineKeyboardButton("🧠 Спросить наставника текстом", callback_data="menu:ask")],
         ]
     )
 
@@ -213,7 +252,7 @@ def nets_keyboard() -> InlineKeyboardMarkup:
             row = []
     if row:
         rows.append(row)
-    rows.append([InlineKeyboardButton("« Главное меню", callback_data="menu:home")])
+    rows.append([InlineKeyboardButton("🏠 Главное меню", callback_data="menu:home")])
     return InlineKeyboardMarkup(rows)
 
 
@@ -222,25 +261,25 @@ def net_actions_keyboard(net_id: str) -> InlineKeyboardMarkup:
         [
             [
                 InlineKeyboardButton(
-                    "Установка / регистрация",
+                    "🔧 Регистрация / VPN",
                     callback_data=f"step:{net_id}:install",
                 )
             ],
             [
                 InlineKeyboardButton(
-                    "Как пользоваться",
+                    "🛠 Как пользоваться",
                     callback_data=f"step:{net_id}:use",
                 )
             ],
             [
                 InlineKeyboardButton(
-                    "Пример промпта",
+                    "📌 Промпты (несколько)",
                     callback_data=f"step:{net_id}:prompt",
                 )
             ],
             [
-                InlineKeyboardButton("« К списку", callback_data="menu:nets"),
-                InlineKeyboardButton("« Меню", callback_data="menu:home"),
+                InlineKeyboardButton("🔙 К списку", callback_data="menu:nets"),
+                InlineKeyboardButton("🏠 Меню", callback_data="menu:home"),
             ],
         ]
     )
@@ -248,7 +287,7 @@ def net_actions_keyboard(net_id: str) -> InlineKeyboardMarkup:
 
 def back_home_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
-        [[InlineKeyboardButton("« Главное меню", callback_data="menu:home")]]
+        [[InlineKeyboardButton("🏠 Главное меню", callback_data="menu:home")]]
     )
 
 
@@ -278,17 +317,20 @@ def category_keyboard(kind_key: str) -> InlineKeyboardMarkup:
             row = []
     if row:
         rows.append(row)
-    rows.append([InlineKeyboardButton("« Главное меню", callback_data="menu:home")])
+    rows.append([InlineKeyboardButton("🏠 Главное меню", callback_data="menu:home")])
     return InlineKeyboardMarkup(rows)
 
 
 def welcome_text(name: str) -> str:
     return (
-        f"Привет, {name}!\n\n"
-        "Я научу тебя пользоваться нейросетями — с нуля.\n"
-        "От регистрации и установки до первых результатов:\n"
-        "текст, картинки, видео, промпты и умение общаться с ИИ.\n\n"
-        "Выбери, с чего начать:"
+        f"👋 Привет, {name}!\n\n"
+        "Я научу тебя пользоваться нейросетями для МЛМ — с нуля 🚀\n"
+        "Разберём регистрацию (в том числе из РФ через VPN), "
+        "посты и возражения, картинки, видео, промпты и сценарии.\n\n"
+        "💬 Важно: этот чат тоже можно использовать как нейросеть.\n"
+        "Просто напиши мне текстом вопрос или задачу — отвечу как наставник.\n"
+        "Например: «напиши ответ на возражение: нет времени».\n\n"
+        "Сначала выбери кнопку ниже 👇"
     )
 
 
@@ -297,78 +339,119 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     name = user.first_name if user and user.first_name else "друг"
     if update.effective_chat:
         _histories.pop(update.effective_chat.id, None)
-    await update.message.reply_text(
+    await send_long_message(
+        update.message,
         welcome_text(name),
         reply_markup=main_menu_keyboard(),
     )
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text(
-        "Команды:\n"
-        "/start — главное меню обучения\n"
+    await send_long_message(
+        update.message,
+        "ℹ️ Команды:\n"
+        "/start — приветствие и меню\n"
         "/help — справка\n"
         "/menu — открыть меню\n"
         "/ping — проверка\n\n"
-        "Также можно просто написать вопрос текстом — отвечу как наставник.",
+        "💬 Можно просто написать вопрос текстом — отвечу как нейросеть-наставник.",
         reply_markup=main_menu_keyboard(),
     )
 
 
 async def menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        "Главное меню:",
+        "🏠 Главное меню:",
         reply_markup=main_menu_keyboard(),
     )
 
 
 async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("pong")
+    await update.message.reply_text("pong ✅")
 
 
 async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
-    if not query:
+    if not query or not query.message:
         return
     await query.answer()
     data = query.data or ""
 
     if data in {"menu:home", "menu:main"}:
         name = update.effective_user.first_name if update.effective_user else "друг"
-        await query.edit_message_text(
+        await send_long_message(
+            query.message,
             welcome_text(name),
             reply_markup=main_menu_keyboard(),
+            edit=True,
+        )
+        return
+
+    if data == "menu:startguide":
+        await send_long_message(
+            query.message,
+            START_GUIDE,
+            reply_markup=back_home_keyboard(),
+            edit=True,
+        )
+        return
+
+    if data == "menu:choose":
+        await send_long_message(
+            query.message,
+            CHOOSE_GUIDE,
+            reply_markup=back_home_keyboard(),
+            edit=True,
         )
         return
 
     if data == "menu:nets":
-        await query.edit_message_text(
-            "Выбери нейросеть (15 штук).\n"
-            "Потом открою: установка → использование → пример промпта.",
+        await send_long_message(
+            query.message,
+            "🤖 Выбери нейросеть (15 шт.).\n"
+            "Дальше открою: 🔧 регистрация/VPN → 🛠 использование → 📌 несколько промптов.",
             reply_markup=nets_keyboard(),
+            edit=True,
         )
         return
 
     if data == "menu:prompts":
-        await query.edit_message_text(
+        await send_long_message(
+            query.message,
             PROMPTS_LESSON,
             reply_markup=back_home_keyboard(),
+            edit=True,
+        )
+        return
+
+    if data == "menu:imagestrategy":
+        await send_long_message(
+            query.message,
+            IMAGE_STRATEGY,
+            reply_markup=back_home_keyboard(),
+            edit=True,
         )
         return
 
     if data == "menu:chat":
-        await query.edit_message_text(
+        await send_long_message(
+            query.message,
             CHAT_LESSON,
             reply_markup=back_home_keyboard(),
+            edit=True,
         )
         return
 
     if data == "menu:ask":
-        await query.edit_message_text(
-            "Напиши мне обычным сообщением свой вопрос.\n"
-            "Например: «Как зарегистрироваться в Leonardo?» или "
-            "«Составь промпт для аватарки».",
+        await send_long_message(
+            query.message,
+            "🧠 Напиши обычным сообщением свой вопрос — отвечу как нейросеть.\n\n"
+            "Примеры:\n"
+            "• «Напиши ответ на: у меня нет времени»\n"
+            "• «Сделай 5 хуков для Reels про команду»\n"
+            "• «Составь промпт для обложки сторис с текстом СТАРТ»",
             reply_markup=back_home_keyboard(),
+            edit=True,
         )
         return
 
@@ -376,14 +459,18 @@ async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         kind = data.split(":")[-1]
         intro = CATEGORY_INTRO.get(kind)
         if not intro:
-            await query.edit_message_text(
+            await send_long_message(
+                query.message,
                 "Раздел не найден.",
                 reply_markup=back_home_keyboard(),
+                edit=True,
             )
             return
-        await query.edit_message_text(
-            intro + "\n\nВыбери сервис:",
+        await send_long_message(
+            query.message,
+            intro + "\n\nВыбери сервис 👇",
             reply_markup=category_keyboard(kind),
+            edit=True,
         )
         return
 
@@ -391,21 +478,25 @@ async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         net_id = data.split(":", 1)[1]
         net = NETWORKS.get(net_id)
         if not net:
-            await query.edit_message_text(
+            await send_long_message(
+                query.message,
                 "Не нашёл эту нейросеть.",
                 reply_markup=nets_keyboard(),
+                edit=True,
             )
             return
         text = (
-            f"{net['emoji']} {net['title']} ({net['kind']})\n\n"
+            f"{net['emoji']} {net['title']} · {net['kind']}\n\n"
             f"{net['blurb']}\n\n"
-            f"Сайт: {net['site']}\n\n"
+            f"🎯 Лучше всего для: {net.get('best_for', 'универсальных задач')}\n"
+            f"🔗 Сайт: {net['site']}\n\n"
             "Что открыть дальше?"
         )
-        await query.edit_message_text(
+        await send_long_message(
+            query.message,
             text,
             reply_markup=net_actions_keyboard(net_id),
-            disable_web_page_preview=True,
+            edit=True,
         )
         return
 
@@ -413,28 +504,33 @@ async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         _, net_id, step = data.split(":", 2)
         net = NETWORKS.get(net_id)
         if not net or step not in {"install", "use", "prompt"}:
-            await query.edit_message_text(
+            await send_long_message(
+                query.message,
                 "Урок не найден.",
                 reply_markup=back_home_keyboard(),
+                edit=True,
             )
             return
         titles = {
-            "install": "Установка и регистрация",
-            "use": "Как пользоваться",
-            "prompt": "Пример промпта",
+            "install": "🔧 Регистрация / VPN",
+            "use": "🛠 Как пользоваться",
+            "prompt": "📌 Готовые промпты",
         }
         body = net[step]
         text = f"{net['emoji']} {net['title']} — {titles[step]}\n\n{body}"
-        await query.edit_message_text(
+        await send_long_message(
+            query.message,
             text,
             reply_markup=net_actions_keyboard(net_id),
-            disable_web_page_preview=True,
+            edit=True,
         )
         return
 
-    await query.edit_message_text(
+    await send_long_message(
+        query.message,
         "Не понял кнопку. Открой меню заново: /start",
         reply_markup=main_menu_keyboard(),
+        edit=True,
     )
 
 
