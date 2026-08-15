@@ -41,9 +41,36 @@ export TELEGRAM_TOKEN="ваш_токен"
 python bot.py
 ```
 
+## Круглосуточная работа (без вашего ПК)
+
+Бот должен крутиться на сервере в облаке. Самый простой вариант — [Railway](https://railway.app).
+
+### Railway (рекомендуется)
+
+1. Зарегистрируйтесь на [railway.app](https://railway.app) (можно через GitHub).
+2. **New Project** → **Deploy from GitHub repo** → выберите этот репозиторий.
+3. В настройках сервиса укажите **Root Directory**: `telegram_bot`.
+4. **Variables** → добавьте:
+   - `TELEGRAM_TOKEN` = токен от @BotFather
+5. Дождитесь деплоя — бот запустится сам и будет работать, пока сервис включён.
+
+Ваш компьютер при этом может быть выключен.
+
+### Docker (любой VPS)
+
+```bash
+cd telegram_bot
+docker build -t telegram-bot .
+docker run -d --restart unless-stopped -e TELEGRAM_TOKEN="ваш_токен" telegram-bot
+```
+
+Подходит для Timeweb, Selectel, DigitalOcean, Oracle Cloud Free Tier и т.п.
+
 ## Файлы
 
 - `bot.py` — код бота
 - `requirements.txt` — зависимости
+- `Dockerfile` — образ для облака / VPS
+- `railway.toml` — настройки для Railway
 - `.env.example` — пример переменных окружения
 - `.gitignore` — игнорирует `.env` и виртуальное окружение
