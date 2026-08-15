@@ -50,64 +50,123 @@ GEMINI_FALLBACK_MODELS = [
     ).split(",")
     if m.strip()
 ]
+GROQ_BASE_URL = os.getenv(
+    "GROQ_BASE_URL",
+    "https://api.groq.com/openai/v1",
+).rstrip("/")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_FALLBACK_MODELS = [
+    m.strip()
+    for m in os.getenv(
+        "GROQ_FALLBACK_MODELS",
+        "llama-3.1-8b-instant,gemma2-9b-it",
+    ).split(",")
+    if m.strip()
+]
 SYSTEM_PROMPT = os.getenv(
-    "GEMINI_SYSTEM_PROMPT",
-    (
-        "Ты дружелюбный наставник по нейросетям в Telegram. "
-        "Объясняй просто, по шагам, на русском. "
-        "Помогай с установкой, использованием и промптами. "
-        "Не выдумывай оплату/лимиты как факты — говори осторожно."
+    "AI_SYSTEM_PROMPT",
+    os.getenv(
+        "GEMINI_SYSTEM_PROMPT",
+        (
+            "Ты дружелюбный наставник по нейросетям в Telegram. "
+            "Объясняй просто, по шагам, на русском. "
+            "Помогай с установкой, использованием и промптами. "
+            "Не выдумывай оплату/лимиты как факты — говори осторожно."
+        ),
     ),
 )
-MAX_HISTORY = int(os.getenv("GEMINI_MAX_HISTORY", "20"))
+MAX_HISTORY = int(os.getenv("AI_MAX_HISTORY", os.getenv("GEMINI_MAX_HISTORY", "20")))
 
 _histories: dict[int, deque[dict[str, str]]] = defaultdict(
     lambda: deque(maxlen=MAX_HISTORY)
 )
-_client: AsyncOpenAI | None = None
+_gemini_client: AsyncOpenAI | None = None
+_groq_client: AsyncOpenAI | None = None
 
 
-def get_client() -> AsyncOpenAI:
-    global _client
-    if _client is None:
-        api_key = os.getenv("GEMINI_API_KEY", "").strip()
-        if not api_key:
-            raise RuntimeError("Не задан GEMINI_API_KEY")
-        _client = AsyncOpenAI(
+def get_gemini_client() -> AsyncOpenAI | None:
+    global _gemini_client
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        return None
+    if _gemini_client is None:
+        _gemini_client = AsyncOpenAI(
             api_key=api_key,
             base_url=GEMINI_BASE_URL,
             timeout=45.0,
             max_retries=1,
         )
-    return _client
+    return _gemini_client
 
 
-async def ask_gemini(chat_id: int, user_text: str) -> str:
+def get_groq_client() -> AsyncOpenAI | None:
+    global _groq_client
+    api_key = os.getenv("GROQ_API_KEY", "").strip()
+    if not api_key:
+        return None
+    if _groq_client is None:
+        _groq_client = AsyncOpenAI(
+            api_key=api_key,
+            base_url=GROQ_BASE_URL,
+            timeout=45.0,
+            max_retries=1,
+        )
+    return _groq_client
+
+
+def provider_chains() -> list[tuple[str, AsyncOpenAI, list[str]]]:
+    """Порядок: сначала Gemini, потом запасной Groq."""
+    chains: list[tuple[str, AsyncOpenAI, list[str]]] = []
+    gemini = get_gemini_client()
+    if gemini is not None:
+        models = [GEMINI_MODEL, *[m for m in GEMINI_FALLBACK_MODELS if m != GEMINI_MODEL]]
+        chains.append(("gemini", gemini, models))
+    groq = get_groq_client()
+    if groq is not None:
+        models = [GROQ_MODEL, *[m for m in GROQ_FALLBACK_MODELS if m != GROQ_MODEL]]
+        chains.append(("groq", groq, models))
+    return chains
+
+
+async def ask_ai(chat_id: int, user_text: str) -> str:
     history = _histories[chat_id]
     history.append({"role": "user", "content": user_text})
     messages = [{"role": "system", "content": SYSTEM_PROMPT}, *history]
-    models = [GEMINI_MODEL, *[m for m in GEMINI_FALLBACK_MODELS if m != GEMINI_MODEL]]
     last_error: Exception | None = None
+    chains = provider_chains()
+    if not chains:
+        if history and history[-1].get("role") == "user":
+            history.pop()
+        raise RuntimeError("Нет настроенных AI-ключей (GEMINI_API_KEY / GROQ_API_KEY)")
 
-    for model in models:
-        try:
-            response = await get_client().chat.completions.create(
-                model=model,
-                messages=messages,
-            )
-            reply = (response.choices[0].message.content or "").strip()
-            if not reply:
-                reply = "Пустой ответ от модели. Попробуйте ещё раз."
-            history.append({"role": "assistant", "content": reply})
-            return reply
-        except Exception as exc:
-            last_error = exc
-            logger.warning("Модель %s недоступна: %s", model, exc)
+    for provider, client, models in chains:
+        for model in models:
+            try:
+                response = await client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                )
+                reply = (response.choices[0].message.content or "").strip()
+                if not reply:
+                    reply = "Пустой ответ от модели. Попробуйте ещё раз."
+                history.append({"role": "assistant", "content": reply})
+                if provider != "gemini" or model != GEMINI_MODEL:
+                    logger.info("Ответ через %s / %s", provider, model)
+                return reply
+            except Exception as exc:
+                last_error = exc
+                logger.warning("%s/%s недоступен: %s", provider, model, exc)
 
     assert last_error is not None
     if history and history[-1].get("role") == "user":
         history.pop()
     raise last_error
+
+
+# Обратная совместимость для старых импортов/тестов
+async def ask_gemini(chat_id: int, user_text: str) -> str:
+    return await ask_ai(chat_id, user_text)
+
 
 
 def split_message(text: str, limit: int = 3900) -> list[str]:
@@ -389,12 +448,12 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     await update.message.chat.send_action(ChatAction.TYPING)
     try:
-        reply = await ask_gemini(update.effective_chat.id, text)
+        reply = await ask_ai(update.effective_chat.id, text)
     except Exception:
-        logger.exception("Ошибка Gemini API")
+        logger.exception("Ошибка AI API (Gemini/Groq)")
         await update.message.reply_text(
-            "Сейчас наставник недоступен. Нажми /menu и учись по кнопкам — "
-            "там уроки работают без ожидания.",
+            "Сейчас наставник недоступен (лимит Gemini/Groq). "
+            "Нажми /menu и учись по кнопкам — уроки работают без ИИ.",
             reply_markup=main_menu_keyboard(),
         )
         return
@@ -412,15 +471,20 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 def main() -> None:
     token = os.getenv("TELEGRAM_TOKEN", "").strip()
     gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
+    groq_key = os.getenv("GROQ_API_KEY", "").strip()
 
     if not token:
         logger.error("Не задан TELEGRAM_TOKEN.")
         sys.exit(1)
-    if not gemini_key:
-        logger.error("Не задан GEMINI_API_KEY.")
+    if not gemini_key and not groq_key:
+        logger.error("Нужен хотя бы один ключ: GEMINI_API_KEY или GROQ_API_KEY.")
         sys.exit(1)
 
-    get_client()
+    providers = []
+    if get_gemini_client() is not None:
+        providers.append(f"gemini:{GEMINI_MODEL}")
+    if get_groq_client() is not None:
+        providers.append(f"groq:{GROQ_MODEL}")
 
     app = Application.builder().token(token).build()
     app.add_handler(CommandHandler("start", start))
@@ -431,7 +495,7 @@ def main() -> None:
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
     app.add_error_handler(error_handler)
 
-    logger.info("Бот-наставник запущен (Gemini model=%s)", GEMINI_MODEL)
+    logger.info("Бот-наставник запущен (%s)", " -> ".join(providers))
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
