@@ -32,7 +32,7 @@ GEMINI_BASE_URL = os.getenv(
     "GEMINI_BASE_URL",
     "https://generativelanguage.googleapis.com/v1beta/openai/",
 ).rstrip("/") + "/"
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 SYSTEM_PROMPT = os.getenv(
     "GEMINI_SYSTEM_PROMPT",
     "Ты полезный ассистент в Telegram. Отвечай кратко и по делу, на языке пользователя.",
