@@ -32,7 +32,15 @@ GEMINI_BASE_URL = os.getenv(
     "GEMINI_BASE_URL",
     "https://generativelanguage.googleapis.com/v1beta/openai/",
 ).rstrip("/") + "/"
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
+GEMINI_FALLBACK_MODELS = [
+    m.strip()
+    for m in os.getenv(
+        "GEMINI_FALLBACK_MODELS",
+        "gemini-flash-latest,gemini-3.6-flash",
+    ).split(",")
+    if m.strip()
+]
 SYSTEM_PROMPT = os.getenv(
     "GEMINI_SYSTEM_PROMPT",
     "Ты полезный ассистент в Telegram. Отвечай кратко и по делу, на языке пользователя.",
@@ -53,7 +61,12 @@ def get_client() -> AsyncOpenAI:
         api_key = os.getenv("GEMINI_API_KEY", "").strip()
         if not api_key:
             raise RuntimeError("Не задан GEMINI_API_KEY")
-        _client = AsyncOpenAI(api_key=api_key, base_url=GEMINI_BASE_URL)
+        _client = AsyncOpenAI(
+            api_key=api_key,
+            base_url=GEMINI_BASE_URL,
+            timeout=45.0,
+            max_retries=1,
+        )
     return _client
 
 
@@ -62,15 +75,31 @@ async def ask_gemini(chat_id: int, user_text: str) -> str:
     history.append({"role": "user", "content": user_text})
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}, *history]
-    response = await get_client().chat.completions.create(
-        model=GEMINI_MODEL,
-        messages=messages,
-    )
-    reply = (response.choices[0].message.content or "").strip()
-    if not reply:
-        reply = "Пустой ответ от модели. Попробуйте ещё раз."
-    history.append({"role": "assistant", "content": reply})
-    return reply
+    models = [GEMINI_MODEL, *[m for m in GEMINI_FALLBACK_MODELS if m != GEMINI_MODEL]]
+    last_error: Exception | None = None
+
+    for model in models:
+        try:
+            response = await get_client().chat.completions.create(
+                model=model,
+                messages=messages,
+            )
+            reply = (response.choices[0].message.content or "").strip()
+            if not reply:
+                reply = "Пустой ответ от модели. Попробуйте ещё раз."
+            history.append({"role": "assistant", "content": reply})
+            if model != GEMINI_MODEL:
+                logger.info("Ответ через запасную модель %s", model)
+            return reply
+        except Exception as exc:
+            last_error = exc
+            logger.warning("Модель %s недоступна: %s", model, exc)
+
+    assert last_error is not None
+    # Убираем неуспешный user-turn из истории
+    if history and history[-1].get("role") == "user":
+        history.pop()
+    raise last_error
 
 
 def split_message(text: str, limit: int = 4000) -> list[str]:
