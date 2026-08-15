@@ -10,8 +10,14 @@ from collections import defaultdict, deque
 
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.constants import ChatAction, ParseMode
+from telegram import (
+    BotCommand,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    MenuButtonCommands,
+    Update,
+)
+from telegram.constants import ChatAction
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
@@ -85,8 +91,32 @@ MAX_HISTORY = int(os.getenv("AI_MAX_HISTORY", os.getenv("GEMINI_MAX_HISTORY", "2
 _histories: dict[int, deque[dict[str, str]]] = defaultdict(
     lambda: deque(maxlen=MAX_HISTORY)
 )
+# chat_id -> message_ids (чтобы /clear мог удалить переписку)
+_tracked_messages: dict[int, list[int]] = defaultdict(list)
 _gemini_client: AsyncOpenAI | None = None
 _groq_client: AsyncOpenAI | None = None
+
+
+def track_message(chat_id: int, message_id: int | None) -> None:
+    if message_id is None:
+        return
+    ids = _tracked_messages[chat_id]
+    ids.append(message_id)
+    if len(ids) > 120:
+        _tracked_messages[chat_id] = ids[-120:]
+
+
+async def delete_tracked_messages(bot, chat_id: int) -> int:
+    ids = _tracked_messages.pop(chat_id, [])
+    deleted = 0
+    for mid in ids:
+        try:
+            await bot.delete_message(chat_id=chat_id, message_id=mid)
+            deleted += 1
+        except Exception:
+            continue
+    return deleted
+
 
 
 def get_gemini_client() -> AsyncOpenAI | None:
@@ -189,30 +219,38 @@ async def send_long_message(
     text: str,
     reply_markup: InlineKeyboardMarkup | None = None,
     edit: bool = False,
+    track: bool = True,
 ) -> None:
+    chat_id = message.chat_id
     chunks = split_message(text)
     if edit and message is not None:
-        await message.edit_text(
+        edited = await message.edit_text(
             chunks[0],
             reply_markup=reply_markup if len(chunks) == 1 else None,
             disable_web_page_preview=True,
         )
+        if track:
+            track_message(chat_id, getattr(edited, "message_id", message.message_id))
         for i, chunk in enumerate(chunks[1:], start=1):
             markup = reply_markup if i == len(chunks) - 1 else None
-            await message.reply_text(
+            sent = await message.reply_text(
                 chunk,
                 reply_markup=markup,
                 disable_web_page_preview=True,
             )
+            if track:
+                track_message(chat_id, sent.message_id)
         return
 
     for i, chunk in enumerate(chunks):
         markup = reply_markup if i == len(chunks) - 1 else None
-        await message.reply_text(
+        sent = await message.reply_text(
             chunk,
             reply_markup=markup,
             disable_web_page_preview=True,
         )
+        if track:
+            track_message(chat_id, sent.message_id)
 
 
 def main_menu_keyboard() -> InlineKeyboardMarkup:
@@ -330,7 +368,9 @@ def welcome_text(name: str) -> str:
         "💬 Важно: этот чат тоже можно использовать как нейросеть.\n"
         "Просто напиши мне текстом вопрос или задачу — отвечу как наставник.\n"
         "Например: «напиши ответ на возражение: нет времени».\n\n"
-        "Сначала выбери кнопку ниже 👇"
+        "Сначала выбери кнопку ниже 👇\n"
+        "Потом меню всегда в кнопке Menu слева от поля ввода "
+        "(рядом со скрепкой 📎). Команда /clear очищает чат."
     )
 
 
@@ -339,6 +379,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     name = user.first_name if user and user.first_name else "друг"
     if update.effective_chat:
         _histories.pop(update.effective_chat.id, None)
+    if update.message:
+        track_message(update.effective_chat.id, update.message.message_id)
     await send_long_message(
         update.message,
         welcome_text(name),
@@ -347,27 +389,62 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if update.message and update.effective_chat:
+        track_message(update.effective_chat.id, update.message.message_id)
     await send_long_message(
         update.message,
-        "ℹ️ Команды:\n"
-        "/start — приветствие и меню\n"
+        "ℹ️ Команды (кнопка Menu рядом с полем ввода 📎):\n"
+        "/start — приветствие и меню уроков\n"
+        "/menu — открыть меню уроков\n"
+        "/clear — очистить чат и память диалога\n"
         "/help — справка\n"
-        "/menu — открыть меню\n"
         "/ping — проверка\n\n"
-        "💬 Можно просто написать вопрос текстом — отвечу как нейросеть-наставник.",
-        reply_markup=main_menu_keyboard(),
+        "💬 Можно просто писать текстом — отвечу как нейросеть.\n"
+        "Во время обычной переписки кнопки меню не показываю.",
+        reply_markup=None,
     )
 
 
 async def menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text(
-        "🏠 Главное меню:",
+    if update.message and update.effective_chat:
+        track_message(update.effective_chat.id, update.message.message_id)
+    sent = await update.message.reply_text(
+        "🏠 Меню уроков:",
         reply_markup=main_menu_keyboard(),
     )
+    if update.effective_chat:
+        track_message(update.effective_chat.id, sent.message_id)
+
+
+async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not update.effective_chat or not update.message:
+        return
+    chat_id = update.effective_chat.id
+    _histories.pop(chat_id, None)
+    track_message(chat_id, update.message.message_id)
+    deleted = await delete_tracked_messages(context.bot, chat_id)
+    try:
+        await update.message.delete()
+    except Exception:
+        pass
+    sent = await context.bot.send_message(
+        chat_id=chat_id,
+        text=(
+            "🧹 Чат очищен.\n"
+            f"Удалено сообщений: {deleted}. Память диалога сброшена.\n\n"
+            "Меню уроков — кнопка Menu слева от поля ввода "
+            "(рядом со скрепкой) или команда /menu."
+        ),
+    )
+    track_message(chat_id, sent.message_id)
 
 
 async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("pong ✅")
+    if update.message and update.effective_chat:
+        track_message(update.effective_chat.id, update.message.message_id)
+    sent = await update.message.reply_text("pong ✅")
+    if update.effective_chat:
+        track_message(update.effective_chat.id, sent.message_id)
 
 
 async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -542,26 +619,42 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not text:
         return
 
+    chat_id = update.effective_chat.id
+    track_message(chat_id, update.message.message_id)
+
     await update.message.chat.send_action(ChatAction.TYPING)
     try:
-        reply = await ask_ai(update.effective_chat.id, text)
+        reply = await ask_ai(chat_id, text)
     except Exception:
         logger.exception("Ошибка AI API (Gemini/Groq)")
-        await update.message.reply_text(
-            "Сейчас наставник недоступен (лимит Gemini/Groq). "
-            "Нажми /menu и учись по кнопкам — уроки работают без ИИ.",
-            reply_markup=main_menu_keyboard(),
+        sent = await update.message.reply_text(
+            "Сейчас наставник недоступен (лимит Gemini/Groq).\n"
+            "Открой Menu → /menu для уроков без ИИ."
         )
+        track_message(chat_id, sent.message_id)
         return
 
-    chunks = split_message(reply)
-    for i, chunk in enumerate(chunks):
-        markup = main_menu_keyboard() if i == len(chunks) - 1 else None
-        await update.message.reply_text(chunk, reply_markup=markup)
+    for chunk in split_message(reply):
+        sent = await update.message.reply_text(chunk)
+        track_message(chat_id, sent.message_id)
 
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     logger.exception("Ошибка при обработке обновления: %s", context.error)
+
+
+async def post_init(app: Application) -> None:
+    await app.bot.set_my_commands(
+        [
+            BotCommand("start", "🚀 Старт и меню уроков"),
+            BotCommand("menu", "🏠 Открыть меню уроков"),
+            BotCommand("clear", "🧹 Очистить чат и память"),
+            BotCommand("help", "ℹ️ Справка"),
+            BotCommand("ping", "✅ Проверка бота"),
+        ]
+    )
+    # Кнопка Menu рядом со скрепкой / полем ввода
+    await app.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
 
 
 def main() -> None:
@@ -582,10 +675,16 @@ def main() -> None:
     if get_groq_client() is not None:
         providers.append(f"groq:{GROQ_MODEL}")
 
-    app = Application.builder().token(token).build()
+    app = (
+        Application.builder()
+        .token(token)
+        .post_init(post_init)
+        .build()
+    )
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("menu", menu_command))
+    app.add_handler(CommandHandler("clear", clear_command))
     app.add_handler(CommandHandler("ping", ping))
     app.add_handler(CallbackQueryHandler(on_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
