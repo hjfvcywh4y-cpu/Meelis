@@ -71,7 +71,7 @@ SYSTEM_PROMPT = os.getenv(
     os.getenv(
         "GEMINI_SYSTEM_PROMPT",
         (
-            "Ты дружелюбный наставник по нейросетям для людей из МЛМ/сетевого бизнеса. "
+            "Ты дружелюбный наставник по нейросетям. "
             "Объясняй просто, по шагам, на русском, с эмодзи умеренно. "
             "Помогай с регистрацией (в т.ч. из РФ через VPN), промптами, "
             "постами, возражениями, картинками и видео. "
@@ -227,7 +227,7 @@ def main_menu_keyboard() -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton("🎬 Видео", callback_data="menu:cat:video"),
-                InlineKeyboardButton("✍️ Промпты МЛМ", callback_data="menu:prompts"),
+                InlineKeyboardButton("✍️ Промпты", callback_data="menu:prompts"),
             ],
             [InlineKeyboardButton("🎨 Стратегия картинок", callback_data="menu:imagestrategy")],
             [InlineKeyboardButton("💬 Как общаться с ИИ", callback_data="menu:chat")],
@@ -324,7 +324,7 @@ def category_keyboard(kind_key: str) -> InlineKeyboardMarkup:
 def welcome_text(name: str) -> str:
     return (
         f"👋 Привет, {name}!\n\n"
-        "Я научу тебя пользоваться нейросетями для МЛМ — с нуля 🚀\n"
+        "Я научу тебя пользоваться нейросетями — с нуля 🚀\n"
         "Разберём регистрацию (в том числе из РФ через VPN), "
         "посты и возражения, картинки, видео, промпты и сценарии.\n\n"
         "💬 Важно: этот чат тоже можно использовать как нейросеть.\n"
