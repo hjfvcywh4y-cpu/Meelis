@@ -37,6 +37,7 @@ from lessons import (
     PROMPTS_LESSON,
     START_GUIDE,
 )
+from stats import admin_ids, record_user, snapshot
 
 load_dotenv()
 
@@ -377,6 +378,12 @@ def welcome_text(name: str) -> str:
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     name = user.first_name if user and user.first_name else "друг"
+    record_user(
+        user.id if user else None,
+        event="start",
+        username=user.username if user else None,
+        first_name=name,
+    )
     if update.effective_chat:
         _histories.pop(update.effective_chat.id, None)
     if update.message:
@@ -398,7 +405,8 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "/menu — открыть меню уроков\n"
         "/clear — очистить чат и память диалога\n"
         "/help — справка\n"
-        "/ping — проверка\n\n"
+        "/ping — проверка\n"
+        "/id — ваш Telegram ID\n\n"
         "💬 Можно просто писать текстом — отвечу как нейросеть.\n"
         "Во время обычной переписки кнопки меню не показываю.",
         reply_markup=None,
@@ -439,6 +447,50 @@ async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     track_message(chat_id, sent.message_id)
 
 
+def _is_admin(user_id: int | None) -> bool:
+    allowed = admin_ids()
+    if not allowed:
+        return True
+    return bool(user_id and user_id in allowed)
+
+
+async def id_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user = update.effective_user
+    if not update.message or not user:
+        return
+    sent = await update.message.reply_text(
+        f"Ваш Telegram ID: `{user.id}`",
+        parse_mode="Markdown",
+    )
+    if update.effective_chat:
+        track_message(update.effective_chat.id, update.message.message_id)
+        track_message(update.effective_chat.id, sent.message_id)
+
+
+async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user = update.effective_user
+    if not update.message:
+        return
+    if not _is_admin(user.id if user else None):
+        await update.message.reply_text("Эта команда только для владельца бота.")
+        return
+    data = snapshot()
+    text = (
+        "📊 Статистика бота\n\n"
+        f"👥 Уникальных людей: {data['unique_users']}\n"
+        f"🚀 Нажали /start: {data['starts']}\n"
+        f"💬 Текстовых сообщений: {data['messages']}\n"
+        f"🔘 Нажатий по кнопкам: {data['callbacks']}\n\n"
+        "Счёт идёт с момента этого обновления. "
+        "После нового деплоя Railway цифры могут сброситься, "
+        "если нет постоянного диска."
+    )
+    sent = await update.message.reply_text(text)
+    if update.effective_chat:
+        track_message(update.effective_chat.id, update.message.message_id)
+        track_message(update.effective_chat.id, sent.message_id)
+
+
 async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message and update.effective_chat:
         track_message(update.effective_chat.id, update.message.message_id)
@@ -452,6 +504,13 @@ async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     if not query or not query.message:
         return
     await query.answer()
+    user = update.effective_user
+    record_user(
+        user.id if user else None,
+        event="callback",
+        username=user.username if user else None,
+        first_name=user.first_name if user else None,
+    )
     data = query.data or ""
 
     if data in {"menu:home", "menu:main"}:
@@ -620,6 +679,13 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     chat_id = update.effective_chat.id
+    user = update.effective_user
+    record_user(
+        user.id if user else None,
+        event="message",
+        username=user.username if user else None,
+        first_name=user.first_name if user else None,
+    )
     track_message(chat_id, update.message.message_id)
 
     await update.message.chat.send_action(ChatAction.TYPING)
@@ -686,6 +752,8 @@ def main() -> None:
     app.add_handler(CommandHandler("menu", menu_command))
     app.add_handler(CommandHandler("clear", clear_command))
     app.add_handler(CommandHandler("ping", ping))
+    app.add_handler(CommandHandler("id", id_command))
+    app.add_handler(CommandHandler("stats", stats_command))
     app.add_handler(CallbackQueryHandler(on_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
     app.add_error_handler(error_handler)
