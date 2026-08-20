@@ -596,12 +596,13 @@ async def post_init(app: Application) -> None:
     try:
         await app.bot.set_my_description(
             description=(
-                "IDera Helper — помощник по продукту и бизнесу.\n"
-                "Подбор БАД, документы ИП/самозанятость, мероприятия и каталог."
+                "IDera Helper — тихий ориентир рядом с тобой.\n"
+                "Без суеты и без лекций: ясность, когда она нужна, и кнопка, "
+                "с которой можно начать."
             )
         )
         await app.bot.set_my_short_description(
-            short_description="Подбор БАД, бизнес-документы и продукт"
+            short_description="IDera Helper. Ясность рядом, всегда на связи."
         )
         await app.bot.set_my_name(name="IDera Helper")
     except Exception:

@@ -26,16 +26,16 @@ def _utf16_len(text: str) -> int:
 
 
 def welcome_message() -> tuple[str, list[MessageEntity]]:
-    """Свой текст IDera (не копия EWA) + кастомные эмодзи пака."""
+    """Живое приветствие IDera без перечня разделов."""
     blue_id, blue = IDERA_EMOJI["blue"]
     star_id, star = IDERA_EMOJI["star"]
     rocket_id, rocket = IDERA_EMOJI["rocket"]
     brand = "IDera Helper"
     text = (
-        f"{blue} Привет! Это {brand}.\n\n"
-        f"{star} Здесь собрано то, что нужно под рукой: подбор БАД, "
-        "документы для ИП и самозанятости, продукт и мероприятия.\n\n"
-        f"Открой раздел кнопками внизу — я рядом {rocket}"
+        f"{blue} Привет. Это {brand}.\n\n"
+        f"{star} Не витрина и не лекция — скорее тихий ориентир, "
+        "когда хочется ясности и спокойного шага вперёд.\n\n"
+        f"Кнопки уже внизу. Выбирай то, что откликается — я рядом {rocket}"
     )
 
     def entity(needle: str, etype: str, **kwargs) -> MessageEntity:
@@ -199,10 +199,10 @@ def quiz_choice_keyboard() -> ReplyKeyboardMarkup:
 
 
 WELCOME_CAPTION = (
-    f"{idera('blue')} Привет! Это <b>IDera Helper</b>.\n\n"
-    f"{idera('star')} Здесь собрано то, что нужно под рукой: подбор БАД, "
-    "документы для ИП и самозанятости, продукт и мероприятия.\n\n"
-    f"Открой раздел кнопками внизу — я рядом {idera('rocket')}"
+    f"{idera('blue')} Привет. Это <b>IDera Helper</b>.\n\n"
+    f"{idera('star')} Не витрина и не лекция — скорее тихий ориентир, "
+    "когда хочется ясности и спокойного шага вперёд.\n\n"
+    f"Кнопки уже внизу. Выбирай то, что откликается — я рядом {idera('rocket')}"
 )
 
 BUSINESS_TEXT = (
