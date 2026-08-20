@@ -239,7 +239,7 @@ async def reply_html(
 
 async def send_idera_stickers(bot, chat_id: int) -> None:
     """Fallback: send pack stickers if Telegram strips inline custom emoji."""
-    wanted = {menus.IDERA_EMOJI[name][0] for name in ("blue", "coffee", "rocket")}
+    wanted = {menus.IDERA_EMOJI[name][0] for name in ("blue", "star", "rocket")}
     try:
         pack = await bot.get_sticker_set(menus.IDERA_PACK)
     except Exception:
@@ -632,7 +632,10 @@ def main() -> None:
     app.add_error_handler(error_handler)
 
     logger.info("IDera Helper запущен (%s)", " -> ".join(providers) or "без AI")
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
+    app.run_polling(
+        allowed_updates=Update.ALL_TYPES,
+        drop_pending_updates=True,
+    )
 
 
 if __name__ == "__main__":

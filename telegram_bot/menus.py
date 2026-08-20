@@ -26,44 +26,34 @@ def _utf16_len(text: str) -> int:
 
 
 def welcome_message() -> tuple[str, list[MessageEntity]]:
-    """Текст приветствия + entities, чтобы Telegram не выкинул кастомные эмодзи."""
+    """Свой текст IDera (не копия EWA) + кастомные эмодзи пака."""
     blue_id, blue = IDERA_EMOJI["blue"]
-    coffee_id, coffee = IDERA_EMOJI["coffee"]
+    star_id, star = IDERA_EMOJI["star"]
     rocket_id, rocket = IDERA_EMOJI["rocket"]
     brand = "IDera Helper"
-    before_brand = f"{blue} Добро пожаловать!\n\nЯ — "
-    after_brand = ", твой помощник по продукту и бизнесу.\n"
-    coffee_line = f"{coffee} Кофе мне не нужен, усталость — не про меня. Я всегда на связи "
-    tail = f"{rocket}\n\nВыбери раздел в меню ниже 👇"
-    text = before_brand + brand + after_brand + coffee_line + tail
+    text = (
+        f"{blue} Привет! Это {brand}.\n\n"
+        f"{star} Здесь собрано то, что нужно под рукой: подбор БАД, "
+        "документы для ИП и самозанятости, продукт и мероприятия.\n\n"
+        f"Открой раздел кнопками внизу — я рядом {rocket}"
+    )
 
-    def at(*parts: str) -> int:
-        return _utf16_len("".join(parts))
+    def entity(needle: str, etype: str, **kwargs) -> MessageEntity:
+        idx = text.find(needle)
+        if idx < 0:
+            raise ValueError(f"welcome text missing {needle!r}")
+        return MessageEntity(
+            type=etype,
+            offset=_utf16_len(text[:idx]),
+            length=_utf16_len(needle),
+            **kwargs,
+        )
 
     entities = [
-        MessageEntity(
-            type=MessageEntity.CUSTOM_EMOJI,
-            offset=0,
-            length=_utf16_len(blue),
-            custom_emoji_id=blue_id,
-        ),
-        MessageEntity(
-            type=MessageEntity.BOLD,
-            offset=at(before_brand),
-            length=_utf16_len(brand),
-        ),
-        MessageEntity(
-            type=MessageEntity.CUSTOM_EMOJI,
-            offset=at(before_brand, brand, after_brand),
-            length=_utf16_len(coffee),
-            custom_emoji_id=coffee_id,
-        ),
-        MessageEntity(
-            type=MessageEntity.CUSTOM_EMOJI,
-            offset=at(before_brand, brand, after_brand, coffee_line),
-            length=_utf16_len(rocket),
-            custom_emoji_id=rocket_id,
-        ),
+        entity(blue, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=blue_id),
+        entity(brand, MessageEntity.BOLD),
+        entity(star, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=star_id),
+        entity(rocket, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=rocket_id),
     ]
     return text, entities
 
@@ -209,11 +199,10 @@ def quiz_choice_keyboard() -> ReplyKeyboardMarkup:
 
 
 WELCOME_CAPTION = (
-    f"{idera('blue')} Добро пожаловать!\n\n"
-    "Я — <b>IDera Helper</b>, твой помощник по продукту и бизнесу.\n"
-    f"{idera('coffee')} Кофе мне не нужен, усталость — не про меня. "
-    f"Я всегда на связи {idera('rocket')}\n\n"
-    "Выбери раздел в меню ниже 👇"
+    f"{idera('blue')} Привет! Это <b>IDera Helper</b>.\n\n"
+    f"{idera('star')} Здесь собрано то, что нужно под рукой: подбор БАД, "
+    "документы для ИП и самозанятости, продукт и мероприятия.\n\n"
+    f"Открой раздел кнопками внизу — я рядом {idera('rocket')}"
 )
 
 BUSINESS_TEXT = (
