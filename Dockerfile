@@ -3,5 +3,7 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 COPY telegram_bot/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY telegram_bot/bot.py telegram_bot/lessons.py telegram_bot/stats.py .
+COPY telegram_bot/bot.py telegram_bot/menus.py telegram_bot/bad_quiz.py telegram_bot/stats.py telegram_bot/lessons.py ./
+COPY telegram_bot/assets ./assets
+COPY telegram_bot/docs ./docs
 CMD ["python", "bot.py"]

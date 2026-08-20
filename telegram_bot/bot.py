@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Telegram-бот-наставник по нейросетям + Gemini для свободных вопросов."""
+"""IDera Helper — Telegram-бот с меню как у конкурента + подбор БАД."""
 
 from __future__ import annotations
 
@@ -7,36 +7,27 @@ import logging
 import os
 import sys
 from collections import defaultdict, deque
+from pathlib import Path
 
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 from telegram import (
     BotCommand,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
+    InputFile,
     MenuButtonCommands,
     Update,
 )
-from telegram.constants import ChatAction
+from telegram.constants import ChatAction, ParseMode
 from telegram.ext import (
     Application,
-    CallbackQueryHandler,
     CommandHandler,
     ContextTypes,
     MessageHandler,
     filters,
 )
 
-from lessons import (
-    CATEGORY_INTRO,
-    CHAT_LESSON,
-    CHOOSE_GUIDE,
-    IMAGE_STRATEGY,
-    NETWORK_ORDER,
-    NETWORKS,
-    PROMPTS_LESSON,
-    START_GUIDE,
-)
+import bad_quiz
+import menus
 from stats import admin_ids, record_user, snapshot
 
 load_dotenv()
@@ -46,6 +37,11 @@ logging.basicConfig(
     level=logging.INFO,
 )
 logger = logging.getLogger(__name__)
+
+BASE_DIR = Path(__file__).resolve().parent
+ASSETS = BASE_DIR / "assets"
+DOCS = BASE_DIR / "docs"
+WELCOME_IMAGE = ASSETS / "welcome.png"
 
 GEMINI_BASE_URL = os.getenv(
     "GEMINI_BASE_URL",
@@ -60,10 +56,7 @@ GEMINI_FALLBACK_MODELS = [
     ).split(",")
     if m.strip()
 ]
-GROQ_BASE_URL = os.getenv(
-    "GROQ_BASE_URL",
-    "https://api.groq.com/openai/v1",
-).rstrip("/")
+GROQ_BASE_URL = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1").rstrip("/")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 GROQ_FALLBACK_MODELS = [
     m.strip()
@@ -75,24 +68,17 @@ GROQ_FALLBACK_MODELS = [
 ]
 SYSTEM_PROMPT = os.getenv(
     "AI_SYSTEM_PROMPT",
-    os.getenv(
-        "GEMINI_SYSTEM_PROMPT",
-        (
-            "Ты дружелюбный наставник по нейросетям. "
-            "Объясняй просто, по шагам, на русском, с эмодзи умеренно. "
-            "Помогай с регистрацией (в т.ч. из РФ через VPN), промптами, "
-            "постами, возражениями, картинками и видео. "
-            "Не обещай доход и не дави на продажи. "
-            "Не выдумывай оплату/лимиты как точные факты — говори осторожно."
-        ),
+    (
+        "Ты дружелюбный помощник IDera Helper. "
+        "Отвечай кратко на русском, помогай с продуктом и бизнесом. "
+        "Не ставь диагнозов и не обещай доход."
     ),
 )
-MAX_HISTORY = int(os.getenv("AI_MAX_HISTORY", os.getenv("GEMINI_MAX_HISTORY", "20")))
+MAX_HISTORY = int(os.getenv("AI_MAX_HISTORY", "20"))
 
 _histories: dict[int, deque[dict[str, str]]] = defaultdict(
     lambda: deque(maxlen=MAX_HISTORY)
 )
-# chat_id -> message_ids (чтобы /clear мог удалить переписку)
 _tracked_messages: dict[int, list[int]] = defaultdict(list)
 _gemini_client: AsyncOpenAI | None = None
 _groq_client: AsyncOpenAI | None = None
@@ -117,7 +103,6 @@ async def delete_tracked_messages(bot, chat_id: int) -> int:
         except Exception:
             continue
     return deleted
-
 
 
 def get_gemini_client() -> AsyncOpenAI | None:
@@ -151,7 +136,6 @@ def get_groq_client() -> AsyncOpenAI | None:
 
 
 def provider_chains() -> list[tuple[str, AsyncOpenAI, list[str]]]:
-    """Порядок: сначала Gemini, потом запасной Groq."""
     chains: list[tuple[str, AsyncOpenAI, list[str]]] = []
     gemini = get_gemini_client()
     if gemini is not None:
@@ -173,7 +157,7 @@ async def ask_ai(chat_id: int, user_text: str) -> str:
     if not chains:
         if history and history[-1].get("role") == "user":
             history.pop()
-        raise RuntimeError("Нет настроенных AI-ключей (GEMINI_API_KEY / GROQ_API_KEY)")
+        raise RuntimeError("Нет AI-ключей")
 
     for provider, client, models in chains:
         for model in models:
@@ -184,10 +168,8 @@ async def ask_ai(chat_id: int, user_text: str) -> str:
                 )
                 reply = (response.choices[0].message.content or "").strip()
                 if not reply:
-                    reply = "Пустой ответ от модели. Попробуйте ещё раз."
+                    reply = "Пустой ответ. Попробуйте ещё раз."
                 history.append({"role": "assistant", "content": reply})
-                if provider != "gemini" or model != GEMINI_MODEL:
-                    logger.info("Ответ через %s / %s", provider, model)
                 return reply
             except Exception as exc:
                 last_error = exc
@@ -197,12 +179,6 @@ async def ask_ai(chat_id: int, user_text: str) -> str:
     if history and history[-1].get("role") == "user":
         history.pop()
     raise last_error
-
-
-# Обратная совместимость для старых импортов/тестов
-async def ask_gemini(chat_id: int, user_text: str) -> str:
-    return await ask_ai(chat_id, user_text)
-
 
 
 def split_message(text: str, limit: int = 3900) -> list[str]:
@@ -215,213 +191,127 @@ def split_message(text: str, limit: int = 3900) -> list[str]:
     return chunks
 
 
-async def send_long_message(
-    message,
-    text: str,
-    reply_markup: InlineKeyboardMarkup | None = None,
-    edit: bool = False,
-    track: bool = True,
-) -> None:
-    chat_id = message.chat_id
-    chunks = split_message(text)
-    if edit and message is not None:
-        edited = await message.edit_text(
-            chunks[0],
-            reply_markup=reply_markup if len(chunks) == 1 else None,
-            disable_web_page_preview=True,
-        )
-        if track:
-            track_message(chat_id, getattr(edited, "message_id", message.message_id))
-        for i, chunk in enumerate(chunks[1:], start=1):
-            markup = reply_markup if i == len(chunks) - 1 else None
-            sent = await message.reply_text(
-                chunk,
-                reply_markup=markup,
-                disable_web_page_preview=True,
-            )
-            if track:
-                track_message(chat_id, sent.message_id)
-        return
+def screen_of(context: ContextTypes.DEFAULT_TYPE) -> str:
+    return context.user_data.get("screen", "main")
 
+
+def set_screen(context: ContextTypes.DEFAULT_TYPE, screen: str) -> None:
+    context.user_data["screen"] = screen
+
+
+def keyboard_for(screen: str):
+    return {
+        "main": menus.main_keyboard(),
+        "business": menus.business_keyboard(),
+        "ip_self": menus.ip_self_keyboard(),
+        "self": menus.self_employed_keyboard(),
+        "ip": menus.ip_keyboard(),
+        "events": menus.events_keyboard(),
+        "product": menus.product_keyboard(),
+        "quiz_intro": menus.quiz_intro_keyboard(),
+        "quiz": menus.quiz_choice_keyboard(),
+    }.get(screen, menus.main_keyboard())
+
+
+async def reply_html(
+    update: Update,
+    text: str,
+    context: ContextTypes.DEFAULT_TYPE,
+    *,
+    screen: str | None = None,
+) -> None:
+    if screen:
+        set_screen(context, screen)
+    markup = keyboard_for(screen_of(context))
+    chat_id = update.effective_chat.id if update.effective_chat else None
+    chunks = split_message(text)
     for i, chunk in enumerate(chunks):
-        markup = reply_markup if i == len(chunks) - 1 else None
-        sent = await message.reply_text(
+        sent = await update.message.reply_text(
             chunk,
-            reply_markup=markup,
+            parse_mode=ParseMode.HTML,
+            reply_markup=markup if i == len(chunks) - 1 else None,
             disable_web_page_preview=True,
         )
-        if track:
+        if chat_id:
             track_message(chat_id, sent.message_id)
 
 
-def main_menu_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        [
-            [InlineKeyboardButton("🚀 С чего начать", callback_data="menu:startguide")],
-            [InlineKeyboardButton("🧭 Какую нейросеть выбрать", callback_data="menu:choose")],
-            [InlineKeyboardButton("🤖 Выбрать нейросеть (15)", callback_data="menu:nets")],
-            [
-                InlineKeyboardButton("📝 Текст", callback_data="menu:cat:text"),
-                InlineKeyboardButton("🖼️ Картинки", callback_data="menu:cat:image"),
-            ],
-            [
-                InlineKeyboardButton("🎬 Видео", callback_data="menu:cat:video"),
-                InlineKeyboardButton("✍️ Промпты", callback_data="menu:prompts"),
-            ],
-            [InlineKeyboardButton("🎨 Стратегия картинок", callback_data="menu:imagestrategy")],
-            [InlineKeyboardButton("💬 Как общаться с ИИ", callback_data="menu:chat")],
-            [InlineKeyboardButton("🧠 Спросить наставника текстом", callback_data="menu:ask")],
-        ]
-    )
-
-
-def nets_keyboard() -> InlineKeyboardMarkup:
-    rows: list[list[InlineKeyboardButton]] = []
-    row: list[InlineKeyboardButton] = []
-    for net_id in NETWORK_ORDER:
-        net = NETWORKS[net_id]
-        row.append(
-            InlineKeyboardButton(
-                f"{net['emoji']} {net['title']}",
-                callback_data=f"net:{net_id}",
+async def send_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    set_screen(context, "main")
+    chat_id = update.effective_chat.id if update.effective_chat else None
+    markup = menus.main_keyboard()
+    if WELCOME_IMAGE.exists() and update.message:
+        with WELCOME_IMAGE.open("rb") as photo:
+            sent = await update.message.reply_photo(
+                photo=InputFile(photo, filename="welcome.png"),
+                caption=menus.WELCOME_CAPTION,
+                parse_mode=ParseMode.HTML,
+                reply_markup=markup,
             )
+        if chat_id:
+            track_message(chat_id, sent.message_id)
+        return
+    await reply_html(update, menus.WELCOME_CAPTION, context, screen="main")
+
+
+async def send_document_for_button(update: Update, button: str) -> None:
+    filename = menus.DOC_FILES.get(button)
+    caption = menus.DOC_CAPTIONS.get(button, button)
+    if not filename:
+        await update.message.reply_text("Документ пока не привязан.")
+        return
+    path = DOCS / filename
+    if not path.exists():
+        await update.message.reply_text(
+            f"{caption}\n\nФайл ещё не загружен. Скоро добавим PDF."
         )
-        if len(row) == 2:
-            rows.append(row)
-            row = []
-    if row:
-        rows.append(row)
-    rows.append([InlineKeyboardButton("🏠 Главное меню", callback_data="menu:home")])
-    return InlineKeyboardMarkup(rows)
-
-
-def net_actions_keyboard(net_id: str) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton(
-                    "🔧 Регистрация / VPN",
-                    callback_data=f"step:{net_id}:install",
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    "🛠 Как пользоваться",
-                    callback_data=f"step:{net_id}:use",
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    "📌 Промпты (несколько)",
-                    callback_data=f"step:{net_id}:prompt",
-                )
-            ],
-            [
-                InlineKeyboardButton("🔙 К списку", callback_data="menu:nets"),
-                InlineKeyboardButton("🏠 Меню", callback_data="menu:home"),
-            ],
-        ]
-    )
-
-
-def back_home_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        [[InlineKeyboardButton("🏠 Главное меню", callback_data="menu:home")]]
-    )
-
-
-def category_nets(kind_key: str) -> list[str]:
-    mapping = {
-        "text": {"Текст", "Поиск"},
-        "image": {"Картинки"},
-        "video": {"Видео"},
-    }
-    kinds = mapping[kind_key]
-    return [nid for nid in NETWORK_ORDER if NETWORKS[nid]["kind"] in kinds]
-
-
-def category_keyboard(kind_key: str) -> InlineKeyboardMarkup:
-    rows: list[list[InlineKeyboardButton]] = []
-    row: list[InlineKeyboardButton] = []
-    for net_id in category_nets(kind_key):
-        net = NETWORKS[net_id]
-        row.append(
-            InlineKeyboardButton(
-                f"{net['emoji']} {net['title']}",
-                callback_data=f"net:{net_id}",
-            )
+        return
+    with path.open("rb") as doc:
+        sent = await update.message.reply_document(
+            document=InputFile(doc, filename=filename),
+            caption=f"{caption}\n\n⚠️ Пока это черновик — заменим на финальный PDF.",
         )
-        if len(row) == 2:
-            rows.append(row)
-            row = []
-    if row:
-        rows.append(row)
-    rows.append([InlineKeyboardButton("🏠 Главное меню", callback_data="menu:home")])
-    return InlineKeyboardMarkup(rows)
-
-
-def welcome_text(name: str) -> str:
-    return (
-        f"👋 Привет, {name}!\n\n"
-        "Я научу тебя пользоваться нейросетями — с нуля 🚀\n"
-        "Разберём регистрацию (в том числе из РФ через VPN), "
-        "посты и возражения, картинки, видео, промпты и сценарии.\n\n"
-        "💬 Важно: этот чат тоже можно использовать как нейросеть.\n"
-        "Просто напиши мне текстом вопрос или задачу — отвечу как наставник.\n"
-        "Например: «напиши ответ на возражение: нет времени».\n\n"
-        "Сначала выбери кнопку ниже 👇\n"
-        "Потом меню всегда в кнопке Menu слева от поля ввода "
-        "(рядом со скрепкой 📎). Команда /clear очищает чат."
-    )
+    if update.effective_chat:
+        track_message(update.effective_chat.id, sent.message_id)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
-    name = user.first_name if user and user.first_name else "друг"
     record_user(
         user.id if user else None,
         event="start",
         username=user.username if user else None,
-        first_name=name,
+        first_name=user.first_name if user else None,
     )
     if update.effective_chat:
         _histories.pop(update.effective_chat.id, None)
-    if update.message:
-        track_message(update.effective_chat.id, update.message.message_id)
-    await send_long_message(
-        update.message,
-        welcome_text(name),
-        reply_markup=main_menu_keyboard(),
-    )
+        if update.message:
+            track_message(update.effective_chat.id, update.message.message_id)
+    await send_welcome(update, context)
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message and update.effective_chat:
         track_message(update.effective_chat.id, update.message.message_id)
-    await send_long_message(
-        update.message,
-        "ℹ️ Команды (кнопка Menu рядом с полем ввода 📎):\n"
-        "/start — приветствие и меню уроков\n"
-        "/menu — открыть меню уроков\n"
-        "/clear — очистить чат и память диалога\n"
-        "/help — справка\n"
-        "/ping — проверка\n"
-        "/id — ваш Telegram ID\n\n"
-        "💬 Можно просто писать текстом — отвечу как нейросеть.\n"
-        "Во время обычной переписки кнопки меню не показываю.",
-        reply_markup=None,
+    await reply_html(
+        update,
+        "ℹ️ <b>Команды</b>\n"
+        "/start — приветствие и главное меню\n"
+        "/menu — открыть главное меню\n"
+        "/clear — очистить чат\n"
+        "/id — ваш Telegram ID\n"
+        "/stats — статистика (для владельца)\n"
+        "/ping — проверка\n\n"
+        "Кнопки меню внизу экрана — как у удобных бизнес-ботов.",
+        context,
+        screen="main",
     )
 
 
 async def menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message and update.effective_chat:
         track_message(update.effective_chat.id, update.message.message_id)
-    sent = await update.message.reply_text(
-        "🏠 Меню уроков:",
-        reply_markup=main_menu_keyboard(),
-    )
-    if update.effective_chat:
-        track_message(update.effective_chat.id, sent.message_id)
+    await reply_html(update, "🏠 Главное меню:", context, screen="main")
 
 
 async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -429,6 +319,7 @@ async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         return
     chat_id = update.effective_chat.id
     _histories.pop(chat_id, None)
+    context.user_data.clear()
     track_message(chat_id, update.message.message_id)
     deleted = await delete_tracked_messages(context.bot, chat_id)
     try:
@@ -438,13 +329,23 @@ async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     sent = await context.bot.send_message(
         chat_id=chat_id,
         text=(
-            "🧹 Чат очищен.\n"
-            f"Удалено сообщений: {deleted}. Память диалога сброшена.\n\n"
-            "Меню уроков — кнопка Menu слева от поля ввода "
-            "(рядом со скрепкой) или команда /menu."
+            f"🧹 Чат очищен. Удалено сообщений: {deleted}.\n"
+            "Нажми /start или выбери раздел в меню."
         ),
+        reply_markup=menus.main_keyboard(),
     )
+    set_screen(context, "main")
     track_message(chat_id, sent.message_id)
+
+
+async def id_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user = update.effective_user
+    if not update.message or not user:
+        return
+    sent = await update.message.reply_text(f"Ваш Telegram ID: `{user.id}`", parse_mode="Markdown")
+    if update.effective_chat:
+        track_message(update.effective_chat.id, update.message.message_id)
+        track_message(update.effective_chat.id, sent.message_id)
 
 
 def _is_admin(user_id: int | None) -> bool:
@@ -452,19 +353,6 @@ def _is_admin(user_id: int | None) -> bool:
     if not allowed:
         return True
     return bool(user_id and user_id in allowed)
-
-
-async def id_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user = update.effective_user
-    if not update.message or not user:
-        return
-    sent = await update.message.reply_text(
-        f"Ваш Telegram ID: `{user.id}`",
-        parse_mode="Markdown",
-    )
-    if update.effective_chat:
-        track_message(update.effective_chat.id, update.message.message_id)
-        track_message(update.effective_chat.id, sent.message_id)
 
 
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -478,12 +366,9 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     text = (
         "📊 Статистика бота\n\n"
         f"👥 Уникальных людей: {data['unique_users']}\n"
-        f"🚀 Нажали /start: {data['starts']}\n"
-        f"💬 Текстовых сообщений: {data['messages']}\n"
-        f"🔘 Нажатий по кнопкам: {data['callbacks']}\n\n"
-        "Счёт идёт с момента этого обновления. "
-        "После нового деплоя Railway цифры могут сброситься, "
-        "если нет постоянного диска."
+        f"🚀 /start: {data['starts']}\n"
+        f"💬 Сообщений: {data['messages']}\n"
+        f"🔘 Кликов: {data['callbacks']}"
     )
     sent = await update.message.reply_text(text)
     if update.effective_chat:
@@ -499,185 +384,24 @@ async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         track_message(update.effective_chat.id, sent.message_id)
 
 
-async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    query = update.callback_query
-    if not query or not query.message:
-        return
-    await query.answer()
-    user = update.effective_user
-    record_user(
-        user.id if user else None,
-        event="callback",
-        username=user.username if user else None,
-        first_name=user.first_name if user else None,
-    )
-    data = query.data or ""
-
-    if data in {"menu:home", "menu:main"}:
-        name = update.effective_user.first_name if update.effective_user else "друг"
-        await send_long_message(
-            query.message,
-            welcome_text(name),
-            reply_markup=main_menu_keyboard(),
-            edit=True,
-        )
-        return
-
-    if data == "menu:startguide":
-        await send_long_message(
-            query.message,
-            START_GUIDE,
-            reply_markup=back_home_keyboard(),
-            edit=True,
-        )
-        return
-
-    if data == "menu:choose":
-        await send_long_message(
-            query.message,
-            CHOOSE_GUIDE,
-            reply_markup=back_home_keyboard(),
-            edit=True,
-        )
-        return
-
-    if data == "menu:nets":
-        await send_long_message(
-            query.message,
-            "🤖 Выбери нейросеть (15 шт.).\n"
-            "Дальше открою: 🔧 регистрация/VPN → 🛠 использование → 📌 несколько промптов.",
-            reply_markup=nets_keyboard(),
-            edit=True,
-        )
-        return
-
-    if data == "menu:prompts":
-        await send_long_message(
-            query.message,
-            PROMPTS_LESSON,
-            reply_markup=back_home_keyboard(),
-            edit=True,
-        )
-        return
-
-    if data == "menu:imagestrategy":
-        await send_long_message(
-            query.message,
-            IMAGE_STRATEGY,
-            reply_markup=back_home_keyboard(),
-            edit=True,
-        )
-        return
-
-    if data == "menu:chat":
-        await send_long_message(
-            query.message,
-            CHAT_LESSON,
-            reply_markup=back_home_keyboard(),
-            edit=True,
-        )
-        return
-
-    if data == "menu:ask":
-        await send_long_message(
-            query.message,
-            "🧠 Напиши обычным сообщением свой вопрос — отвечу как нейросеть.\n\n"
-            "Примеры:\n"
-            "• «Напиши ответ на: у меня нет времени»\n"
-            "• «Сделай 5 хуков для Reels про команду»\n"
-            "• «Составь промпт для обложки сторис с текстом СТАРТ»",
-            reply_markup=back_home_keyboard(),
-            edit=True,
-        )
-        return
-
-    if data.startswith("menu:cat:"):
-        kind = data.split(":")[-1]
-        intro = CATEGORY_INTRO.get(kind)
-        if not intro:
-            await send_long_message(
-                query.message,
-                "Раздел не найден.",
-                reply_markup=back_home_keyboard(),
-                edit=True,
-            )
-            return
-        await send_long_message(
-            query.message,
-            intro + "\n\nВыбери сервис 👇",
-            reply_markup=category_keyboard(kind),
-            edit=True,
-        )
-        return
-
-    if data.startswith("net:"):
-        net_id = data.split(":", 1)[1]
-        net = NETWORKS.get(net_id)
-        if not net:
-            await send_long_message(
-                query.message,
-                "Не нашёл эту нейросеть.",
-                reply_markup=nets_keyboard(),
-                edit=True,
-            )
-            return
-        text = (
-            f"{net['emoji']} {net['title']} · {net['kind']}\n\n"
-            f"{net['blurb']}\n\n"
-            f"🎯 Лучше всего для: {net.get('best_for', 'универсальных задач')}\n"
-            f"🔗 Сайт: {net['site']}\n\n"
-            "Что открыть дальше?"
-        )
-        await send_long_message(
-            query.message,
-            text,
-            reply_markup=net_actions_keyboard(net_id),
-            edit=True,
-        )
-        return
-
-    if data.startswith("step:"):
-        _, net_id, step = data.split(":", 2)
-        net = NETWORKS.get(net_id)
-        if not net or step not in {"install", "use", "prompt"}:
-            await send_long_message(
-                query.message,
-                "Урок не найден.",
-                reply_markup=back_home_keyboard(),
-                edit=True,
-            )
-            return
-        titles = {
-            "install": "🔧 Регистрация / VPN",
-            "use": "🛠 Как пользоваться",
-            "prompt": "📌 Готовые промпты",
-        }
-        body = net[step]
-        text = f"{net['emoji']} {net['title']} — {titles[step]}\n\n{body}"
-        await send_long_message(
-            query.message,
-            text,
-            reply_markup=net_actions_keyboard(net_id),
-            edit=True,
-        )
-        return
-
-    await send_long_message(
-        query.message,
-        "Не понял кнопку. Открой меню заново: /start",
-        reply_markup=main_menu_keyboard(),
-        edit=True,
-    )
+async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    current = screen_of(context)
+    parent = menus.PARENT.get(current, "main")
+    texts = {
+        "main": "🏠 Главное меню:",
+        "business": menus.BUSINESS_TEXT,
+        "ip_self": menus.IP_SELF_TEXT,
+        "quiz_intro": bad_quiz.INTRO,
+    }
+    text = texts.get(parent, "🏠 Главное меню:")
+    await reply_html(update, text, context, screen=parent)
 
 
-async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message or not update.message.text or not update.effective_chat:
         return
 
     text = update.message.text.strip()
-    if not text:
-        return
-
     chat_id = update.effective_chat.id
     user = update.effective_user
     record_user(
@@ -688,51 +412,171 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
     track_message(chat_id, update.message.message_id)
 
+    screen = screen_of(context)
+
+    # Quiz number input
+    if screen == "quiz":
+        goals = bad_quiz.parse_goals(text)
+        if goals is None:
+            await reply_html(
+                update,
+                "Не понял выбор. Пришли до 3 номеров через запятую, например <code>1,3,5</code>",
+                context,
+                screen="quiz",
+            )
+            return
+        await reply_html(update, bad_quiz.build_result(goals), context, screen="main")
+        return
+
+    # Navigation buttons
+    if text == menus.BTN_MAIN:
+        await reply_html(update, "🏠 Главное меню:", context, screen="main")
+        return
+    if text == menus.BTN_BACK:
+        await handle_back(update, context)
+        return
+
+    if text == menus.BTN_BAD:
+        await reply_html(update, bad_quiz.INTRO, context, screen="quiz_intro")
+        return
+    if text == menus.BTN_QUIZ_START:
+        await reply_html(update, bad_quiz.ASK, context, screen="quiz")
+        return
+
+    if text == menus.BTN_BUSINESS:
+        await reply_html(update, menus.BUSINESS_TEXT, context, screen="business")
+        return
+    if text == menus.BTN_IP_SELF:
+        await reply_html(update, menus.IP_SELF_TEXT, context, screen="ip_self")
+        return
+    if text == menus.BTN_SELF:
+        await reply_html(update, menus.SELF_TEXT, context, screen="self")
+        return
+    if text == menus.BTN_IP:
+        await reply_html(update, menus.IP_TEXT, context, screen="ip")
+        return
+    if text == menus.BTN_ABOUT:
+        await reply_html(update, menus.ABOUT_TEXT, context, screen="business")
+        return
+    if text == menus.BTN_PVZ:
+        await reply_html(update, menus.PVZ_TEXT, context, screen="business")
+        return
+    if text == menus.BTN_PARTNERS:
+        await reply_html(update, menus.PARTNERS_TEXT, context, screen="business")
+        return
+    if text == menus.BTN_AWARDS:
+        await reply_html(update, menus.AWARDS_TEXT, context, screen="business")
+        return
+    if text == menus.BTN_REWARDS:
+        await reply_html(update, menus.REWARDS_TEXT, context, screen="business")
+        return
+
+    if text == menus.BTN_SWITCH:
+        # From self-employment → open IP docs + send memo PDF
+        await send_document_for_button(update, text)
+        if screen_of(context) == "self":
+            await reply_html(update, menus.IP_TEXT, context, screen="ip")
+        return
+
+    if text in menus.DOC_FILES:
+        await send_document_for_button(update, text)
+        return
+
+    if text == menus.BTN_EVENTS:
+        await reply_html(update, menus.EVENTS_TEXT, context, screen="events")
+        return
+    if text == menus.BTN_CHARITY:
+        await reply_html(update, menus.CHARITY_TEXT, context, screen="events")
+        return
+    if text == menus.BTN_UPCOMING:
+        await reply_html(update, menus.UPCOMING_TEXT, context, screen="events")
+        return
+    if text == menus.BTN_ARCHIVE:
+        await reply_html(update, menus.ARCHIVE_TEXT, context, screen="events")
+        return
+
+    if text == menus.BTN_PRODUCT:
+        await reply_html(update, menus.PRODUCT_TEXT, context, screen="product")
+        return
+    if text == menus.BTN_CATALOG:
+        await reply_html(update, menus.CATALOG_TEXT, context, screen="product")
+        return
+    if text == menus.BTN_HOW_GET:
+        await reply_html(update, menus.HOW_GET_TEXT, context, screen="product")
+        return
+    if text == menus.BTN_PRESENTATION:
+        await reply_html(update, menus.PRESENTATION_TEXT, context, screen="product")
+        return
+    if text == menus.BTN_VIDEO:
+        await reply_html(update, menus.VIDEO_TEXT, context, screen="product")
+        return
+    if text == menus.BTN_CREATIVES:
+        await reply_html(update, menus.CREATIVES_TEXT, context, screen="product")
+        return
+
+    # Free-text AI fallback (no reply-keyboard wipe)
+    if not provider_chains():
+        await reply_html(
+            update,
+            "Выбери раздел в меню ниже 👇\nИли нажми /menu",
+            context,
+        )
+        return
+
     await update.message.chat.send_action(ChatAction.TYPING)
     try:
         reply = await ask_ai(chat_id, text)
     except Exception:
-        logger.exception("Ошибка AI API (Gemini/Groq)")
+        logger.exception("AI error")
         sent = await update.message.reply_text(
-            "Сейчас наставник недоступен (лимит Gemini/Groq).\n"
-            "Открой Menu → /menu для уроков без ИИ."
+            "Сейчас не могу ответить текстом. Пользуйся кнопками меню 👇",
+            reply_markup=keyboard_for(screen_of(context)),
         )
         track_message(chat_id, sent.message_id)
         return
 
     for chunk in split_message(reply):
-        sent = await update.message.reply_text(chunk)
+        sent = await update.message.reply_text(
+            chunk,
+            reply_markup=keyboard_for(screen_of(context)),
+        )
         track_message(chat_id, sent.message_id)
 
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logger.exception("Ошибка при обработке обновления: %s", context.error)
+    logger.exception("Ошибка: %s", context.error)
 
 
 async def post_init(app: Application) -> None:
     await app.bot.set_my_commands(
         [
-            BotCommand("start", "🚀 Старт и меню уроков"),
-            BotCommand("menu", "🏠 Открыть меню уроков"),
-            BotCommand("clear", "🧹 Очистить чат и память"),
+            BotCommand("start", "🚀 Старт"),
+            BotCommand("menu", "🏠 Меню"),
+            BotCommand("clear", "🧹 Очистить чат"),
             BotCommand("help", "ℹ️ Справка"),
-            BotCommand("ping", "✅ Проверка бота"),
+            BotCommand("ping", "✅ Проверка"),
         ]
     )
-    # Кнопка Menu рядом со скрепкой / полем ввода
     await app.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+    try:
+        await app.bot.set_my_description(
+            description=(
+                "IDera Helper — помощник по продукту и бизнесу.\n"
+                "Подбор БАД, документы ИП/самозанятость, мероприятия и каталог."
+            )
+        )
+        await app.bot.set_my_short_description(
+            short_description="Подбор БАД, бизнес-документы и продукт"
+        )
+        await app.bot.set_my_name(name="IDera Helper")
+    except Exception:
+        logger.exception("Не удалось обновить описание бота")
 
 
 def main() -> None:
     token = os.getenv("TELEGRAM_TOKEN", "").strip()
-    gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
-    groq_key = os.getenv("GROQ_API_KEY", "").strip()
-
     if not token:
         logger.error("Не задан TELEGRAM_TOKEN.")
-        sys.exit(1)
-    if not gemini_key and not groq_key:
-        logger.error("Нужен хотя бы один ключ: GEMINI_API_KEY или GROQ_API_KEY.")
         sys.exit(1)
 
     providers = []
@@ -741,12 +585,7 @@ def main() -> None:
     if get_groq_client() is not None:
         providers.append(f"groq:{GROQ_MODEL}")
 
-    app = (
-        Application.builder()
-        .token(token)
-        .post_init(post_init)
-        .build()
-    )
+    app = Application.builder().token(token).post_init(post_init).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("menu", menu_command))
@@ -754,11 +593,10 @@ def main() -> None:
     app.add_handler(CommandHandler("ping", ping))
     app.add_handler(CommandHandler("id", id_command))
     app.add_handler(CommandHandler("stats", stats_command))
-    app.add_handler(CallbackQueryHandler(on_callback))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     app.add_error_handler(error_handler)
 
-    logger.info("Бот-наставник запущен (%s)", " -> ".join(providers))
+    logger.info("IDera Helper запущен (%s)", " -> ".join(providers) or "без AI")
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
