@@ -4,6 +4,21 @@ from __future__ import annotations
 
 from telegram import KeyboardButton, ReplyKeyboardMarkup
 
+# Кастомные эмодзи из пака https://t.me/addemoji/IDera
+IDERA_EMOJI = {
+    "blue": ("5188255858605205817", "🔵"),
+    "rocket": ("5467765621489968794", "🚀"),
+    "coffee": ("5465148723686319832", "☕️"),
+    "check": ("5467564307782869924", "✅"),
+    "fire": ("5465165443994005794", "🔥"),
+    "star": ("5467737725677378875", "🌟"),
+}
+
+
+def idera(name: str) -> str:
+    emoji_id, fallback = IDERA_EMOJI[name]
+    return f'<tg-emoji emoji-id="{emoji_id}">{fallback}</tg-emoji>'
+
 # --- Button labels ---
 BTN_BAD = "🧪 Подобрать БАД"
 BTN_BUSINESS = "💼 БИЗНЕС"
@@ -146,9 +161,10 @@ def quiz_choice_keyboard() -> ReplyKeyboardMarkup:
 
 
 WELCOME_CAPTION = (
-    "👋 Добро пожаловать!\n\n"
+    f"{idera('blue')} Добро пожаловать!\n\n"
     "Я — <b>IDera Helper</b>, твой помощник по продукту и бизнесу.\n"
-    "Кофе мне не нужен, усталость — не про меня. Я всегда на связи 🚀\n\n"
+    f"{idera('coffee')} Кофе мне не нужен, усталость — не про меня. "
+    f"Я всегда на связи {idera('rocket')}\n\n"
     "Выбери раздел в меню ниже 👇"
 )
 
