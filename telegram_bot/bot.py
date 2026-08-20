@@ -597,8 +597,7 @@ async def post_init(app: Application) -> None:
         await app.bot.set_my_description(
             description=(
                 "IDera Helper — тихий ориентир рядом с тобой.\n"
-                "Без суеты и без лекций: ясность, когда она нужна, и кнопка, "
-                "с которой можно начать."
+                "Ясность в нужный момент и кнопка, с которой можно начать."
             )
         )
         await app.bot.set_my_short_description(
