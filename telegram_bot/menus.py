@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from telegram import KeyboardButton, ReplyKeyboardMarkup
+from telegram import KeyboardButton, MessageEntity, ReplyKeyboardMarkup
 
 # Кастомные эмодзи из пака https://t.me/addemoji/IDera
 IDERA_EMOJI = {
@@ -13,11 +13,59 @@ IDERA_EMOJI = {
     "fire": ("5465165443994005794", "🔥"),
     "star": ("5467737725677378875", "🌟"),
 }
+IDERA_PACK = "IDera"
 
 
 def idera(name: str) -> str:
     emoji_id, fallback = IDERA_EMOJI[name]
     return f'<tg-emoji emoji-id="{emoji_id}">{fallback}</tg-emoji>'
+
+
+def _utf16_len(text: str) -> int:
+    return len(text.encode("utf-16-le")) // 2
+
+
+def welcome_message() -> tuple[str, list[MessageEntity]]:
+    """Текст приветствия + entities, чтобы Telegram не выкинул кастомные эмодзи."""
+    blue_id, blue = IDERA_EMOJI["blue"]
+    coffee_id, coffee = IDERA_EMOJI["coffee"]
+    rocket_id, rocket = IDERA_EMOJI["rocket"]
+    brand = "IDera Helper"
+    before_brand = f"{blue} Добро пожаловать!\n\nЯ — "
+    after_brand = ", твой помощник по продукту и бизнесу.\n"
+    coffee_line = f"{coffee} Кофе мне не нужен, усталость — не про меня. Я всегда на связи "
+    tail = f"{rocket}\n\nВыбери раздел в меню ниже 👇"
+    text = before_brand + brand + after_brand + coffee_line + tail
+
+    def at(*parts: str) -> int:
+        return _utf16_len("".join(parts))
+
+    entities = [
+        MessageEntity(
+            type=MessageEntity.CUSTOM_EMOJI,
+            offset=0,
+            length=_utf16_len(blue),
+            custom_emoji_id=blue_id,
+        ),
+        MessageEntity(
+            type=MessageEntity.BOLD,
+            offset=at(before_brand),
+            length=_utf16_len(brand),
+        ),
+        MessageEntity(
+            type=MessageEntity.CUSTOM_EMOJI,
+            offset=at(before_brand, brand, after_brand),
+            length=_utf16_len(coffee),
+            custom_emoji_id=coffee_id,
+        ),
+        MessageEntity(
+            type=MessageEntity.CUSTOM_EMOJI,
+            offset=at(before_brand, brand, after_brand, coffee_line),
+            length=_utf16_len(rocket),
+            custom_emoji_id=rocket_id,
+        ),
+    ]
+    return text, entities
 
 # --- Button labels ---
 BTN_BAD = "🧪 Подобрать БАД"

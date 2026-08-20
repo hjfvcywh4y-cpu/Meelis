@@ -15,6 +15,7 @@ from telegram import (
     BotCommand,
     InputFile,
     MenuButtonCommands,
+    MessageEntity,
     Update,
 )
 from telegram.constants import ChatAction, ParseMode
@@ -236,22 +237,56 @@ async def reply_html(
             track_message(chat_id, sent.message_id)
 
 
+async def send_idera_stickers(bot, chat_id: int) -> None:
+    """Fallback: send pack stickers if Telegram strips inline custom emoji."""
+    wanted = {menus.IDERA_EMOJI[name][0] for name in ("blue", "coffee", "rocket")}
+    try:
+        pack = await bot.get_sticker_set(menus.IDERA_PACK)
+    except Exception:
+        logger.exception("Не удалось загрузить пак %s", menus.IDERA_PACK)
+        return
+    for sticker in pack.stickers:
+        emoji_id = getattr(sticker, "custom_emoji_id", None)
+        if emoji_id not in wanted:
+            continue
+        try:
+            sent = await bot.send_sticker(chat_id=chat_id, sticker=sticker.file_id)
+            track_message(chat_id, sent.message_id)
+        except Exception:
+            logger.warning("Стикер IDera не отправился: %s", emoji_id)
+        wanted.discard(emoji_id)
+        if not wanted:
+            break
+
+
 async def send_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     set_screen(context, "main")
-    chat_id = update.effective_chat.id if update.effective_chat else None
-    markup = menus.main_keyboard()
-    if WELCOME_IMAGE.exists() and update.message:
-        with WELCOME_IMAGE.open("rb") as photo:
-            sent = await update.message.reply_photo(
-                photo=InputFile(photo, filename="welcome.png"),
-                caption=menus.WELCOME_CAPTION,
-                parse_mode=ParseMode.HTML,
-                reply_markup=markup,
-            )
-        if chat_id:
-            track_message(chat_id, sent.message_id)
+    if not update.message or not update.effective_chat:
         return
-    await reply_html(update, menus.WELCOME_CAPTION, context, screen="main")
+    chat_id = update.effective_chat.id
+    markup = menus.main_keyboard()
+
+    # Photo in its own bubble: captions often drop custom emoji.
+    if WELCOME_IMAGE.exists():
+        with WELCOME_IMAGE.open("rb") as photo:
+            sent_photo = await update.message.reply_photo(
+                photo=InputFile(photo, filename="welcome.png"),
+            )
+        track_message(chat_id, sent_photo.message_id)
+
+    text, entities = menus.welcome_message()
+    sent = await update.message.reply_text(
+        text,
+        entities=entities,
+        reply_markup=markup,
+        disable_web_page_preview=True,
+    )
+    track_message(chat_id, sent.message_id)
+    kept = [e.type for e in (sent.entities or [])]
+    logger.info("welcome entities kept by Telegram: %s", kept)
+    if MessageEntity.CUSTOM_EMOJI not in kept:
+        logger.warning("Кастомные эмодзи срезаны — отправляю стикеры из пака IDera")
+        await send_idera_stickers(context.bot, chat_id)
 
 
 async def send_document_for_button(update: Update, button: str) -> None:
