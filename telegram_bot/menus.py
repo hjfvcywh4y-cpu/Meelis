@@ -92,6 +92,7 @@ BTN_HOW_GET = "📦 Как получить продукт"
 BTN_PRESENTATION = "🎞 Презентация"
 BTN_VIDEO = "🎬 Видеоотзывы"
 BTN_CREATIVES = "🎨 Креативы и другое"
+BTN_DETOX = "💧 Detox"
 
 BTN_QUIZ_START = "✅ Начать подбор"
 BTN_QUIZ_SKIP = "1,3,5"
@@ -177,6 +178,15 @@ def product_keyboard() -> ReplyKeyboardMarkup:
             [BTN_CATALOG, BTN_HOW_GET],
             [BTN_PRESENTATION, BTN_VIDEO],
             [BTN_CREATIVES],
+            [BTN_BACK],
+        ]
+    )
+
+
+def presentation_keyboard() -> ReplyKeyboardMarkup:
+    return kb(
+        [
+            [BTN_DETOX],
             [BTN_BACK],
         ]
     )
@@ -293,7 +303,7 @@ HOW_GET_TEXT = (
 
 PRESENTATION_TEXT = (
     "🎞 <b>Презентация</b>\n\n"
-    "Презентация продукта для партнёров — добавим файл позже."
+    "Выбери материал 👇"
 )
 
 VIDEO_TEXT = (
@@ -314,6 +324,7 @@ DOC_CAPTIONS = {
     BTN_BANK: "🏦 Особые условия банков для открытия ИП",
     BTN_SWITCH: "🔄 Переход с самозанятости на ИП",
     BTN_REWARDS: "💰 Система вознаграждений IDera",
+    BTN_DETOX: "💧 Detox",
 }
 
 DOC_FILES = {
@@ -324,14 +335,16 @@ DOC_FILES = {
     BTN_BANK: "bank_terms.pdf",
     BTN_SWITCH: "switch_to_ip.pdf",
     BTN_REWARDS: "IDera_M.pdf",
+    BTN_DETOX: "IDera_DETOX_1.pdf",
 }
 
 DOC_DOWNLOAD_NAMES = {
     BTN_REWARDS: "IDera M.pdf",
+    BTN_DETOX: "IDera_DETOX_1.pdf",
 }
 
 # Финальные файлы — без пометки «черновик»
-FINAL_DOCS = {BTN_REWARDS}
+FINAL_DOCS = {BTN_REWARDS, BTN_DETOX}
 
 # Navigation: current screen -> parent screen
 PARENT = {
@@ -341,6 +354,7 @@ PARENT = {
     "ip": "ip_self",
     "events": "main",
     "product": "main",
+    "presentation": "product",
     "quiz_intro": "main",
     "quiz": "quiz_intro",
 }

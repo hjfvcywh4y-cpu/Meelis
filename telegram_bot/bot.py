@@ -209,6 +209,7 @@ def keyboard_for(screen: str):
         "ip": menus.ip_keyboard(),
         "events": menus.events_keyboard(),
         "product": menus.product_keyboard(),
+        "presentation": menus.presentation_keyboard(),
         "quiz_intro": menus.quiz_intro_keyboard(),
         "quiz": menus.quiz_choice_keyboard(),
     }.get(screen, menus.main_keyboard())
@@ -433,6 +434,7 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "business": menus.BUSINESS_TEXT,
         "ip_self": menus.IP_SELF_TEXT,
         "quiz_intro": bad_quiz.INTRO,
+        "product": menus.PRODUCT_TEXT,
     }
     text = texts.get(parent, "🏠 Главное меню:")
     await reply_html(update, text, context, screen=parent)
@@ -537,7 +539,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await reply_html(update, menus.HOW_GET_TEXT, context, screen="product")
         return
     if text == menus.BTN_PRESENTATION:
-        await reply_html(update, menus.PRESENTATION_TEXT, context, screen="product")
+        await reply_html(update, menus.PRESENTATION_TEXT, context, screen="presentation")
         return
     if text == menus.BTN_VIDEO:
         await reply_html(update, menus.VIDEO_TEXT, context, screen="product")
