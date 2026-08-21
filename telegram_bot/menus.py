@@ -314,6 +314,7 @@ DOC_CAPTIONS = {
     BTN_DOCS: "📂 Список документов",
     BTN_BANK: "🏦 Особые условия банков для открытия ИП",
     BTN_SWITCH: "🔄 Переход с самозанятости на ИП",
+    BTN_REWARDS: "💰 Система вознаграждений IDera",
 }
 
 DOC_FILES = {
@@ -323,7 +324,15 @@ DOC_FILES = {
     BTN_DOCS: "documents_list.pdf",
     BTN_BANK: "bank_terms.pdf",
     BTN_SWITCH: "switch_to_ip.pdf",
+    BTN_REWARDS: "IDera_M.pdf",
 }
+
+DOC_DOWNLOAD_NAMES = {
+    BTN_REWARDS: "IDera M.pdf",
+}
+
+# Финальные файлы — без пометки «черновик»
+FINAL_DOCS = {BTN_REWARDS}
 
 # Navigation: current screen -> parent screen
 PARENT = {

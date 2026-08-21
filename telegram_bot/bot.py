@@ -302,9 +302,15 @@ async def send_document_for_button(update: Update, button: str) -> None:
         )
         return
     with path.open("rb") as doc:
+        caption_text = caption
+        if button not in menus.FINAL_DOCS:
+            caption_text = f"{caption}\n\n⚠️ Пока это черновик — заменим на финальный PDF."
         sent = await update.message.reply_document(
-            document=InputFile(doc, filename=filename),
-            caption=f"{caption}\n\n⚠️ Пока это черновик — заменим на финальный PDF.",
+            document=InputFile(
+                doc,
+                filename=menus.DOC_DOWNLOAD_NAMES.get(button, filename),
+            ),
+            caption=caption_text,
         )
     if update.effective_chat:
         track_message(update.effective_chat.id, sent.message_id)
@@ -501,9 +507,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
     if text == menus.BTN_AWARDS:
         await reply_html(update, menus.AWARDS_TEXT, context, screen="business")
-        return
-    if text == menus.BTN_REWARDS:
-        await reply_html(update, menus.REWARDS_TEXT, context, screen="business")
         return
 
     if text == menus.BTN_SWITCH:
