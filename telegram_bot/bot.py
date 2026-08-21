@@ -268,24 +268,28 @@ async def send_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
     chat_id = update.effective_chat.id
     markup = menus.main_keyboard()
+    text, entities = menus.welcome_message()
 
-    # Photo in its own bubble: captions often drop custom emoji.
     if WELCOME_IMAGE.exists():
         with WELCOME_IMAGE.open("rb") as photo:
-            sent_photo = await update.message.reply_photo(
+            sent = await update.message.reply_photo(
                 photo=InputFile(photo, filename="welcome.png"),
+                caption=text,
+                caption_entities=entities,
+                reply_markup=markup,
             )
-        track_message(chat_id, sent_photo.message_id)
+        track_message(chat_id, sent.message_id)
+        kept = [e.type for e in (sent.caption_entities or [])]
+    else:
+        sent = await update.message.reply_text(
+            text,
+            entities=entities,
+            reply_markup=markup,
+            disable_web_page_preview=True,
+        )
+        track_message(chat_id, sent.message_id)
+        kept = [e.type for e in (sent.entities or [])]
 
-    text, entities = menus.welcome_message()
-    sent = await update.message.reply_text(
-        text,
-        entities=entities,
-        reply_markup=markup,
-        disable_web_page_preview=True,
-    )
-    track_message(chat_id, sent.message_id)
-    kept = [e.type for e in (sent.entities or [])]
     logger.info("welcome entities kept by Telegram: %s", kept)
     if MessageEntity.CUSTOM_EMOJI not in kept:
         logger.warning("Кастомные эмодзи срезаны — отправляю стикеры из пака IDera")
