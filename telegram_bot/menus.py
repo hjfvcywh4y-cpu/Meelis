@@ -122,10 +122,9 @@ def main_keyboard() -> ReplyKeyboardMarkup:
 def business_keyboard() -> ReplyKeyboardMarkup:
     return kb(
         [
-            [BTN_BACK, BTN_AWARDS],
             [BTN_IP_SELF, BTN_PARTNERS],
-            [BTN_ABOUT, BTN_PVZ],
-            [BTN_REWARDS],
+            [BTN_ABOUT, BTN_REWARDS],
+            [BTN_BACK],
         ]
     )
 

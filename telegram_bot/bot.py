@@ -499,14 +499,8 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     if text == menus.BTN_ABOUT:
         await reply_html(update, menus.ABOUT_TEXT, context, screen="business")
         return
-    if text == menus.BTN_PVZ:
-        await reply_html(update, menus.PVZ_TEXT, context, screen="business")
-        return
     if text == menus.BTN_PARTNERS:
         await reply_html(update, menus.PARTNERS_TEXT, context, screen="business")
-        return
-    if text == menus.BTN_AWARDS:
-        await reply_html(update, menus.AWARDS_TEXT, context, screen="business")
         return
 
     if text == menus.BTN_SWITCH:
@@ -591,8 +585,6 @@ async def post_init(app: Application) -> None:
             BotCommand("start", "🚀 Старт"),
             BotCommand("menu", "🏠 Меню"),
             BotCommand("clear", "🧹 Очистить чат"),
-            BotCommand("help", "ℹ️ Справка"),
-            BotCommand("ping", "✅ Проверка"),
         ]
     )
     await app.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
