@@ -68,6 +68,8 @@ BTN_MAIN = "🏠 Главное меню"
 
 BTN_IP_SELF = "📄 ИП и Самозанятость"
 BTN_ABOUT = "ℹ️ О компании"
+BTN_ABOUT_US = "👥 О нас"
+BTN_COMPANY_PRESENTATION = "🎞 Презентация компании"
 BTN_PVZ = "📦 Открыть ПВЗ"
 BTN_PARTNERS = "🤝 Материалы для партнеров"
 BTN_AWARDS = "🏆 Номинации и лауреатства"
@@ -128,6 +130,15 @@ def business_keyboard() -> ReplyKeyboardMarkup:
         [
             [BTN_IP_SELF, BTN_PARTNERS],
             [BTN_ABOUT, BTN_REWARDS],
+            [BTN_BACK],
+        ]
+    )
+
+
+def about_keyboard() -> ReplyKeyboardMarkup:
+    return kb(
+        [
+            [BTN_ABOUT_US, BTN_COMPANY_PRESENTATION],
             [BTN_BACK],
         ]
     )
@@ -243,8 +254,14 @@ IP_TEXT = (
 
 ABOUT_TEXT = (
     "ℹ️ <b>О компании</b>\n\n"
+    "Узнай больше об IDera и посмотри презентацию.\n"
+    "Выбери раздел 👇"
+)
+
+ABOUT_US_TEXT = (
+    "👥 <b>О нас</b>\n\n"
     "Коротко о нас: миссия, ценности и путь партнёра.\n"
-    "Полный текст и презентацию можно добавить сюда позже."
+    "Полный текст можно добавить сюда позже."
 )
 
 PVZ_TEXT = (
@@ -334,6 +351,7 @@ DOC_CAPTIONS = {
     BTN_GLOW: "✨ Glow",
     BTN_FOCUS: "🎯 Focus",
     BTN_PARTNERS: "🤝 Материалы для партнеров",
+    BTN_COMPANY_PRESENTATION: "🎞 Презентация компании IDera",
 }
 
 DOC_FILES = {
@@ -349,6 +367,7 @@ DOC_FILES = {
     BTN_GLOW: "IDera_GLOW.pdf",
     BTN_FOCUS: "IDera_FOCUS.pdf",
     BTN_PARTNERS: "IDera_partners.pdf",
+    BTN_COMPANY_PRESENTATION: "IDera_company.pdf",
 }
 
 DOC_DOWNLOAD_NAMES = {
@@ -358,6 +377,7 @@ DOC_DOWNLOAD_NAMES = {
     BTN_GLOW: "IDera Glow.pdf",
     BTN_FOCUS: "IDera Focus.pdf",
     BTN_PARTNERS: "IDera материалы для партнеров.pdf",
+    BTN_COMPANY_PRESENTATION: "IDera презентация компании.pdf",
 }
 
 # Финальные файлы — без пометки «черновик»
@@ -366,6 +386,7 @@ FINAL_DOCS = {BTN_REWARDS, BTN_DETOX, BTN_RELAX, BTN_GLOW, BTN_FOCUS, BTN_PARTNE
 # Navigation: current screen -> parent screen
 PARENT = {
     "business": "main",
+    "about": "business",
     "ip_self": "business",
     "self": "ip_self",
     "ip": "ip_self",

@@ -205,6 +205,7 @@ def keyboard_for(screen: str):
     return {
         "main": menus.main_keyboard(),
         "business": menus.business_keyboard(),
+        "about": menus.about_keyboard(),
         "ip_self": menus.ip_self_keyboard(),
         "self": menus.self_employed_keyboard(),
         "ip": menus.ip_keyboard(),
@@ -452,6 +453,7 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     texts = {
         "main": "🏠 Главное меню:",
         "business": menus.BUSINESS_TEXT,
+        "about": menus.ABOUT_TEXT,
         "ip_self": menus.IP_SELF_TEXT,
         "quiz_intro": bad_quiz.INTRO,
         "product": menus.PRODUCT_TEXT,
@@ -519,7 +521,10 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await reply_html(update, menus.IP_TEXT, context, screen="ip")
         return
     if text == menus.BTN_ABOUT:
-        await reply_html(update, menus.ABOUT_TEXT, context, screen="business")
+        await reply_html(update, menus.ABOUT_TEXT, context, screen="about")
+        return
+    if text == menus.BTN_ABOUT_US:
+        await reply_html(update, menus.ABOUT_US_TEXT, context, screen="about")
         return
 
     if text == menus.BTN_SWITCH:
