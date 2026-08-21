@@ -418,7 +418,15 @@ DOC_DOWNLOAD_NAMES = {
 }
 
 # Финальные файлы — без пометки «черновик»
-FINAL_DOCS = {BTN_REWARDS, BTN_DETOX, BTN_RELAX, BTN_GLOW, BTN_FOCUS, BTN_PARTNERS}
+FINAL_DOCS = {
+    BTN_REWARDS,
+    BTN_DETOX,
+    BTN_RELAX,
+    BTN_GLOW,
+    BTN_FOCUS,
+    BTN_PARTNERS,
+    BTN_COMPANY_PRESENTATION,
+}
 
 # Navigation: current screen -> parent screen
 PARENT = {
