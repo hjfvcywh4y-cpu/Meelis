@@ -94,6 +94,7 @@ BTN_VIDEO = "🎬 Видеоотзывы"
 BTN_CREATIVES = "🎨 Креативы и другое"
 BTN_DETOX = "💧 Detox"
 BTN_RELAX = "🌙 Relax"
+BTN_GLOW = "✨ Glow"
 
 BTN_QUIZ_START = "✅ Начать подбор"
 BTN_QUIZ_SKIP = "1,3,5"
@@ -188,6 +189,7 @@ def presentation_keyboard() -> ReplyKeyboardMarkup:
     return kb(
         [
             [BTN_DETOX, BTN_RELAX],
+            [BTN_GLOW],
             [BTN_BACK],
         ]
     )
@@ -327,6 +329,7 @@ DOC_CAPTIONS = {
     BTN_REWARDS: "💰 Система вознаграждений IDera",
     BTN_DETOX: "💧 Detox",
     BTN_RELAX: "🌙 Relax",
+    BTN_GLOW: "✨ Glow",
 }
 
 DOC_FILES = {
@@ -339,16 +342,18 @@ DOC_FILES = {
     BTN_REWARDS: "IDera_M.pdf",
     BTN_DETOX: "IDera_DETOX_1.pdf",
     BTN_RELAX: "IDera_RELAX.pdf",
+    BTN_GLOW: "IDera_GLOW.pdf",
 }
 
 DOC_DOWNLOAD_NAMES = {
     BTN_REWARDS: "IDera M.pdf",
     BTN_DETOX: "IDera_DETOX_1.pdf",
     BTN_RELAX: "IDera Relax.pdf",
+    BTN_GLOW: "IDera Glow.pdf",
 }
 
 # Финальные файлы — без пометки «черновик»
-FINAL_DOCS = {BTN_REWARDS, BTN_DETOX, BTN_RELAX}
+FINAL_DOCS = {BTN_REWARDS, BTN_DETOX, BTN_RELAX, BTN_GLOW}
 
 # Navigation: current screen -> parent screen
 PARENT = {
