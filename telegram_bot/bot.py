@@ -43,6 +43,7 @@ BASE_DIR = Path(__file__).resolve().parent
 ASSETS = BASE_DIR / "assets"
 DOCS = BASE_DIR / "docs"
 WELCOME_IMAGE = ASSETS / "welcome.png"
+CATALOG_IMAGE = ASSETS / "catalog.png"
 
 GEMINI_BASE_URL = os.getenv(
     "GEMINI_BASE_URL",
@@ -317,6 +318,25 @@ async def send_document_for_button(update: Update, button: str) -> None:
         track_message(update.effective_chat.id, sent.message_id)
 
 
+async def send_catalog(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    set_screen(context, "product")
+    if not update.message:
+        return
+    markup = menus.product_keyboard()
+    if CATALOG_IMAGE.exists():
+        with CATALOG_IMAGE.open("rb") as photo:
+            sent = await update.message.reply_photo(
+                photo=InputFile(photo, filename="catalog.png"),
+                caption=menus.CATALOG_TEXT,
+                parse_mode=ParseMode.HTML,
+                reply_markup=markup,
+            )
+        if update.effective_chat:
+            track_message(update.effective_chat.id, sent.message_id)
+        return
+    await reply_html(update, menus.CATALOG_TEXT, context, screen="product")
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     record_user(
@@ -533,7 +553,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await reply_html(update, menus.PRODUCT_TEXT, context, screen="product")
         return
     if text == menus.BTN_CATALOG:
-        await reply_html(update, menus.CATALOG_TEXT, context, screen="product")
+        await send_catalog(update, context)
         return
     if text == menus.BTN_HOW_GET:
         await reply_html(update, menus.HOW_GET_TEXT, context, screen="product")

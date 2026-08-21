@@ -296,8 +296,9 @@ PRODUCT_TEXT = (
 )
 
 CATALOG_TEXT = (
-    "📚 <b>Каталог продукции</b>\n\n"
-    "Здесь будет ссылка/файл каталога. Пока заглушка."
+    "🛍 <b>Каталог IDera</b>\n\n"
+    "Открыть магазин:\n"
+    '<a href="https://shop.idera.io/catalog">https://shop.idera.io/catalog</a>'
 )
 
 HOW_GET_TEXT = (
