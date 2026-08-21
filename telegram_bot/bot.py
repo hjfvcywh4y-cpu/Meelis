@@ -521,9 +521,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     if text == menus.BTN_ABOUT:
         await reply_html(update, menus.ABOUT_TEXT, context, screen="business")
         return
-    if text == menus.BTN_PARTNERS:
-        await reply_html(update, menus.PARTNERS_TEXT, context, screen="business")
-        return
 
     if text == menus.BTN_SWITCH:
         # From self-employment → open IP docs + send memo PDF

@@ -333,6 +333,7 @@ DOC_CAPTIONS = {
     BTN_RELAX: "🌙 Relax",
     BTN_GLOW: "✨ Glow",
     BTN_FOCUS: "🎯 Focus",
+    BTN_PARTNERS: "🤝 Материалы для партнеров",
 }
 
 DOC_FILES = {
@@ -347,6 +348,7 @@ DOC_FILES = {
     BTN_RELAX: "IDera_RELAX.pdf",
     BTN_GLOW: "IDera_GLOW.pdf",
     BTN_FOCUS: "IDera_FOCUS.pdf",
+    BTN_PARTNERS: "IDera_partners.pdf",
 }
 
 DOC_DOWNLOAD_NAMES = {
@@ -355,10 +357,11 @@ DOC_DOWNLOAD_NAMES = {
     BTN_RELAX: "IDera Relax.pdf",
     BTN_GLOW: "IDera Glow.pdf",
     BTN_FOCUS: "IDera Focus.pdf",
+    BTN_PARTNERS: "IDera материалы для партнеров.pdf",
 }
 
 # Финальные файлы — без пометки «черновик»
-FINAL_DOCS = {BTN_REWARDS, BTN_DETOX, BTN_RELAX, BTN_GLOW, BTN_FOCUS}
+FINAL_DOCS = {BTN_REWARDS, BTN_DETOX, BTN_RELAX, BTN_GLOW, BTN_FOCUS, BTN_PARTNERS}
 
 # Navigation: current screen -> parent screen
 PARENT = {
