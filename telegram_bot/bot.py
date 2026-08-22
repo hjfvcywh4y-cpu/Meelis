@@ -17,12 +17,15 @@ from dotenv import load_dotenv
 from openai import AsyncOpenAI
 from telegram import (
     BotCommand,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
     InputFile,
     InputMediaPhoto,
     MenuButtonCommands,
     MessageEntity,
     ReplyKeyboardRemove,
     Update,
+    WebAppInfo,
 )
 from telegram.constants import ChatAction, ParseMode
 from telegram.error import NetworkError, TimedOut
@@ -62,6 +65,7 @@ ASSETS = BASE_DIR / "assets"
 DOCS = BASE_DIR / "docs"
 WELCOME_IMAGE = ASSETS / "welcome.png"
 CATALOG_IMAGE = ASSETS / "catalog.png"
+VIDEO_TRACK_IMAGE = ASSETS / "video_track.png"
 CONSENT_PDF = DOCS / menus.CONSENT_PDF
 
 GEMINI_BASE_URL = os.getenv(
@@ -250,6 +254,7 @@ def keyboard_for(screen: str):
         "partners": menus.partners_keyboard(),
         "materials": menus.materials_keyboard(),
         "business_tools": menus.business_tools_keyboard(),
+        "track": menus.track_keyboard(),
         "visitka": menus.visitka_keyboard(),
         "ip_self": menus.ip_self_keyboard(),
         "self": menus.self_employed_keyboard(),
@@ -533,6 +538,50 @@ async def send_catalog(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     await reply_html(update, menus.CATALOG_TEXT, context, screen="product")
 
 
+def video_launch_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    menus.BTN_VIDEO_LAUNCH,
+                    web_app=WebAppInfo(url=menus.VIDEO_WIZARD_URL),
+                )
+            ]
+        ]
+    )
+
+
+async def send_video_track(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Картинка трека, описание и кнопка мини-приложения «Запустить»."""
+    if not update.message or not update.effective_chat:
+        return
+    set_screen(context, "track")
+    chat_id = update.effective_chat.id
+    markup = video_launch_keyboard()
+
+    if VIDEO_TRACK_IMAGE.exists():
+        payload = VIDEO_TRACK_IMAGE.read_bytes()
+
+        async def _send_photo():
+            return await update.message.reply_photo(
+                photo=InputFile(BytesIO(payload), filename="video_track.png"),
+                caption=menus.VIDEO_TRACK_TEXT,
+                reply_markup=markup,
+            )
+
+        sent = await _tg_retry(_send_photo)
+        track_message(chat_id, sent.message_id)
+        return
+
+    sent = await _tg_retry(
+        lambda: update.message.reply_text(
+            menus.VIDEO_TRACK_TEXT,
+            reply_markup=markup,
+        )
+    )
+    track_message(chat_id, sent.message_id)
+
+
 async def start_visitka(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     context.user_data["visitka"] = {"step": "name"}
     await reply_html(update, menus.VISITKA_ASK_NAME, context, screen="visitka")
@@ -787,6 +836,7 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "partners": menus.PARTNERS_TEXT,
         "materials": menus.MATERIALS_TEXT,
         "business_tools": menus.BUSINESS_TOOLS_TEXT,
+        "track": menus.TRACK_TEXT,
         "ip_self": menus.IP_SELF_TEXT,
         "quiz_intro": bad_quiz.INTRO,
         "product": menus.PRODUCT_TEXT,
@@ -935,6 +985,12 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
     if text == menus.BTN_VISITKA:
         await start_visitka(update, context)
+        return
+    if text == menus.BTN_TRACK:
+        await reply_html(update, menus.TRACK_TEXT, context, screen="track")
+        return
+    if text == menus.BTN_VIDEO_30S:
+        await send_video_track(update, context)
         return
 
     if text == menus.BTN_SWITCH:

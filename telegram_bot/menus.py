@@ -80,6 +80,8 @@ BTN_PVZ = "📦 Открыть ПВЗ"
 BTN_PARTNERS = "🤝 Материалы для партнеров"
 BTN_BUSINESS_TOOLS = "🛠 Бизнес-инструменты"
 BTN_VISITKA = "💳 Визитка"
+BTN_TRACK = "🎯 Трек"
+BTN_VIDEO_30S = "🎥 Как снять видео за 30 секунд"
 BTN_PARTNERS_PDF = "📄 Материалы"
 BTN_PARTNER_SYSTEM = "📋 Система работы партнёров"
 BTN_STICKERS = "Stickers"
@@ -189,6 +191,16 @@ def business_tools_keyboard() -> ReplyKeyboardMarkup:
     return kb(
         [
             [BTN_VISITKA],
+            [BTN_TRACK],
+            [BTN_BACK],
+        ]
+    )
+
+
+def track_keyboard() -> ReplyKeyboardMarkup:
+    return kb(
+        [
+            [BTN_VIDEO_30S],
             [BTN_BACK],
         ]
     )
@@ -414,8 +426,37 @@ PACK_PREVIEW_LIMIT = 6
 
 BUSINESS_TOOLS_TEXT = (
     "🛠 <b>Бизнес-инструменты</b>\n\n"
-    "Собери персональную визитку IDera.\n"
-    "Нажми «Визитка» 👇"
+    "Визитка и трек «Как снять видео за 30 секунд».\n"
+    "Выбери, с чего начать 👇"
+)
+
+TRACK_TEXT = (
+    "🎯 <b>Трек</b>\n\n"
+    "Короткий маршрут: сними видео о продукте за 30 секунд.\n"
+    "Нажми кнопку ниже 👇"
+)
+
+VIDEO_WIZARD_URL = "https://idera-video-wizard.vercel.app"
+BTN_VIDEO_LAUNCH = "🚀 Запустить"
+
+VIDEO_TRACK_TEXT = (
+    "Сними видео о продукте за 30 секунд 📱\n\n"
+    "Камеру включил и всё забыл? 😬\n"
+    "Не знаешь, что сказать и куда смотреть?\n\n"
+    "Мы уже собрали маршрут:\n\n"
+    "✨ выбери продукт\n"
+    "📝 получи готовую структуру\n"
+    "👀 читай текст с телесуфлёра\n"
+    "🎥 запиши ролик по шагам\n\n"
+    "✅ Результат: твоё готовое видео о продукте.\n\n"
+    "Не идеальное.\n"
+    "Не «когда-нибудь».\n"
+    "А снятое сегодня. 🔥\n\n"
+    "🎯 Задача: пройти трек и записать 1 ролик.\n\n"
+    "⏱️ Несколько минут\n"
+    "📱 Только телефон\n"
+    "🚀 На выходе — готовое действие\n\n"
+    "💙 IDERA | Сила партнёра"
 )
 
 VISITKA_ASK_NAME = (
@@ -568,6 +609,7 @@ PARENT = {
     "materials": "partners",
     "business_tools": "partners",
     "visitka": "business_tools",
+    "track": "business_tools",
     "ip_self": "business",
     "self": "ip_self",
     "ip": "ip_self",
