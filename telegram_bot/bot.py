@@ -65,6 +65,7 @@ ASSETS = BASE_DIR / "assets"
 DOCS = BASE_DIR / "docs"
 WELCOME_IMAGE = ASSETS / "welcome.png"
 CATALOG_IMAGE = ASSETS / "catalog.png"
+TRACKS_IMAGE = ASSETS / "tracks.png"
 VIDEO_TRACK_IMAGE = ASSETS / "video_track.png"
 CONSENT_PDF = DOCS / menus.CONSENT_PDF
 
@@ -538,6 +539,31 @@ async def send_catalog(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     await reply_html(update, menus.CATALOG_TEXT, context, screen="product")
 
 
+async def send_tracks(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Обложка раздела «Треки»: картинка и короткий текст."""
+    if not update.message or not update.effective_chat:
+        return
+    set_screen(context, "track")
+    chat_id = update.effective_chat.id
+    markup = menus.track_keyboard()
+
+    if TRACKS_IMAGE.exists():
+        payload = TRACKS_IMAGE.read_bytes()
+
+        async def _send_photo():
+            return await update.message.reply_photo(
+                photo=InputFile(BytesIO(payload), filename="tracks.png"),
+                caption=menus.TRACK_TEXT,
+                reply_markup=markup,
+            )
+
+        sent = await _tg_retry(_send_photo)
+        track_message(chat_id, sent.message_id)
+        return
+
+    await reply_html(update, menus.TRACK_TEXT, context, screen="track")
+
+
 def video_launch_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
@@ -987,7 +1013,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await start_visitka(update, context)
         return
     if text == menus.BTN_TRACK:
-        await reply_html(update, menus.TRACK_TEXT, context, screen="track")
+        await send_tracks(update, context)
         return
     if text == menus.BTN_VIDEO_30S:
         await send_video_track(update, context)

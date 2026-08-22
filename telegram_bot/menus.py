@@ -80,7 +80,7 @@ BTN_PVZ = "📦 Открыть ПВЗ"
 BTN_PARTNERS = "🤝 Материалы для партнеров"
 BTN_BUSINESS_TOOLS = "🛠 Бизнес-инструменты"
 BTN_VISITKA = "💳 Визитка"
-BTN_TRACK = "🎯 Трек"
+BTN_TRACK = "🎯 Треки"
 BTN_VIDEO_30S = "🎥 Как снять видео за 30 секунд"
 BTN_PARTNERS_PDF = "📄 Материалы"
 BTN_PARTNER_SYSTEM = "📋 Система работы партнёров"
@@ -426,15 +426,11 @@ PACK_PREVIEW_LIMIT = 6
 
 BUSINESS_TOOLS_TEXT = (
     "🛠 <b>Бизнес-инструменты</b>\n\n"
-    "Визитка и трек «Как снять видео за 30 секунд».\n"
+    "Визитка и треки.\n"
     "Выбери, с чего начать 👇"
 )
 
-TRACK_TEXT = (
-    "🎯 <b>Трек</b>\n\n"
-    "Короткий маршрут: сними видео о продукте за 30 секунд.\n"
-    "Нажми кнопку ниже 👇"
-)
+TRACK_TEXT = "Выбери цель → пройди маршрут → сделай."
 
 VIDEO_WIZARD_URL = "https://idera-video-wizard.vercel.app"
 BTN_VIDEO_LAUNCH = "🚀 Запустить"
