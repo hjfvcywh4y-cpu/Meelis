@@ -663,13 +663,29 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         await update.message.reply_text("Эта команда только для владельца бота.")
         return
     data = snapshot()
-    text = (
-        "📊 Статистика бота\n\n"
-        f"👥 Уникальных людей: {data['unique_users']}\n"
-        f"🚀 /start: {data['starts']}\n"
-        f"💬 Сообщений: {data['messages']}\n"
-        f"🔘 Кликов: {data['callbacks']}"
-    )
+    lines = [
+        "📊 Статистика бота",
+        "",
+        f"👥 Уникальных людей: {data['unique_users']}",
+        f"🚀 /start: {data['starts']}",
+        f"💬 Сообщений: {data['messages']}",
+        f"🔘 Кликов: {data['callbacks']}",
+        "",
+        f"✅ Согласие дали: {data['consented']}",
+        f"❌ Отказали: {data['declined']}",
+        f"⏳ Ещё не ответили: {data['pending']}",
+        f"💾 Файл: {data['stats_path']}",
+    ]
+    recent = data.get("consents") or []
+    if recent:
+        lines.append("")
+        lines.append("Последние согласия:")
+        for row in recent[:20]:
+            mark = "✅" if row["accepted"] else "❌"
+            who = f"@{row['username']}" if row["username"] else row["first_name"] or "—"
+            when = (row.get("at") or "")[:19].replace("T", " ")
+            lines.append(f"{mark} {row['id']} {who} {when}")
+    text = "\n".join(lines)
     sent = await update.message.reply_text(text)
     if update.effective_chat:
         track_message(update.effective_chat.id, update.message.message_id)
@@ -970,7 +986,11 @@ def main() -> None:
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     app.add_error_handler(error_handler)
 
-    logger.info("IDera Helper запущен (%s)", " -> ".join(providers) or "без AI")
+    logger.info(
+        "IDera Helper запущен (%s); stats=%s",
+        " -> ".join(providers) or "без AI",
+        os.getenv("STATS_PATH", "data/stats.json"),
+    )
     app.run_polling(
         allowed_updates=Update.ALL_TYPES,
         drop_pending_updates=True,
