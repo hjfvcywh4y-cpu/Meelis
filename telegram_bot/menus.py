@@ -118,13 +118,7 @@ BTN_FOCUS = "🎯 Focus"
 BTN_CONSENT_YES = "✅ Согласен"
 BTN_CONSENT_NO = "❌ Не согласен"
 
-BTN_QUIZ_START = "✅ Начать подбор"
-BTN_QUIZ_SKIP = "1,3,5"
-BTN_QUIZ_SKIP2 = "2,4,6"
-BTN_QUIZ_SKIP3 = "1,2,3"
-BTN_QUIZ_SKIP4 = "4,5,6"
-BTN_QUIZ_SKIP5 = "5,6,7"
-BTN_QUIZ_SKIP6 = "1,4,7"
+BTN_QUIZ_START = "Начать подбор"
 
 
 def kb(rows: list[list[str]], *, one_time: bool = False) -> ReplyKeyboardMarkup:
@@ -277,15 +271,14 @@ def quiz_intro_keyboard() -> ReplyKeyboardMarkup:
     return kb([[BTN_QUIZ_START], [BTN_BACK]])
 
 
-def quiz_choice_keyboard() -> ReplyKeyboardMarkup:
-    return kb(
-        [
-            [BTN_QUIZ_SKIP, BTN_QUIZ_SKIP2],
-            [BTN_QUIZ_SKIP3, BTN_QUIZ_SKIP4],
-            [BTN_QUIZ_SKIP5, BTN_QUIZ_SKIP6],
-            [BTN_BACK],
-        ]
-    )
+def quiz_goals_keyboard() -> ReplyKeyboardMarkup:
+    return kb([[BTN_BACK]])
+
+
+def quiz_options_keyboard(options: list[str]) -> ReplyKeyboardMarkup:
+    rows = [[opt] for opt in options]
+    rows.append([BTN_BACK])
+    return kb(rows)
 
 
 CONSENT_TEXT = (
@@ -632,5 +625,6 @@ PARENT = {
     "product": "main",
     "presentation": "product",
     "quiz_intro": "main",
-    "quiz": "quiz_intro",
+    "quiz_goals": "quiz_intro",
+    "quiz_step": "quiz_goals",
 }

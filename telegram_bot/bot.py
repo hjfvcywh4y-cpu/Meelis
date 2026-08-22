@@ -207,6 +207,34 @@ async def ask_ai(chat_id: int, user_text: str) -> str:
     raise last_error
 
 
+async def ask_ai_once(system: str, user_text: str) -> str:
+    """Отдельный запрос без истории чата — для подбора продукта."""
+    last_error: Exception | None = None
+    chains = provider_chains()
+    if not chains:
+        raise RuntimeError("Нет AI-ключей")
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user_text},
+    ]
+    for provider, client, models in chains:
+        for model in models:
+            try:
+                response = await client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    temperature=0.3,
+                )
+                reply = (response.choices[0].message.content or "").strip()
+                if reply:
+                    return reply
+            except Exception as exc:
+                last_error = exc
+                logger.warning("%s/%s недоступен: %s", provider, model, exc)
+    assert last_error is not None
+    raise last_error
+
+
 def split_message(text: str, limit: int = 3900) -> list[str]:
     if len(text) <= limit:
         return [text]
@@ -246,7 +274,12 @@ def set_consent(context: ContextTypes.DEFAULT_TYPE, *, accepted: bool) -> None:
         context.user_data["consent_blocked"] = True
 
 
-def keyboard_for(screen: str):
+def keyboard_for(screen: str, context: ContextTypes.DEFAULT_TYPE | None = None):
+    if screen == "quiz_step" and context is not None:
+        quiz = context.user_data.get("quiz") or {}
+        idx = int(quiz.get("q_index") or 0)
+        idx = max(0, min(idx, len(bad_quiz.QUESTIONS) - 1))
+        return bad_quiz.step_keyboard(idx)
     return {
         "main": menus.main_keyboard(),
         "consent": menus.consent_keyboard(),
@@ -264,7 +297,8 @@ def keyboard_for(screen: str):
         "product": menus.product_keyboard(),
         "presentation": menus.presentation_keyboard(),
         "quiz_intro": menus.quiz_intro_keyboard(),
-        "quiz": menus.quiz_choice_keyboard(),
+        "quiz_goals": menus.quiz_goals_keyboard(),
+        "quiz_step": menus.quiz_goals_keyboard(),
     }.get(screen, menus.main_keyboard())
 
 
@@ -299,7 +333,7 @@ async def reply_html(
 ) -> None:
     if screen:
         set_screen(context, screen)
-    markup = keyboard_for(screen_of(context))
+    markup = keyboard_for(screen_of(context), context)
     chat_id = update.effective_chat.id if update.effective_chat else None
     chunks = split_message(text)
     for i, chunk in enumerate(chunks):
@@ -853,8 +887,150 @@ async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         track_message(update.effective_chat.id, sent.message_id)
 
 
+def _quiz_data(context: ContextTypes.DEFAULT_TYPE) -> dict:
+    data = context.user_data.get("quiz")
+    if not isinstance(data, dict):
+        data = {}
+        context.user_data["quiz"] = data
+    return data
+
+
+async def start_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    context.user_data["quiz"] = {"phase": "intro"}
+    await reply_html(update, bad_quiz.INTRO, context, screen="quiz_intro")
+
+
+async def send_quiz_goals(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    data = _quiz_data(context)
+    data["phase"] = "goals"
+    data.pop("q_index", None)
+    await reply_html(update, bad_quiz.ASK, context, screen="quiz_goals")
+
+
+async def send_quiz_question(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, index: int
+) -> None:
+    data = _quiz_data(context)
+    data["phase"] = "step"
+    data["q_index"] = index
+    await reply_html(
+        update, bad_quiz.question_text(index), context, screen="quiz_step"
+    )
+
+
+async def finish_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    data = context.user_data.pop("quiz", {}) or {}
+    set_screen(context, "main")
+    goals = list(data.get("goals") or [])
+    answers = list(data.get("answers") or [])
+    fallback = bad_quiz.score_product(goals, answers)
+    why: str | None = None
+
+    if update.message:
+        await update.message.chat.send_action(ChatAction.TYPING)
+        sent_wait = await _tg_retry(
+            lambda: update.message.reply_text(
+                bad_quiz.RESULT_WAIT,
+                reply_markup=menus.main_keyboard(),
+            )
+        )
+        if update.effective_chat:
+            track_message(update.effective_chat.id, sent_wait.message_id)
+
+    try:
+        raw = await ask_ai_once(
+            bad_quiz.AI_SYSTEM,
+            "Каталог:\n"
+            f"{bad_quiz.catalog_for_ai()}\n\n"
+            f"{bad_quiz.answers_for_ai(goals, answers)}",
+        )
+        parsed = bad_quiz.parse_ai_choice(raw)
+        if parsed:
+            fallback, why = parsed
+    except Exception:
+        logger.exception("Quiz AI recommendation failed")
+
+    await reply_html(
+        update, bad_quiz.format_result(fallback, why), context, screen="main"
+    )
+
+
+async def handle_quiz_back(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    current = screen_of(context)
+    data = context.user_data.get("quiz")
+    if current == "quiz_step" and isinstance(data, dict):
+        answers = list(data.get("answers") or [])
+        if answers:
+            answers.pop()
+            data["answers"] = answers
+        idx = int(data.get("q_index") or 0)
+        if idx > 0:
+            await send_quiz_question(update, context, idx - 1)
+            return
+        await send_quiz_goals(update, context)
+        return
+    if current == "quiz_goals":
+        await start_quiz(update, context)
+        return
+    context.user_data.pop("quiz", None)
+    await reply_html(update, "🏠 Главное меню:", context, screen="main")
+
+
+async def handle_quiz_flow(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, text: str
+) -> bool:
+    screen = screen_of(context)
+    if screen not in {"quiz_intro", "quiz_goals", "quiz_step"}:
+        return False
+    if text == menus.BTN_BACK:
+        await handle_quiz_back(update, context)
+        return True
+    if text == menus.BTN_MAIN:
+        context.user_data.pop("quiz", None)
+        await reply_html(update, "🏠 Главное меню:", context, screen="main")
+        return True
+    if screen == "quiz_intro":
+        if text == menus.BTN_QUIZ_START:
+            await send_quiz_goals(update, context)
+            return True
+        return False
+    if screen == "quiz_goals":
+        goals = bad_quiz.parse_goals(text)
+        if goals is None:
+            await reply_html(update, bad_quiz.ASK_RETRY, context, screen="quiz_goals")
+            return True
+        data = _quiz_data(context)
+        data["goals"] = goals
+        data["answers"] = []
+        await send_quiz_question(update, context, 0)
+        return True
+
+    data = _quiz_data(context)
+    idx = int(data.get("q_index") or 0)
+    option = bad_quiz.match_option(idx, text)
+    if option is None:
+        await reply_html(update, bad_quiz.STEP_RETRY, context, screen="quiz_step")
+        return True
+    answers = list(data.get("answers") or [])
+    qid = bad_quiz.QUESTIONS[idx]["id"]
+    answers = [row for row in answers if row.get("id") != qid]
+    answers.append({"id": qid, "text": option})
+    data["answers"] = answers
+    nxt = idx + 1
+    if nxt >= len(bad_quiz.QUESTIONS):
+        await finish_quiz(update, context)
+        return True
+    await send_quiz_question(update, context, nxt)
+    return True
+
+
 async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     current = screen_of(context)
+    if current in {"quiz_intro", "quiz_goals", "quiz_step"}:
+        await handle_quiz_back(update, context)
+        return
     if current == "visitka":
         context.user_data.pop("visitka", None)
     parent = menus.PARENT.get(current, "main")
@@ -934,23 +1110,13 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     screen = screen_of(context)
 
-    # Quiz number input
-    if screen == "quiz":
-        goals = bad_quiz.parse_goals(text)
-        if goals is None:
-            await reply_html(
-                update,
-                "Не понял выбор. Пришли до 3 номеров через запятую, например <code>1,3,5</code>",
-                context,
-                screen="quiz",
-            )
-            return
-        await reply_html(update, bad_quiz.build_result(goals), context, screen="main")
+    if await handle_quiz_flow(update, context, text):
         return
 
     # Navigation buttons
     if text == menus.BTN_MAIN:
         context.user_data.pop("visitka", None)
+        context.user_data.pop("quiz", None)
         await reply_html(update, "🏠 Главное меню:", context, screen="main")
         return
     if text == menus.BTN_BACK:
@@ -961,10 +1127,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
 
     if text == menus.BTN_BAD:
-        await reply_html(update, bad_quiz.INTRO, context, screen="quiz_intro")
-        return
-    if text == menus.BTN_QUIZ_START:
-        await reply_html(update, bad_quiz.ASK, context, screen="quiz")
+        await start_quiz(update, context)
         return
 
     if text == menus.BTN_BUSINESS:
@@ -1081,7 +1244,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         logger.exception("AI error")
         sent = await update.message.reply_text(
             "Сейчас не могу ответить текстом. Пользуйся кнопками меню 👇",
-            reply_markup=keyboard_for(screen_of(context)),
+            reply_markup=keyboard_for(screen_of(context), context),
         )
         track_message(chat_id, sent.message_id)
         return
@@ -1089,7 +1252,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     for chunk in split_message(reply):
         sent = await update.message.reply_text(
             chunk,
-            reply_markup=keyboard_for(screen_of(context)),
+            reply_markup=keyboard_for(screen_of(context), context),
         )
         track_message(chat_id, sent.message_id)
 
