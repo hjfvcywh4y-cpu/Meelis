@@ -82,6 +82,8 @@ BTN_BUSINESS_TOOLS = "🛠 Бизнес-инструменты"
 BTN_VISITKA = "💳 Визитка"
 BTN_PARTNERS_PDF = "📄 Материалы"
 BTN_PARTNER_SYSTEM = "📋 Система работы партнёров"
+BTN_STICKERS = "Stickers"
+BTN_EMOJI = "Emoji"
 BTN_STICKER_ETG = "STICKER.ETG"
 BTN_EMOD_ETG = "EMOD.ETG"
 BTN_AWARDS = "🏆 Номинации и лауреатства"
@@ -177,7 +179,7 @@ def materials_keyboard() -> ReplyKeyboardMarkup:
     return kb(
         [
             [BTN_PARTNER_SYSTEM],
-            [BTN_STICKER_ETG, BTN_EMOD_ETG],
+            [BTN_STICKERS, BTN_EMOJI],
             [BTN_BACK],
         ]
     )
@@ -408,7 +410,7 @@ EMOJI_PACK_TEXT = (
     f"{EMOJI_PACK_URL}"
 )
 
-PACK_PREVIEW_LIMIT = 9
+PACK_PREVIEW_LIMIT = 6
 
 BUSINESS_TOOLS_TEXT = (
     "🛠 <b>Бизнес-инструменты</b>\n\n"

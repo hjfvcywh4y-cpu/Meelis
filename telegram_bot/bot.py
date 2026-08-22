@@ -18,6 +18,7 @@ from openai import AsyncOpenAI
 from telegram import (
     BotCommand,
     InputFile,
+    InputMediaPhoto,
     MenuButtonCommands,
     MessageEntity,
     ReplyKeyboardRemove,
@@ -330,31 +331,12 @@ async def send_pack_preview(
     set_name: str,
     text: str,
 ) -> None:
-    """Показать стикеры/эмодзи из набора и ссылку «добавить себе»."""
+    """Сразу ссылка «добавить себе», затем короткое превью картинок."""
     if not update.message or not update.effective_chat:
         return
     chat_id = update.effective_chat.id
     set_screen(context, "materials")
     markup = menus.materials_keyboard()
-
-    stickers: list = []
-    try:
-        pack = await context.bot.get_sticker_set(set_name)
-        stickers = list(pack.stickers or [])[: menus.PACK_PREVIEW_LIMIT]
-    except Exception:
-        logger.exception("Не удалось загрузить набор %s", set_name)
-
-    for sticker in stickers:
-        try:
-            sent = await _tg_retry(
-                lambda s=sticker: context.bot.send_sticker(
-                    chat_id=chat_id,
-                    sticker=s.file_id,
-                )
-            )
-            track_message(chat_id, sent.message_id)
-        except Exception:
-            logger.warning("Стикер набора %s не отправился", set_name)
 
     sent = await _tg_retry(
         lambda: update.message.reply_text(
@@ -365,6 +347,46 @@ async def send_pack_preview(
         )
     )
     track_message(chat_id, sent.message_id)
+
+    try:
+        pack = await asyncio.wait_for(
+            context.bot.get_sticker_set(set_name),
+            timeout=8,
+        )
+    except Exception:
+        logger.exception("Не удалось загрузить набор %s", set_name)
+        return
+
+    stickers = list(pack.stickers or [])[: menus.PACK_PREVIEW_LIMIT]
+    media: list[InputMediaPhoto] = []
+    for sticker in stickers:
+        thumb = getattr(sticker, "thumbnail", None) or getattr(sticker, "thumb", None)
+        file_id = getattr(thumb, "file_id", None) if thumb else None
+        if file_id:
+            media.append(InputMediaPhoto(media=file_id))
+
+    if len(media) >= 2:
+        try:
+            messages = await asyncio.wait_for(
+                context.bot.send_media_group(chat_id=chat_id, media=media),
+                timeout=12,
+            )
+            for msg in messages:
+                track_message(chat_id, msg.message_id)
+            return
+        except Exception:
+            logger.warning("Превью-альбом набора %s не отправился", set_name)
+
+    for sticker in stickers[:4]:
+        try:
+            sent = await asyncio.wait_for(
+                context.bot.send_sticker(chat_id=chat_id, sticker=sticker.file_id),
+                timeout=5,
+            )
+            track_message(chat_id, sent.message_id)
+        except Exception:
+            logger.warning("Стикер набора %s не отправился", set_name)
+            break
 
 
 async def send_consent_flow(
@@ -881,7 +903,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     if text == menus.BTN_PARTNERS_PDF:
         await reply_html(update, menus.MATERIALS_TEXT, context, screen="materials")
         return
-    if text == menus.BTN_STICKER_ETG:
+    if text in {menus.BTN_STICKERS, menus.BTN_STICKER_ETG}:
         await send_pack_preview(
             update,
             context,
@@ -889,7 +911,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             text=menus.STICKER_PACK_TEXT,
         )
         return
-    if text == menus.BTN_EMOD_ETG:
+    if text in {menus.BTN_EMOJI, menus.BTN_EMOD_ETG}:
         await send_pack_preview(
             update,
             context,
@@ -1038,6 +1060,7 @@ def main() -> None:
         .request(request)
         .get_updates_request(get_updates_request)
         .post_init(post_init)
+        .concurrent_updates(True)
         .build()
     )
     app.add_handler(CommandHandler("start", start))
