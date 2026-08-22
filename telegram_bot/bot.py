@@ -44,6 +44,7 @@ ASSETS = BASE_DIR / "assets"
 DOCS = BASE_DIR / "docs"
 WELCOME_IMAGE = ASSETS / "welcome.png"
 CATALOG_IMAGE = ASSETS / "catalog.png"
+VISITKA_IMAGE = ASSETS / "visitka.png"
 
 GEMINI_BASE_URL = os.getenv(
     "GEMINI_BASE_URL",
@@ -206,6 +207,8 @@ def keyboard_for(screen: str):
         "main": menus.main_keyboard(),
         "business": menus.business_keyboard(),
         "about": menus.about_keyboard(),
+        "partners": menus.partners_keyboard(),
+        "business_tools": menus.business_tools_keyboard(),
         "ip_self": menus.ip_self_keyboard(),
         "self": menus.self_employed_keyboard(),
         "ip": menus.ip_keyboard(),
@@ -342,6 +345,33 @@ async def send_catalog(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     await reply_html(update, menus.CATALOG_TEXT, context, screen="product")
 
 
+async def send_asset_photo(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    *,
+    path: Path,
+    filename: str,
+    caption: str,
+    screen: str,
+) -> None:
+    set_screen(context, screen)
+    if not update.message:
+        return
+    markup = keyboard_for(screen)
+    if path.exists():
+        with path.open("rb") as photo:
+            sent = await update.message.reply_photo(
+                photo=InputFile(photo, filename=filename),
+                caption=caption,
+                parse_mode=ParseMode.HTML,
+                reply_markup=markup,
+            )
+        if update.effective_chat:
+            track_message(update.effective_chat.id, sent.message_id)
+        return
+    await reply_html(update, caption, context, screen=screen)
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     record_user(
@@ -458,6 +488,8 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "main": "🏠 Главное меню:",
         "business": menus.BUSINESS_TEXT,
         "about": menus.ABOUT_TEXT,
+        "partners": menus.PARTNERS_TEXT,
+        "business_tools": menus.BUSINESS_TOOLS_TEXT,
         "ip_self": menus.IP_SELF_TEXT,
         "quiz_intro": bad_quiz.INTRO,
         "product": menus.PRODUCT_TEXT,
@@ -529,6 +561,34 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
     if text == menus.BTN_ABOUT_US:
         await reply_html(update, menus.ABOUT_US_TEXT, context, screen="about")
+        return
+    if text == menus.BTN_PARTNERS:
+        await reply_html(update, menus.PARTNERS_TEXT, context, screen="partners")
+        return
+    if text == menus.BTN_BUSINESS_TOOLS:
+        await reply_html(
+            update, menus.BUSINESS_TOOLS_TEXT, context, screen="business_tools"
+        )
+        return
+    if text == menus.BTN_VISITKA:
+        await send_asset_photo(
+            update,
+            context,
+            path=VISITKA_IMAGE,
+            filename="visitka.png",
+            caption=menus.VISITKA_CAPTION,
+            screen="business_tools",
+        )
+        return
+    if text == menus.BTN_TG_CARD:
+        await send_asset_photo(
+            update,
+            context,
+            path=VISITKA_IMAGE,
+            filename="visitka.png",
+            caption=menus.TG_CARD_CAPTION,
+            screen="business_tools",
+        )
         return
 
     if text == menus.BTN_SWITCH:
