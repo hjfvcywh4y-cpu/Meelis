@@ -161,6 +161,34 @@ def snapshot() -> dict:
     }
 
 
+def get_owner_id() -> int | None:
+    with _lock:
+        data = _load()
+    raw = data.get("owner_id")
+    if isinstance(raw, int):
+        return raw
+    if isinstance(raw, str) and (raw.isdigit() or (raw.startswith("-") and raw[1:].isdigit())):
+        return int(raw)
+    return None
+
+
+def claim_owner(user_id: int | None) -> int | None:
+    """Первый, кто вызовет /stats, становится владельцем, если админы не заданы."""
+    if not user_id:
+        return get_owner_id()
+    with _lock:
+        data = _load()
+        current = data.get("owner_id")
+        if current:
+            try:
+                return int(current)
+            except (TypeError, ValueError):
+                return None
+        data["owner_id"] = user_id
+        _save(data)
+        return user_id
+
+
 def admin_ids() -> set[int]:
     raw = os.getenv("BOT_ADMIN_IDS", "").strip()
     ids: set[int] = set()

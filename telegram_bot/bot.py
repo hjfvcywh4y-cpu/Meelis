@@ -38,7 +38,14 @@ from telegram.request import HTTPXRequest
 import bad_quiz
 import menus
 import visitka
-from stats import admin_ids, has_consent, record_consent, record_user, snapshot
+from stats import (
+    admin_ids,
+    claim_owner,
+    has_consent,
+    record_consent,
+    record_user,
+    snapshot,
+)
 
 T = TypeVar("T")
 
@@ -650,7 +657,6 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "/menu — открыть главное меню\n"
         "/clear — очистить чат\n"
         "/id — ваш Telegram ID\n"
-        "/stats — статистика (для владельца)\n"
         "/ping — проверка\n\n"
         "Кнопки меню внизу экрана — как у удобных бизнес-ботов.",
         context,
@@ -715,10 +721,13 @@ async def id_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
 
 def _is_admin(user_id: int | None) -> bool:
+    if not user_id:
+        return False
     allowed = admin_ids()
-    if not allowed:
-        return True
-    return bool(user_id and user_id in allowed)
+    if allowed:
+        return user_id in allowed
+    owner = claim_owner(user_id)
+    return owner == user_id
 
 
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
