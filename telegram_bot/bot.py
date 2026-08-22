@@ -923,7 +923,7 @@ async def finish_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     set_screen(context, "main")
     goals = list(data.get("goals") or [])
     answers = list(data.get("answers") or [])
-    fallback = bad_quiz.score_product(goals, answers)
+    product = bad_quiz.score_product(goals, answers)
     why: str | None = None
 
     if update.message:
@@ -938,20 +938,20 @@ async def finish_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             track_message(update.effective_chat.id, sent_wait.message_id)
 
     try:
+        item = bad_quiz.PRODUCTS[product]
         raw = await ask_ai_once(
             bad_quiz.AI_SYSTEM,
-            "Каталог:\n"
-            f"{bad_quiz.catalog_for_ai()}\n\n"
+            "Продукт уже выбран, менять нельзя: "
+            f"{item['name']} ({product}).\n"
+            f"О продукте: {item['blurb']}\n\n"
             f"{bad_quiz.answers_for_ai(goals, answers)}",
         )
-        parsed = bad_quiz.parse_ai_choice(raw)
-        if parsed:
-            fallback, why = parsed
+        why = bad_quiz.parse_ai_why(raw)
     except Exception:
         logger.exception("Quiz AI recommendation failed")
 
     await reply_html(
-        update, bad_quiz.format_result(fallback, why), context, screen="main"
+        update, bad_quiz.format_result(product, why), context, screen="main"
     )
 
 

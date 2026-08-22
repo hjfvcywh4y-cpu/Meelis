@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import json
-import re
 from typing import Any
 
 import menus
@@ -70,7 +68,7 @@ QUESTIONS: list[dict[str, Any]] = [
             "К середине дня уже мало",
             "Почти всегда на нуле",
         ],
-        "weights": {"focus": [0, 1, 2], "detox": [0, 0, 1]},
+        "weights": {"focus": [0, 1, 2]},
     },
     {
         "id": "attention",
@@ -130,16 +128,16 @@ QUESTIONS: list[dict[str, Any]] = [
             "Смешанный, как получится",
             "В основном сидя",
         ],
-        "weights": {"focus": [0, 0, 1], "detox": [0, 0, 1], "relax": [1, 0, 0]},
+        "weights": {"focus": [0, 0, 1]},
     },
 ]
 
 INTRO = (
     f"{menus.idera('blue')} <b>Подбор продукта</b>\n\n"
-    "Не каталог «нажми наугад» и не универсальный совет для всех.\n\n"
     "Короткий разговор: что сейчас важнее, как проходит день, "
     "где состояние проседает. По ответам соберу ориентир — "
-    f"{menus.idera('star')} один продукт линейки IDera, с которого логично начать.\n\n"
+    f"{menus.idera('star')} один продукт из четырёх в линейке IDera: "
+    "Glow, Detox, Focus или Relax.\n\n"
     "Это не диагноз и не назначение. Просто точнее, чем листать витрину вслепую."
 )
 
@@ -159,10 +157,10 @@ STEP_RETRY = "Выбери один из вариантов на кнопках 
 RESULT_WAIT = "Сверяю ответы с линейкой IDera…"
 
 AI_SYSTEM = (
-    "Ты помощник IDera Helper. По ответам человека выбираешь ОДИН продукт "
-    "линейки: glow, detox, focus или relax. Не ставь диагнозов, не обещай лечение "
-    "и доход, не сравнивай с лекарствами. Пиши коротко, спокойно, на русском. "
-    "Верни только JSON: {\"product\":\"glow|detox|focus|relax\",\"why\":\"2-4 предложения\"}."
+    "Ты помощник IDera Helper. Продукт уже выбран, его менять нельзя. "
+    "Напиши 2-3 спокойных предложения на русском, почему он подходит по ответам. "
+    "Не ставь диагнозов, не обещай лечение, не предлагай другой продукт. "
+    "Только текст, без JSON, без заголовка и без названия других продуктов линейки."
 )
 
 
@@ -203,11 +201,17 @@ def question_text(index: int) -> str:
 
 
 def score_product(goals: list[int], answers: list[dict[str, str]]) -> str:
+    """Главный сигнал — выбранные цели. Detox не получает бонус «по умолчанию»."""
     scores = {key: 0 for key in PRODUCTS}
-    for g in goals:
+    goal_keys: list[str] = []
+    for i, g in enumerate(goals):
         key = GOAL_PRODUCT.get(g)
-        if key:
-            scores[key] += 3
+        if not key:
+            continue
+        goal_keys.append(key)
+        scores[key] += 5 if i == 0 else 3
+
+    selected = set(goal_keys)
     by_id = {q["id"]: q for q in QUESTIONS}
     for row in answers:
         q = by_id.get(row["id"])
@@ -218,8 +222,24 @@ def score_product(goals: list[int], answers: list[dict[str, str]]) -> str:
         except ValueError:
             continue
         for product, weights in q.get("weights", {}).items():
-            scores[product] = scores.get(product, 0) + int(weights[idx])
-    return max(scores, key=lambda k: (scores[k], -list(PRODUCTS).index(k)))
+            weight = int(weights[idx])
+            if weight <= 0:
+                continue
+            # Средние ответы не перетягивают на продукт вне выбранных целей.
+            if idx < 2 and selected and product not in selected:
+                continue
+            scores[product] += weight
+
+    tie_order = list(dict.fromkeys(goal_keys + ["glow", "focus", "relax", "detox"]))
+
+    def sort_key(name: str) -> tuple[int, int]:
+        try:
+            rank = tie_order.index(name)
+        except ValueError:
+            rank = 99
+        return scores[name], -rank
+
+    return max(scores, key=sort_key)
 
 
 def catalog_for_ai() -> str:
@@ -241,26 +261,14 @@ def answers_for_ai(goals: list[int], answers: list[dict[str, str]]) -> str:
     return "\n".join(lines)
 
 
-def parse_ai_choice(raw: str) -> tuple[str, str] | None:
-    text = raw.strip()
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\s*", "", text)
-        text = re.sub(r"\s*```$", "", text)
-    try:
-        data = json.loads(text)
-    except json.JSONDecodeError:
-        m = re.search(r"\{.*\}", text, re.S)
-        if not m:
-            return None
-        try:
-            data = json.loads(m.group(0))
-        except json.JSONDecodeError:
-            return None
-    key = str(data.get("product") or "").strip().lower()
-    why = str(data.get("why") or "").strip()
-    if key not in PRODUCTS or not why:
+def parse_ai_why(raw: str) -> str | None:
+    text = raw.strip().strip("`")
+    if text.lower().startswith("json"):
+        text = text[4:].strip()
+    text = text.strip().strip('"').strip()
+    if len(text) < 20:
         return None
-    return key, why
+    return text[:1200]
 
 
 def _escape(text: str) -> str:
@@ -274,9 +282,11 @@ def _escape(text: str) -> str:
 def format_result(product_key: str, why: str | None = None) -> str:
     item = PRODUCTS[product_key]
     body = _escape(why) if why else _escape(item["blurb"])
+    names = " · ".join(p["name"] for p in PRODUCTS.values())
     return (
         f"{menus.idera('check')} <b>Ориентир по твоим ответам</b>\n\n"
-        f"Ближе всего сейчас — <b>{item['name']}</b>.\n\n"
+        f"В линейке четыре продукта: {names}.\n"
+        f"По твоим ответам ближе всего — <b>{item['name']}</b>.\n\n"
         f"{body}\n\n"
         f"Карточка в магазине:\n"
         f'<a href="{SHOP_CATALOG}">{SHOP_CATALOG}</a>\n\n'
