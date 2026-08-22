@@ -240,6 +240,7 @@ def keyboard_for(screen: str):
         "business": menus.business_keyboard(),
         "about": menus.about_keyboard(),
         "partners": menus.partners_keyboard(),
+        "materials": menus.materials_keyboard(),
         "business_tools": menus.business_tools_keyboard(),
         "visitka": menus.visitka_keyboard(),
         "ip_self": menus.ip_self_keyboard(),
@@ -320,6 +321,50 @@ async def send_idera_stickers(bot, chat_id: int) -> None:
         wanted.discard(emoji_id)
         if not wanted:
             break
+
+
+async def send_pack_preview(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    *,
+    set_name: str,
+    text: str,
+) -> None:
+    """Показать стикеры/эмодзи из набора и ссылку «добавить себе»."""
+    if not update.message or not update.effective_chat:
+        return
+    chat_id = update.effective_chat.id
+    set_screen(context, "materials")
+    markup = menus.materials_keyboard()
+
+    stickers: list = []
+    try:
+        pack = await context.bot.get_sticker_set(set_name)
+        stickers = list(pack.stickers or [])[: menus.PACK_PREVIEW_LIMIT]
+    except Exception:
+        logger.exception("Не удалось загрузить набор %s", set_name)
+
+    for sticker in stickers:
+        try:
+            sent = await _tg_retry(
+                lambda s=sticker: context.bot.send_sticker(
+                    chat_id=chat_id,
+                    sticker=s.file_id,
+                )
+            )
+            track_message(chat_id, sent.message_id)
+        except Exception:
+            logger.warning("Стикер набора %s не отправился", set_name)
+
+    sent = await _tg_retry(
+        lambda: update.message.reply_text(
+            text,
+            parse_mode=ParseMode.HTML,
+            reply_markup=markup,
+            disable_web_page_preview=False,
+        )
+    )
+    track_message(chat_id, sent.message_id)
 
 
 async def send_consent_flow(
@@ -709,6 +754,7 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "business": menus.BUSINESS_TEXT,
         "about": menus.ABOUT_TEXT,
         "partners": menus.PARTNERS_TEXT,
+        "materials": menus.MATERIALS_TEXT,
         "business_tools": menus.BUSINESS_TOOLS_TEXT,
         "ip_self": menus.IP_SELF_TEXT,
         "quiz_intro": bad_quiz.INTRO,
@@ -831,6 +877,25 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
     if text == menus.BTN_PARTNERS:
         await reply_html(update, menus.PARTNERS_TEXT, context, screen="partners")
+        return
+    if text == menus.BTN_PARTNERS_PDF:
+        await reply_html(update, menus.MATERIALS_TEXT, context, screen="materials")
+        return
+    if text == menus.BTN_STICKER_ETG:
+        await send_pack_preview(
+            update,
+            context,
+            set_name=menus.STICKER_PACK_NAME,
+            text=menus.STICKER_PACK_TEXT,
+        )
+        return
+    if text == menus.BTN_EMOD_ETG:
+        await send_pack_preview(
+            update,
+            context,
+            set_name=menus.EMOJI_PACK_NAME,
+            text=menus.EMOJI_PACK_TEXT,
+        )
         return
     if text == menus.BTN_BUSINESS_TOOLS:
         await reply_html(

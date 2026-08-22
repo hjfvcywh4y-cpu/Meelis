@@ -81,6 +81,9 @@ BTN_PARTNERS = "🤝 Материалы для партнеров"
 BTN_BUSINESS_TOOLS = "🛠 Бизнес-инструменты"
 BTN_VISITKA = "💳 Визитка"
 BTN_PARTNERS_PDF = "📄 Материалы"
+BTN_PARTNER_SYSTEM = "📋 Система работы партнёров"
+BTN_STICKER_ETG = "STICKER.ETG"
+BTN_EMOD_ETG = "EMOD.ETG"
 BTN_AWARDS = "🏆 Номинации и лауреатства"
 BTN_REWARDS = "💰 Система вознаграждений"
 
@@ -165,6 +168,16 @@ def partners_keyboard() -> ReplyKeyboardMarkup:
         [
             [BTN_BUSINESS_TOOLS],
             [BTN_PARTNERS_PDF],
+            [BTN_BACK],
+        ]
+    )
+
+
+def materials_keyboard() -> ReplyKeyboardMarkup:
+    return kb(
+        [
+            [BTN_PARTNER_SYSTEM],
+            [BTN_STICKER_ETG, BTN_EMOD_ETG],
             [BTN_BACK],
         ]
     )
@@ -371,6 +384,32 @@ PARTNERS_TEXT = (
     "Выбери раздел 👇"
 )
 
+MATERIALS_TEXT = (
+    "📄 <b>Материалы</b>\n\n"
+    "Система работы партнёров, стикеры и эмодзи IDera.\n"
+    "Выбери, что нужно 👇"
+)
+
+STICKER_PACK_NAME = "IDera3"
+STICKER_PACK_URL = "https://t.me/addstickers/IDera3"
+STICKER_PACK_TEXT = (
+    "✨ <b>Стикеры IDera</b>\n\n"
+    "Набор для переписок и сторис.\n"
+    f'<a href="{STICKER_PACK_URL}">Добавить себе</a>\n'
+    f"{STICKER_PACK_URL}"
+)
+
+EMOJI_PACK_NAME = IDERA_PACK
+EMOJI_PACK_URL = "https://t.me/addemoji/IDera"
+EMOJI_PACK_TEXT = (
+    "✨ <b>Эмодзи IDera</b>\n\n"
+    "Кастомные эмодзи для сообщений.\n"
+    f'<a href="{EMOJI_PACK_URL}">Добавить себе</a>\n'
+    f"{EMOJI_PACK_URL}"
+)
+
+PACK_PREVIEW_LIMIT = 9
+
 BUSINESS_TOOLS_TEXT = (
     "🛠 <b>Бизнес-инструменты</b>\n\n"
     "Собери персональную визитку IDera.\n"
@@ -478,7 +517,7 @@ DOC_CAPTIONS = {
     BTN_RELAX: "🌙 Relax",
     BTN_GLOW: "✨ Glow",
     BTN_FOCUS: "🎯 Focus",
-    BTN_PARTNERS_PDF: "🤝 Материалы для партнеров",
+    BTN_PARTNER_SYSTEM: "📋 Система работы партнёров",
     BTN_COMPANY_PRESENTATION: "🎞 Презентация компании IDera",
 }
 
@@ -494,7 +533,7 @@ DOC_FILES = {
     BTN_RELAX: "IDera_RELAX.pdf",
     BTN_GLOW: "IDera_GLOW.pdf",
     BTN_FOCUS: "IDera_FOCUS.pdf",
-    BTN_PARTNERS_PDF: "IDera_partners.pdf",
+    BTN_PARTNER_SYSTEM: "IDera_partners.pdf",
     BTN_COMPANY_PRESENTATION: "IDera_company.pdf",
 }
 
@@ -504,7 +543,7 @@ DOC_DOWNLOAD_NAMES = {
     BTN_RELAX: "IDera Relax.pdf",
     BTN_GLOW: "IDera Glow.pdf",
     BTN_FOCUS: "IDera Focus.pdf",
-    BTN_PARTNERS_PDF: "IDera материалы для партнеров.pdf",
+    BTN_PARTNER_SYSTEM: "IDera материалы для партнеров.pdf",
     BTN_COMPANY_PRESENTATION: "IDera презентация компании.pdf",
 }
 
@@ -515,7 +554,7 @@ FINAL_DOCS = {
     BTN_RELAX,
     BTN_GLOW,
     BTN_FOCUS,
-    BTN_PARTNERS_PDF,
+    BTN_PARTNER_SYSTEM,
     BTN_COMPANY_PRESENTATION,
 }
 
@@ -524,6 +563,7 @@ PARENT = {
     "business": "main",
     "about": "business",
     "partners": "business",
+    "materials": "partners",
     "business_tools": "partners",
     "visitka": "business_tools",
     "ip_self": "business",
