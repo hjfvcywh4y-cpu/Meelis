@@ -102,6 +102,9 @@ BTN_RELAX = "🌙 Relax"
 BTN_GLOW = "✨ Glow"
 BTN_FOCUS = "🎯 Focus"
 
+BTN_CONSENT_YES = "✅ Согласен"
+BTN_CONSENT_NO = "❌ Не согласен"
+
 BTN_QUIZ_START = "✅ Начать подбор"
 BTN_QUIZ_SKIP = "1,3,5"
 BTN_QUIZ_SKIP2 = "2,4,6"
@@ -117,6 +120,10 @@ def kb(rows: list[list[str]], *, one_time: bool = False) -> ReplyKeyboardMarkup:
         resize_keyboard=True,
         one_time_keyboard=one_time,
     )
+
+
+def consent_keyboard() -> ReplyKeyboardMarkup:
+    return kb([[BTN_CONSENT_YES, BTN_CONSENT_NO]], one_time=True)
 
 
 def main_keyboard() -> ReplyKeyboardMarkup:
@@ -247,6 +254,28 @@ def quiz_choice_keyboard() -> ReplyKeyboardMarkup:
         ]
     )
 
+
+CONSENT_TEXT = (
+    "📄 <b>Согласие на обработку персональных данных</b>\n\n"
+    "Для использования бота необходимо ваше согласие на обработку персональных "
+    "данных в соответствии с законодательством Российской Федерации.\n\n"
+    "Мы обрабатываем ваши данные исключительно для предоставления функций бота "
+    "и улучшения качества сервиса.\n\n"
+    "Пожалуйста, ознакомьтесь с документом выше.\n\n"
+    "Если вы согласны — нажмите «Согласен». Если нет — «Не согласен»."
+)
+
+CONSENT_DECLINED_TEXT = (
+    "Без согласия на обработку персональных данных использование бота невозможно.\n\n"
+    "Если передумаете — нажмите /start и подтвердите согласие."
+)
+
+CONSENT_ACCEPTED_TEXT = (
+    "Спасибо! Согласие получено.\n\n"
+    "Выберите раздел в главном меню 👇"
+)
+
+CONSENT_PDF = "consent_pd.pdf"
 
 WELCOME_CAPTION = (
     f"{idera('blue')} Привет. Это <b>IDera Helper</b>.\n\n"

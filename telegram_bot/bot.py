@@ -20,6 +20,7 @@ from telegram import (
     InputFile,
     MenuButtonCommands,
     MessageEntity,
+    ReplyKeyboardRemove,
     Update,
 )
 from telegram.constants import ChatAction, ParseMode
@@ -36,7 +37,7 @@ from telegram.request import HTTPXRequest
 import bad_quiz
 import menus
 import visitka
-from stats import admin_ids, record_user, snapshot
+from stats import admin_ids, has_consent, record_consent, record_user, snapshot
 
 T = TypeVar("T")
 
@@ -53,6 +54,7 @@ ASSETS = BASE_DIR / "assets"
 DOCS = BASE_DIR / "docs"
 WELCOME_IMAGE = ASSETS / "welcome.png"
 CATALOG_IMAGE = ASSETS / "catalog.png"
+CONSENT_PDF = DOCS / menus.CONSENT_PDF
 
 GEMINI_BASE_URL = os.getenv(
     "GEMINI_BASE_URL",
@@ -210,6 +212,27 @@ def set_screen(context: ContextTypes.DEFAULT_TYPE, screen: str) -> None:
     context.user_data["screen"] = screen
 
 
+def user_has_consent(context: ContextTypes.DEFAULT_TYPE, user_id: int | None) -> bool:
+    if context.user_data.get("consent_blocked"):
+        return False
+    if context.user_data.get("consent_given"):
+        return True
+    return has_consent(user_id)
+
+
+def consent_blocked(context: ContextTypes.DEFAULT_TYPE) -> bool:
+    return bool(context.user_data.get("consent_blocked"))
+
+
+def set_consent(context: ContextTypes.DEFAULT_TYPE, *, accepted: bool) -> None:
+    if accepted:
+        context.user_data["consent_given"] = True
+        context.user_data.pop("consent_blocked", None)
+    else:
+        context.user_data.pop("consent_given", None)
+        context.user_data["consent_blocked"] = True
+
+
 def keyboard_for(screen: str):
     return {
         "main": menus.main_keyboard(),
@@ -296,6 +319,41 @@ async def send_idera_stickers(bot, chat_id: int) -> None:
         wanted.discard(emoji_id)
         if not wanted:
             break
+
+
+async def send_consent_flow(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Показать PDF согласия и кнопки подтверждения."""
+    if not update.message or not update.effective_chat:
+        return
+    chat_id = update.effective_chat.id
+    set_screen(context, "consent")
+
+    if CONSENT_PDF.exists():
+        payload = CONSENT_PDF.read_bytes()
+
+        async def _send_pdf():
+            return await update.message.reply_document(
+                document=InputFile(
+                    BytesIO(payload),
+                    filename="Согласие на обработку персональных данных.pdf",
+                ),
+                caption="📄 Согласие на обработку персональных данных",
+            )
+
+        sent = await _tg_retry(_send_pdf)
+        track_message(chat_id, sent.message_id)
+    else:
+        logger.warning("Файл согласия не найден: %s", CONSENT_PDF)
+
+    sent = await _tg_retry(
+        lambda: update.message.reply_text(
+            menus.CONSENT_TEXT,
+            parse_mode=ParseMode.HTML,
+            reply_markup=menus.consent_keyboard(),
+            disable_web_page_preview=True,
+        )
+    )
+    track_message(chat_id, sent.message_id)
 
 
 async def send_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -468,8 +526,9 @@ async def handle_visitka_flow(
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
+    uid = user.id if user else None
     record_user(
-        user.id if user else None,
+        uid,
         event="start",
         username=user.username if user else None,
         first_name=user.first_name if user else None,
@@ -478,7 +537,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         _histories.pop(update.effective_chat.id, None)
         if update.message:
             track_message(update.effective_chat.id, update.message.message_id)
-    await send_welcome(update, context)
+
+    context.user_data.pop("consent_blocked", None)
+    if user_has_consent(context, uid):
+        await send_welcome(update, context)
+        return
+
+    context.user_data.pop("consent_given", None)
+    await send_consent_flow(update, context)
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -502,6 +568,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 async def menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message and update.effective_chat:
         track_message(update.effective_chat.id, update.message.message_id)
+    user = update.effective_user
+    if not user_has_consent(context, user.id if user else None):
+        await send_consent_flow(update, context)
+        return
     await reply_html(update, "🏠 Главное меню:", context, screen="main")
 
 
@@ -517,15 +587,27 @@ async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         await update.message.delete()
     except Exception:
         pass
-    sent = await context.bot.send_message(
-        chat_id=chat_id,
-        text=(
-            f"🧹 Чат очищен. Удалено сообщений: {deleted}.\n"
-            "Нажми /start или выбери раздел в меню."
-        ),
-        reply_markup=menus.main_keyboard(),
-    )
-    set_screen(context, "main")
+    user = update.effective_user
+    uid = user.id if user else None
+    if user_has_consent(context, uid):
+        sent = await context.bot.send_message(
+            chat_id=chat_id,
+            text=(
+                f"🧹 Чат очищен. Удалено сообщений: {deleted}.\n"
+                "Нажми /start или выбери раздел в меню."
+            ),
+            reply_markup=menus.main_keyboard(),
+        )
+        set_screen(context, "main")
+    else:
+        sent = await context.bot.send_message(
+            chat_id=chat_id,
+            text=(
+                f"🧹 Чат очищен. Удалено сообщений: {deleted}.\n"
+                "Нажми /start, чтобы продолжить."
+            ),
+            reply_markup=ReplyKeyboardRemove(),
+        )
     track_message(chat_id, sent.message_id)
 
 
@@ -601,13 +683,61 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     text = update.message.text.strip()
     chat_id = update.effective_chat.id
     user = update.effective_user
+    uid = user.id if user else None
     record_user(
-        user.id if user else None,
+        uid,
         event="message",
         username=user.username if user else None,
         first_name=user.first_name if user else None,
     )
     track_message(chat_id, update.message.message_id)
+
+    if text == menus.BTN_CONSENT_YES:
+        set_consent(context, accepted=True)
+        record_consent(
+            uid,
+            accepted=True,
+            username=user.username if user else None,
+            first_name=user.first_name if user else None,
+        )
+        await reply_html(
+            update,
+            menus.CONSENT_ACCEPTED_TEXT,
+            context,
+            screen="main",
+        )
+        return
+
+    if text == menus.BTN_CONSENT_NO:
+        set_consent(context, accepted=False)
+        record_consent(
+            uid,
+            accepted=False,
+            username=user.username if user else None,
+            first_name=user.first_name if user else None,
+        )
+        sent = await _tg_retry(
+            lambda: update.message.reply_text(
+                menus.CONSENT_DECLINED_TEXT,
+                reply_markup=ReplyKeyboardRemove(),
+            )
+        )
+        track_message(chat_id, sent.message_id)
+        return
+
+    if consent_blocked(context):
+        sent = await _tg_retry(
+            lambda: update.message.reply_text(
+                menus.CONSENT_DECLINED_TEXT,
+                reply_markup=ReplyKeyboardRemove(),
+            )
+        )
+        track_message(chat_id, sent.message_id)
+        return
+
+    if not user_has_consent(context, uid):
+        await send_consent_flow(update, context)
+        return
 
     screen = screen_of(context)
 

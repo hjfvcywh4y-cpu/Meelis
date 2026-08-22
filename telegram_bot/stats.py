@@ -39,6 +39,45 @@ def _save(data: dict) -> None:
     tmp.replace(_path)
 
 
+def has_consent(user_id: int | None) -> bool:
+    if not user_id:
+        return False
+    with _lock:
+        data = _load()
+        row = (data.get("users") or {}).get(str(user_id)) or {}
+        return bool(row.get("consent_given"))
+
+
+def record_consent(
+    user_id: int | None,
+    *,
+    accepted: bool,
+    username: str | None = None,
+    first_name: str | None = None,
+) -> None:
+    if not user_id:
+        return
+    key = str(user_id)
+    with _lock:
+        data = _load()
+        users = data.setdefault("users", {})
+        row = users.get(key) or {
+            "first_seen": _now(),
+            "starts": 0,
+            "messages": 0,
+            "callbacks": 0,
+        }
+        row["last_seen"] = _now()
+        row["consent_given"] = accepted
+        row["consent_at"] = _now()
+        if username:
+            row["username"] = username
+        if first_name:
+            row["first_name"] = first_name
+        users[key] = row
+        _save(data)
+
+
 def record_user(
     user_id: int | None,
     *,
