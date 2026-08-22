@@ -25,7 +25,7 @@ def _utf16_len(text: str) -> int:
     return len(text.encode("utf-16-le")) // 2
 
 
-def welcome_message() -> tuple[str, list[MessageEntity]]:
+def welcome_message(*, with_menu_hint: bool = True) -> tuple[str, list[MessageEntity]]:
     """Живое приветствие IDera без перечня разделов."""
     blue_id, blue = IDERA_EMOJI["blue"]
     star_id, star = IDERA_EMOJI["star"]
@@ -34,9 +34,12 @@ def welcome_message() -> tuple[str, list[MessageEntity]]:
     text = (
         f"{blue} Привет. Это {brand}.\n\n"
         f"{star} Тихий ориентир, когда хочется ясности "
-        "и спокойного шага вперёд.\n\n"
-        f"Кнопки уже внизу. Выбирай то, что откликается — я рядом {rocket}"
+        "и спокойного шага вперёд."
     )
+    if with_menu_hint:
+        text += (
+            f"\n\nКнопки уже внизу. Выбирай то, что откликается — я рядом {rocket}"
+        )
 
     def entity(needle: str, etype: str, **kwargs) -> MessageEntity:
         idx = text.find(needle)
@@ -53,8 +56,11 @@ def welcome_message() -> tuple[str, list[MessageEntity]]:
         entity(blue, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=blue_id),
         entity(brand, MessageEntity.BOLD),
         entity(star, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=star_id),
-        entity(rocket, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=rocket_id),
     ]
+    if with_menu_hint:
+        entities.append(
+            entity(rocket, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=rocket_id)
+        )
     return text, entities
 
 # --- Button labels ---

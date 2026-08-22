@@ -236,6 +236,7 @@ def set_consent(context: ContextTypes.DEFAULT_TYPE, *, accepted: bool) -> None:
 def keyboard_for(screen: str):
     return {
         "main": menus.main_keyboard(),
+        "consent": menus.consent_keyboard(),
         "business": menus.business_keyboard(),
         "about": menus.about_keyboard(),
         "partners": menus.partners_keyboard(),
@@ -321,29 +322,37 @@ async def send_idera_stickers(bot, chat_id: int) -> None:
             break
 
 
-async def send_consent_flow(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def send_consent_flow(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    *,
+    include_pdf: bool | None = None,
+) -> None:
     """Показать PDF согласия и кнопки подтверждения."""
     if not update.message or not update.effective_chat:
         return
     chat_id = update.effective_chat.id
+    if include_pdf is None:
+        include_pdf = screen_of(context) != "consent"
     set_screen(context, "consent")
 
-    if CONSENT_PDF.exists():
-        payload = CONSENT_PDF.read_bytes()
+    if include_pdf:
+        if CONSENT_PDF.exists():
+            payload = CONSENT_PDF.read_bytes()
 
-        async def _send_pdf():
-            return await update.message.reply_document(
-                document=InputFile(
-                    BytesIO(payload),
-                    filename="Согласие на обработку персональных данных.pdf",
-                ),
-                caption="📄 Согласие на обработку персональных данных",
-            )
+            async def _send_pdf():
+                return await update.message.reply_document(
+                    document=InputFile(
+                        BytesIO(payload),
+                        filename="Согласие на обработку персональных данных.pdf",
+                    ),
+                    caption="📄 Согласие на обработку персональных данных",
+                )
 
-        sent = await _tg_retry(_send_pdf)
-        track_message(chat_id, sent.message_id)
-    else:
-        logger.warning("Файл согласия не найден: %s", CONSENT_PDF)
+            sent = await _tg_retry(_send_pdf)
+            track_message(chat_id, sent.message_id)
+        else:
+            logger.warning("Файл согласия не найден: %s", CONSENT_PDF)
 
     sent = await _tg_retry(
         lambda: update.message.reply_text(
@@ -356,31 +365,44 @@ async def send_consent_flow(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     track_message(chat_id, sent.message_id)
 
 
-async def send_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    set_screen(context, "main")
+async def send_welcome(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    *,
+    with_menu: bool = True,
+) -> None:
+    if with_menu:
+        set_screen(context, "main")
     if not update.message or not update.effective_chat:
         return
     chat_id = update.effective_chat.id
-    markup = menus.main_keyboard()
-    text, entities = menus.welcome_message()
+    markup = menus.main_keyboard() if with_menu else ReplyKeyboardRemove()
+    text, entities = menus.welcome_message(with_menu_hint=with_menu)
 
     if WELCOME_IMAGE.exists():
-        with WELCOME_IMAGE.open("rb") as photo:
-            sent = await update.message.reply_photo(
-                photo=InputFile(photo, filename="welcome.png"),
+        payload = WELCOME_IMAGE.read_bytes()
+
+        async def _send_photo():
+            return await update.message.reply_photo(
+                photo=InputFile(BytesIO(payload), filename="welcome.png"),
                 caption=text,
                 caption_entities=entities,
                 reply_markup=markup,
             )
+
+        sent = await _tg_retry(_send_photo)
         track_message(chat_id, sent.message_id)
         kept = [e.type for e in (sent.caption_entities or [])]
     else:
-        sent = await update.message.reply_text(
-            text,
-            entities=entities,
-            reply_markup=markup,
-            disable_web_page_preview=True,
-        )
+        async def _send_text():
+            return await update.message.reply_text(
+                text,
+                entities=entities,
+                reply_markup=markup,
+                disable_web_page_preview=True,
+            )
+
+        sent = await _tg_retry(_send_text)
         track_message(chat_id, sent.message_id)
         kept = [e.type for e in (sent.entities or [])]
 
@@ -540,16 +562,21 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     context.user_data.pop("consent_blocked", None)
     if user_has_consent(context, uid):
-        await send_welcome(update, context)
+        await send_welcome(update, context, with_menu=True)
         return
 
     context.user_data.pop("consent_given", None)
-    await send_consent_flow(update, context)
+    await send_welcome(update, context, with_menu=False)
+    await send_consent_flow(update, context, include_pdf=True)
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message and update.effective_chat:
         track_message(update.effective_chat.id, update.message.message_id)
+    user = update.effective_user
+    if not user_has_consent(context, user.id if user else None):
+        await send_consent_flow(update, context)
+        return
     await reply_html(
         update,
         "ℹ️ <b>Команды</b>\n"
@@ -700,12 +727,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             username=user.username if user else None,
             first_name=user.first_name if user else None,
         )
-        await reply_html(
-            update,
-            menus.CONSENT_ACCEPTED_TEXT,
-            context,
-            screen="main",
-        )
+        await send_welcome(update, context, with_menu=True)
         return
 
     if text == menus.BTN_CONSENT_NO:
