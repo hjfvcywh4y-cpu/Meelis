@@ -344,9 +344,8 @@ async def send_consent_flow(
                 return await update.message.reply_document(
                     document=InputFile(
                         BytesIO(payload),
-                        filename="Согласие на обработку персональных данных.pdf",
+                        filename=menus.CONSENT_PDF_FILENAME,
                     ),
-                    caption="📄 Согласие на обработку персональных данных",
                 )
 
             sent = await _tg_retry(_send_pdf)

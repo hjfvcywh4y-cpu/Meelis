@@ -281,7 +281,8 @@ CONSENT_ACCEPTED_TEXT = (
     "Выберите раздел в главном меню 👇"
 )
 
-CONSENT_PDF = "consent_pd.pdf"
+CONSENT_PDF = "Soglasie_na_obrabotku_personalnyh_dannyh.pdf"
+CONSENT_PDF_FILENAME = "Согласие на обработку персональных данных.pdf"
 
 WELCOME_CAPTION = (
     f"{idera('blue')} Привет. Это <b>IDera Helper</b>.\n\n"

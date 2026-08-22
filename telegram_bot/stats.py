@@ -10,7 +10,10 @@ from threading import Lock
 
 _lock = Lock()
 _path = Path(os.getenv("STATS_PATH", "data/stats.json"))
-_consent_document = os.getenv("CONSENT_DOCUMENT", "consent_pd.pdf")
+_consent_document = os.getenv(
+    "CONSENT_DOCUMENT",
+    "Согласие на обработку персональных данных.pdf",
+)
 
 
 def _now() -> str:
