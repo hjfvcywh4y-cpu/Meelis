@@ -3,11 +3,15 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import sys
 from collections import defaultdict, deque
+from collections.abc import Awaitable, Callable
+from io import BytesIO
 from pathlib import Path
+from typing import TypeVar
 
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
@@ -19,6 +23,7 @@ from telegram import (
     Update,
 )
 from telegram.constants import ChatAction, ParseMode
+from telegram.error import NetworkError, TimedOut
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -26,11 +31,14 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
+from telegram.request import HTTPXRequest
 
 import bad_quiz
 import menus
 import visitka
 from stats import admin_ids, record_user, snapshot
+
+T = TypeVar("T")
 
 load_dotenv()
 
@@ -221,6 +229,28 @@ def keyboard_for(screen: str):
     }.get(screen, menus.main_keyboard())
 
 
+async def _tg_retry(
+    factory: Callable[[], Awaitable[T]],
+    *,
+    attempts: int = 3,
+) -> T:
+    """Retry Telegram API calls on transient network timeouts."""
+    last: Exception | None = None
+    for i in range(attempts):
+        try:
+            return await factory()
+        except (TimedOut, NetworkError) as exc:
+            last = exc
+            logger.warning(
+                "Telegram timeout/network (%s/%s): %s", i + 1, attempts, exc
+            )
+            if i + 1 >= attempts:
+                break
+            await asyncio.sleep(1.5 * (i + 1))
+    assert last is not None
+    raise last
+
+
 async def reply_html(
     update: Update,
     text: str,
@@ -234,11 +264,13 @@ async def reply_html(
     chat_id = update.effective_chat.id if update.effective_chat else None
     chunks = split_message(text)
     for i, chunk in enumerate(chunks):
-        sent = await update.message.reply_text(
-            chunk,
-            parse_mode=ParseMode.HTML,
-            reply_markup=markup if i == len(chunks) - 1 else None,
-            disable_web_page_preview=True,
+        sent = await _tg_retry(
+            lambda c=chunk, last=(i == len(chunks) - 1): update.message.reply_text(
+                c,
+                parse_mode=ParseMode.HTML,
+                reply_markup=markup if last else None,
+                disable_web_page_preview=True,
+            )
         )
         if chat_id:
             track_message(chat_id, sent.message_id)
@@ -312,17 +344,19 @@ async def send_document_for_button(update: Update, button: str) -> None:
             f"{caption}\n\nФайл ещё не загружен. Скоро добавим PDF."
         )
         return
-    with path.open("rb") as doc:
-        caption_text = caption
-        if button not in menus.FINAL_DOCS:
-            caption_text = f"{caption}\n\n⚠️ Пока это черновик — заменим на финальный PDF."
-        sent = await update.message.reply_document(
-            document=InputFile(
-                doc,
-                filename=menus.DOC_DOWNLOAD_NAMES.get(button, filename),
-            ),
+    caption_text = caption
+    if button not in menus.FINAL_DOCS:
+        caption_text = f"{caption}\n\n⚠️ Пока это черновик — заменим на финальный PDF."
+    payload = path.read_bytes()
+    download_name = menus.DOC_DOWNLOAD_NAMES.get(button, filename)
+
+    async def _send():
+        return await update.message.reply_document(
+            document=InputFile(BytesIO(payload), filename=download_name),
             caption=caption_text,
         )
+
+    sent = await _tg_retry(_send)
     if update.effective_chat:
         track_message(update.effective_chat.id, sent.message_id)
 
@@ -397,18 +431,21 @@ async def handle_visitka_flow(
                 phone=data["phone"],
                 telegram=username,
             )
-            with path.open("rb") as doc:
-                sent = await update.message.reply_document(
-                    document=InputFile(
-                        doc,
-                        filename=f"IDera_vizitka_{username}.pdf",
-                    ),
-                    caption=(
-                        f"💳 Визитка для {data['name']}\n"
-                        f"✈️ @{username} · {data['phone']}"
-                    ),
+            payload = path.read_bytes()
+            caption = (
+                f"💳 Визитка для {data['name']}\n"
+                f"✈️ @{username} · {data['phone']}"
+            )
+            filename = f"IDera_vizitka_{username}.pdf"
+
+            async def _send_visitka():
+                return await update.message.reply_document(
+                    document=InputFile(BytesIO(payload), filename=filename),
+                    caption=caption,
                     reply_markup=menus.business_tools_keyboard(),
                 )
+
+            sent = await _tg_retry(_send_visitka)
             if update.effective_chat:
                 track_message(update.effective_chat.id, sent.message_id)
         except Exception:
@@ -749,7 +786,28 @@ def main() -> None:
     if get_groq_client() is not None:
         providers.append(f"groq:{GROQ_MODEL}")
 
-    app = Application.builder().token(token).post_init(post_init).build()
+    request = HTTPXRequest(
+        connection_pool_size=8,
+        connect_timeout=30.0,
+        read_timeout=30.0,
+        write_timeout=60.0,
+        pool_timeout=30.0,
+    )
+    get_updates_request = HTTPXRequest(
+        connection_pool_size=4,
+        connect_timeout=30.0,
+        read_timeout=30.0,
+        write_timeout=30.0,
+        pool_timeout=30.0,
+    )
+    app = (
+        Application.builder()
+        .token(token)
+        .request(request)
+        .get_updates_request(get_updates_request)
+        .post_init(post_init)
+        .build()
+    )
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("menu", menu_command))
