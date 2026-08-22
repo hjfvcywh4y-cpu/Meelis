@@ -435,25 +435,44 @@ TRACK_TEXT = "Выбери цель → пройди маршрут → сдел
 VIDEO_WIZARD_URL = "https://idera-video-wizard.vercel.app"
 BTN_VIDEO_LAUNCH = "🚀 Запустить"
 
-VIDEO_TRACK_TEXT = (
-    "Сними видео о продукте за 30 секунд 📱\n\n"
-    "Камеру включил и всё забыл? 😬\n"
-    "Не знаешь, что сказать и куда смотреть?\n\n"
-    "Мы уже собрали маршрут:\n\n"
-    "✨ выбери продукт\n"
-    "📝 получи готовую структуру\n"
-    "👀 читай текст с телесуфлёра\n"
-    "🎥 запиши ролик по шагам\n\n"
-    "✅ Результат: твоё готовое видео о продукте.\n\n"
-    "Не идеальное.\n"
-    "Не «когда-нибудь».\n"
-    "А снятое сегодня. 🔥\n\n"
-    "🎯 Задача: пройти трек и записать 1 ролик.\n\n"
-    "⏱️ Несколько минут\n"
-    "📱 Только телефон\n"
-    "🚀 На выходе — готовое действие\n\n"
-    "💙 IDERA | Сила партнёра"
-)
+
+def video_track_message() -> tuple[str, list[MessageEntity]]:
+    """Короткий текст карточки трека с фирменными эмодзи IDera."""
+    star_id, star = IDERA_EMOJI["star"]
+    check_id, check = IDERA_EMOJI["check"]
+    blue_id, blue = IDERA_EMOJI["blue"]
+    text = (
+        "Сними видео о продукте за 30 секунд 📱\n\n"
+        "Камеру включил и всё забыл? 😬\n"
+        "Не знаешь, что сказать и куда смотреть?\n\n"
+        "Мы уже собрали маршрут:\n\n"
+        f"{star} выбери продукт\n"
+        "📝 получи готовую структуру\n"
+        "👀 читай текст с телесуфлёра\n"
+        "🎥 запиши ролик по шагам\n\n"
+        f"{check} Результат: твоё готовое видео о продукте\n\n"
+        f"{blue} IDERA | Сила партнёра"
+    )
+
+    def entity(needle: str, etype: str, **kwargs) -> MessageEntity:
+        idx = text.find(needle)
+        if idx < 0:
+            raise ValueError(f"video track text missing {needle!r}")
+        return MessageEntity(
+            type=etype,
+            offset=_utf16_len(text[:idx]),
+            length=_utf16_len(needle),
+            **kwargs,
+        )
+
+    return text, [
+        entity(star, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=star_id),
+        entity(check, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=check_id),
+        entity(blue, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=blue_id),
+    ]
+
+
+VIDEO_TRACK_TEXT = video_track_message()[0]
 
 VISITKA_ASK_NAME = (
     "💳 <b>Визитка</b>\n\n"

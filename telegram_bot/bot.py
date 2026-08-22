@@ -584,6 +584,7 @@ async def send_video_track(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     set_screen(context, "track")
     chat_id = update.effective_chat.id
     markup = video_launch_keyboard()
+    caption, entities = menus.video_track_message()
 
     if VIDEO_TRACK_IMAGE.exists():
         payload = VIDEO_TRACK_IMAGE.read_bytes()
@@ -591,7 +592,8 @@ async def send_video_track(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         async def _send_photo():
             return await update.message.reply_photo(
                 photo=InputFile(BytesIO(payload), filename="video_track.png"),
-                caption=menus.VIDEO_TRACK_TEXT,
+                caption=caption,
+                caption_entities=entities,
                 reply_markup=markup,
             )
 
@@ -601,7 +603,8 @@ async def send_video_track(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     sent = await _tg_retry(
         lambda: update.message.reply_text(
-            menus.VIDEO_TRACK_TEXT,
+            caption,
+            entities=entities,
             reply_markup=markup,
         )
     )
