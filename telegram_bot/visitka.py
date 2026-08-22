@@ -13,12 +13,13 @@ from PIL import Image, ImageDraw, ImageFont
 TEMPLATE = Path(__file__).resolve().parent / "docs" / "IDERA_vizitka.pdf"
 
 # Координаты на нативном растре шаблона (1448×1086).
-NAME_XY = (810, 378)
-TITLE_XY = (810, 428)
-TG_XY = (900, 494)  # центр по вертикали у иконки Telegram
-PHONE_XY = (900, 574)  # центр по вертикали у иконки телефона
-TEXT_MAX_X = 1040  # не заходить за вертикальный разделитель
-QR_BOX = (1125, 365, 1335, 575)  # внутренность скруглённой рамки QR
+# Чистый бланк без иконок: текст столбиком слева, QR в рамке справа.
+NAME_XY = (800, 360)
+TITLE_XY = (800, 420)
+TG_XY = (800, 500)
+PHONE_XY = (800, 560)
+TEXT_MAX_X = 1090  # не заходить в зону QR
+QR_BOX = (1135, 370, 1315, 550)  # внутренность скруглённой рамки QR
 
 NAME_COLOR = (25, 45, 85)
 TITLE_COLOR = (90, 140, 200)
@@ -120,9 +121,9 @@ def build_visitka_pdf(*, name: str, phone: str, telegram: str) -> Path:
     draw.text(
         TITLE_XY, "Партнёр IDERA", font=title_font, fill=TITLE_COLOR, anchor="ls"
     )
-    draw.text(TG_XY, tg_label, font=contact_font, fill=CONTACT_COLOR, anchor="lm")
+    draw.text(TG_XY, tg_label, font=contact_font, fill=CONTACT_COLOR, anchor="ls")
     draw.text(
-        PHONE_XY, phone_n, font=phone_font, fill=CONTACT_COLOR, anchor="lm"
+        PHONE_XY, phone_n, font=phone_font, fill=CONTACT_COLOR, anchor="ls"
     )
 
     qr_bg = im.getpixel(
