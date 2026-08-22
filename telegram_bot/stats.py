@@ -10,6 +10,10 @@ from threading import Lock
 
 _lock = Lock()
 _path = Path(os.getenv("STATS_PATH", "data/stats.json"))
+_consent_document = os.getenv(
+    "CONSENT_DOCUMENT",
+    "Согласие на обработку персональных данных.pdf",
+)
 
 
 def _now() -> str:
@@ -70,6 +74,7 @@ def record_consent(
         row["last_seen"] = _now()
         row["consent_given"] = accepted
         row["consent_at"] = _now()
+        row["consent_document"] = _consent_document
         if username:
             row["username"] = username
         if first_name:
@@ -119,12 +124,69 @@ def snapshot() -> dict:
     starts = sum(int(u.get("starts", 0)) for u in users.values())
     messages = sum(int(u.get("messages", 0)) for u in users.values())
     callbacks = sum(int(u.get("callbacks", 0)) for u in users.values())
+    consented = 0
+    declined = 0
+    pending = 0
+    consents: list[dict] = []
+    for uid, row in users.items():
+        if "consent_given" not in row:
+            pending += 1
+            continue
+        accepted = bool(row.get("consent_given"))
+        if accepted:
+            consented += 1
+        else:
+            declined += 1
+        consents.append(
+            {
+                "id": uid,
+                "username": row.get("username") or "",
+                "first_name": row.get("first_name") or "",
+                "accepted": accepted,
+                "at": row.get("consent_at") or "",
+                "document": row.get("consent_document") or _consent_document,
+            }
+        )
+    consents.sort(key=lambda r: r.get("at") or "", reverse=True)
     return {
         "unique_users": len(users),
         "starts": starts,
         "messages": messages,
         "callbacks": callbacks,
+        "consented": consented,
+        "declined": declined,
+        "pending": pending,
+        "consents": consents,
+        "stats_path": str(_path),
     }
+
+
+def get_owner_id() -> int | None:
+    with _lock:
+        data = _load()
+    raw = data.get("owner_id")
+    if isinstance(raw, int):
+        return raw
+    if isinstance(raw, str) and (raw.isdigit() or (raw.startswith("-") and raw[1:].isdigit())):
+        return int(raw)
+    return None
+
+
+def claim_owner(user_id: int | None) -> int | None:
+    """Первый, кто вызовет /stats, становится владельцем, если админы не заданы."""
+    if not user_id:
+        return get_owner_id()
+    with _lock:
+        data = _load()
+        current = data.get("owner_id")
+        if current:
+            try:
+                return int(current)
+            except (TypeError, ValueError):
+                return None
+        data["owner_id"] = user_id
+        _save(data)
+        return user_id
 
 
 def admin_ids() -> set[int]:

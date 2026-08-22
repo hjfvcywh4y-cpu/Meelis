@@ -25,7 +25,7 @@ def _utf16_len(text: str) -> int:
     return len(text.encode("utf-16-le")) // 2
 
 
-def welcome_message() -> tuple[str, list[MessageEntity]]:
+def welcome_message(*, with_menu_hint: bool = True) -> tuple[str, list[MessageEntity]]:
     """Живое приветствие IDera без перечня разделов."""
     blue_id, blue = IDERA_EMOJI["blue"]
     star_id, star = IDERA_EMOJI["star"]
@@ -34,9 +34,12 @@ def welcome_message() -> tuple[str, list[MessageEntity]]:
     text = (
         f"{blue} Привет. Это {brand}.\n\n"
         f"{star} Тихий ориентир, когда хочется ясности "
-        "и спокойного шага вперёд.\n\n"
-        f"Кнопки уже внизу. Выбирай то, что откликается — я рядом {rocket}"
+        "и спокойного шага вперёд."
     )
+    if with_menu_hint:
+        text += (
+            f"\n\nКнопки уже внизу. Выбирай то, что откликается — я рядом {rocket}"
+        )
 
     def entity(needle: str, etype: str, **kwargs) -> MessageEntity:
         idx = text.find(needle)
@@ -53,8 +56,11 @@ def welcome_message() -> tuple[str, list[MessageEntity]]:
         entity(blue, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=blue_id),
         entity(brand, MessageEntity.BOLD),
         entity(star, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=star_id),
-        entity(rocket, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=rocket_id),
     ]
+    if with_menu_hint:
+        entities.append(
+            entity(rocket, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=rocket_id)
+        )
     return text, entities
 
 # --- Button labels ---
@@ -74,7 +80,14 @@ BTN_PVZ = "📦 Открыть ПВЗ"
 BTN_PARTNERS = "🤝 Материалы для партнеров"
 BTN_BUSINESS_TOOLS = "🛠 Бизнес-инструменты"
 BTN_VISITKA = "💳 Визитка"
+BTN_TRACK = "🎯 Треки"
+BTN_VIDEO_30S = "🎥 Как снять видео за 30 секунд"
 BTN_PARTNERS_PDF = "📄 Материалы"
+BTN_PARTNER_SYSTEM = "📋 Система работы партнёров"
+BTN_STICKERS = "Stickers"
+BTN_EMOJI = "Emoji"
+BTN_STICKER_ETG = "STICKER.ETG"
+BTN_EMOD_ETG = "EMOD.ETG"
 BTN_AWARDS = "🏆 Номинации и лауреатства"
 BTN_REWARDS = "💰 Система вознаграждений"
 
@@ -105,13 +118,7 @@ BTN_FOCUS = "🎯 Focus"
 BTN_CONSENT_YES = "✅ Согласен"
 BTN_CONSENT_NO = "❌ Не согласен"
 
-BTN_QUIZ_START = "✅ Начать подбор"
-BTN_QUIZ_SKIP = "1,3,5"
-BTN_QUIZ_SKIP2 = "2,4,6"
-BTN_QUIZ_SKIP3 = "1,2,3"
-BTN_QUIZ_SKIP4 = "4,5,6"
-BTN_QUIZ_SKIP5 = "5,6,7"
-BTN_QUIZ_SKIP6 = "1,4,7"
+BTN_QUIZ_START = "Начать подбор"
 
 
 def kb(rows: list[list[str]], *, one_time: bool = False) -> ReplyKeyboardMarkup:
@@ -164,10 +171,30 @@ def partners_keyboard() -> ReplyKeyboardMarkup:
     )
 
 
+def materials_keyboard() -> ReplyKeyboardMarkup:
+    return kb(
+        [
+            [BTN_PARTNER_SYSTEM],
+            [BTN_STICKERS, BTN_EMOJI],
+            [BTN_BACK],
+        ]
+    )
+
+
 def business_tools_keyboard() -> ReplyKeyboardMarkup:
     return kb(
         [
             [BTN_VISITKA],
+            [BTN_TRACK],
+            [BTN_BACK],
+        ]
+    )
+
+
+def track_keyboard() -> ReplyKeyboardMarkup:
+    return kb(
+        [
+            [BTN_VIDEO_30S],
             [BTN_BACK],
         ]
     )
@@ -244,15 +271,14 @@ def quiz_intro_keyboard() -> ReplyKeyboardMarkup:
     return kb([[BTN_QUIZ_START], [BTN_BACK]])
 
 
-def quiz_choice_keyboard() -> ReplyKeyboardMarkup:
-    return kb(
-        [
-            [BTN_QUIZ_SKIP, BTN_QUIZ_SKIP2],
-            [BTN_QUIZ_SKIP3, BTN_QUIZ_SKIP4],
-            [BTN_QUIZ_SKIP5, BTN_QUIZ_SKIP6],
-            [BTN_BACK],
-        ]
-    )
+def quiz_goals_keyboard() -> ReplyKeyboardMarkup:
+    return kb([[BTN_BACK]])
+
+
+def quiz_options_keyboard(options: list[str]) -> ReplyKeyboardMarkup:
+    rows = [[opt] for opt in options]
+    rows.append([BTN_BACK])
+    return kb(rows)
 
 
 CONSENT_TEXT = (
@@ -275,7 +301,8 @@ CONSENT_ACCEPTED_TEXT = (
     "Выберите раздел в главном меню 👇"
 )
 
-CONSENT_PDF = "consent_pd.pdf"
+CONSENT_PDF = "Soglasie_na_obrabotku_personalnyh_dannyh.pdf"
+CONSENT_PDF_FILENAME = "Согласие на обработку персональных данных.pdf"
 
 WELCOME_CAPTION = (
     f"{idera('blue')} Привет. Это <b>IDera Helper</b>.\n\n"
@@ -364,11 +391,81 @@ PARTNERS_TEXT = (
     "Выбери раздел 👇"
 )
 
+MATERIALS_TEXT = (
+    "📄 <b>Материалы</b>\n\n"
+    "Система работы партнёров, стикеры и эмодзи IDera.\n"
+    "Выбери, что нужно 👇"
+)
+
+STICKER_PACK_NAME = "IDera3"
+STICKER_PACK_URL = "https://t.me/addstickers/IDera3"
+STICKER_PACK_TEXT = (
+    "✨ <b>Стикеры IDera</b>\n\n"
+    "Набор для переписок и сторис.\n"
+    f'<a href="{STICKER_PACK_URL}">Добавить себе</a>\n'
+    f"{STICKER_PACK_URL}"
+)
+
+EMOJI_PACK_NAME = IDERA_PACK
+EMOJI_PACK_URL = "https://t.me/addemoji/IDera"
+EMOJI_PACK_TEXT = (
+    "✨ <b>Эмодзи IDera</b>\n\n"
+    "Кастомные эмодзи для сообщений.\n"
+    f'<a href="{EMOJI_PACK_URL}">Добавить себе</a>\n'
+    f"{EMOJI_PACK_URL}"
+)
+
+PACK_PREVIEW_LIMIT = 6
+
 BUSINESS_TOOLS_TEXT = (
     "🛠 <b>Бизнес-инструменты</b>\n\n"
-    "Собери персональную визитку IDera.\n"
-    "Нажми «Визитка» 👇"
+    "Визитка и треки.\n"
+    "Выбери, с чего начать 👇"
 )
+
+TRACK_TEXT = "Выбери цель → пройди маршрут → сделай."
+
+VIDEO_WIZARD_URL = "https://idera-video-wizard.vercel.app"
+BTN_VIDEO_LAUNCH = "🚀 Запустить"
+
+
+def video_track_message() -> tuple[str, list[MessageEntity]]:
+    """Короткий текст карточки трека с фирменными эмодзи IDera."""
+    star_id, star = IDERA_EMOJI["star"]
+    check_id, check = IDERA_EMOJI["check"]
+    blue_id, blue = IDERA_EMOJI["blue"]
+    text = (
+        "Сними видео о продукте за 30 секунд 📱\n\n"
+        "Камеру включил и всё забыл? 😬\n"
+        "Не знаешь, что сказать и куда смотреть?\n\n"
+        "Мы уже собрали маршрут:\n\n"
+        f"{star} выбери продукт\n"
+        "📝 получи готовую структуру\n"
+        "👀 читай текст с телесуфлёра\n"
+        "🎥 запиши ролик по шагам\n\n"
+        f"{check} Результат: твоё готовое видео о продукте\n\n"
+        f"{blue} IDERA | Сила партнёра"
+    )
+
+    def entity(needle: str, etype: str, **kwargs) -> MessageEntity:
+        idx = text.find(needle)
+        if idx < 0:
+            raise ValueError(f"video track text missing {needle!r}")
+        return MessageEntity(
+            type=etype,
+            offset=_utf16_len(text[:idx]),
+            length=_utf16_len(needle),
+            **kwargs,
+        )
+
+    return text, [
+        entity(star, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=star_id),
+        entity(check, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=check_id),
+        entity(blue, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=blue_id),
+    ]
+
+
+VIDEO_TRACK_TEXT = video_track_message()[0]
 
 VISITKA_ASK_NAME = (
     "💳 <b>Визитка</b>\n\n"
@@ -471,7 +568,7 @@ DOC_CAPTIONS = {
     BTN_RELAX: "🌙 Relax",
     BTN_GLOW: "✨ Glow",
     BTN_FOCUS: "🎯 Focus",
-    BTN_PARTNERS_PDF: "🤝 Материалы для партнеров",
+    BTN_PARTNER_SYSTEM: "📋 Система работы партнёров",
     BTN_COMPANY_PRESENTATION: "🎞 Презентация компании IDera",
 }
 
@@ -487,7 +584,7 @@ DOC_FILES = {
     BTN_RELAX: "IDera_RELAX.pdf",
     BTN_GLOW: "IDera_GLOW.pdf",
     BTN_FOCUS: "IDera_FOCUS.pdf",
-    BTN_PARTNERS_PDF: "IDera_partners.pdf",
+    BTN_PARTNER_SYSTEM: "IDera_partners.pdf",
     BTN_COMPANY_PRESENTATION: "IDera_company.pdf",
 }
 
@@ -497,7 +594,7 @@ DOC_DOWNLOAD_NAMES = {
     BTN_RELAX: "IDera Relax.pdf",
     BTN_GLOW: "IDera Glow.pdf",
     BTN_FOCUS: "IDera Focus.pdf",
-    BTN_PARTNERS_PDF: "IDera материалы для партнеров.pdf",
+    BTN_PARTNER_SYSTEM: "IDera материалы для партнеров.pdf",
     BTN_COMPANY_PRESENTATION: "IDera презентация компании.pdf",
 }
 
@@ -508,7 +605,7 @@ FINAL_DOCS = {
     BTN_RELAX,
     BTN_GLOW,
     BTN_FOCUS,
-    BTN_PARTNERS_PDF,
+    BTN_PARTNER_SYSTEM,
     BTN_COMPANY_PRESENTATION,
 }
 
@@ -517,8 +614,10 @@ PARENT = {
     "business": "main",
     "about": "business",
     "partners": "business",
+    "materials": "partners",
     "business_tools": "partners",
     "visitka": "business_tools",
+    "track": "business_tools",
     "ip_self": "business",
     "self": "ip_self",
     "ip": "ip_self",
@@ -526,5 +625,6 @@ PARENT = {
     "product": "main",
     "presentation": "product",
     "quiz_intro": "main",
-    "quiz": "quiz_intro",
+    "quiz_goals": "quiz_intro",
+    "quiz_step": "quiz_goals",
 }
