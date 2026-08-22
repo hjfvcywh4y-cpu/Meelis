@@ -29,6 +29,7 @@ from telegram.ext import (
 
 import bad_quiz
 import menus
+import visitka
 from stats import admin_ids, record_user, snapshot
 
 load_dotenv()
@@ -44,7 +45,6 @@ ASSETS = BASE_DIR / "assets"
 DOCS = BASE_DIR / "docs"
 WELCOME_IMAGE = ASSETS / "welcome.png"
 CATALOG_IMAGE = ASSETS / "catalog.png"
-VISITKA_IMAGE = ASSETS / "visitka.png"
 
 GEMINI_BASE_URL = os.getenv(
     "GEMINI_BASE_URL",
@@ -209,6 +209,7 @@ def keyboard_for(screen: str):
         "about": menus.about_keyboard(),
         "partners": menus.partners_keyboard(),
         "business_tools": menus.business_tools_keyboard(),
+        "visitka": menus.visitka_keyboard(),
         "ip_self": menus.ip_self_keyboard(),
         "self": menus.self_employed_keyboard(),
         "ip": menus.ip_keyboard(),
@@ -345,31 +346,87 @@ async def send_catalog(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     await reply_html(update, menus.CATALOG_TEXT, context, screen="product")
 
 
-async def send_asset_photo(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
-    *,
-    path: Path,
-    filename: str,
-    caption: str,
-    screen: str,
-) -> None:
-    set_screen(context, screen)
-    if not update.message:
-        return
-    markup = keyboard_for(screen)
-    if path.exists():
-        with path.open("rb") as photo:
-            sent = await update.message.reply_photo(
-                photo=InputFile(photo, filename=filename),
-                caption=caption,
-                parse_mode=ParseMode.HTML,
-                reply_markup=markup,
+async def start_visitka(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    context.user_data["visitka"] = {"step": "name"}
+    await reply_html(update, menus.VISITKA_ASK_NAME, context, screen="visitka")
+
+
+async def handle_visitka_flow(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, text: str
+) -> bool:
+    """Return True if the message was consumed by the visitka wizard."""
+    data = context.user_data.get("visitka")
+    if screen_of(context) != "visitka" or not isinstance(data, dict):
+        return False
+
+    step = data.get("step")
+    if step == "name":
+        name = visitka.normalize_name(text)
+        if not name:
+            await reply_html(update, menus.VISITKA_BAD_NAME, context, screen="visitka")
+            return True
+        data["name"] = name
+        data["step"] = "phone"
+        await reply_html(update, menus.VISITKA_ASK_PHONE, context, screen="visitka")
+        return True
+
+    if step == "phone":
+        phone = visitka.normalize_phone(text)
+        if not phone:
+            await reply_html(update, menus.VISITKA_BAD_PHONE, context, screen="visitka")
+            return True
+        data["phone"] = phone
+        data["step"] = "telegram"
+        await reply_html(update, menus.VISITKA_ASK_TELEGRAM, context, screen="visitka")
+        return True
+
+    if step == "telegram":
+        username = visitka.normalize_telegram(text)
+        if not username:
+            await reply_html(
+                update, menus.VISITKA_BAD_TELEGRAM, context, screen="visitka"
             )
-        if update.effective_chat:
-            track_message(update.effective_chat.id, sent.message_id)
-        return
-    await reply_html(update, caption, context, screen=screen)
+            return True
+        data["telegram"] = username
+        data["step"] = "done"
+        await reply_html(update, menus.VISITKA_READY, context, screen="visitka")
+        path = None
+        try:
+            path = visitka.build_visitka_pdf(
+                name=data["name"],
+                phone=data["phone"],
+                telegram=username,
+            )
+            with path.open("rb") as doc:
+                sent = await update.message.reply_document(
+                    document=InputFile(
+                        doc,
+                        filename=f"IDera_vizitka_{username}.pdf",
+                    ),
+                    caption=(
+                        f"💳 Визитка для {data['name']}\n"
+                        f"✈️ @{username} · {data['phone']}"
+                    ),
+                    reply_markup=menus.business_tools_keyboard(),
+                )
+            if update.effective_chat:
+                track_message(update.effective_chat.id, sent.message_id)
+        except Exception:
+            logger.exception("visitka build failed")
+            await reply_html(
+                update,
+                "Не удалось собрать визитку. Попробуйте ещё раз позже.",
+                context,
+                screen="business_tools",
+            )
+        finally:
+            context.user_data.pop("visitka", None)
+            set_screen(context, "business_tools")
+            if path is not None:
+                path.unlink(missing_ok=True)
+        return True
+
+    return False
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -483,6 +540,8 @@ async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     current = screen_of(context)
+    if current == "visitka":
+        context.user_data.pop("visitka", None)
     parent = menus.PARENT.get(current, "main")
     texts = {
         "main": "🏠 Главное меню:",
@@ -531,10 +590,14 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     # Navigation buttons
     if text == menus.BTN_MAIN:
+        context.user_data.pop("visitka", None)
         await reply_html(update, "🏠 Главное меню:", context, screen="main")
         return
     if text == menus.BTN_BACK:
         await handle_back(update, context)
+        return
+
+    if await handle_visitka_flow(update, context, text):
         return
 
     if text == menus.BTN_BAD:
@@ -571,24 +634,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         )
         return
     if text == menus.BTN_VISITKA:
-        await send_asset_photo(
-            update,
-            context,
-            path=VISITKA_IMAGE,
-            filename="visitka.png",
-            caption=menus.VISITKA_CAPTION,
-            screen="business_tools",
-        )
-        return
-    if text == menus.BTN_TG_CARD:
-        await send_asset_photo(
-            update,
-            context,
-            path=VISITKA_IMAGE,
-            filename="visitka.png",
-            caption=menus.TG_CARD_CAPTION,
-            screen="business_tools",
-        )
+        await start_visitka(update, context)
         return
 
     if text == menus.BTN_SWITCH:

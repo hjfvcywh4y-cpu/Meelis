@@ -74,8 +74,7 @@ BTN_PVZ = "📦 Открыть ПВЗ"
 BTN_PARTNERS = "🤝 Материалы для партнеров"
 BTN_BUSINESS_TOOLS = "🛠 Бизнес-инструменты"
 BTN_VISITKA = "💳 Визитка"
-BTN_TG_CARD = "✈️ Telegram"
-BTN_PARTNERS_PDF = "📄 PDF-материалы"
+BTN_PARTNERS_PDF = "📄 Материалы"
 BTN_AWARDS = "🏆 Номинации и лауреатства"
 BTN_REWARDS = "💰 Система вознаграждений"
 
@@ -161,10 +160,14 @@ def partners_keyboard() -> ReplyKeyboardMarkup:
 def business_tools_keyboard() -> ReplyKeyboardMarkup:
     return kb(
         [
-            [BTN_VISITKA, BTN_TG_CARD],
+            [BTN_VISITKA],
             [BTN_BACK],
         ]
     )
+
+
+def visitka_keyboard() -> ReplyKeyboardMarkup:
+    return kb([[BTN_BACK]])
 
 
 def ip_self_keyboard() -> ReplyKeyboardMarkup:
@@ -334,18 +337,35 @@ PARTNERS_TEXT = (
 
 BUSINESS_TOOLS_TEXT = (
     "🛠 <b>Бизнес-инструменты</b>\n\n"
-    "Визитка и материалы для связи в Telegram.\n"
-    "Выбери инструмент 👇"
+    "Собери персональную визитку IDera.\n"
+    "Нажми «Визитка» 👇"
 )
 
-VISITKA_CAPTION = (
-    "💳 <b>Визитка IDera</b>\n\n"
-    "Пример макета 90×50 мм (лицо и оборот)."
+VISITKA_ASK_NAME = (
+    "💳 <b>Визитка</b>\n\n"
+    "Напишите <b>имя и фамилию</b>, как на визитке.\n"
+    "Например: <code>Анна Соколова</code>"
 )
 
-TG_CARD_CAPTION = (
-    "✈️ <b>Telegram на визитке</b>\n\n"
-    "На обороте — username, телефон и QR для связи."
+VISITKA_ASK_PHONE = (
+    "Теперь отправьте <b>номер телефона</b>.\n"
+    "Например: <code>+7 999 123 45 67</code>"
+)
+
+VISITKA_ASK_TELEGRAM = (
+    "И <b>Telegram</b> (username без ссылки).\n"
+    "Например: <code>@anna_idera</code> или <code>anna_idera</code>\n\n"
+    "Из него сделаем QR для связи."
+)
+
+VISITKA_BAD_NAME = "Не понял имя. Пришлите имя и фамилию текстом."
+VISITKA_BAD_PHONE = "Не похоже на телефон. Пример: <code>+7 999 123 45 67</code>"
+VISITKA_BAD_TELEGRAM = (
+    "Не похоже на Telegram-username. Пример: <code>@anna_idera</code>"
+)
+
+VISITKA_READY = (
+    "Готово! Собираю вашу визитку…"
 )
 
 AWARDS_TEXT = (
@@ -469,6 +489,7 @@ PARENT = {
     "about": "business",
     "partners": "business",
     "business_tools": "partners",
+    "visitka": "business_tools",
     "ip_self": "business",
     "self": "ip_self",
     "ip": "ip_self",
