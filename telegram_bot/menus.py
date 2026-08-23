@@ -425,7 +425,7 @@ BUSINESS_TOOLS_TEXT = (
 
 TRACK_TEXT = "Выбери цель → пройди маршрут → сделай."
 
-VIDEO_WIZARD_URL = "https://idera-video-wizard.vercel.app"
+VIDEO_WIZARD_URL = "https://video-creator-track.vercel.app"
 BTN_VIDEO_LAUNCH = "🚀 Запустить"
 
 
