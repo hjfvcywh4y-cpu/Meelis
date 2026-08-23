@@ -574,7 +574,7 @@ async def send_catalog(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 
 async def send_tracks(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обложка раздела «Треки»: картинка и короткий текст."""
+    """Обложка раздела IDera GO: картинка и короткий текст."""
     if not update.message or not update.effective_chat:
         return
     set_screen(context, "track")

@@ -80,8 +80,8 @@ BTN_PVZ = "📦 Открыть ПВЗ"
 BTN_PARTNERS = "🤝 Материалы для партнеров"
 BTN_BUSINESS_TOOLS = "🛠 Бизнес-инструменты"
 BTN_VISITKA = "💳 Визитка"
-BTN_TRACK = "🎯 Треки"
-BTN_VIDEO_30S = "🎥 Как снять видео за 30 секунд"
+BTN_TRACK = "IDera GO"
+BTN_VIDEO_30S = "GO снимать видео за 30 секунд"
 BTN_PARTNERS_PDF = "📄 Материалы"
 BTN_PARTNER_SYSTEM = "📋 Система работы партнёров"
 BTN_STICKERS = "Stickers"
@@ -419,7 +419,7 @@ PACK_PREVIEW_LIMIT = 6
 
 BUSINESS_TOOLS_TEXT = (
     "🛠 <b>Бизнес-инструменты</b>\n\n"
-    "Визитка и треки.\n"
+    "Визитка и IDera GO.\n"
     "Выбери, с чего начать 👇"
 )
 
