@@ -527,7 +527,7 @@ ARCHIVE_TEXT = (
     "и какую роль играет пищеварительная система.\n\n"
     "Длительность ≈ 1 час 07 мин.\n"
     "Смотреть запись:\n"
-    '<a href="https://t.me/ideraofficial/123">https://t.me/ideraofficial/123</a>'
+    '<a href="https://t.me/ideraofficial/124">https://t.me/ideraofficial/124</a>'
 )
 
 PRODUCT_TEXT = (
