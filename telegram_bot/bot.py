@@ -290,6 +290,7 @@ def keyboard_for(screen: str, context: ContextTypes.DEFAULT_TYPE | None = None):
         "business_tools": menus.business_tools_keyboard(),
         "track": menus.track_keyboard(),
         "visitka": menus.visitka_keyboard(),
+        "visitka_pick": menus.visitka_pick_keyboard(),
         "ip_self": menus.ip_self_keyboard(),
         "self": menus.self_employed_keyboard(),
         "ip": menus.ip_keyboard(),
@@ -649,16 +650,55 @@ async def send_video_track(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
 
 async def start_visitka(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    context.user_data["visitka"] = {"step": "name"}
-    await reply_html(update, menus.VISITKA_ASK_NAME, context, screen="visitka")
+    context.user_data["visitka"] = {"step": "pick"}
+    await reply_html(update, menus.VISITKA_PICK_TEXT, context, screen="visitka_pick")
+
+
+async def choose_visitka_template(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, template_id: str, button: str
+) -> None:
+    context.user_data["visitka"] = {"step": "name", "template_id": template_id}
+    set_screen(context, "visitka")
+    if not update.message or not update.effective_chat:
+        return
+    caption = f"Макет «{button}».\n\n{menus.VISITKA_ASK_NAME}"
+    markup = menus.visitka_keyboard()
+    try:
+        payload = visitka.preview_jpeg_bytes(template_id)
+    except Exception:
+        logger.exception("visitka preview failed")
+        await reply_html(update, caption, context, screen="visitka")
+        return
+
+    async def _send_preview():
+        return await update.message.reply_photo(
+            photo=InputFile(BytesIO(payload), filename=f"visitka_{template_id}.jpg"),
+            caption=caption,
+            parse_mode=ParseMode.HTML,
+            reply_markup=markup,
+        )
+
+    sent = await _tg_retry(_send_preview)
+    track_message(update.effective_chat.id, sent.message_id)
 
 
 async def handle_visitka_flow(
     update: Update, context: ContextTypes.DEFAULT_TYPE, text: str
 ) -> bool:
     """Return True if the message was consumed by the visitka wizard."""
+    screen = screen_of(context)
+    if screen == "visitka_pick":
+        template_id = menus.VISITKA_TEMPLATE_BUTTONS.get(text)
+        if template_id:
+            await choose_visitka_template(update, context, template_id, text)
+            return True
+        await reply_html(
+            update, menus.VISITKA_PICK_TEXT, context, screen="visitka_pick"
+        )
+        return True
+
     data = context.user_data.get("visitka")
-    if screen_of(context) != "visitka" or not isinstance(data, dict):
+    if screen != "visitka" or not isinstance(data, dict):
         return False
 
     step = data.get("step")
@@ -693,18 +733,20 @@ async def handle_visitka_flow(
         data["step"] = "done"
         await reply_html(update, menus.VISITKA_READY, context, screen="visitka")
         path = None
+        template_id = data.get("template_id") or visitka.TEMPLATE_QR
         try:
             path = visitka.build_visitka_pdf(
                 name=data["name"],
                 phone=data["phone"],
                 telegram=username,
+                template_id=template_id,
             )
             payload = path.read_bytes()
             caption = (
                 f"💳 Визитка для {data['name']}\n"
                 f"✈️ @{username} · {data['phone']}"
             )
-            filename = f"IDera_vizitka_{username}.pdf"
+            filename = f"IDera_vizitka_{template_id}_{username}.pdf"
 
             async def _send_visitka():
                 return await update.message.reply_document(
@@ -1034,7 +1076,7 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     if current in {"quiz_intro", "quiz_goals", "quiz_step"}:
         await handle_quiz_back(update, context)
         return
-    if current == "visitka":
+    if current in {"visitka", "visitka_pick"}:
         context.user_data.pop("visitka", None)
     parent = menus.PARENT.get(current, "main")
     texts = {
@@ -1049,6 +1091,7 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "quiz_intro": bad_quiz.INTRO,
         "events": menus.EVENTS_TEXT,
         "archive": menus.ARCHIVE_TEXT,
+        "visitka_pick": menus.VISITKA_PICK_TEXT,
         "product": menus.PRODUCT_TEXT,
     }
     text = texts.get(parent, "🏠 Главное меню:")

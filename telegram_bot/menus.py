@@ -80,6 +80,9 @@ BTN_PVZ = "📦 Открыть ПВЗ"
 BTN_PARTNERS = "🤝 Материалы для партнеров"
 BTN_BUSINESS_TOOLS = "🛠 Бизнес-инструменты"
 BTN_VISITKA = "💳 Визитка"
+BTN_VISITKA_QR = "С QR-кодом"
+BTN_VISITKA_LIGHT = "Светлая"
+BTN_VISITKA_BLUE = "Голубая"
 BTN_TRACK = "IDera GO"
 BTN_VIDEO_30S = "GO снимать видео за 30 секунд"
 BTN_PARTNERS_PDF = "📄 Материалы"
@@ -201,6 +204,17 @@ def track_keyboard() -> ReplyKeyboardMarkup:
 
 def visitka_keyboard() -> ReplyKeyboardMarkup:
     return kb([[BTN_BACK]])
+
+
+def visitka_pick_keyboard() -> ReplyKeyboardMarkup:
+    return kb(
+        [
+            [BTN_VISITKA_QR],
+            [BTN_VISITKA_LIGHT],
+            [BTN_VISITKA_BLUE],
+            [BTN_BACK],
+        ]
+    )
 
 
 def ip_self_keyboard() -> ReplyKeyboardMarkup:
@@ -465,8 +479,18 @@ def video_track_message() -> tuple[str, list[MessageEntity]]:
 
 VIDEO_TRACK_TEXT = video_track_message()[0]
 
-VISITKA_ASK_NAME = (
+VISITKA_PICK_TEXT = (
     "💳 <b>Визитка</b>\n\n"
+    "Выбери макет — пришлю превью, затем заполним твои данные."
+)
+
+VISITKA_TEMPLATE_BUTTONS = {
+    BTN_VISITKA_QR: "qr",
+    BTN_VISITKA_LIGHT: "light",
+    BTN_VISITKA_BLUE: "blue",
+}
+
+VISITKA_ASK_NAME = (
     "Напишите <b>имя и фамилию</b>, как на визитке.\n"
     "Например: <code>Анна Соколова</code>"
 )
@@ -656,7 +680,8 @@ PARENT = {
     "partners": "business",
     "materials": "partners",
     "business_tools": "partners",
-    "visitka": "business_tools",
+    "visitka_pick": "business_tools",
+    "visitka": "visitka_pick",
     "track": "business_tools",
     "ip_self": "business",
     "self": "ip_self",
