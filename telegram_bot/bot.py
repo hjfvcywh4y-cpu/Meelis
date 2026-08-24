@@ -330,6 +330,7 @@ async def reply_html(
     context: ContextTypes.DEFAULT_TYPE,
     *,
     screen: str | None = None,
+    preview: bool = False,
 ) -> None:
     if screen:
         set_screen(context, screen)
@@ -342,7 +343,7 @@ async def reply_html(
                 c,
                 parse_mode=ParseMode.HTML,
                 reply_markup=markup if last else None,
-                disable_web_page_preview=True,
+                disable_web_page_preview=not preview,
             )
         )
         if chat_id:
@@ -1206,7 +1207,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await reply_html(update, menus.UPCOMING_TEXT, context, screen="events")
         return
     if text == menus.BTN_ARCHIVE:
-        await reply_html(update, menus.ARCHIVE_TEXT, context, screen="events")
+        await reply_html(
+            update, menus.ARCHIVE_TEXT, context, screen="events", preview=True
+        )
         return
 
     if text == menus.BTN_PRODUCT:
