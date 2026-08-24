@@ -83,6 +83,7 @@ BTN_VISITKA = "💳 Визитка"
 BTN_VISITKA_QR = "С QR-кодом"
 BTN_VISITKA_LIGHT = "Модель 1"
 BTN_VISITKA_BLUE = "Модель 2"
+BTN_VISITKA_MODEL3 = "Модель 3"
 BTN_TRACK = "IDera GO"
 BTN_VIDEO_30S = "GO снимать видео за 30 секунд"
 BTN_PARTNERS_PDF = "📄 Материалы"
@@ -212,6 +213,7 @@ def visitka_pick_keyboard() -> ReplyKeyboardMarkup:
             [BTN_VISITKA_QR],
             [BTN_VISITKA_LIGHT],
             [BTN_VISITKA_BLUE],
+            [BTN_VISITKA_MODEL3],
             [BTN_BACK],
         ]
     )
@@ -488,6 +490,7 @@ VISITKA_TEMPLATE_BUTTONS = {
     BTN_VISITKA_QR: "qr",
     BTN_VISITKA_LIGHT: "light",
     BTN_VISITKA_BLUE: "blue",
+    BTN_VISITKA_MODEL3: "model3",
 }
 
 VISITKA_ASK_NAME = (

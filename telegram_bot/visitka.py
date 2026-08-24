@@ -16,12 +16,14 @@ DOCS = Path(__file__).resolve().parent / "docs"
 TEMPLATE_QR = "qr"
 TEMPLATE_LIGHT = "light"
 TEMPLATE_BLUE = "blue"
-TEMPLATE_IDS = (TEMPLATE_QR, TEMPLATE_LIGHT, TEMPLATE_BLUE)
+TEMPLATE_MODEL3 = "model3"
+TEMPLATE_IDS = (TEMPLATE_QR, TEMPLATE_LIGHT, TEMPLATE_BLUE, TEMPLATE_MODEL3)
 
 _FILES = {
     TEMPLATE_QR: DOCS / "IDERA_vizitka.pdf",
     TEMPLATE_LIGHT: DOCS / "IDERA_vizitka_light.jpg",
     TEMPLATE_BLUE: DOCS / "IDERA_vizitka_blue.jpg",
+    TEMPLATE_MODEL3: DOCS / "IDERA_vizitka_model3.jpg",
 }
 
 # Координаты на нативном растре QR-макета (1448×1086).
@@ -49,6 +51,11 @@ BLUE_PHONE_Y = 333
 BLUE_TG_Y = 359
 BLUE_MAX_W = 480
 BLUE_FILL = (25, 45, 85)
+
+# Модель 3: белые полосы под подписями на обороте (полный JPEG 1280×401).
+MODEL3_NAME_BOX = (706, 236, 1211, 260)
+MODEL3_CONTACT_BOX = (706, 310, 1211, 344)
+MODEL3_FILL = (30, 70, 120)
 
 _FONT_BOLD = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
 _FONT_REG = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
@@ -221,6 +228,27 @@ def _draw_centered(
     draw.text(((x0 + x1) / 2, (y0 + y1) / 2), text, font=font, fill=fill, anchor="mm")
 
 
+def _draw_contact_two_lines(
+    draw: ImageDraw.ImageDraw,
+    box: tuple[int, int, int, int],
+    phone: str,
+    telegram: str,
+    fill: tuple[int, int, int],
+    *,
+    max_size: int = 16,
+    dy: int = 8,
+) -> None:
+    x0, y0, x1, y1 = box
+    cx = (x0 + x1) / 2
+    cy = (y0 + y1) / 2
+    max_w = max(20, x1 - x0 - 12)
+    tg = f"@{telegram}"
+    phone_font = _fit_font(draw, phone, _FONT_REG, max_size, max_w)
+    tg_font = _fit_font(draw, tg, _FONT_REG, max_size, max_w)
+    draw.text((cx, cy - dy), phone, font=phone_font, fill=fill, anchor="mm")
+    draw.text((cx, cy + dy), tg, font=tg_font, fill=fill, anchor="mm")
+
+
 def _build_light_pdf(*, name: str, phone: str, telegram: str) -> Path:
     path = template_path(TEMPLATE_LIGHT)
     if not path.exists():
@@ -228,14 +256,20 @@ def _build_light_pdf(*, name: str, phone: str, telegram: str) -> Path:
     im = Image.open(path).convert("RGB")
     draw = ImageDraw.Draw(im)
     _draw_centered(draw, LIGHT_NAME_BOX, name, _FONT_BOLD, 22, LIGHT_FILL)
-    x0, y0, x1, y1 = LIGHT_CONTACT_BOX
-    cx = (x0 + x1) / 2
-    cy = (y0 + y1) / 2
-    max_w = max(20, x1 - x0 - 12)
-    phone_font = _fit_font(draw, phone, _FONT_REG, 16, max_w)
-    tg_font = _fit_font(draw, f"@{telegram}", _FONT_REG, 16, max_w)
-    draw.text((cx, cy - 8), phone, font=phone_font, fill=LIGHT_FILL, anchor="mm")
-    draw.text((cx, cy + 9), f"@{telegram}", font=tg_font, fill=LIGHT_FILL, anchor="mm")
+    _draw_contact_two_lines(draw, LIGHT_CONTACT_BOX, phone, telegram, LIGHT_FILL)
+    return _save_image_pdf(im)
+
+
+def _build_model3_pdf(*, name: str, phone: str, telegram: str) -> Path:
+    path = template_path(TEMPLATE_MODEL3)
+    if not path.exists():
+        raise FileNotFoundError(f"Нет шаблона визитки: {path}")
+    im = Image.open(path).convert("RGB")
+    draw = ImageDraw.Draw(im)
+    _draw_centered(draw, MODEL3_NAME_BOX, name, _FONT_BOLD, 20, MODEL3_FILL)
+    _draw_contact_two_lines(
+        draw, MODEL3_CONTACT_BOX, phone, telegram, MODEL3_FILL, max_size=14, dy=7
+    )
     return _save_image_pdf(im)
 
 
@@ -285,4 +319,6 @@ def build_visitka_pdf(
         return _build_light_pdf(name=full_name, phone=phone_n, telegram=username)
     if template_id == TEMPLATE_BLUE:
         return _build_blue_pdf(name=full_name, phone=phone_n, telegram=username)
+    if template_id == TEMPLATE_MODEL3:
+        return _build_model3_pdf(name=full_name, phone=phone_n, telegram=username)
     return _build_qr_pdf(name=full_name, phone=phone_n, telegram=username)
