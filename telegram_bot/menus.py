@@ -21,8 +21,34 @@ def idera(name: str) -> str:
     return f'<tg-emoji emoji-id="{emoji_id}">{fallback}</tg-emoji>'
 
 
+def idera_fallback(name: str) -> str:
+    """Юникод из пака IDera — для кнопок, где кастомные эмодзи недоступны."""
+    return IDERA_EMOJI[name][1]
+
+
 def _utf16_len(text: str) -> int:
     return len(text.encode("utf-16-le")) // 2
+
+
+def idera_entities(text: str, *names: str) -> list[MessageEntity]:
+    """Custom-emoji entities в порядке появления fallback-символов."""
+    entities: list[MessageEntity] = []
+    pos = 0
+    for name in names:
+        emoji_id, token = IDERA_EMOJI[name]
+        idx = text.find(token, pos)
+        if idx < 0:
+            raise ValueError(f"text missing IDera emoji {name!r} ({token!r})")
+        entities.append(
+            MessageEntity(
+                type=MessageEntity.CUSTOM_EMOJI,
+                offset=_utf16_len(text[:idx]),
+                length=_utf16_len(token),
+                custom_emoji_id=emoji_id,
+            )
+        )
+        pos = idx + len(token)
+    return entities
 
 
 def welcome_message(*, with_menu_hint: bool = True) -> tuple[str, list[MessageEntity]]:
@@ -70,7 +96,7 @@ BTN_EVENTS = "📅 Мероприятия"
 BTN_PRODUCT = "🛍 ПРОДУКТ"
 
 BTN_BACK = "⬅️ Назад"
-BTN_MAIN = "🏠 Главное меню"
+BTN_MAIN = f"{idera_fallback('blue')} Главное меню"
 
 BTN_IP_SELF = "📄 ИП и Самозанятость"
 BTN_ABOUT = "ℹ️ О компании"
@@ -84,8 +110,11 @@ BTN_VISITKA_QR = "С QR-кодом"
 BTN_VISITKA_LIGHT = "Модель 1"
 BTN_VISITKA_BLUE = "Модель 2"
 BTN_VISITKA_MODEL3 = "Модель 3"
-BTN_TRACK = "IDera GO"
-BTN_VIDEO_30S = "GO снимать видео за 30 секунд"
+BTN_TRACK = f"{idera_fallback('blue')} IDera GO {idera_fallback('blue')}"
+BTN_VIDEO_30S = f"{idera_fallback('rocket')} GO снимать видео за 30 секунд"
+BTN_VIDEO_LAUNCH = f"{idera_fallback('rocket')} Запустить"
+TRACK_BUTTON_ALIASES = frozenset({"IDera GO", BTN_TRACK})
+VIDEO_30S_ALIASES = frozenset({"GO снимать видео за 30 секунд", BTN_VIDEO_30S})
 BTN_PARTNERS_PDF = "📄 Материалы"
 BTN_PARTNER_SYSTEM = "📋 Система работы партнёров"
 BTN_STICKERS = "Stickers"
@@ -118,10 +147,11 @@ BTN_RELAX = "🌙 Relax"
 BTN_GLOW = "✨ Glow"
 BTN_FOCUS = "🎯 Focus"
 
-BTN_CONSENT_YES = "✅ Согласен"
+BTN_CONSENT_YES = f"{idera_fallback('check')} Согласен"
 BTN_CONSENT_NO = "❌ Не согласен"
 
-BTN_QUIZ_START = "Начать подбор"
+BTN_QUIZ_START = f"{idera_fallback('rocket')} Начать подбор"
+QUIZ_START_ALIASES = frozenset({"Начать подбор", BTN_QUIZ_START})
 
 
 def kb(rows: list[list[str]], *, one_time: bool = False) -> ReplyKeyboardMarkup:
@@ -296,7 +326,7 @@ def quiz_options_keyboard(options: list[str]) -> ReplyKeyboardMarkup:
 
 
 CONSENT_TEXT = (
-    "📄 <b>Согласие на обработку персональных данных</b>\n\n"
+    f"{idera('check')} <b>Согласие на обработку персональных данных</b>\n\n"
     "Для использования бота необходимо ваше согласие на обработку персональных "
     "данных в соответствии с законодательством Российской Федерации.\n\n"
     "Мы обрабатываем ваши данные исключительно для предоставления функций бота "
@@ -311,8 +341,8 @@ CONSENT_DECLINED_TEXT = (
 )
 
 CONSENT_ACCEPTED_TEXT = (
-    "Спасибо! Согласие получено.\n\n"
-    "Выберите раздел в главном меню 👇"
+    f"{idera('check')} Спасибо! Согласие получено.\n\n"
+    f"Выберите раздел в главном меню {idera('blue')}"
 )
 
 CONSENT_PDF = "Soglasie_na_obrabotku_personalnyh_dannyh.pdf"
@@ -325,33 +355,35 @@ WELCOME_CAPTION = (
     f"Кнопки уже внизу. Выбирай то, что откликается — я рядом {idera('rocket')}"
 )
 
+MAIN_TEXT = f"{idera('blue')} <b>Главное меню</b>"
+
 BUSINESS_TEXT = (
-    "💼 <b>Бизнес</b>\n\n"
+    f"{idera('blue')} <b>Бизнес</b>\n\n"
     "Здесь всё для партнёров: оформление, материалы, вознаграждения и рост.\n"
-    "Выбери нужный раздел 👇"
+    f"Выбери нужный раздел {idera('blue')}"
 )
 
 IP_SELF_TEXT = (
-    "📄 <b>ИП и Самозанятость</b>\n\n"
+    f"{idera('blue')} <b>ИП и Самозанятость</b>\n\n"
     "Выбери формат работы — открою нужные документы и инструкции."
 )
 
 SELF_TEXT = (
-    "👤 <b>Самозанятость</b>\n\n"
+    f"{idera('blue')} <b>Самозанятость</b>\n\n"
     "Документы и шаблоны для самозанятых партнёров.\n"
     "Нажми кнопку — пришлю PDF (пока черновик, позже заменим на финальный файл)."
 )
 
 IP_TEXT = (
-    "🏢 <b>ИП</b>\n\n"
+    f"{idera('blue')} <b>ИП</b>\n\n"
     "Документы, заявление, оферта и банковские условия для открытия ИП.\n"
     "Нажми кнопку — пришлю PDF."
 )
 
 ABOUT_TEXT = (
-    "ℹ️ <b>О компании</b>\n\n"
+    f"{idera('blue')} <b>О компании</b>\n\n"
     "Узнай больше об IDera и посмотри презентацию.\n"
-    "Выбери раздел 👇"
+    f"Выбери раздел {idera('blue')}"
 )
 
 ABOUT_US_TEXT = (
@@ -359,7 +391,7 @@ ABOUT_US_TEXT = (
     "вместе с партнёрами.</b>\n\n"
     "<b>IDERA объединяет продукт, технологии, предпринимательство и развитие "
     "человека в одну систему.</b>\n\n"
-    "💎 <b>Продукты IDERA — часть ежедневной системы заботы о себе.</b>\n"
+    f"{idera('star')} <b>Продукты IDERA — часть ежедневной системы заботы о себе.</b>\n"
     "Сегодня в экосистеме уже развиваются направления "
     "<b>RELAX, DETOX, GLOW, FOCUS и новые продукты, каждый со своей задачей "
     "и своим местом в повседневной жизни.</b>\n\n"
@@ -374,7 +406,7 @@ ABOUT_US_TEXT = (
     "· цифровые инструменты для партнёров и наставников;\n"
     "· новые сервисы, контент и технологии, которые помогают сделать "
     "следующий шаг.\n\n"
-    "🌱 <b>Мы растём. И вместе с ростом меняется сама IDERA.</b>\n\n"
+    f"{idera('check')} <b>Мы растём. И вместе с ростом меняется сама IDERA.</b>\n\n"
     "Мы запускаем новые продукты.\n"
     "Развиваем цифровую платформу.\n"
     "Создаём инструменты для партнёров.\n"
@@ -385,7 +417,7 @@ ABOUT_US_TEXT = (
     "Наша цель — чтобы у каждого было понятно:\n\n"
     "<b>где я сейчас → куда хочу прийти → какой следующий шаг → "
     "какой инструмент поможет его сделать.</b>\n\n"
-    "🌍 <b>IDERA — это движение вперёд.</b>\n\n"
+    f"{idera('blue')} <b>IDERA — это движение вперёд.</b>\n\n"
     "Продукт становится системой.\n"
     "Обучение становится действием.\n"
     "Опыт лидеров становится технологией.\n"
@@ -394,27 +426,27 @@ ABOUT_US_TEXT = (
 )
 
 PVZ_TEXT = (
-    "📦 <b>Открыть ПВЗ</b>\n\n"
+    f"{idera('blue')} <b>Открыть ПВЗ</b>\n\n"
     "Инструкция и требования к пункту выдачи появятся здесь.\n"
     "Пока раздел-заглушка — структуру кнопок уже заложили."
 )
 
 PARTNERS_TEXT = (
-    "🤝 <b>Материалы для партнёров</b>\n\n"
+    f"{idera('blue')} <b>Материалы для партнёров</b>\n\n"
     "Бизнес-инструменты и файлы для работы с клиентами.\n"
-    "Выбери раздел 👇"
+    f"Выбери раздел {idera('blue')}"
 )
 
 MATERIALS_TEXT = (
-    "📄 <b>Материалы</b>\n\n"
+    f"{idera('blue')} <b>Материалы</b>\n\n"
     "Система работы партнёров, стикеры и эмодзи IDera.\n"
-    "Выбери, что нужно 👇"
+    f"Выбери, что нужно {idera('blue')}"
 )
 
 STICKER_PACK_NAME = "IDera3"
 STICKER_PACK_URL = "https://t.me/addstickers/IDera3"
 STICKER_PACK_TEXT = (
-    "✨ <b>Стикеры IDera</b>\n\n"
+    f"{idera('star')} <b>Стикеры IDera</b>\n\n"
     "Набор для переписок и сторис.\n"
     f'<a href="{STICKER_PACK_URL}">Добавить себе</a>\n'
     f"{STICKER_PACK_URL}"
@@ -423,7 +455,7 @@ STICKER_PACK_TEXT = (
 EMOJI_PACK_NAME = IDERA_PACK
 EMOJI_PACK_URL = "https://t.me/addemoji/IDera"
 EMOJI_PACK_TEXT = (
-    "✨ <b>Эмодзи IDera</b>\n\n"
+    f"{idera('star')} <b>Эмодзи IDera</b>\n\n"
     "Кастомные эмодзи для сообщений.\n"
     f'<a href="{EMOJI_PACK_URL}">Добавить себе</a>\n'
     f"{EMOJI_PACK_URL}"
@@ -432,24 +464,38 @@ EMOJI_PACK_TEXT = (
 PACK_PREVIEW_LIMIT = 6
 
 BUSINESS_TOOLS_TEXT = (
-    "🛠 <b>Бизнес-инструменты</b>\n\n"
-    "Визитка и IDera GO.\n"
-    "Выбери, с чего начать 👇"
+    f"{idera('blue')} <b>Бизнес-инструменты</b>\n\n"
+    f"Визитка и {idera('blue')} IDera GO {idera('blue')}.\n"
+    f"Выбери, с чего начать {idera('rocket')}"
 )
 
-TRACK_TEXT = "Выбери цель → пройди маршрут → сделай."
+TRACK_TEXT = (
+    f"{idera('blue')} IDera GO {idera('blue')}\n\n"
+    f"Выбери цель → пройди маршрут → сделай. {idera('rocket')}"
+)
 
 VIDEO_WIZARD_URL = "https://video-creator-track.vercel.app"
-BTN_VIDEO_LAUNCH = "🚀 Запустить"
+
+
+def track_cover_message() -> tuple[str, list[MessageEntity]]:
+    """Обложка IDera GO с фирменными эмодзи."""
+    blue = idera_fallback("blue")
+    rocket = idera_fallback("rocket")
+    text = (
+        f"{blue} IDera GO {blue}\n\n"
+        f"Выбери цель → пройди маршрут → сделай. {rocket}"
+    )
+    return text, idera_entities(text, "blue", "blue", "rocket")
 
 
 def video_track_message() -> tuple[str, list[MessageEntity]]:
     """Короткий текст карточки трека с фирменными эмодзи IDera."""
-    star_id, star = IDERA_EMOJI["star"]
-    check_id, check = IDERA_EMOJI["check"]
-    blue_id, blue = IDERA_EMOJI["blue"]
+    star = idera_fallback("star")
+    check = idera_fallback("check")
+    blue = idera_fallback("blue")
+    rocket = idera_fallback("rocket")
     text = (
-        "Сними видео о продукте за 30 секунд 📱\n\n"
+        f"{rocket} Сними видео о продукте за 30 секунд\n\n"
         "Камеру включил и всё забыл? 😬\n"
         "Не знаешь, что сказать и куда смотреть?\n\n"
         "Мы уже собрали маршрут:\n\n"
@@ -460,29 +506,13 @@ def video_track_message() -> tuple[str, list[MessageEntity]]:
         f"{check} Результат: твоё готовое видео о продукте\n\n"
         f"{blue} IDERA | Сила партнёра"
     )
-
-    def entity(needle: str, etype: str, **kwargs) -> MessageEntity:
-        idx = text.find(needle)
-        if idx < 0:
-            raise ValueError(f"video track text missing {needle!r}")
-        return MessageEntity(
-            type=etype,
-            offset=_utf16_len(text[:idx]),
-            length=_utf16_len(needle),
-            **kwargs,
-        )
-
-    return text, [
-        entity(star, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=star_id),
-        entity(check, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=check_id),
-        entity(blue, MessageEntity.CUSTOM_EMOJI, custom_emoji_id=blue_id),
-    ]
+    return text, idera_entities(text, "rocket", "star", "check", "blue")
 
 
 VIDEO_TRACK_TEXT = video_track_message()[0]
 
 VISITKA_PICK_TEXT = (
-    "💳 <b>Визитка</b>\n\n"
+    f"{idera('blue')} <b>Визитка</b>\n\n"
     "Выбери макет — пришлю превью, затем заполним твои данные."
 )
 
@@ -516,39 +546,39 @@ VISITKA_BAD_TELEGRAM = (
 )
 
 VISITKA_READY = (
-    "Готово! Собираю вашу визитку…"
+    f"{idera('check')} Готово! Собираю вашу визитку…"
 )
 
 AWARDS_TEXT = (
-    "🏆 <b>Номинации и лауреатства</b>\n\n"
+    f"{idera('star')} <b>Номинации и лауреатства</b>\n\n"
     "Наши награды и достижения. Раздел готов к наполнению."
 )
 
 REWARDS_TEXT = (
-    "💰 <b>Система вознаграждений</b>\n\n"
+    f"{idera('blue')} <b>Система вознаграждений</b>\n\n"
     "Порядок получения вознаграждений и бонусов.\n"
     "Детали и таблицы добавим позже."
 )
 
 EVENTS_TEXT = (
-    "📅 <b>Мероприятия</b>\n\n"
+    f"{idera('blue')} <b>Мероприятия</b>\n\n"
     "Благотворительность, ближайшие события и архив."
 )
 
 CHARITY_TEXT = (
-    "❤️ <b>Благотворительный фонд</b>\n\n"
+    f"{idera('star')} <b>Благотворительный фонд</b>\n\n"
     "Информация о фонде и участии появится здесь."
 )
 
 UPCOMING_TEXT = (
-    "🔜 <b>Предстоящие мероприятия</b>\n\n"
+    f"{idera('rocket')} <b>Предстоящие мероприятия</b>\n\n"
     "Список ближайших встреч и эфиров — скоро наполним."
 )
 
 ARCHIVE_TEXT = (
-    "🗂 <b>Архив мероприятий</b>\n\n"
+    f"{idera('blue')} <b>Архив мероприятий</b>\n\n"
     "Здесь прошедшие мероприятия.\n"
-    "Выбери запись 👇"
+    f"Выбери запись {idera('blue')}"
 )
 
 # Новые эфиры добавляются сюда — кнопка в архиве собирается из date + name.
@@ -598,28 +628,28 @@ if len(ARCHIVE_BY_BUTTON) != len(ARCHIVE_EVENTS):
     raise ValueError("Archive events must have unique date + name buttons")
 
 PRODUCT_TEXT = (
-    "🛍 <b>Продукт</b>\n\n"
+    f"{idera('blue')} <b>Продукт</b>\n\n"
     "Каталог, получение, презентация и видеоотзывы."
 )
 
 CATALOG_TEXT = (
-    "🛍 <b>Каталог IDera</b>\n\n"
+    f"{idera('blue')} <b>Каталог IDera</b>\n\n"
     "Открыть магазин:\n"
     '<a href="https://shop.idera.io/catalog">https://shop.idera.io/catalog</a>'
 )
 
 HOW_GET_TEXT = (
-    "📦 <b>Как получить продукт</b>\n\n"
+    f"{idera('blue')} <b>Как получить продукт</b>\n\n"
     "Пошаговая инструкция появления заказа появится здесь."
 )
 
 PRESENTATION_TEXT = (
-    "🎞 <b>Презентация</b>\n\n"
-    "Выбери материал 👇"
+    f"{idera('star')} <b>Презентация</b>\n\n"
+    f"Выбери материал {idera('blue')}"
 )
 
 VIDEO_TEXT = (
-    "🎬 <b>Видеоотзывы</b>\n\n"
+    f"{idera('fire')} <b>Видеоотзывы</b>\n\n"
     "Подборка видеоотзывов — раздел готов к ссылкам."
 )
 

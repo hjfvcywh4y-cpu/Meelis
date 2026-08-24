@@ -585,13 +585,16 @@ async def send_tracks(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     chat_id = update.effective_chat.id
     markup = menus.track_keyboard()
 
+    caption, entities = menus.track_cover_message()
+
     if TRACKS_IMAGE.exists():
         payload = TRACKS_IMAGE.read_bytes()
 
         async def _send_photo():
             return await update.message.reply_photo(
                 photo=InputFile(BytesIO(payload), filename="tracks.png"),
-                caption=menus.TRACK_TEXT,
+                caption=caption,
+                caption_entities=entities,
                 reply_markup=markup,
             )
 
@@ -809,13 +812,13 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
     await reply_html(
         update,
-        "ℹ️ <b>Команды</b>\n"
+        f"{menus.idera('blue')} <b>Команды IDera Helper</b>\n"
         "/start — приветствие и главное меню\n"
         "/menu — открыть главное меню\n"
         "/clear — очистить чат\n"
         "/id — ваш Telegram ID\n"
         "/ping — проверка\n\n"
-        "Кнопки меню внизу экрана — как у удобных бизнес-ботов.",
+        f"Кнопки меню внизу экрана {menus.idera('rocket')}",
         context,
         screen="main",
     )
@@ -828,7 +831,7 @@ async def menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if not user_has_consent(context, user.id if user else None):
         await send_consent_flow(update, context)
         return
-    await reply_html(update, "🏠 Главное меню:", context, screen="main")
+    await reply_html(update, menus.MAIN_TEXT, context, screen="main")
 
 
 async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -1020,7 +1023,7 @@ async def handle_quiz_back(
         await start_quiz(update, context)
         return
     context.user_data.pop("quiz", None)
-    await reply_html(update, "🏠 Главное меню:", context, screen="main")
+    await reply_html(update, menus.MAIN_TEXT, context, screen="main")
 
 
 async def handle_quiz_flow(
@@ -1032,12 +1035,12 @@ async def handle_quiz_flow(
     if text == menus.BTN_BACK:
         await handle_quiz_back(update, context)
         return True
-    if text == menus.BTN_MAIN:
+    if text == menus.BTN_MAIN or text == "🏠 Главное меню":
         context.user_data.pop("quiz", None)
-        await reply_html(update, "🏠 Главное меню:", context, screen="main")
+        await reply_html(update, menus.MAIN_TEXT, context, screen="main")
         return True
     if screen == "quiz_intro":
-        if text == menus.BTN_QUIZ_START:
+        if text in menus.QUIZ_START_ALIASES:
             await send_quiz_goals(update, context)
             return True
         return False
@@ -1080,7 +1083,7 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         context.user_data.pop("visitka", None)
     parent = menus.PARENT.get(current, "main")
     texts = {
-        "main": "🏠 Главное меню:",
+        "main": menus.MAIN_TEXT,
         "business": menus.BUSINESS_TEXT,
         "about": menus.ABOUT_TEXT,
         "partners": menus.PARTNERS_TEXT,
@@ -1094,7 +1097,7 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "visitka_pick": menus.VISITKA_PICK_TEXT,
         "product": menus.PRODUCT_TEXT,
     }
-    text = texts.get(parent, "🏠 Главное меню:")
+    text = texts.get(parent, menus.MAIN_TEXT)
     await reply_html(update, text, context, screen=parent)
 
 
@@ -1162,10 +1165,10 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
 
     # Navigation buttons
-    if text == menus.BTN_MAIN:
+    if text == menus.BTN_MAIN or text == "🏠 Главное меню":
         context.user_data.pop("visitka", None)
         context.user_data.pop("quiz", None)
-        await reply_html(update, "🏠 Главное меню:", context, screen="main")
+        await reply_html(update, menus.MAIN_TEXT, context, screen="main")
         return
     if text == menus.BTN_BACK:
         await handle_back(update, context)
@@ -1226,10 +1229,10 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     if text == menus.BTN_VISITKA:
         await start_visitka(update, context)
         return
-    if text == menus.BTN_TRACK:
+    if text in menus.TRACK_BUTTON_ALIASES:
         await send_tracks(update, context)
         return
-    if text == menus.BTN_VIDEO_30S:
+    if text in menus.VIDEO_30S_ALIASES:
         await send_video_track(update, context)
         return
 
@@ -1287,7 +1290,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     if not provider_chains():
         await reply_html(
             update,
-            "Выбери раздел в меню ниже 👇\nИли нажми /menu",
+            "Выбери раздел в меню ниже.\nИли нажми /menu",
             context,
         )
         return
@@ -1298,7 +1301,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     except Exception:
         logger.exception("AI error")
         sent = await update.message.reply_text(
-            "Сейчас не могу ответить текстом. Пользуйся кнопками меню 👇",
+            "Сейчас не могу ответить текстом. Пользуйся кнопками меню.",
             reply_markup=keyboard_for(screen_of(context), context),
         )
         track_message(chat_id, sent.message_id)
@@ -1319,8 +1322,8 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 async def post_init(app: Application) -> None:
     await app.bot.set_my_commands(
         [
-            BotCommand("start", "🚀 Старт"),
-            BotCommand("menu", "🏠 Меню"),
+            BotCommand("start", f"{menus.idera_fallback('rocket')} Старт"),
+            BotCommand("menu", f"{menus.idera_fallback('blue')} Меню"),
             BotCommand("clear", "🧹 Очистить чат"),
         ]
     )
