@@ -109,7 +109,6 @@ BTN_CATALOG = "📚 Каталог продукции"
 BTN_HOW_GET = "📦 Как получить продукт"
 BTN_PRESENTATION = "🎞 Презентация"
 BTN_VIDEO = "🎬 Видеоотзывы"
-BTN_CREATIVES = "🎨 Креативы и другое"
 BTN_DETOX = "💧 Detox"
 BTN_RELAX = "🌙 Relax"
 BTN_GLOW = "✨ Glow"
@@ -251,7 +250,6 @@ def product_keyboard() -> ReplyKeyboardMarkup:
         [
             [BTN_CATALOG, BTN_HOW_GET],
             [BTN_PRESENTATION, BTN_VIDEO],
-            [BTN_CREATIVES],
             [BTN_BACK],
         ]
     )
@@ -527,7 +525,7 @@ ARCHIVE_TEXT = (
 
 PRODUCT_TEXT = (
     "🛍 <b>Продукт</b>\n\n"
-    "Каталог, получение, презентация, видеоотзывы и креативы."
+    "Каталог, получение, презентация и видеоотзывы."
 )
 
 CATALOG_TEXT = (
@@ -549,11 +547,6 @@ PRESENTATION_TEXT = (
 VIDEO_TEXT = (
     "🎬 <b>Видеоотзывы</b>\n\n"
     "Подборка видеоотзывов — раздел готов к ссылкам."
-)
-
-CREATIVES_TEXT = (
-    "🎨 <b>Креативы и другое</b>\n\n"
-    "Готовые креативы, баннеры и материалы для сторис."
 )
 
 DOC_CAPTIONS = {

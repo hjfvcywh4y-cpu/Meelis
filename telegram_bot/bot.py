@@ -1224,9 +1224,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     if text == menus.BTN_VIDEO:
         await reply_html(update, menus.VIDEO_TEXT, context, screen="product")
         return
-    if text == menus.BTN_CREATIVES:
-        await reply_html(update, menus.CREATIVES_TEXT, context, screen="product")
-        return
 
     # Free-text AI fallback (no reply-keyboard wipe)
     if not provider_chains():
