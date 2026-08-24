@@ -519,17 +519,56 @@ UPCOMING_TEXT = (
 )
 
 ARCHIVE_TEXT = (
-    "21.08.2026\n\n"
     "🗂 <b>Архив мероприятий</b>\n\n"
-    "<b>Запись эфира | IDera DETOX</b>\n"
-    "Обучение для партнёров: что такое правильный детокс.\n\n"
-    "Ксения Митрай разбирает IDera DETOX: как устроена формула, "
-    "чего ждать от курса, почему детокс не должен давать резкий эффект "
-    "и какую роль играет пищеварительная система.\n\n"
-    "Длительность ≈ 1 час 07 мин.\n"
-    "Смотреть запись:\n"
-    '<a href="https://t.me/ideraofficial/124">https://t.me/ideraofficial/124</a>'
+    "Здесь прошедшие мероприятия.\n"
+    "Выбери запись 👇"
 )
+
+# Новые эфиры добавляются сюда — кнопка в архиве собирается из date + name.
+ARCHIVE_EVENTS: list[dict[str, str]] = [
+    {
+        "date": "21.08.2026",
+        "name": "IDera DETOX",
+        "url": "https://t.me/ideraofficial/124",
+        "title": "Запись эфира | IDera DETOX",
+        "body": (
+            "Обучение для партнёров: что такое правильный детокс.\n\n"
+            "Ксения Митрай разбирает IDera DETOX: как устроена формула, "
+            "чего ждать от курса, почему детокс не должен давать резкий эффект "
+            "и какую роль играет пищеварительная система.\n\n"
+            "Длительность ≈ 1 час 07 мин."
+        ),
+    },
+]
+
+
+def archive_button_label(event: dict[str, str]) -> str:
+    """ReplyKeyboard: дата и название. В Telegram не больше 64 символов."""
+    return f"{event['date']} | {event['name']}"[:64]
+
+
+def archive_event_text(event: dict[str, str]) -> str:
+    url = event["url"]
+    return (
+        f"{event['date']}\n\n"
+        f"<b>{event['title']}</b>\n"
+        f"{event['body']}\n\n"
+        "Смотреть запись:\n"
+        f'<a href="{url}">{url}</a>'
+    )
+
+
+def archive_keyboard() -> ReplyKeyboardMarkup:
+    rows = [[archive_button_label(event)] for event in ARCHIVE_EVENTS]
+    rows.append([BTN_BACK])
+    return kb(rows)
+
+
+ARCHIVE_BY_BUTTON = {
+    archive_button_label(event): event for event in ARCHIVE_EVENTS
+}
+if len(ARCHIVE_BY_BUTTON) != len(ARCHIVE_EVENTS):
+    raise ValueError("Archive events must have unique date + name buttons")
 
 PRODUCT_TEXT = (
     "🛍 <b>Продукт</b>\n\n"
@@ -623,6 +662,8 @@ PARENT = {
     "self": "ip_self",
     "ip": "ip_self",
     "events": "main",
+    "archive": "events",
+    "archive_item": "archive",
     "product": "main",
     "presentation": "product",
     "quiz_intro": "main",
