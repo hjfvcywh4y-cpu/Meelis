@@ -90,6 +90,22 @@ def normalize_name(raw: str) -> str | None:
     return text
 
 
+def profile_name(user) -> str | None:
+    if user is None:
+        return None
+    parts = [
+        str(getattr(user, "first_name", None) or "").strip(),
+        str(getattr(user, "last_name", None) or "").strip(),
+    ]
+    return normalize_name(" ".join(p for p in parts if p))
+
+
+def profile_username(user) -> str | None:
+    if user is None:
+        return None
+    return normalize_telegram(str(getattr(user, "username", None) or ""))
+
+
 def template_path(template_id: str) -> Path:
     path = _FILES.get(template_id)
     if path is None:

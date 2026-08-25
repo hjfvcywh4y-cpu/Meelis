@@ -112,6 +112,9 @@ BTN_VISITKA_QR = "С QR-кодом"
 BTN_VISITKA_LIGHT = "Модель 1"
 BTN_VISITKA_BLUE = "Модель 2"
 BTN_VISITKA_MODEL3 = "Модель 3"
+BTN_VISITKA_USE_NAME = "👤 Вставить имя"
+BTN_VISITKA_USE_PHONE = "📱 Вставить номер"
+BTN_VISITKA_USE_TELEGRAM = "✈️ Вставить никнейм"
 BTN_TRACK = f"{idera_fallback('blue')} IDera GO {idera_fallback('blue')}"
 BTN_VIDEO_30S = f"{idera_fallback('rocket')} GO снимать видео за 30 секунд"
 BTN_VIDEO_LAUNCH = f"{idera_fallback('rocket')} Запустить"
@@ -236,7 +239,32 @@ def track_keyboard() -> ReplyKeyboardMarkup:
 
 
 def visitka_keyboard() -> ReplyKeyboardMarkup:
-    return kb([[BTN_BACK]])
+    return visitka_step_keyboard("name")
+
+
+def visitka_step_keyboard(step: str | None, user=None) -> ReplyKeyboardMarkup:
+    """Ввод вручную или кнопка подставить данные из Telegram."""
+    rows: list[list[KeyboardButton]] = []
+    if step == "name" and _telegram_profile_name(user):
+        rows.append([KeyboardButton(BTN_VISITKA_USE_NAME)])
+    elif step == "phone":
+        rows.append(
+            [KeyboardButton(BTN_VISITKA_USE_PHONE, request_contact=True)]
+        )
+    elif step == "telegram" and getattr(user, "username", None):
+        rows.append([KeyboardButton(BTN_VISITKA_USE_TELEGRAM)])
+    rows.append([KeyboardButton(BTN_BACK)])
+    return ReplyKeyboardMarkup(rows, resize_keyboard=True)
+
+
+def _telegram_profile_name(user) -> str:
+    if user is None:
+        return ""
+    parts = [
+        str(getattr(user, "first_name", None) or "").strip(),
+        str(getattr(user, "last_name", None) or "").strip(),
+    ]
+    return " ".join(p for p in parts if p)
 
 
 def visitka_pick_keyboard() -> ReplyKeyboardMarkup:
@@ -558,18 +586,21 @@ VISITKA_TEMPLATE_BUTTONS = {
 
 VISITKA_ASK_NAME = (
     "Напишите <b>имя и фамилию</b>, как на визитке.\n"
-    "Например: <code>Анна Соколова</code>"
+    "Например: <code>Анна Соколова</code>\n\n"
+    "Или нажмите кнопку внизу — подставлю имя из Telegram."
 )
 
 VISITKA_ASK_PHONE = (
     "Теперь отправьте <b>номер телефона</b>.\n"
-    "Например: <code>+7 999 123 45 67</code>"
+    "Например: <code>+7 999 123 45 67</code>\n\n"
+    "Или нажмите «Вставить номер» — Telegram подставит телефон из вашей карточки."
 )
 
 VISITKA_ASK_TELEGRAM = (
     "И <b>Telegram</b> (username без ссылки).\n"
     "Например: <code>@anna_idera</code> или <code>anna_idera</code>\n\n"
-    "Из него сделаем QR для связи."
+    "Из него сделаем QR для связи.\n"
+    "Если внизу есть кнопка — можно подставить ваш никнейм одним нажатием."
 )
 
 VISITKA_BAD_NAME = "Не понял имя. Пришлите имя и фамилию текстом."

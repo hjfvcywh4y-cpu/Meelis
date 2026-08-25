@@ -276,12 +276,21 @@ def set_consent(context: ContextTypes.DEFAULT_TYPE, *, accepted: bool) -> None:
         context.user_data["consent_blocked"] = True
 
 
-def keyboard_for(screen: str, context: ContextTypes.DEFAULT_TYPE | None = None):
+def keyboard_for(
+    screen: str,
+    context: ContextTypes.DEFAULT_TYPE | None = None,
+    user=None,
+):
     if screen == "quiz_step" and context is not None:
         quiz = context.user_data.get("quiz") or {}
         idx = int(quiz.get("q_index") or 0)
         idx = max(0, min(idx, len(bad_quiz.QUESTIONS) - 1))
         return bad_quiz.step_keyboard(idx)
+    if screen == "visitka":
+        step = "name"
+        if context is not None:
+            step = str((context.user_data.get("visitka") or {}).get("step") or "name")
+        return menus.visitka_step_keyboard(step, user=user)
     return {
         "main": menus.main_keyboard(),
         "consent": menus.consent_keyboard(),
@@ -342,7 +351,7 @@ async def reply_html(
 ) -> None:
     if screen:
         set_screen(context, screen)
-    markup = keyboard_for(screen_of(context), context)
+    markup = keyboard_for(screen_of(context), context, update.effective_user)
     chat_id = update.effective_chat.id if update.effective_chat else None
     chunks = split_message(text)
     for i, chunk in enumerate(chunks):
@@ -670,7 +679,7 @@ async def choose_visitka_template(
     if not update.message or not update.effective_chat:
         return
     caption = f"Макет «{button}».\n\n{menus.VISITKA_ASK_NAME}"
-    markup = menus.visitka_keyboard()
+    markup = menus.visitka_step_keyboard("name", user=update.effective_user)
     try:
         payload = visitka.preview_jpeg_bytes(template_id)
     except Exception:
@@ -710,8 +719,12 @@ async def handle_visitka_flow(
         return False
 
     step = data.get("step")
+    user = update.effective_user
     if step == "name":
-        name = visitka.normalize_name(text)
+        if text == menus.BTN_VISITKA_USE_NAME:
+            name = visitka.profile_name(user)
+        else:
+            name = visitka.normalize_name(text)
         if not name:
             await reply_html(update, menus.VISITKA_BAD_NAME, context, screen="visitka")
             return True
@@ -721,6 +734,15 @@ async def handle_visitka_flow(
         return True
 
     if step == "phone":
+        if text == menus.BTN_VISITKA_USE_PHONE:
+            await reply_html(
+                update,
+                "Нажмите «Вставить номер» ещё раз и разрешите Telegram "
+                "отправить телефон из вашей карточки.",
+                context,
+                screen="visitka",
+            )
+            return True
         phone = visitka.normalize_phone(text)
         if not phone:
             await reply_html(update, menus.VISITKA_BAD_PHONE, context, screen="visitka")
@@ -731,57 +753,116 @@ async def handle_visitka_flow(
         return True
 
     if step == "telegram":
-        username = visitka.normalize_telegram(text)
+        if text == menus.BTN_VISITKA_USE_TELEGRAM:
+            username = visitka.profile_username(user)
+        else:
+            username = visitka.normalize_telegram(text)
         if not username:
             await reply_html(
                 update, menus.VISITKA_BAD_TELEGRAM, context, screen="visitka"
             )
             return True
-        data["telegram"] = username
-        data["step"] = "done"
-        await reply_html(update, menus.VISITKA_READY, context, screen="visitka")
-        path = None
-        template_id = data.get("template_id") or visitka.TEMPLATE_QR
-        try:
-            path = visitka.build_visitka_pdf(
-                name=data["name"],
-                phone=data["phone"],
-                telegram=username,
-                template_id=template_id,
-            )
-            payload = path.read_bytes()
-            caption = (
-                f"💳 Визитка для {data['name']}\n"
-                f"✈️ @{username} · {data['phone']}"
-            )
-            filename = f"IDera_vizitka_{template_id}_{username}.pdf"
-
-            async def _send_visitka():
-                return await update.message.reply_document(
-                    document=InputFile(BytesIO(payload), filename=filename),
-                    caption=caption,
-                    reply_markup=menus.business_tools_keyboard(),
-                )
-
-            sent = await _tg_retry(_send_visitka)
-            if update.effective_chat:
-                track_message(update.effective_chat.id, sent.message_id)
-        except Exception:
-            logger.exception("visitka build failed")
-            await reply_html(
-                update,
-                "Не удалось собрать визитку. Попробуйте ещё раз позже.",
-                context,
-                screen="business_tools",
-            )
-        finally:
-            context.user_data.pop("visitka", None)
-            set_screen(context, "business_tools")
-            if path is not None:
-                path.unlink(missing_ok=True)
-        return True
+        return await _finish_visitka(update, context, data, username)
 
     return False
+
+
+async def _finish_visitka(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    data: dict,
+    username: str,
+) -> bool:
+    data["telegram"] = username
+    data["step"] = "done"
+    await reply_html(update, menus.VISITKA_READY, context, screen="visitka")
+    path = None
+    template_id = data.get("template_id") or visitka.TEMPLATE_QR
+    try:
+        path = visitka.build_visitka_pdf(
+            name=data["name"],
+            phone=data["phone"],
+            telegram=username,
+            template_id=template_id,
+        )
+        payload = path.read_bytes()
+        caption = (
+            f"💳 Визитка для {data['name']}\n"
+            f"✈️ @{username} · {data['phone']}"
+        )
+        filename = f"IDera_vizitka_{template_id}_{username}.pdf"
+
+        async def _send_visitka():
+            return await update.message.reply_document(
+                document=InputFile(BytesIO(payload), filename=filename),
+                caption=caption,
+                reply_markup=menus.business_tools_keyboard(),
+            )
+
+        sent = await _tg_retry(_send_visitka)
+        if update.effective_chat:
+            track_message(update.effective_chat.id, sent.message_id)
+    except Exception:
+        logger.exception("visitka build failed")
+        await reply_html(
+            update,
+            "Не удалось собрать визитку. Попробуйте ещё раз позже.",
+            context,
+            screen="business_tools",
+        )
+    finally:
+        context.user_data.pop("visitka", None)
+        set_screen(context, "business_tools")
+        if path is not None:
+            path.unlink(missing_ok=True)
+    return True
+
+
+async def handle_visitka_contact(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    if not update.message or not update.message.contact or not update.effective_chat:
+        return
+    if screen_of(context) != "visitka":
+        return
+    data = context.user_data.get("visitka")
+    if not isinstance(data, dict):
+        return
+    track_message(update.effective_chat.id, update.message.message_id)
+    contact = update.message.contact
+    phone = visitka.normalize_phone(contact.phone_number or "")
+    contact_name = visitka.normalize_name(
+        " ".join(
+            p
+            for p in (contact.first_name or "", contact.last_name or "")
+            if p
+        )
+    )
+    step = data.get("step")
+    if step == "name":
+        name = contact_name or visitka.profile_name(update.effective_user)
+        if not name:
+            await reply_html(update, menus.VISITKA_BAD_NAME, context, screen="visitka")
+            return
+        data["name"] = name
+        if phone:
+            data["phone"] = phone
+            data["step"] = "telegram"
+            await reply_html(
+                update, menus.VISITKA_ASK_TELEGRAM, context, screen="visitka"
+            )
+            return
+        data["step"] = "phone"
+        await reply_html(update, menus.VISITKA_ASK_PHONE, context, screen="visitka")
+        return
+    if step != "phone":
+        return
+    if not phone:
+        await reply_html(update, menus.VISITKA_BAD_PHONE, context, screen="visitka")
+        return
+    data["phone"] = phone
+    data["step"] = "telegram"
+    await reply_html(update, menus.VISITKA_ASK_TELEGRAM, context, screen="visitka")
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -1690,7 +1771,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         logger.exception("AI error")
         sent = await update.message.reply_text(
             "Сейчас не могу ответить текстом. Пользуйся кнопками меню.",
-            reply_markup=keyboard_for(screen_of(context), context),
+            reply_markup=keyboard_for(
+                screen_of(context), context, update.effective_user
+            ),
         )
         track_message(chat_id, sent.message_id)
         return
@@ -1698,7 +1781,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     for chunk in split_message(reply):
         sent = await update.message.reply_text(
             chunk,
-            reply_markup=keyboard_for(screen_of(context), context),
+            reply_markup=keyboard_for(
+                screen_of(context), context, update.effective_user
+            ),
         )
         track_message(chat_id, sent.message_id)
 
@@ -1785,6 +1870,7 @@ def main() -> None:
             on_service_forward,
         )
     )
+    app.add_handler(MessageHandler(filters.CONTACT, handle_visitka_contact))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     app.add_error_handler(error_handler)
 
