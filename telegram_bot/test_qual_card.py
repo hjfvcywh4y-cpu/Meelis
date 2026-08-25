@@ -60,6 +60,9 @@ class QualCardTests(unittest.TestCase):
             orient="h", rank_id="nd", photo=photo, name="Елена Тураева"
         )
         box, name_xy, _max_w, _r = qual_card._layout(active.size)
+        self.assertGreater(name_xy[0], 300)
+        self.assertGreater(name_xy[1], 750)
+        self.assertLess(box[2] - box[0], 720)
         self.assertEqual(qual_card.name_fill_for(active, name_xy), qual_card._NAME_DARK)
         self.assertEqual(qual_card.name_fill_for(nd, name_xy), qual_card._NAME_GOLD)
         d1 = Image.open(qual_card.template_path("h", "d1")).convert("RGB")
@@ -75,8 +78,8 @@ class QualCardTests(unittest.TestCase):
         box, name_xy, _max_w, radius = qual_card._layout(im_size)
         self.assertGreater(box[1], 1200)
         self.assertLess(box[3], im_size[1] - 1100)
-        self.assertGreater(name_xy[1], 1400)
-        self.assertGreaterEqual(radius, 80)
+        self.assertGreater(name_xy[1], 1600)
+        self.assertGreaterEqual(radius, 100)
         jpeg = qual_card.build_card_jpeg(
             orient="v",
             rank_id="active",
@@ -98,9 +101,18 @@ class QualCardTests(unittest.TestCase):
         self.assertTrue(qual_card.is_image_bytes(buf.getvalue()))
         self.assertFalse(qual_card.is_image_bytes(b"not-an-image"))
 
-    def test_cover_crop_fills_target(self) -> None:
-        cropped = qual_card._cover_crop(_dummy_photo(100, 400), 200, 200)
-        self.assertEqual(cropped.size, (200, 200))
+    def test_photo_clipped_to_inner_frame(self) -> None:
+        red = Image.new("RGB", (400, 600), (255, 0, 0))
+        card = qual_card.build_card_image(
+            orient="h", rank_id="d3", photo=red, name="Анна Соколова"
+        )
+        box, name_xy, _max_w, _r = qual_card._layout(card.size)
+        inside = card.getpixel(((box[0] + box[2]) // 2, (box[1] + box[3]) // 2))
+        self.assertGreater(inside[0], 200)
+        outside = card.getpixel((box[2] + 36, (box[1] + box[3]) // 2))
+        self.assertLess(outside[0], 180)
+        self.assertGreater(name_xy[0], 300)
+        self.assertGreater(qual_card._NAME_SIZE, 70)
 
     def test_menus_wire_qualification(self) -> None:
         self.assertIn(menus.BTN_QUAL, menus.MENU_LABELS)
@@ -121,7 +133,8 @@ class QualCardTests(unittest.TestCase):
         markup = menus.qual_step_keyboard("name", user=user)
         self.assertEqual(markup.keyboard[0][0].text, menus.BTN_VISITKA_USE_NAME)
         photo_kb = menus.qual_step_keyboard("photo", user=user)
-        self.assertEqual(photo_kb.keyboard[0][0].text, menus.BTN_BACK)
+        self.assertIn("Анна Соколова", menus.QUAL_ASK_NAME)
+        self.assertNotIn("Елена Тураева", menus.QUAL_ASK_NAME)
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ import io
 from dataclasses import dataclass
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
 
 DOCS = Path(__file__).resolve().parent / "docs" / "qualifications"
 
@@ -17,12 +17,13 @@ ORIENT_IDS = (ORIENT_H, ORIENT_V)
 # Нативный размер горизонтального макета. Вертикальные — 9:16 с той же
 # карточкой по центру и полями сверху/снизу.
 _H_SIZE = (2115, 1259)
-# Внутренность скруглённой рамки справа (не золотая кайма).
-_PHOTO_BOX = (1358, 328, 2062, 1096)
-_PHOTO_RADIUS = 88
-# Имя слева, под заголовком «ПОЗДРАВЛЯЕМ…», над бейджем ранга.
-_NAME_XY = (108, 648)
-_NAME_MAX_W = 1180
+# Внутреннее отверстие рамки справа (без стеклянной каймы).
+_PHOTO_BOX = (1354, 318, 1976, 1106)
+_PHOTO_RADIUS = 122
+# Имя справа от иконки 3×3, над бейджем ранга.
+_NAME_XY = (352, 812)
+_NAME_MAX_W = 960
+_NAME_SIZE = 88
 
 _FONT_BOLD = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
 
@@ -108,7 +109,7 @@ def _layout(size: tuple[int, int]) -> tuple[tuple[int, int, int, int], tuple[int
 
 
 def _cover_crop(im: Image.Image, tw: int, th: int) -> Image.Image:
-    src = im.convert("RGB")
+    src = ImageOps.exif_transpose(im.convert("RGB"))
     sw, sh = src.size
     if sw < 1 or sh < 1 or tw < 1 or th < 1:
         raise ValueError("empty image")
@@ -195,7 +196,7 @@ def _draw_name(
 ) -> None:
     draw = ImageDraw.Draw(im)
     fill = name_fill_for(im, origin)
-    max_size = 52 if im.width >= 1800 else 36
+    max_size = _NAME_SIZE if im.width >= 1800 else max(36, round(_NAME_SIZE * im.width / _H_SIZE[0]))
     lines, font = _name_lines(draw, name, max_width, max_size)
     x, y = origin
     ascent, descent = font.getmetrics()
@@ -225,15 +226,20 @@ def build_card_image(
     path = template_path(orient, rank_id)
     if not path.exists():
         raise FileNotFoundError(f"Нет макета квалификации: {path}")
-    base = Image.open(path).convert("RGB")
-    box, name_xy, max_w, radius = _layout(base.size)
+    template = Image.open(path).convert("RGB")
+    box, name_xy, max_w, radius = _layout(template.size)
     x0, y0, x1, y1 = box
-    tw, th = x1 - x0, y1 - y0
+    tw, th = max(1, x1 - x0), max(1, y1 - y0)
     fitted = _cover_crop(_open_photo(photo), tw, th)
-    mask = _rounded_mask((tw, th), radius)
-    base.paste(fitted, (x0, y0), mask)
-    _draw_name(base, full_name, name_xy, max_w)
-    return base
+    photo_layer = template.copy()
+    photo_layer.paste(fitted, (x0, y0))
+    hole = _rounded_mask((tw, th), radius).filter(ImageFilter.GaussianBlur(0.6))
+    full_mask = Image.new("L", template.size, 0)
+    full_mask.paste(hole, (x0, y0))
+    # Фото только в отверстии — оригинальная рамка макета остаётся сверху.
+    out = Image.composite(photo_layer, template, full_mask)
+    _draw_name(out, full_name, name_xy, max_w)
+    return out
 
 
 def build_card_jpeg(
