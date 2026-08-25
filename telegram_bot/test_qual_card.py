@@ -61,8 +61,8 @@ class QualCardTests(unittest.TestCase):
         )
         box, name_xy, _max_w, _r = qual_card._layout(active.size)
         self.assertGreater(name_xy[0], 300)
-        self.assertGreater(name_xy[1], 750)
-        self.assertLess(box[2] - box[0], 720)
+        self.assertGreater(name_xy[1], 740)
+        self.assertLess(box[2] - box[0], 780)
         self.assertEqual(qual_card.name_fill_for(active, name_xy), qual_card._NAME_DARK)
         self.assertEqual(qual_card.name_fill_for(nd, name_xy), qual_card._NAME_GOLD)
         d1 = Image.open(qual_card.template_path("h", "d1")).convert("RGB")
@@ -109,8 +109,10 @@ class QualCardTests(unittest.TestCase):
         box, name_xy, _max_w, _r = qual_card._layout(card.size)
         inside = card.getpixel(((box[0] + box[2]) // 2, (box[1] + box[3]) // 2))
         self.assertGreater(inside[0], 200)
-        outside = card.getpixel((box[2] + 36, (box[1] + box[3]) // 2))
+        # Слева от отверстия — металл макета, не фото.
+        outside = card.getpixel((max(8, box[0] - 48), (box[1] + box[3]) // 2))
         self.assertLess(outside[0], 180)
+        self.assertEqual(name_xy[1], 800)
         self.assertGreater(name_xy[0], 300)
         self.assertGreater(qual_card._NAME_SIZE, 70)
 
