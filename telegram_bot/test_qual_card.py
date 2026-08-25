@@ -113,6 +113,7 @@ class QualCardTests(unittest.TestCase):
         outside = card.getpixel((max(8, box[0] - 48), (box[1] + box[3]) // 2))
         self.assertLess(outside[0], 180)
         self.assertEqual(name_xy[1], 800)
+        self.assertEqual(box, (1300, 280, 2030, 1124))
         self.assertGreater(name_xy[0], 300)
         self.assertGreater(qual_card._NAME_SIZE, 70)
 
