@@ -42,6 +42,7 @@ from telegram.request import HTTPXRequest
 import ai_prompt
 import bad_quiz
 import menus
+import pdf_preview
 import qual_card
 import visitka
 from stats import (
@@ -573,16 +574,43 @@ async def send_document_for_button(update: Update, button: str) -> None:
         caption_text = f"{caption}\n\n⚠️ Пока это черновик — заменим на финальный PDF."
     payload = path.read_bytes()
     download_name = menus.DOC_DOWNLOAD_NAMES.get(button, filename)
+    chat = update.effective_chat
+    sent_cover = False
+
+    if button in menus.PRODUCT_PRESENTATION_BUTTONS:
+        try:
+            cover = pdf_preview.cover_jpeg(path)
+            cover_name = Path(download_name).stem + ".jpg"
+            if update.message:
+                await update.message.chat.send_action(ChatAction.UPLOAD_PHOTO)
+
+            async def _send_cover():
+                return await update.message.reply_photo(
+                    photo=InputFile(BytesIO(cover), filename=cover_name),
+                    caption=caption_text,
+                )
+
+            cover_msg = await _tg_retry(_send_cover)
+            if chat:
+                track_message(chat.id, cover_msg.message_id)
+            sent_cover = True
+        except Exception:
+            logger.exception("Не удалось отправить обложку презентации %s", filename)
+
+    if update.message:
+        await update.message.chat.send_action(ChatAction.UPLOAD_DOCUMENT)
 
     async def _send():
-        return await update.message.reply_document(
-            document=InputFile(BytesIO(payload), filename=download_name),
-            caption=caption_text,
-        )
+        kwargs: dict = {
+            "document": InputFile(BytesIO(payload), filename=download_name),
+        }
+        if not sent_cover:
+            kwargs["caption"] = caption_text
+        return await update.message.reply_document(**kwargs)
 
     sent = await _tg_retry(_send)
-    if update.effective_chat:
-        track_message(update.effective_chat.id, sent.message_id)
+    if chat:
+        track_message(chat.id, sent.message_id)
 
 
 async def send_catalog(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -2076,6 +2104,12 @@ async def post_init(app: Application) -> None:
         await app.bot.set_my_name(name=menus.BOT_NAME)
     except Exception:
         logger.exception("Не удалось обновить описание бота")
+    names = [
+        menus.DOC_FILES[button]
+        for button in menus.PRODUCT_PRESENTATION_BUTTONS
+        if button in menus.DOC_FILES
+    ]
+    asyncio.create_task(asyncio.to_thread(pdf_preview.warm, DOCS, names))
 
 
 def main() -> None:

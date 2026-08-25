@@ -202,6 +202,7 @@ BTN_DETOX = "💧 Detox"
 BTN_RELAX = "🌙 Relax"
 BTN_GLOW = "✨ Glow"
 BTN_FOCUS = "🎯 Focus"
+PRODUCT_PRESENTATION_BUTTONS = frozenset({BTN_DETOX, BTN_RELAX, BTN_GLOW, BTN_FOCUS})
 
 BTN_CONSENT_YES = f"{idera_fallback('check')} Согласен"
 BTN_CONSENT_NO = "❌ Не согласен"
