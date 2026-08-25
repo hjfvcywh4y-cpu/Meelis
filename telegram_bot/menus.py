@@ -98,6 +98,7 @@ BTN_PRODUCT = "🛍 ПРОДУКТ"
 
 BTN_BACK = "⬅️ Назад"
 BTN_MAIN = f"{idera_fallback('blue')} Главное меню"
+BTN_FEEDBACK_CANCEL = "✖️ Отмена"
 
 BTN_IP_SELF = "📄 ИП и Самозанятость"
 BTN_ABOUT = "ℹ️ О компании"
@@ -326,6 +327,10 @@ def quiz_options_keyboard(options: list[str]) -> ReplyKeyboardMarkup:
     return kb(rows)
 
 
+def feedback_keyboard() -> ReplyKeyboardMarkup:
+    return kb([[BTN_FEEDBACK_CANCEL], [BTN_BACK]])
+
+
 CONSENT_TEXT = (
     f"{idera('check')} <b>Согласие на обработку персональных данных</b>\n\n"
     "Для использования бота необходимо ваше согласие на обработку персональных "
@@ -357,6 +362,27 @@ WELCOME_CAPTION = (
 )
 
 MAIN_TEXT = f"{idera('blue')} <b>Главное меню</b>"
+
+FEEDBACK_PROMPT_TEXT = (
+    f"{idera('blue')} <b>Книга жалоб и предложений</b>\n\n"
+    "Напишите одним сообщением, что важно сказать команде IDera: "
+    "жалобу, идею или пожелание.\n\n"
+    "Чтобы передумать — нажмите «Отмена» или /menu."
+)
+
+FEEDBACK_THANKS_TEXT = (
+    f"{idera('check')} <b>Спасибо, мы получили ваше сообщение.</b>\n\n"
+    "Команда IDera его увидит."
+)
+
+FEEDBACK_CANCEL_TEXT = (
+    "Обратную связь отменили. Можете продолжить с меню ниже."
+)
+
+FEEDBACK_TOO_SHORT_TEXT = (
+    "Напишите чуть подробнее — одним сообщением.\n"
+    "Или нажмите «Отмена»."
+)
 
 BUSINESS_TEXT = (
     f"{idera('blue')} <b>Бизнес</b>\n\n"
@@ -707,8 +733,22 @@ FINAL_DOCS = {
     BTN_COMPANY_PRESENTATION,
 }
 
+MENU_LABELS = frozenset(
+    {
+        value
+        for name, value in globals().items()
+        if name.startswith("BTN_") and isinstance(value, str)
+    }
+    | TRACK_BUTTON_ALIASES
+    | VIDEO_30S_ALIASES
+    | QUIZ_START_ALIASES
+    | set(ARCHIVE_BY_BUTTON)
+    | {"🏠 Главное меню"}
+)
+
 # Navigation: current screen -> parent screen
 PARENT = {
+    "feedback": "main",
     "business": "main",
     "about": "business",
     "partners": "business",

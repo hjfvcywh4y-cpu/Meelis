@@ -21,7 +21,11 @@ def _now() -> str:
 
 
 def _empty() -> dict:
-    return {"users": {}}
+    return {"users": {}, "feedback": []}
+
+
+_MAX_FEEDBACK = 200
+_MAX_FEEDBACK_TEXT = 4000
 
 
 def _load() -> dict:
@@ -117,6 +121,32 @@ def record_user(
         _save(data)
 
 
+def record_feedback(
+    user_id: int | None,
+    *,
+    text: str,
+    username: str | None = None,
+    first_name: str | None = None,
+) -> dict:
+    cleaned = (text or "").strip()[:_MAX_FEEDBACK_TEXT]
+    entry = {
+        "at": _now(),
+        "user_id": user_id,
+        "username": username or "",
+        "first_name": first_name or "",
+        "text": cleaned,
+    }
+    with _lock:
+        data = _load()
+        items = data.setdefault("feedback", [])
+        if not isinstance(items, list):
+            items = []
+        items.append(entry)
+        data["feedback"] = items[-_MAX_FEEDBACK:]
+        _save(data)
+    return entry
+
+
 def snapshot() -> dict:
     with _lock:
         data = _load()
@@ -148,6 +178,10 @@ def snapshot() -> dict:
             }
         )
     consents.sort(key=lambda r: r.get("at") or "", reverse=True)
+    feedback = [
+        row for row in (data.get("feedback") or []) if isinstance(row, dict)
+    ]
+    feedback.reverse()
     return {
         "unique_users": len(users),
         "starts": starts,
@@ -157,6 +191,8 @@ def snapshot() -> dict:
         "declined": declined,
         "pending": pending,
         "consents": consents,
+        "feedback": feedback,
+        "feedback_count": len(feedback),
         "stats_path": str(_path),
     }
 

@@ -44,8 +44,10 @@ import visitka
 from stats import (
     admin_ids,
     claim_owner,
+    get_owner_id,
     has_consent,
     record_consent,
+    record_feedback,
     record_user,
     snapshot,
 )
@@ -302,6 +304,7 @@ def keyboard_for(screen: str, context: ContextTypes.DEFAULT_TYPE | None = None):
         "quiz_intro": menus.quiz_intro_keyboard(),
         "quiz_goals": menus.quiz_goals_keyboard(),
         "quiz_step": menus.quiz_goals_keyboard(),
+        "feedback": menus.feedback_keyboard(),
     }.get(screen, menus.main_keyboard())
 
 
@@ -794,6 +797,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             track_message(update.effective_chat.id, update.message.message_id)
 
     context.user_data.pop("consent_blocked", None)
+    context.user_data.pop("awaiting_feedback", None)
     if user_has_consent(context, uid):
         await send_welcome(update, context, with_menu=True)
         return
@@ -810,11 +814,13 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if not user_has_consent(context, user.id if user else None):
         await send_consent_flow(update, context)
         return
+    context.user_data.pop("awaiting_feedback", None)
     await reply_html(
         update,
         f"{menus.idera('blue')} <b>Команды {menus.BOT_NAME}</b>\n"
         "/start — приветствие и главное меню\n"
         "/menu — открыть главное меню\n"
+        "/feedback — книга жалоб и предложений\n"
         "/clear — очистить чат\n"
         "/id — ваш Telegram ID\n"
         "/ping — проверка\n\n"
@@ -831,7 +837,23 @@ async def menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if not user_has_consent(context, user.id if user else None):
         await send_consent_flow(update, context)
         return
+    context.user_data.pop("awaiting_feedback", None)
+    context.user_data.pop("quiz", None)
+    context.user_data.pop("visitka", None)
     await reply_html(update, menus.MAIN_TEXT, context, screen="main")
+
+
+async def feedback_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if update.message and update.effective_chat:
+        track_message(update.effective_chat.id, update.message.message_id)
+    user = update.effective_user
+    if not user_has_consent(context, user.id if user else None):
+        await send_consent_flow(update, context)
+        return
+    context.user_data.pop("quiz", None)
+    context.user_data.pop("visitka", None)
+    context.user_data["awaiting_feedback"] = True
+    await reply_html(update, menus.FEEDBACK_PROMPT_TEXT, context, screen="feedback")
 
 
 async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -890,6 +912,74 @@ def _is_admin(user_id: int | None) -> bool:
     return owner == user_id
 
 
+def _feedback_destinations() -> set[int]:
+    dest = set(admin_ids())
+    owner = get_owner_id()
+    if owner:
+        dest.add(owner)
+    raw = os.getenv("FEEDBACK_CHAT_ID", "").strip()
+    if raw.isdigit() or (raw.startswith("-") and raw[1:].isdigit()):
+        dest.add(int(raw))
+    return dest
+
+
+def _format_feedback_notice(entry: dict) -> str:
+    username = (entry.get("username") or "").strip()
+    first_name = (entry.get("first_name") or "").strip()
+    if username:
+        who = f"{first_name} @{username}".strip()
+    else:
+        who = first_name or "без имени"
+    when = (entry.get("at") or "").replace("T", " ").replace("+00:00", " UTC")
+    body = (entry.get("text") or "").strip()
+    header = (
+        "✍️ Книга жалоб и предложений\n"
+        f"От: {who}\n"
+        f"ID: {entry.get('user_id') or '—'}\n"
+        f"Когда: {when or '—'}\n"
+        "\n"
+        "Текст:\n"
+    )
+    limit = 3900 - len(header)
+    if len(body) > limit:
+        body = body[: max(0, limit - 1)] + "…"
+    return header + body
+
+
+async def notify_feedback(bot, entry: dict, *, sender_chat_id: int | None) -> int:
+    delivered = 0
+    for chat_id in _feedback_destinations():
+        if sender_chat_id is not None and chat_id == sender_chat_id:
+            continue
+        try:
+            await bot.send_message(chat_id=chat_id, text=_format_feedback_notice(entry))
+            delivered += 1
+        except Exception:
+            logger.exception("Не удалось отправить обращение в чат %s", chat_id)
+    return delivered
+
+
+async def submit_feedback(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, text: str
+) -> None:
+    context.user_data.pop("awaiting_feedback", None)
+    user = update.effective_user
+    entry = record_feedback(
+        user.id if user else None,
+        text=text,
+        username=user.username if user else None,
+        first_name=user.first_name if user else None,
+    )
+    delivered = await notify_feedback(
+        context.bot,
+        entry,
+        sender_chat_id=update.effective_chat.id if update.effective_chat else None,
+    )
+    if delivered == 0:
+        logger.warning("Обращение сохранено, но некому переслать в Telegram")
+    await reply_html(update, menus.FEEDBACK_THANKS_TEXT, context, screen="main")
+
+
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     if not update.message:
@@ -920,6 +1010,18 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             who = f"@{row['username']}" if row["username"] else row["first_name"] or "—"
             when = (row.get("at") or "")[:19].replace("T", " ")
             lines.append(f"{mark} {row['id']} {who} {when}")
+    feedback_items = data.get("feedback") or []
+    lines.append("")
+    lines.append(f"✍️ Обращений: {data.get('feedback_count', len(feedback_items))}")
+    if feedback_items:
+        lines.append("Последние обращения:")
+        for row in feedback_items[:8]:
+            who = f"@{row['username']}" if row.get("username") else row.get("first_name") or "—"
+            when = (row.get("at") or "")[:19].replace("T", " ")
+            preview = " ".join((row.get("text") or "").split())
+            if len(preview) > 80:
+                preview = preview[:79] + "…"
+            lines.append(f"• {who} {when}: {preview}")
     text = "\n".join(lines)
     sent = await update.message.reply_text(text)
     if update.effective_chat:
@@ -1081,6 +1183,8 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
     if current in {"visitka", "visitka_pick"}:
         context.user_data.pop("visitka", None)
+    if current == "feedback":
+        context.user_data.pop("awaiting_feedback", None)
     parent = menus.PARENT.get(current, "main")
     texts = {
         "main": menus.MAIN_TEXT,
@@ -1158,6 +1262,23 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     if not user_has_consent(context, uid):
         await send_consent_flow(update, context)
         return
+
+    if context.user_data.get("awaiting_feedback"):
+        if text == menus.BTN_FEEDBACK_CANCEL:
+            context.user_data.pop("awaiting_feedback", None)
+            await reply_html(
+                update, menus.FEEDBACK_CANCEL_TEXT, context, screen="main"
+            )
+            return
+        if text not in menus.MENU_LABELS:
+            if len(text) < 3:
+                await reply_html(
+                    update, menus.FEEDBACK_TOO_SHORT_TEXT, context, screen="feedback"
+                )
+                return
+            await submit_feedback(update, context, text)
+            return
+        context.user_data.pop("awaiting_feedback", None)
 
     screen = screen_of(context)
 
@@ -1324,6 +1445,7 @@ async def post_init(app: Application) -> None:
         [
             BotCommand("start", f"{menus.idera_fallback('rocket')} Старт"),
             BotCommand("menu", f"{menus.idera_fallback('blue')} Меню"),
+            BotCommand("feedback", "✍️ Книга жалоб и предложений"),
             BotCommand("clear", "🧹 Очистить чат"),
         ]
     )
@@ -1381,6 +1503,7 @@ def main() -> None:
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("menu", menu_command))
+    app.add_handler(CommandHandler("feedback", feedback_command))
     app.add_handler(CommandHandler("clear", clear_command))
     app.add_handler(CommandHandler("ping", ping))
     app.add_handler(CommandHandler("id", id_command))
