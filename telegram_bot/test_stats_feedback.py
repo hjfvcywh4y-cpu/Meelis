@@ -48,6 +48,14 @@ class FeedbackStatsTests(unittest.TestCase):
         self.assertIn(menus.BTN_BACK, menus.MENU_LABELS)
         self.assertIn(menus.BTN_FEEDBACK_CANCEL, menus.MENU_LABELS)
         self.assertEqual(menus.PARENT["feedback"], "main")
+        self.assertEqual(
+            menus.UPCOMING_EVENTS[0]["url"],
+            "https://t.me/ideraofficial/127",
+        )
+        self.assertIn(
+            menus.upcoming_button_label(menus.UPCOMING_EVENTS[0]),
+            menus.MENU_LABELS,
+        )
 
     def test_service_chat_roundtrip(self) -> None:
         self.assertIsNone(stats.get_service_chat_id())

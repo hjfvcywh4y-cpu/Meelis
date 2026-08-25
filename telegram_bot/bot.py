@@ -302,6 +302,8 @@ def keyboard_for(screen: str, context: ContextTypes.DEFAULT_TYPE | None = None):
         "self": menus.self_employed_keyboard(),
         "ip": menus.ip_keyboard(),
         "events": menus.events_keyboard(),
+        "upcoming": menus.upcoming_keyboard(),
+        "upcoming_item": menus.upcoming_keyboard(),
         "archive": menus.archive_keyboard(),
         "archive_item": menus.archive_keyboard(),
         "product": menus.product_keyboard(),
@@ -1445,6 +1447,7 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "ip_self": menus.IP_SELF_TEXT,
         "quiz_intro": bad_quiz.INTRO,
         "events": menus.EVENTS_TEXT,
+        "upcoming": menus.UPCOMING_TEXT,
         "archive": menus.ARCHIVE_TEXT,
         "visitka_pick": menus.VISITKA_PICK_TEXT,
         "product": menus.PRODUCT_TEXT,
@@ -1634,7 +1637,17 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await reply_html(update, menus.CHARITY_TEXT, context, screen="events")
         return
     if text == menus.BTN_UPCOMING:
-        await reply_html(update, menus.UPCOMING_TEXT, context, screen="events")
+        await reply_html(update, menus.UPCOMING_TEXT, context, screen="upcoming")
+        return
+    upcoming_event = menus.UPCOMING_BY_BUTTON.get(text)
+    if upcoming_event:
+        await reply_html(
+            update,
+            menus.upcoming_event_text(upcoming_event),
+            context,
+            screen="upcoming_item",
+            preview=True,
+        )
         return
     if text == menus.BTN_ARCHIVE:
         await reply_html(update, menus.ARCHIVE_TEXT, context, screen="archive")

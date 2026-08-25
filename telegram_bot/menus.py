@@ -605,8 +605,28 @@ CHARITY_TEXT = (
 
 UPCOMING_TEXT = (
     f"{idera('rocket')} <b>Предстоящие мероприятия</b>\n\n"
-    "Список ближайших встреч и эфиров — скоро наполним."
+    "Ближайшие встречи и эфиры.\n"
+    f"Выбери запись {idera('blue')}"
 )
+
+# Новые эфиры добавляются сюда — кнопка собирается из date + name.
+UPCOMING_EVENTS: list[dict[str, str]] = [
+    {
+        "date": "26–28.08.2026",
+        "name": "Старт в IDera",
+        "url": "https://t.me/ideraofficial/127",
+        "title": "Старт в IDera | Разбираемся вместе",
+        "body": (
+            "Двухдневный интенсив для новых партнёров с Дианой Хадиуллиной — "
+            "топ-лидером, обладателем первого контракта и первого чека компании.\n\n"
+            "26 августа, 19:00 МСК — база сетевого предпринимательства, "
+            "бизнес-модель IDera и первые шаги после регистрации.\n\n"
+            "28 августа, 19:00 МСК — маркетинг-план IDera: система роста, "
+            "бонусы и возможности для партнёров.\n\n"
+            "Подключиться можно, даже если вы пока только присматриваетесь к IDera."
+        ),
+    },
+]
 
 ARCHIVE_TEXT = (
     f"{idera('blue')} <b>Архив мероприятий</b>\n\n"
@@ -646,6 +666,35 @@ def archive_event_text(event: dict[str, str]) -> str:
         "Смотреть запись:\n"
         f'<a href="{url}">{url}</a>'
     )
+
+
+def upcoming_button_label(event: dict[str, str]) -> str:
+    """ReplyKeyboard: дата и название. В Telegram не больше 64 символов."""
+    return f"{event['date']} | {event['name']}"[:64]
+
+
+def upcoming_event_text(event: dict[str, str]) -> str:
+    url = event["url"]
+    return (
+        f"{event['date']}\n\n"
+        f"<b>{event['title']}</b>\n"
+        f"{event['body']}\n\n"
+        "Подробности и подключение:\n"
+        f'<a href="{url}">{url}</a>'
+    )
+
+
+def upcoming_keyboard() -> ReplyKeyboardMarkup:
+    rows = [[upcoming_button_label(event)] for event in UPCOMING_EVENTS]
+    rows.append([BTN_BACK])
+    return kb(rows)
+
+
+UPCOMING_BY_BUTTON = {
+    upcoming_button_label(event): event for event in UPCOMING_EVENTS
+}
+if len(UPCOMING_BY_BUTTON) != len(UPCOMING_EVENTS):
+    raise ValueError("Upcoming events must have unique date + name buttons")
 
 
 def archive_keyboard() -> ReplyKeyboardMarkup:
@@ -749,6 +798,7 @@ MENU_LABELS = frozenset(
     | VIDEO_30S_ALIASES
     | QUIZ_START_ALIASES
     | set(ARCHIVE_BY_BUTTON)
+    | set(UPCOMING_BY_BUTTON)
     | {"🏠 Главное меню"}
 )
 
@@ -767,6 +817,8 @@ PARENT = {
     "self": "ip_self",
     "ip": "ip_self",
     "events": "main",
+    "upcoming": "events",
+    "upcoming_item": "upcoming",
     "archive": "events",
     "archive_item": "archive",
     "product": "main",
