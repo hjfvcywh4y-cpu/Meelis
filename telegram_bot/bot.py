@@ -42,6 +42,7 @@ from telegram.request import HTTPXRequest
 import ai_prompt
 import bad_quiz
 import menus
+import qual_card
 import visitka
 from stats import (
     admin_ids,
@@ -291,6 +292,11 @@ def keyboard_for(
         if context is not None:
             step = str((context.user_data.get("visitka") or {}).get("step") or "name")
         return menus.visitka_step_keyboard(step, user=user)
+    if screen == "qual":
+        step = "photo"
+        if context is not None:
+            step = str((context.user_data.get("qual") or {}).get("step") or "photo")
+        return menus.qual_step_keyboard(step, user=user)
     return {
         "main": menus.main_keyboard(),
         "consent": menus.consent_keyboard(),
@@ -302,6 +308,9 @@ def keyboard_for(
         "track": menus.track_keyboard(),
         "visitka": menus.visitka_keyboard(),
         "visitka_pick": menus.visitka_pick_keyboard(),
+        "qual_orient": menus.qual_orient_keyboard(),
+        "qual_rank": menus.qual_rank_keyboard(),
+        "qual": menus.qual_step_keyboard("photo", user=user),
         "ip_self": menus.ip_self_keyboard(),
         "self": menus.self_employed_keyboard(),
         "ip": menus.ip_keyboard(),
@@ -667,6 +676,7 @@ async def send_video_track(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
 
 async def start_visitka(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    context.user_data.pop("qual", None)
     context.user_data["visitka"] = {"step": "pick"}
     await reply_html(update, menus.VISITKA_PICK_TEXT, context, screen="visitka_pick")
 
@@ -865,6 +875,237 @@ async def handle_visitka_contact(
     await reply_html(update, menus.VISITKA_ASK_TELEGRAM, context, screen="visitka")
 
 
+def _qual_data(context: ContextTypes.DEFAULT_TYPE) -> dict:
+    data = context.user_data.get("qual")
+    if not isinstance(data, dict):
+        data = {}
+        context.user_data["qual"] = data
+    return data
+
+
+async def start_qual(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    context.user_data.pop("visitka", None)
+    context.user_data["qual"] = {"step": "orient"}
+    await reply_html(update, menus.QUAL_ORIENT_TEXT, context, screen="qual_orient")
+
+
+async def choose_qual_orient(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, orient: str
+) -> None:
+    data = _qual_data(context)
+    data["orient"] = orient
+    data["step"] = "rank"
+    data.pop("rank_id", None)
+    data.pop("photo", None)
+    await reply_html(update, menus.QUAL_RANK_TEXT, context, screen="qual_rank")
+
+
+async def choose_qual_rank(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    rank_id: str,
+    button: str,
+) -> None:
+    data = _qual_data(context)
+    orient = data.get("orient")
+    if orient not in qual_card.ORIENT_IDS:
+        await start_qual(update, context)
+        return
+    data["rank_id"] = rank_id
+    data["step"] = "photo"
+    data.pop("photo", None)
+    set_screen(context, "qual")
+    if not update.message or not update.effective_chat:
+        return
+    caption = f"Макет «{button}».\n\n{menus.QUAL_ASK_PHOTO}"
+    markup = menus.qual_step_keyboard("photo", user=update.effective_user)
+    try:
+        payload = qual_card.preview_jpeg_bytes(orient, rank_id)
+    except Exception:
+        logger.exception("qual preview failed")
+        await reply_html(update, caption, context, screen="qual")
+        return
+
+    async def _send_preview():
+        return await update.message.reply_photo(
+            photo=InputFile(BytesIO(payload), filename=f"qual_{orient}_{rank_id}.jpg"),
+            caption=caption,
+            parse_mode=ParseMode.HTML,
+            reply_markup=markup,
+        )
+
+    sent = await _tg_retry(_send_preview)
+    track_message(update.effective_chat.id, sent.message_id)
+
+
+async def handle_qual_flow(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, text: str
+) -> bool:
+    """Return True if the message was consumed by the qualification wizard."""
+    screen = screen_of(context)
+    if screen == "qual_orient":
+        orient = menus.QUAL_ORIENT_BUTTONS.get(text)
+        if orient:
+            await choose_qual_orient(update, context, orient)
+            return True
+        await reply_html(
+            update, menus.QUAL_ORIENT_TEXT, context, screen="qual_orient"
+        )
+        return True
+
+    if screen == "qual_rank":
+        rank_id = menus.QUAL_RANK_BUTTONS.get(text)
+        if rank_id:
+            await choose_qual_rank(update, context, rank_id, text)
+            return True
+        await reply_html(update, menus.QUAL_RANK_TEXT, context, screen="qual_rank")
+        return True
+
+    data = context.user_data.get("qual")
+    if screen != "qual" or not isinstance(data, dict):
+        return False
+
+    step = data.get("step")
+    if step == "photo":
+        await reply_html(update, menus.QUAL_NEED_PHOTO, context, screen="qual")
+        return True
+
+    if step != "name":
+        return False
+
+    if text == menus.BTN_VISITKA_USE_NAME:
+        name = visitka.profile_name(update.effective_user)
+    else:
+        name = qual_card.normalize_name(text)
+    if not name:
+        await reply_html(update, menus.QUAL_BAD_NAME, context, screen="qual")
+        return True
+    return await _finish_qual(update, context, data, name)
+
+
+async def _message_image_bytes(message) -> bytes | None:
+    if message.photo:
+        tg_file = await message.photo[-1].get_file()
+        return bytes(await tg_file.download_as_bytearray())
+    document = message.document
+    if document and str(document.mime_type or "").startswith("image/"):
+        tg_file = await document.get_file()
+        return bytes(await tg_file.download_as_bytearray())
+    return None
+
+
+async def handle_qual_media(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    if not update.message or not update.effective_chat:
+        return
+    user = update.effective_user
+    uid = user.id if user else None
+    if consent_blocked(context) or not user_has_consent(context, uid):
+        return
+    if screen_of(context) != "qual":
+        return
+    data = context.user_data.get("qual")
+    if not isinstance(data, dict):
+        return
+    track_message(update.effective_chat.id, update.message.message_id)
+    if data.get("step") not in {"photo", "name"}:
+        return
+    try:
+        payload = await _message_image_bytes(update.message)
+    except Exception:
+        logger.exception("qual photo download failed")
+        await reply_html(update, menus.QUAL_BAD_PHOTO, context, screen="qual")
+        return
+    if not payload:
+        await reply_html(update, menus.QUAL_NEED_PHOTO, context, screen="qual")
+        return
+    if len(payload) > 8 * 1024 * 1024 or not qual_card.is_image_bytes(payload):
+        await reply_html(update, menus.QUAL_BAD_PHOTO, context, screen="qual")
+        return
+    data["photo"] = payload
+    data["step"] = "name"
+    await reply_html(update, menus.QUAL_ASK_NAME, context, screen="qual")
+
+
+async def _finish_qual(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    data: dict,
+    name: str,
+) -> bool:
+    photo = data.get("photo")
+    orient = data.get("orient")
+    rank_id = data.get("rank_id")
+    if not photo or orient not in qual_card.ORIENT_IDS or rank_id not in qual_card.RANKS_BY_ID:
+        data["step"] = "photo"
+        await reply_html(update, menus.QUAL_NEED_PHOTO, context, screen="qual")
+        return True
+    data["name"] = name
+    data["step"] = "done"
+    await reply_html(update, menus.QUAL_READY, context, screen="qual")
+    rank = qual_card.RANKS_BY_ID[rank_id]
+    try:
+        jpeg = qual_card.build_card_jpeg(
+            orient=orient, rank_id=rank_id, photo=photo, name=name
+        )
+        filename = f"IDera_qualification_{rank_id}_{orient}.jpg"
+        caption = f"🏅 {name} · {rank.label}"
+
+        async def _send_card():
+            return await update.message.reply_photo(
+                photo=InputFile(BytesIO(jpeg), filename=filename),
+                caption=caption,
+                reply_markup=menus.business_tools_keyboard(),
+            )
+
+        sent = await _tg_retry(_send_card)
+        if update.effective_chat:
+            track_message(update.effective_chat.id, sent.message_id)
+    except Exception:
+        logger.exception("qual card build failed")
+        await reply_html(
+            update,
+            "Не удалось собрать карточку. Попробуйте ещё раз позже.",
+            context,
+            screen="business_tools",
+        )
+        context.user_data.pop("qual", None)
+        set_screen(context, "business_tools")
+        return True
+    context.user_data.pop("qual", None)
+    set_screen(context, "business_tools")
+    return True
+
+
+async def handle_qual_back(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    current = screen_of(context)
+    data = context.user_data.get("qual")
+    if not isinstance(data, dict):
+        data = {}
+    if current == "qual":
+        data.pop("photo", None)
+        data["step"] = "rank"
+        context.user_data["qual"] = data
+        await reply_html(update, menus.QUAL_RANK_TEXT, context, screen="qual_rank")
+        return
+    if current == "qual_rank":
+        data.pop("rank_id", None)
+        data.pop("photo", None)
+        data["step"] = "orient"
+        context.user_data["qual"] = data
+        await reply_html(
+            update, menus.QUAL_ORIENT_TEXT, context, screen="qual_orient"
+        )
+        return
+    context.user_data.pop("qual", None)
+    await reply_html(
+        update, menus.BUSINESS_TOOLS_TEXT, context, screen="business_tools"
+    )
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     uid = user.id if user else None
@@ -923,6 +1164,7 @@ async def menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     context.user_data.pop("awaiting_feedback", None)
     context.user_data.pop("quiz", None)
     context.user_data.pop("visitka", None)
+    context.user_data.pop("qual", None)
     await reply_html(update, menus.MAIN_TEXT, context, screen="main")
 
 
@@ -935,6 +1177,7 @@ async def feedback_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         return
     context.user_data.pop("quiz", None)
     context.user_data.pop("visitka", None)
+    context.user_data.pop("qual", None)
     context.user_data["awaiting_feedback"] = True
     await reply_html(update, menus.FEEDBACK_PROMPT_TEXT, context, screen="feedback")
 
@@ -1509,6 +1752,9 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
     if current in {"visitka", "visitka_pick"}:
         context.user_data.pop("visitka", None)
+    if current in {"qual_orient", "qual_rank", "qual"}:
+        await handle_qual_back(update, context)
+        return
     if current == "feedback":
         context.user_data.pop("awaiting_feedback", None)
     parent = menus.PARENT.get(current, "main")
@@ -1526,6 +1772,8 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "upcoming": menus.UPCOMING_TEXT,
         "archive": menus.ARCHIVE_TEXT,
         "visitka_pick": menus.VISITKA_PICK_TEXT,
+        "qual_orient": menus.QUAL_ORIENT_TEXT,
+        "qual_rank": menus.QUAL_RANK_TEXT,
         "product": menus.PRODUCT_TEXT,
     }
     text = texts.get(parent, menus.MAIN_TEXT)
@@ -1626,6 +1874,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     # Navigation buttons
     if text == menus.BTN_MAIN or text == "🏠 Главное меню":
         context.user_data.pop("visitka", None)
+        context.user_data.pop("qual", None)
         context.user_data.pop("quiz", None)
         await reply_html(update, menus.MAIN_TEXT, context, screen="main")
         return
@@ -1634,6 +1883,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
 
     if await handle_visitka_flow(update, context, text):
+        return
+
+    if await handle_qual_flow(update, context, text):
         return
 
     if text == menus.BTN_BAD:
@@ -1687,6 +1939,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
     if text == menus.BTN_VISITKA:
         await start_visitka(update, context)
+        return
+    if text == menus.BTN_QUAL:
+        await start_qual(update, context)
         return
     if text in menus.TRACK_BUTTON_ALIASES:
         await send_tracks(update, context)
@@ -1871,6 +2126,13 @@ def main() -> None:
         )
     )
     app.add_handler(MessageHandler(filters.CONTACT, handle_visitka_contact))
+    app.add_handler(
+        MessageHandler(
+            filters.ChatType.PRIVATE
+            & (filters.PHOTO | filters.Document.IMAGE),
+            handle_qual_media,
+        )
+    )
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     app.add_error_handler(error_handler)
 

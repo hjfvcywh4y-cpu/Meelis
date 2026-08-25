@@ -18,6 +18,7 @@ class AiPromptTests(unittest.TestCase):
             "IDera Focus",
             "IDera GO",
             "shop.idera.io",
+            "квалификации",
         ):
             self.assertIn(name, text)
         self.assertIn("не рекомендуй", text.lower())

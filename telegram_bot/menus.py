@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from telegram import KeyboardButton, MessageEntity, ReplyKeyboardMarkup
 
+import qual_card
+
 # Кастомные эмодзи из пака https://t.me/addemoji/IDera
 IDERA_EMOJI = {
     "blue": ("5188255858605205817", "🔵"),
@@ -108,6 +110,9 @@ BTN_PVZ = "📦 Открыть ПВЗ"
 BTN_PARTNERS = "🤝 Материалы для партнеров"
 BTN_BUSINESS_TOOLS = "🛠 Бизнес-инструменты"
 BTN_VISITKA = "💳 Визитка"
+BTN_QUAL = "🏅 Квалификация"
+BTN_QUAL_H = "Горизонтальные"
+BTN_QUAL_V = "Вертикальные"
 BTN_VISITKA_QR = "С QR-кодом"
 BTN_VISITKA_LIGHT = "Модель 1"
 BTN_VISITKA_BLUE = "Модель 2"
@@ -223,10 +228,38 @@ def business_tools_keyboard() -> ReplyKeyboardMarkup:
     return kb(
         [
             [BTN_VISITKA],
+            [BTN_QUAL],
             [BTN_TRACK],
             [BTN_BACK],
         ]
     )
+
+
+def qual_orient_keyboard() -> ReplyKeyboardMarkup:
+    return kb(
+        [
+            [BTN_QUAL_H],
+            [BTN_QUAL_V],
+            [BTN_BACK],
+        ]
+    )
+
+
+def qual_rank_keyboard() -> ReplyKeyboardMarkup:
+    labels = [rank.label for rank in qual_card.RANKS]
+    rows: list[list[str]] = []
+    for i in range(0, len(labels), 2):
+        rows.append(labels[i : i + 2])
+    rows.append([BTN_BACK])
+    return kb(rows)
+
+
+def qual_step_keyboard(step: str | None, user=None) -> ReplyKeyboardMarkup:
+    rows: list[list[KeyboardButton]] = []
+    if step == "name" and _telegram_profile_name(user):
+        rows.append([KeyboardButton(BTN_VISITKA_USE_NAME)])
+    rows.append([KeyboardButton(BTN_BACK)])
+    return ReplyKeyboardMarkup(rows, resize_keyboard=True)
 
 
 def track_keyboard() -> ReplyKeyboardMarkup:
@@ -526,9 +559,47 @@ PACK_PREVIEW_LIMIT = 6
 
 BUSINESS_TOOLS_TEXT = (
     f"{idera('blue')} <b>Бизнес-инструменты</b>\n\n"
-    f"Визитка и {idera('blue')} IDera GO {idera('blue')}.\n"
+    f"Визитка, карточка квалификации и {idera('blue')} IDera GO {idera('blue')}.\n"
     f"Выбери, с чего начать {idera('rocket')}"
 )
+
+QUAL_ORIENT_TEXT = (
+    f"{idera('star')} <b>Карточка квалификации</b>\n\n"
+    "Соберу поздравление с фото и именем: выбери формат, ранг, "
+    "затем пришли портрет.\n\n"
+    "Горизонтальные — для поста. Вертикальные — для сторис."
+)
+
+QUAL_RANK_TEXT = (
+    f"{idera('blue')} <b>Квалификация</b>\n\n"
+    "Выбери ранг — пришлю превью макета, затем вставим фото и имя."
+)
+
+QUAL_ORIENT_BUTTONS = {
+    BTN_QUAL_H: qual_card.ORIENT_H,
+    BTN_QUAL_V: qual_card.ORIENT_V,
+}
+
+QUAL_RANK_BUTTONS = {rank.label: rank.id for rank in qual_card.RANKS}
+
+QUAL_ASK_PHOTO = (
+    "Пришлите <b>фото</b> — лучше портрет, лицо крупно.\n"
+    "Вставлю его в рамку на карточке."
+)
+
+QUAL_NEED_PHOTO = "Нужно именно фото. Отправьте снимок как фото или файл-картинку."
+
+QUAL_BAD_PHOTO = "Не смог прочитать снимок. Пришлите другое фото."
+
+QUAL_ASK_NAME = (
+    "Напишите <b>имя и фамилию</b>, как на карточке.\n"
+    "Например: <code>Елена Тураева</code>\n\n"
+    "Или нажмите кнопку внизу — подставлю имя из Telegram."
+)
+
+QUAL_BAD_NAME = "Не понял имя. Пришлите имя и фамилию текстом."
+
+QUAL_READY = f"{idera('check')} Готово! Собираю карточку…"
 
 TRACK_TEXT = (
     f"{idera('blue')} IDera GO {idera('blue')}\n\n"
@@ -830,6 +901,7 @@ MENU_LABELS = frozenset(
     | QUIZ_START_ALIASES
     | set(ARCHIVE_BY_BUTTON)
     | set(UPCOMING_BY_BUTTON)
+    | set(QUAL_RANK_BUTTONS)
     | {"🏠 Главное меню"}
 )
 
@@ -843,6 +915,9 @@ PARENT = {
     "business_tools": "partners",
     "visitka_pick": "business_tools",
     "visitka": "visitka_pick",
+    "qual_orient": "business_tools",
+    "qual_rank": "qual_orient",
+    "qual": "qual_rank",
     "track": "business_tools",
     "ip_self": "business",
     "self": "ip_self",

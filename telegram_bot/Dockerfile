@@ -12,7 +12,7 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY bot.py menus.py bad_quiz.py stats.py lessons.py visitka.py ai_prompt.py ./
+COPY bot.py menus.py bad_quiz.py stats.py lessons.py visitka.py ai_prompt.py qual_card.py ./
 COPY assets ./assets
 COPY docs ./docs
 

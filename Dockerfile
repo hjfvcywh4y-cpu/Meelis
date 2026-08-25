@@ -6,7 +6,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 COPY telegram_bot/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY telegram_bot/bot.py telegram_bot/menus.py telegram_bot/bad_quiz.py telegram_bot/stats.py telegram_bot/lessons.py telegram_bot/visitka.py telegram_bot/ai_prompt.py ./
+COPY telegram_bot/bot.py telegram_bot/menus.py telegram_bot/bad_quiz.py telegram_bot/stats.py telegram_bot/lessons.py telegram_bot/visitka.py telegram_bot/ai_prompt.py telegram_bot/qual_card.py ./
 COPY telegram_bot/assets ./assets
 COPY telegram_bot/docs ./docs
 CMD ["python", "bot.py"]
