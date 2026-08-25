@@ -27,10 +27,11 @@ from telegram import (
     Update,
     WebAppInfo,
 )
-from telegram.constants import ChatAction, ParseMode
+from telegram.constants import ChatAction, ChatMemberStatus, ParseMode
 from telegram.error import NetworkError, TimedOut
 from telegram.ext import (
     Application,
+    ChatMemberHandler,
     CommandHandler,
     ContextTypes,
     MessageHandler,
@@ -44,11 +45,15 @@ import visitka
 from stats import (
     admin_ids,
     claim_owner,
+    clear_service_chat,
     get_owner_id,
+    get_service_chat,
+    get_service_chat_id,
     has_consent,
     record_consent,
     record_feedback,
     record_user,
+    set_service_chat,
     snapshot,
 )
 
@@ -913,6 +918,9 @@ def _is_admin(user_id: int | None) -> bool:
 
 
 def _feedback_destinations() -> set[int]:
+    service = get_service_chat_id()
+    if service:
+        return {service}
     dest = set(admin_ids())
     owner = get_owner_id()
     if owner:
@@ -921,6 +929,113 @@ def _feedback_destinations() -> set[int]:
     if raw.isdigit() or (raw.startswith("-") and raw[1:].isdigit()):
         dest.add(int(raw))
     return dest
+
+
+def _forwarded_origin_chat(message):
+    origin = getattr(message, "forward_origin", None)
+    chat = getattr(origin, "chat", None)
+    if chat is not None:
+        return chat
+    chat = getattr(origin, "sender_chat", None)
+    if chat is not None:
+        return chat
+    return getattr(message, "forward_from_chat", None)
+
+
+def _service_inbox_error(chat) -> str | None:
+    if chat is None:
+        return "Не вижу канал. Перешлите пост из вашего приватного канала."
+    if getattr(chat, "type", None) == "private":
+        return (
+            "Личный чат с ботом для этого не подходит. "
+            "Нужен отдельный приватный канал только для вас."
+        )
+    if getattr(chat, "username", None):
+        return (
+            "Этот канал публичный, его могут найти по ссылке.\n"
+            "Создайте приватный канал без @имени, никого туда не добавляйте "
+            "и сделайте бота администратором."
+        )
+    if getattr(chat, "type", None) not in {"channel", "group", "supergroup"}:
+        return "Нужен приватный канал (лучше) или закрытая группа только с вами."
+    return None
+
+
+async def _link_service_chat(bot, *, actor_id: int, chat) -> str:
+    if not _is_admin(actor_id):
+        return "Привязать служебный канал может только владелец бота."
+    error = _service_inbox_error(chat)
+    if error:
+        return error
+    try:
+        sent = await bot.send_message(
+            chat_id=chat.id,
+            text=menus.SERVICE_LINKED_CHAT_TEXT,
+        )
+    except Exception:
+        logger.exception("Не удалось написать в служебный чат %s", chat.id)
+        return (
+            "Бот не смог написать в этот канал.\n"
+            "Сделайте его администратором с правом публиковать сообщения "
+            "и повторите: добавьте бота заново или перешлите пост после /service."
+        )
+    set_service_chat(
+        chat.id,
+        title=getattr(chat, "title", None) or "",
+        chat_type=getattr(chat, "type", None) or "",
+    )
+    try:
+        await bot.pin_chat_message(
+            chat.id, sent.message_id, disable_notification=True
+        )
+    except Exception:
+        logger.info("Не удалось закрепить сообщение в служебном чате %s", chat.id)
+    title = getattr(chat, "title", None) or str(chat.id)
+    extra = ""
+    if getattr(chat, "type", None) in {"group", "supergroup"}:
+        extra = (
+            "\n\nЭто группа. Если в ней есть ещё люди, они тоже увидят обращения. "
+            "Для полной приватности лучше приватный канал, где подписчик только вы."
+        )
+    return (
+        f"Готово. Обращения из книги жалоб будут приходить в «{title}».\n"
+        "Личный чат с ботом больше этим не забивается."
+        f"{extra}"
+    )
+
+
+async def _bot_mention(bot) -> str:
+    try:
+        me = await bot.get_me()
+    except Exception:
+        return "@lDera_bot"
+    if me.username:
+        return f"@{me.username}"
+    return me.first_name or "бот"
+
+
+def _service_status_text(bot_mention: str) -> str:
+    row = get_service_chat()
+    if row:
+        title = row.get("title") or str(row.get("id"))
+        return (
+            f"Служебный ящик привязан: «{title}».\n"
+            "Обращения приходят только туда. Никого в этот канал не добавляйте.\n\n"
+            "Отвязать: /service off"
+        )
+    return (
+        "Чтобы не пропустить личные обращения, заведите отдельный приватный канал "
+        "только для себя.\n\n"
+        "1. Telegram → Новый канал.\n"
+        "2. Название, например: IDera — обращения.\n"
+        "3. Сделайте канал приватным, без ссылки и без @имени.\n"
+        "4. Никого не приглашайте — подписчик только вы.\n"
+        f"5. Добавьте {bot_mention} администратором с правом публиковать сообщения.\n"
+        "6. Как только добавите бота, канал привяжется сам.\n\n"
+        "Если не привязался — напишите сюда /service и перешлите любой пост "
+        "из этого канала.\n\n"
+        "Отвязать позже: /service off"
+    )
 
 
 def _format_feedback_notice(entry: dict) -> str:
@@ -947,14 +1062,29 @@ def _format_feedback_notice(entry: dict) -> str:
 
 
 async def notify_feedback(bot, entry: dict, *, sender_chat_id: int | None) -> int:
+    text = _format_feedback_notice(entry)
     dests = _feedback_destinations()
     delivered = 0
+    failed: list[int] = []
     for chat_id in dests:
         try:
-            await bot.send_message(chat_id=chat_id, text=_format_feedback_notice(entry))
+            await bot.send_message(chat_id=chat_id, text=text)
             delivered += 1
         except Exception:
             logger.exception("Не удалось отправить обращение в чат %s", chat_id)
+            failed.append(chat_id)
+    service = get_service_chat_id()
+    if service and service in failed:
+        owner = get_owner_id()
+        if owner and owner not in dests:
+            try:
+                await bot.send_message(
+                    chat_id=owner,
+                    text="⚠️ Служебный канал недоступен. Обращение:\n\n" + text,
+                )
+                delivered += 1
+            except Exception:
+                logger.exception("Не удалось продублировать обращение владельцу")
     if not dests:
         logger.warning(
             "Обращение от %s сохранено, получатели не заданы",
@@ -1017,6 +1147,12 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     feedback_items = data.get("feedback") or []
     lines.append("")
     lines.append(f"✍️ Обращений: {data.get('feedback_count', len(feedback_items))}")
+    service = data.get("service_chat")
+    if service:
+        title = service.get("title") or str(service.get("id"))
+        lines.append(f"📥 Служебный канал: {title}")
+    else:
+        lines.append("📥 Служебный канал: не привязан — напишите /service")
     if feedback_items:
         lines.append("Последние обращения:")
         for row in feedback_items[:8]:
@@ -1031,6 +1167,114 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     if update.effective_chat:
         track_message(update.effective_chat.id, update.message.message_id)
         track_message(update.effective_chat.id, sent.message_id)
+
+
+async def service_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user = update.effective_user
+    if not update.message or not user:
+        return
+    if not _is_admin(user.id):
+        await update.message.reply_text("Эта команда только для владельца бота.")
+        return
+    args = " ".join(context.args or []).strip().lower()
+    if args in {"off", "unlink", "stop", "отвязать"}:
+        clear_service_chat()
+        context.user_data.pop("awaiting_service_link", None)
+        await update.message.reply_text(
+            "Служебный канал отвязан. Обращения снова будут приходить вам в личку с ботом."
+        )
+        return
+
+    chat = update.effective_chat
+    if chat and chat.type in {"channel", "group", "supergroup"}:
+        result = await _link_service_chat(
+            context.bot, actor_id=user.id, chat=chat
+        )
+        await update.message.reply_text(result)
+        return
+
+    mention = await _bot_mention(context.bot)
+    if get_service_chat_id() is None:
+        context.user_data["awaiting_service_link"] = True
+    await update.message.reply_text(_service_status_text(mention))
+
+
+async def on_my_chat_member(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    event = update.my_chat_member
+    if not event or not event.new_chat_member:
+        return
+    new = event.new_chat_member
+    if new.user.id != context.bot.id:
+        return
+    actor = event.from_user
+    chat = event.chat
+    if new.status in {ChatMemberStatus.LEFT, ChatMemberStatus.BANNED}:
+        if get_service_chat_id() == chat.id:
+            clear_service_chat()
+            if actor:
+                try:
+                    await context.bot.send_message(
+                        chat_id=actor.id,
+                        text=(
+                            "Служебный канал отвязан: бота убрали из канала. "
+                            "Обращения снова будут приходить в личку. "
+                            "Привязать заново: /service"
+                        ),
+                    )
+                except Exception:
+                    logger.exception("Не удалось сообщить об отвязке служебного канала")
+        return
+    if not actor or not _is_admin(actor.id):
+        return
+    if new.status != ChatMemberStatus.ADMINISTRATOR:
+        if actor and chat.type == "channel":
+            try:
+                await context.bot.send_message(
+                    chat_id=actor.id,
+                    text=(
+                        "В канале бот должен быть администратором "
+                        "с правом публиковать сообщения. Назначьте его админом."
+                    ),
+                )
+            except Exception:
+                logger.exception("Не удалось подсказать про права в канале")
+        return
+    result = await _link_service_chat(
+        context.bot, actor_id=actor.id, chat=chat
+    )
+    try:
+        context.application.user_data[actor.id].pop("awaiting_service_link", None)
+    except Exception:
+        pass
+    try:
+        await context.bot.send_message(chat_id=actor.id, text=result)
+    except Exception:
+        logger.exception("Не удалось подтвердить привязку служебного канала")
+
+
+async def on_service_forward(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    message = update.message
+    user = update.effective_user
+    if not message or not user or not _is_admin(user.id):
+        return
+    if not context.user_data.get("awaiting_service_link"):
+        return
+    origin = _forwarded_origin_chat(message)
+    if origin is None:
+        await message.reply_text(
+            "Не вижу канал в пересланном сообщении. "
+            "Перешлите пост из вашего приватного канала."
+        )
+        return
+    context.user_data.pop("awaiting_service_link", None)
+    result = await _link_service_chat(
+        context.bot, actor_id=user.id, chat=origin
+    )
+    await message.reply_text(result)
 
 
 async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -1224,6 +1468,17 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         first_name=user.first_name if user else None,
     )
     track_message(chat_id, update.message.message_id)
+
+    if context.user_data.get("awaiting_service_link") and _is_admin(uid):
+        origin = _forwarded_origin_chat(update.message)
+        if origin is not None:
+            context.user_data.pop("awaiting_service_link", None)
+            result = await _link_service_chat(
+                context.bot, actor_id=uid, chat=origin
+            )
+            sent = await update.message.reply_text(result)
+            track_message(chat_id, sent.message_id)
+            return
 
     if text == menus.BTN_CONSENT_YES:
         set_consent(context, accepted=True)
@@ -1512,6 +1767,16 @@ def main() -> None:
     app.add_handler(CommandHandler("ping", ping))
     app.add_handler(CommandHandler("id", id_command))
     app.add_handler(CommandHandler("stats", stats_command))
+    app.add_handler(CommandHandler("service", service_command))
+    app.add_handler(
+        ChatMemberHandler(on_my_chat_member, ChatMemberHandler.MY_CHAT_MEMBER)
+    )
+    app.add_handler(
+        MessageHandler(
+            filters.FORWARDED & ~filters.TEXT & filters.ChatType.PRIVATE,
+            on_service_forward,
+        )
+    )
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     app.add_error_handler(error_handler)
 

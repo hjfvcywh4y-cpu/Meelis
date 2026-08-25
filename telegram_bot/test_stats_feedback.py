@@ -49,6 +49,22 @@ class FeedbackStatsTests(unittest.TestCase):
         self.assertIn(menus.BTN_FEEDBACK_CANCEL, menus.MENU_LABELS)
         self.assertEqual(menus.PARENT["feedback"], "main")
 
+    def test_service_chat_roundtrip(self) -> None:
+        self.assertIsNone(stats.get_service_chat_id())
+        stats.set_service_chat(
+            -100123456,
+            title="IDera — обращения",
+            chat_type="channel",
+        )
+        row = stats.get_service_chat()
+        self.assertIsNotNone(row)
+        self.assertEqual(row["id"], -100123456)
+        self.assertEqual(row["title"], "IDera — обращения")
+        self.assertEqual(stats.snapshot()["service_chat"]["id"], -100123456)
+        stats.clear_service_chat()
+        self.assertIsNone(stats.get_service_chat_id())
+        self.assertIsNone(stats.snapshot()["service_chat"])
+
 
 if __name__ == "__main__":
     unittest.main()

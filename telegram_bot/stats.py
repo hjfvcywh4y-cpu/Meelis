@@ -193,6 +193,7 @@ def snapshot() -> dict:
         "consents": consents,
         "feedback": feedback,
         "feedback_count": len(feedback),
+        "service_chat": _service_chat_from_data(data),
         "stats_path": str(_path),
     }
 
@@ -206,6 +207,66 @@ def get_owner_id() -> int | None:
     if isinstance(raw, str) and (raw.isdigit() or (raw.startswith("-") and raw[1:].isdigit())):
         return int(raw)
     return None
+
+
+def _parse_chat_id(raw) -> int | None:
+    if isinstance(raw, int):
+        return raw
+    if isinstance(raw, str) and (raw.isdigit() or (raw.startswith("-") and raw[1:].isdigit())):
+        return int(raw)
+    return None
+
+
+def _service_chat_from_data(data: dict) -> dict | None:
+    raw = data.get("service_chat")
+    if not isinstance(raw, dict):
+        return None
+    chat_id = _parse_chat_id(raw.get("id"))
+    if chat_id is None:
+        return None
+    return {
+        "id": chat_id,
+        "title": str(raw.get("title") or ""),
+        "type": str(raw.get("type") or ""),
+        "linked_at": str(raw.get("linked_at") or ""),
+    }
+
+
+def get_service_chat() -> dict | None:
+    with _lock:
+        data = _load()
+    return _service_chat_from_data(data)
+
+
+def get_service_chat_id() -> int | None:
+    row = get_service_chat()
+    return None if row is None else int(row["id"])
+
+
+def set_service_chat(
+    chat_id: int,
+    *,
+    title: str = "",
+    chat_type: str = "",
+) -> dict:
+    entry = {
+        "id": int(chat_id),
+        "title": title or "",
+        "type": chat_type or "",
+        "linked_at": _now(),
+    }
+    with _lock:
+        data = _load()
+        data["service_chat"] = entry
+        _save(data)
+    return entry
+
+
+def clear_service_chat() -> None:
+    with _lock:
+        data = _load()
+        data.pop("service_chat", None)
+        _save(data)
 
 
 def claim_owner(user_id: int | None) -> int | None:
