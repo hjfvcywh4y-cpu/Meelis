@@ -39,6 +39,7 @@ from telegram.ext import (
 )
 from telegram.request import HTTPXRequest
 
+import ai_prompt
 import bad_quiz
 import menus
 import visitka
@@ -99,14 +100,7 @@ GROQ_FALLBACK_MODELS = [
     ).split(",")
     if m.strip()
 ]
-SYSTEM_PROMPT = os.getenv(
-    "AI_SYSTEM_PROMPT",
-    (
-        f"Ты дружелюбный помощник {menus.BOT_NAME}. "
-        "Отвечай кратко на русском, помогай с продуктом и бизнесом. "
-        "Не ставь диагнозов и не обещай доход."
-    ),
-)
+SYSTEM_PROMPT = ai_prompt.build_system_prompt(os.getenv("AI_SYSTEM_PROMPT", ""))
 MAX_HISTORY = int(os.getenv("AI_MAX_HISTORY", "20"))
 
 _histories: dict[int, deque[dict[str, str]]] = defaultdict(
@@ -198,6 +192,7 @@ async def ask_ai(chat_id: int, user_text: str) -> str:
                 response = await client.chat.completions.create(
                     model=model,
                     messages=messages,
+                    temperature=0.35,
                 )
                 reply = (response.choices[0].message.content or "").strip()
                 if not reply:
