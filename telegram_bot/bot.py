@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""IDera Helper — Telegram-бот с меню как у конкурента + подбор БАД."""
+"""IDera HUB — Telegram-бот с меню как у конкурента + подбор БАД."""
 
 from __future__ import annotations
 
@@ -95,7 +95,7 @@ GROQ_FALLBACK_MODELS = [
 SYSTEM_PROMPT = os.getenv(
     "AI_SYSTEM_PROMPT",
     (
-        "Ты дружелюбный помощник IDera Helper. "
+        f"Ты дружелюбный помощник {menus.BOT_NAME}. "
         "Отвечай кратко на русском, помогай с продуктом и бизнесом. "
         "Не ставь диагнозов и не обещай доход."
     ),
@@ -812,7 +812,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
     await reply_html(
         update,
-        f"{menus.idera('blue')} <b>Команды IDera Helper</b>\n"
+        f"{menus.idera('blue')} <b>Команды {menus.BOT_NAME}</b>\n"
         "/start — приветствие и главное меню\n"
         "/menu — открыть главное меню\n"
         "/clear — очистить чат\n"
@@ -1331,14 +1331,14 @@ async def post_init(app: Application) -> None:
     try:
         await app.bot.set_my_description(
             description=(
-                "IDera Helper — тихий ориентир рядом с тобой.\n"
+                f"{menus.BOT_NAME} — тихий ориентир рядом с тобой.\n"
                 "Ясность в нужный момент и кнопка, с которой можно начать."
             )
         )
         await app.bot.set_my_short_description(
-            short_description="IDera Helper. Ясность рядом, всегда на связи."
+            short_description=f"{menus.BOT_NAME}. Ясность рядом, всегда на связи."
         )
-        await app.bot.set_my_name(name="IDera Helper")
+        await app.bot.set_my_name(name=menus.BOT_NAME)
     except Exception:
         logger.exception("Не удалось обновить описание бота")
 
@@ -1389,7 +1389,7 @@ def main() -> None:
     app.add_error_handler(error_handler)
 
     logger.info(
-        "IDera Helper запущен (%s); stats=%s",
+        "IDera HUB запущен (%s); stats=%s",
         " -> ".join(providers) or "без AI",
         os.getenv("STATS_PATH", "data/stats.json"),
     )

@@ -1,4 +1,4 @@
-"""Тексты и кнопки меню IDera Helper (ReplyKeyboard)."""
+"""Тексты и кнопки меню IDera HUB (ReplyKeyboard)."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ IDERA_EMOJI = {
     "star": ("5467737725677378875", "🌟"),
 }
 IDERA_PACK = "IDera"
+BOT_NAME = "IDera HUB"
 
 
 def idera(name: str) -> str:
@@ -56,7 +57,7 @@ def welcome_message(*, with_menu_hint: bool = True) -> tuple[str, list[MessageEn
     blue_id, blue = IDERA_EMOJI["blue"]
     star_id, star = IDERA_EMOJI["star"]
     rocket_id, rocket = IDERA_EMOJI["rocket"]
-    brand = "IDera Helper"
+    brand = BOT_NAME
     text = (
         f"{blue} Привет. Это {brand}.\n\n"
         f"{star} Тихий ориентир, когда хочется ясности "
@@ -349,7 +350,7 @@ CONSENT_PDF = "Soglasie_na_obrabotku_personalnyh_dannyh.pdf"
 CONSENT_PDF_FILENAME = "Согласие на обработку персональных данных.pdf"
 
 WELCOME_CAPTION = (
-    f"{idera('blue')} Привет. Это <b>IDera Helper</b>.\n\n"
+    f"{idera('blue')} Привет. Это <b>{BOT_NAME}</b>.\n\n"
     f"{idera('star')} Тихий ориентир, когда хочется ясности "
     "и спокойного шага вперёд.\n\n"
     f"Кнопки уже внизу. Выбирай то, что откликается — я рядом {idera('rocket')}"
