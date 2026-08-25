@@ -54,6 +54,52 @@ def idera_entities(text: str, *names: str) -> list[MessageEntity]:
     return entities
 
 
+def idera_entities_from_text(text: str) -> list[MessageEntity]:
+    """Все вхождения символов пака IDera в произвольном тексте (ответы нейросети)."""
+    tokens = sorted(IDERA_EMOJI.values(), key=lambda item: -len(item[1]))
+    occupied: list[tuple[int, int]] = []
+    found: list[tuple[int, str, str]] = []
+    for emoji_id, token in tokens:
+        start = 0
+        while True:
+            idx = text.find(token, start)
+            if idx < 0:
+                break
+            end = idx + len(token)
+            if not any(idx < used_end and end > used_start for used_start, used_end in occupied):
+                occupied.append((idx, end))
+                found.append((idx, token, emoji_id))
+            start = idx + max(len(token), 1)
+    found.sort(key=lambda item: item[0])
+    return [
+        MessageEntity(
+            type=MessageEntity.CUSTOM_EMOJI,
+            offset=_utf16_len(text[:idx]),
+            length=_utf16_len(token),
+            custom_emoji_id=emoji_id,
+        )
+        for idx, token, emoji_id in found
+    ]
+
+
+def idera_html_from_text(text: str) -> str:
+    """Подменяет юникод пака на <tg-emoji> в уже экранированном HTML."""
+    tokens = sorted(IDERA_EMOJI.values(), key=lambda item: -len(item[1]))
+    placeholders: list[tuple[str, str]] = []
+    out = text
+    for i, (emoji_id, token) in enumerate(tokens):
+        if token not in out:
+            continue
+        placeholder = f"\0IDERA{i}\0"
+        placeholders.append(
+            (placeholder, f'<tg-emoji emoji-id="{emoji_id}">{token}</tg-emoji>')
+        )
+        out = out.replace(token, placeholder)
+    for placeholder, html in placeholders:
+        out = out.replace(placeholder, html)
+    return out
+
+
 def welcome_message(*, with_menu_hint: bool = True) -> tuple[str, list[MessageEntity]]:
     """Живое приветствие IDera без перечня разделов."""
     blue_id, blue = IDERA_EMOJI["blue"]

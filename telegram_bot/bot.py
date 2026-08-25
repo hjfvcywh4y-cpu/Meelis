@@ -195,7 +195,9 @@ async def ask_ai(chat_id: int, user_text: str) -> str:
                     messages=messages,
                     temperature=0.35,
                 )
-                reply = (response.choices[0].message.content or "").strip()
+                reply = ai_prompt.polish_ai_reply(
+                    response.choices[0].message.content or ""
+                )
                 if not reply:
                     reply = "Пустой ответ. Попробуйте ещё раз."
                 history.append({"role": "assistant", "content": reply})
@@ -228,7 +230,9 @@ async def ask_ai_once(system: str, user_text: str) -> str:
                     messages=messages,
                     temperature=0.3,
                 )
-                reply = (response.choices[0].message.content or "").strip()
+                reply = ai_prompt.polish_ai_reply(
+                    response.choices[0].message.content or ""
+                )
                 if reply:
                     return reply
             except Exception as exc:
@@ -2034,8 +2038,10 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
 
     for chunk in split_message(reply):
+        entities = menus.idera_entities_from_text(chunk)
         sent = await update.message.reply_text(
             chunk,
+            entities=entities or None,
             reply_markup=keyboard_for(
                 screen_of(context), context, update.effective_user
             ),

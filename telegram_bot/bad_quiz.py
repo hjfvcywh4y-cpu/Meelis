@@ -161,7 +161,9 @@ AI_SYSTEM = (
     "Напиши 2-3 спокойных предложения на русском, почему он подходит по ответам. "
     "Говори только об этом продукте IDera. Не называй другие бренды, БАДы и компании. "
     "Не ставь диагнозов, не обещай лечение, не предлагай другой продукт. "
-    "Только текст, без JSON, без заголовка и без названия других продуктов линейки."
+    "Только обычный текст, без JSON, без заголовка, без Markdown и без **звёздочек**. "
+    "Можно эмодзи IDera: 🔵 🚀 ☕️ ✅ 🔥 🌟. "
+    "Без названия других продуктов линейки."
 )
 
 
@@ -282,7 +284,8 @@ def _escape(text: str) -> str:
 
 def format_result(product_key: str, why: str | None = None) -> str:
     item = PRODUCTS[product_key]
-    body = _escape(why) if why else _escape(item["blurb"])
+    raw_why = why if why else item["blurb"]
+    body = menus.idera_html_from_text(_escape(raw_why))
     names = " · ".join(p["name"] for p in PRODUCTS.values())
     return (
         f"{menus.idera('check')} <b>Ориентир по твоим ответам</b>\n\n"
