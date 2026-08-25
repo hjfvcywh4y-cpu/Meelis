@@ -947,15 +947,19 @@ def _format_feedback_notice(entry: dict) -> str:
 
 
 async def notify_feedback(bot, entry: dict, *, sender_chat_id: int | None) -> int:
+    dests = _feedback_destinations()
     delivered = 0
-    for chat_id in _feedback_destinations():
-        if sender_chat_id is not None and chat_id == sender_chat_id:
-            continue
+    for chat_id in dests:
         try:
             await bot.send_message(chat_id=chat_id, text=_format_feedback_notice(entry))
             delivered += 1
         except Exception:
             logger.exception("Не удалось отправить обращение в чат %s", chat_id)
+    if not dests:
+        logger.warning(
+            "Обращение от %s сохранено, получатели не заданы",
+            sender_chat_id,
+        )
     return delivered
 
 
