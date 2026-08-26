@@ -15,6 +15,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY bot.py menus.py bad_quiz.py stats.py lessons.py visitka.py ai_prompt.py qual_card.py pdf_preview.py ./
 COPY assets ./assets
 COPY docs ./docs
-# Force rebuild: qualification sends only a PNG document.
-ENV QUAL_CARD_PNG_ONLY=1
+# Force rebuild: qualification PNG, photo shifted 1mm left.
+ENV QUAL_CARD_PNG_ONLY=2
 CMD ["python", "bot.py"]
