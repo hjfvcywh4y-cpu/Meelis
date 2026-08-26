@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
-from telegram import KeyboardButton, MessageEntity, ReplyKeyboardMarkup
+from telegram import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    MessageEntity,
+    ReplyKeyboardMarkup,
+)
 
 import qual_card
 
@@ -159,6 +165,8 @@ BTN_VISITKA = "💳 Визитка"
 BTN_QUAL = "🏅 Квалификация"
 BTN_QUAL_H = "Горизонтальные"
 BTN_QUAL_V = "Вертикальные"
+BTN_QUAL_DOWNLOAD = "⬇️ Скачать в хорошем качестве"
+QUAL_DOWNLOAD_CB = "qual_download"
 BTN_VISITKA_QR = "С QR-кодом"
 BTN_VISITKA_LIGHT = "Модель 1"
 BTN_VISITKA_BLUE = "Модель 2"
@@ -307,6 +315,12 @@ def qual_step_keyboard(step: str | None, user=None) -> ReplyKeyboardMarkup:
         rows.append([KeyboardButton(BTN_VISITKA_USE_NAME)])
     rows.append([KeyboardButton(BTN_BACK)])
     return ReplyKeyboardMarkup(rows, resize_keyboard=True)
+
+
+def qual_download_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        [[InlineKeyboardButton(BTN_QUAL_DOWNLOAD, callback_data=QUAL_DOWNLOAD_CB)]]
+    )
 
 
 def track_keyboard() -> ReplyKeyboardMarkup:
@@ -632,8 +646,8 @@ QUAL_RANK_BUTTONS = {rank.label: rank.id for rank in qual_card.RANKS}
 QUAL_ASK_PHOTO = (
     "Пришлите <b>портрет</b> — лицо крупно.\n"
     "Чтобы качество не потерялось, отправьте снимок <b>файлом</b> "
-    "(скрепка 📎), а не обычным фото: так Telegram не сожмёт картинку.\n"
-    "Готовую карточку пришлю PNG-файлом — его можно скачать в полном качестве."
+    "(скрепка 📎), а не обычным фото.\n"
+    "Потом покажу карточку в чате и кнопку «Скачать» — файл без сжатия Telegram."
 )
 
 QUAL_NEED_PHOTO = (
@@ -651,7 +665,12 @@ QUAL_ASK_NAME = (
 
 QUAL_BAD_NAME = "Не понял имя. Пришлите имя и фамилию текстом."
 
-QUAL_READY = f"{idera('check')} Готово! Собираю PNG в полном качестве…"
+QUAL_READY = f"{idera('check')} Готово! Собираю карточку…"
+QUAL_DOWNLOAD_CAPTION = (
+    "Это файл PNG. Нажмите на него и сохраните. "
+    "Не сохраняйте картинку из чата — Telegram её сжимает."
+)
+QUAL_DOWNLOAD_MISSING = "Сначала соберите карточку ещё раз."
 
 TRACK_TEXT = (
     f"{idera('blue')} IDera GO {idera('blue')}\n\n"

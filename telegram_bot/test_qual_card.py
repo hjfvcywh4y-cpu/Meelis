@@ -148,9 +148,12 @@ class QualCardTests(unittest.TestCase):
         photo_kb = menus.qual_step_keyboard("photo", user=user)
         self.assertIn("Анна Соколова", menus.QUAL_ASK_NAME)
         self.assertNotIn("Елена Тураева", menus.QUAL_ASK_NAME)
-        self.assertIn("PNG", menus.QUAL_ASK_PHOTO)
+        self.assertIn("Скачать", menus.QUAL_ASK_PHOTO)
         self.assertIn("файлом", menus.QUAL_ASK_PHOTO)
-        self.assertIn("PNG", menus.QUAL_READY)
+        self.assertIn("карточку", menus.QUAL_READY)
+        dl = menus.qual_download_keyboard()
+        self.assertEqual(dl.inline_keyboard[0][0].text, menus.BTN_QUAL_DOWNLOAD)
+        self.assertEqual(dl.inline_keyboard[0][0].callback_data, menus.QUAL_DOWNLOAD_CB)
 
     def test_png_matches_composite_pixels(self) -> None:
         photo = _dummy_photo()

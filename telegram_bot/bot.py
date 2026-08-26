@@ -31,6 +31,7 @@ from telegram.constants import ChatAction, ChatMemberStatus, ParseMode
 from telegram.error import NetworkError, TimedOut
 from telegram.ext import (
     Application,
+    CallbackQueryHandler,
     ChatMemberHandler,
     CommandHandler,
     ContextTypes,
@@ -1075,27 +1076,34 @@ async def _finish_qual(
         return True
     data["name"] = name
     data["step"] = "done"
-    await reply_html(update, menus.QUAL_READY, context, screen="qual")
+    set_screen(context, "business_tools")
+    await reply_html(update, menus.QUAL_READY, context, screen="business_tools")
     rank = qual_card.RANKS_BY_ID[rank_id]
     try:
         if update.message:
-            await update.message.chat.send_action(ChatAction.UPLOAD_DOCUMENT)
+            await update.message.chat.send_action(ChatAction.UPLOAD_PHOTO)
         png = await asyncio.to_thread(
             lambda: qual_card.build_card_png(
                 orient=orient, rank_id=rank_id, photo=photo, name=name
             )
         )
         filename = f"IDera_qualification_{rank_id}_{orient}.png"
+        context.user_data["qual_download"] = {
+            "png": png,
+            "filename": filename,
+            "caption": f"🏅 {name} · {rank.label}\n{menus.QUAL_DOWNLOAD_CAPTION}",
+        }
         caption = (
             f"🏅 {name} · {rank.label}\n"
-            "PNG в полном качестве — скачайте файл, Telegram его не сожмёт."
+            "Картинка в чате сжата Telegram. "
+            "Нажмите «Скачать» под фото — пришлю PNG в полном качестве."
         )
 
         async def _send_card():
-            return await update.message.reply_document(
-                document=InputFile(BytesIO(png), filename=filename),
+            return await update.message.reply_photo(
+                photo=InputFile(BytesIO(png), filename=filename),
                 caption=caption,
-                reply_markup=menus.business_tools_keyboard(),
+                reply_markup=menus.qual_download_keyboard(),
             )
 
         sent = await _tg_retry(_send_card)
@@ -1103,6 +1111,7 @@ async def _finish_qual(
             track_message(update.effective_chat.id, sent.message_id)
     except Exception:
         logger.exception("qual card build failed")
+        context.user_data.pop("qual_download", None)
         await reply_html(
             update,
             "Не удалось собрать карточку. Попробуйте ещё раз позже.",
@@ -1115,6 +1124,44 @@ async def _finish_qual(
     context.user_data.pop("qual", None)
     set_screen(context, "business_tools")
     return True
+
+
+async def handle_qual_download(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    query = update.callback_query
+    if query is None:
+        return
+    payload = context.user_data.get("qual_download")
+    if not isinstance(payload, dict) or not payload.get("png"):
+        await query.answer(menus.QUAL_DOWNLOAD_MISSING, show_alert=True)
+        return
+    await query.answer("Отправляю файл…")
+    png = payload["png"]
+    filename = str(payload.get("filename") or "IDera_qualification.png")
+    caption = str(payload.get("caption") or menus.QUAL_DOWNLOAD_CAPTION)
+    chat = update.effective_chat
+    if chat is None:
+        return
+    await chat.send_action(ChatAction.UPLOAD_DOCUMENT)
+
+    async def _send_file():
+        return await context.bot.send_document(
+            chat_id=chat.id,
+            document=InputFile(BytesIO(png), filename=filename),
+            caption=caption,
+        )
+
+    try:
+        sent = await _tg_retry(_send_file)
+    except Exception:
+        logger.exception("qual png download failed")
+        await context.bot.send_message(
+            chat_id=chat.id,
+            text="Не удалось отправить файл. Попробуйте ещё раз.",
+        )
+        return
+    track_message(chat.id, sent.message_id)
 
 
 async def handle_qual_back(
@@ -2171,6 +2218,9 @@ def main() -> None:
             filters.FORWARDED & ~filters.TEXT & filters.ChatType.PRIVATE,
             on_service_forward,
         )
+    )
+    app.add_handler(
+        CallbackQueryHandler(handle_qual_download, pattern=rf"^{menus.QUAL_DOWNLOAD_CB}$")
     )
     app.add_handler(MessageHandler(filters.CONTACT, handle_visitka_contact))
     app.add_handler(
