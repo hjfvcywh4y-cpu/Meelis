@@ -1078,22 +1078,46 @@ async def _finish_qual(
     await reply_html(update, menus.QUAL_READY, context, screen="qual")
     rank = qual_card.RANKS_BY_ID[rank_id]
     try:
-        jpeg = qual_card.build_card_jpeg(
-            orient=orient, rank_id=rank_id, photo=photo, name=name
+        jpeg, pdf = await asyncio.to_thread(
+            lambda: qual_card.build_card_preview_and_pdf(
+                orient=orient, rank_id=rank_id, photo=photo, name=name
+            )
         )
-        filename = f"IDera_qualification_{rank_id}_{orient}.jpg"
         caption = f"🏅 {name} · {rank.label}"
 
         async def _send_card():
             return await update.message.reply_photo(
-                photo=InputFile(BytesIO(jpeg), filename=filename),
+                photo=InputFile(
+                    BytesIO(jpeg),
+                    filename=f"IDera_qualification_{rank_id}_{orient}.jpg",
+                ),
                 caption=caption,
-                reply_markup=menus.business_tools_keyboard(),
             )
 
         sent = await _tg_retry(_send_card)
         if update.effective_chat:
             track_message(update.effective_chat.id, sent.message_id)
+
+        if update.message:
+            await update.message.chat.send_action(ChatAction.UPLOAD_DOCUMENT)
+
+        async def _send_pdf():
+            return await update.message.reply_document(
+                document=InputFile(
+                    BytesIO(pdf),
+                    filename=f"IDera_qualification_{rank_id}_{orient}.pdf",
+                ),
+                caption=(
+                    f"{caption}\n"
+                    "PDF в полном качестве — скачайте этот файл, "
+                    "не картинку из чата."
+                ),
+                reply_markup=menus.business_tools_keyboard(),
+            )
+
+        doc = await _tg_retry(_send_pdf)
+        if update.effective_chat:
+            track_message(update.effective_chat.id, doc.message_id)
     except Exception:
         logger.exception("qual card build failed")
         await reply_html(

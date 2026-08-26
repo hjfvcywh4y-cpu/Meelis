@@ -89,6 +89,17 @@ class QualCardTests(unittest.TestCase):
         with Image.open(io.BytesIO(jpeg)) as out:
             self.assertEqual(out.size, im_size)
             self.assertEqual(out.format, "JPEG")
+        preview, pdf = qual_card.build_card_preview_and_pdf(
+            orient="v",
+            rank_id="active",
+            photo=_dummy_photo(),
+            name="Анна Соколова",
+        )
+        with Image.open(io.BytesIO(preview)) as out:
+            self.assertEqual(out.size, im_size)
+            self.assertEqual(out.format, "JPEG")
+        self.assertTrue(pdf.startswith(b"%PDF"))
+        self.assertGreater(len(pdf), 1000)
 
     def test_normalize_name(self) -> None:
         self.assertEqual(qual_card.normalize_name("  Елена   Тураева "), "Елена Тураева")

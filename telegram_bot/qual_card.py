@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
+import pymupdf
 
 DOCS = Path(__file__).resolve().parent / "docs" / "qualifications"
 
@@ -258,3 +259,24 @@ def build_card_jpeg(
     buf = io.BytesIO()
     im.save(buf, format="JPEG", quality=quality, optimize=True)
     return buf.getvalue()
+
+
+def build_card_preview_and_pdf(
+    *,
+    orient: str,
+    rank_id: str,
+    photo: Image.Image | bytes | Path,
+    name: str,
+) -> tuple[bytes, bytes]:
+    """JPEG для чата и PDF для скачивания без сжатия Telegram."""
+    im = build_card_image(orient=orient, rank_id=rank_id, photo=photo, name=name)
+    jpeg_buf = io.BytesIO()
+    im.save(jpeg_buf, format="JPEG", quality=90, optimize=True)
+    png_buf = io.BytesIO()
+    im.save(png_buf, format="PNG", compress_level=6)
+    src = pymupdf.open(stream=png_buf.getvalue(), filetype="png")
+    try:
+        pdf = src.convert_to_pdf()
+    finally:
+        src.close()
+    return jpeg_buf.getvalue(), pdf
