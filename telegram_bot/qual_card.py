@@ -261,6 +261,32 @@ def build_card_jpeg(
     return buf.getvalue()
 
 
+def _image_to_pdf_bytes(im: Image.Image) -> bytes:
+    """PDF как у визитки: JPEG на странице обычного размера.
+
+    convert_to_pdf() ставит размер страницы в пикселях-пунктах
+    (~29×17 дюймов). Такой PDF Telegram часто не показывает как файл.
+    """
+    rgb = im.convert("RGB")
+    jpeg_buf = io.BytesIO()
+    rgb.save(jpeg_buf, format="JPEG", quality=95, optimize=True)
+    w, h = rgb.size
+    long_mm = 170.0
+    if w >= h:
+        page_w = long_mm / 25.4 * 72.0
+        page_h = page_w * h / w
+    else:
+        page_h = long_mm / 25.4 * 72.0
+        page_w = page_h * w / h
+    doc = pymupdf.open()
+    try:
+        page = doc.new_page(width=page_w, height=page_h)
+        page.insert_image(page.rect, stream=jpeg_buf.getvalue())
+        return doc.tobytes()
+    finally:
+        doc.close()
+
+
 def build_card_preview_and_pdf(
     *,
     orient: str,
@@ -272,11 +298,5 @@ def build_card_preview_and_pdf(
     im = build_card_image(orient=orient, rank_id=rank_id, photo=photo, name=name)
     jpeg_buf = io.BytesIO()
     im.save(jpeg_buf, format="JPEG", quality=90, optimize=True)
-    png_buf = io.BytesIO()
-    im.save(png_buf, format="PNG", compress_level=6)
-    src = pymupdf.open(stream=png_buf.getvalue(), filetype="png")
-    try:
-        pdf = src.convert_to_pdf()
-    finally:
-        src.close()
+    pdf = _image_to_pdf_bytes(im)
     return jpeg_buf.getvalue(), pdf

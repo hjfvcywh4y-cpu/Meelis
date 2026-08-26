@@ -8,6 +8,7 @@ import unittest
 from types import SimpleNamespace
 
 from PIL import Image
+import pymupdf
 
 import menus
 import qual_card
@@ -100,6 +101,13 @@ class QualCardTests(unittest.TestCase):
             self.assertEqual(out.format, "JPEG")
         self.assertTrue(pdf.startswith(b"%PDF"))
         self.assertGreater(len(pdf), 1000)
+        doc = pymupdf.open(stream=pdf, filetype="pdf")
+        try:
+            page = doc[0]
+            self.assertLess(page.rect.width, 700)
+            self.assertLess(page.rect.height, 700)
+        finally:
+            doc.close()
 
     def test_normalize_name(self) -> None:
         self.assertEqual(qual_card.normalize_name("  Елена   Тураева "), "Елена Тураева")
@@ -149,6 +157,7 @@ class QualCardTests(unittest.TestCase):
         photo_kb = menus.qual_step_keyboard("photo", user=user)
         self.assertIn("Анна Соколова", menus.QUAL_ASK_NAME)
         self.assertNotIn("Елена Тураева", menus.QUAL_ASK_NAME)
+        self.assertIn("файл", menus.QUAL_READY.lower())
 
 
 if __name__ == "__main__":

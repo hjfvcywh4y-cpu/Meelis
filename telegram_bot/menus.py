@@ -646,7 +646,9 @@ QUAL_ASK_NAME = (
 
 QUAL_BAD_NAME = "Не понял имя. Пришлите имя и фамилию текстом."
 
-QUAL_READY = f"{idera('check')} Готово! Собираю карточку…"
+QUAL_READY = (
+    f"{idera('check')} Готово! Сначала превью, затем файл для скачивания…"
+)
 
 TRACK_TEXT = (
     f"{idera('blue')} IDera GO {idera('blue')}\n\n"

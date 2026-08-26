@@ -15,5 +15,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY bot.py menus.py bad_quiz.py stats.py lessons.py visitka.py ai_prompt.py qual_card.py pdf_preview.py ./
 COPY assets ./assets
 COPY docs ./docs
-# Bust image cache so qualification PDF export is included in the build.
+# Bust image cache so the qualification downloadable PDF is in this image.
+ENV QUAL_CARD_DOWNLOAD=1
 CMD ["python", "bot.py"]
