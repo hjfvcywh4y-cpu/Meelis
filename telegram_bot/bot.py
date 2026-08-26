@@ -1078,8 +1078,8 @@ async def _finish_qual(
     await reply_html(update, menus.QUAL_READY, context, screen="qual")
     rank = qual_card.RANKS_BY_ID[rank_id]
     try:
-        jpeg, pdf = await asyncio.to_thread(
-            lambda: qual_card.build_card_preview_and_pdf(
+        jpeg, png = await asyncio.to_thread(
+            lambda: qual_card.build_card_preview_and_png(
                 orient=orient, rank_id=rank_id, photo=photo, name=name
             )
         )
@@ -1098,7 +1098,8 @@ async def _finish_qual(
     caption = f"🏅 {name} · {rank.label}"
     file_caption = (
         f"{caption}\n\n"
-        "📎 Файл карточки — нажмите, чтобы скачать в полном качестве."
+        "🖼 Картинка в полном размере — нажмите, чтобы скачать.\n"
+        "Не сохраняйте превью из чата: Telegram его сжимает."
     )
     photo_msg = None
     try:
@@ -1137,18 +1138,18 @@ async def _finish_qual(
     doc = None
     try:
         logger.info(
-            "qual card sending pdf rank=%s orient=%s bytes=%s",
+            "qual card sending png rank=%s orient=%s bytes=%s",
             rank_id,
             orient,
-            len(pdf),
+            len(png),
         )
         doc = await _tg_retry(
             lambda: _send_qual_document(
-                pdf, f"IDera_qualification_{rank_id}_{orient}.pdf"
+                png, f"IDera_qualification_{rank_id}_{orient}.png"
             )
         )
     except Exception:
-        logger.exception("qual card pdf failed")
+        logger.exception("qual card png failed")
         try:
             doc = await _tg_retry(
                 lambda: _send_qual_document(
