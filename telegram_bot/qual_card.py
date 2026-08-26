@@ -9,6 +9,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
 
 DOCS = Path(__file__).resolve().parent / "docs" / "qualifications"
+PHOTO_MAX_BYTES = 20 * 1024 * 1024
 
 ORIENT_H = "h"
 ORIENT_V = "v"
@@ -246,6 +247,12 @@ def build_card_image(
     return out
 
 
+def _save_card_bytes(im: Image.Image, *, fmt: str, **save_kw) -> bytes:
+    buf = io.BytesIO()
+    im.save(buf, format=fmt, **save_kw)
+    return buf.getvalue()
+
+
 def build_card_jpeg(
     *,
     orient: str,
@@ -255,6 +262,16 @@ def build_card_jpeg(
     quality: int = 90,
 ) -> bytes:
     im = build_card_image(orient=orient, rank_id=rank_id, photo=photo, name=name)
-    buf = io.BytesIO()
-    im.save(buf, format="JPEG", quality=quality, optimize=True)
-    return buf.getvalue()
+    return _save_card_bytes(im, fmt="JPEG", quality=quality, optimize=True)
+
+
+def build_card_png(
+    *,
+    orient: str,
+    rank_id: str,
+    photo: Image.Image | bytes | Path,
+    name: str,
+) -> bytes:
+    """PNG без потерь в размере макета — чтобы скачать без сжатия Telegram."""
+    im = build_card_image(orient=orient, rank_id=rank_id, photo=photo, name=name)
+    return _save_card_bytes(im, fmt="PNG", compress_level=6)

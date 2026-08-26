@@ -89,6 +89,16 @@ class QualCardTests(unittest.TestCase):
         with Image.open(io.BytesIO(jpeg)) as out:
             self.assertEqual(out.size, im_size)
             self.assertEqual(out.format, "JPEG")
+        png = qual_card.build_card_png(
+            orient="v",
+            rank_id="active",
+            photo=_dummy_photo(),
+            name="Анна Соколова",
+        )
+        with Image.open(io.BytesIO(png)) as out:
+            self.assertEqual(out.size, im_size)
+            self.assertEqual(out.format, "PNG")
+        self.assertLess(len(png), qual_card.PHOTO_MAX_BYTES)
 
     def test_normalize_name(self) -> None:
         self.assertEqual(qual_card.normalize_name("  Елена   Тураева "), "Елена Тураева")
@@ -138,6 +148,29 @@ class QualCardTests(unittest.TestCase):
         photo_kb = menus.qual_step_keyboard("photo", user=user)
         self.assertIn("Анна Соколова", menus.QUAL_ASK_NAME)
         self.assertNotIn("Елена Тураева", menus.QUAL_ASK_NAME)
+        self.assertIn("PNG", menus.QUAL_ASK_PHOTO)
+        self.assertIn("файлом", menus.QUAL_ASK_PHOTO)
+        self.assertIn("PNG", menus.QUAL_READY)
+
+    def test_png_matches_composite_pixels(self) -> None:
+        photo = _dummy_photo()
+        card = qual_card.build_card_image(
+            orient="h", rank_id="active", photo=photo, name="Анна Соколова"
+        )
+        png = qual_card.build_card_png(
+            orient="h", rank_id="active", photo=photo, name="Анна Соколова"
+        )
+        with Image.open(io.BytesIO(png)) as out:
+            self.assertEqual(out.format, "PNG")
+            self.assertEqual(out.size, card.size)
+            self.assertEqual(out.convert("RGB").tobytes(), card.convert("RGB").tobytes())
+        jpeg = qual_card.build_card_jpeg(
+            orient="h", rank_id="active", photo=photo, name="Анна Соколова"
+        )
+        with Image.open(io.BytesIO(jpeg)) as lossy:
+            self.assertNotEqual(
+                lossy.convert("RGB").tobytes(), card.convert("RGB").tobytes()
+            )
 
 
 if __name__ == "__main__":

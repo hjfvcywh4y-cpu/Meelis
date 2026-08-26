@@ -1052,7 +1052,7 @@ async def handle_qual_media(
     if not payload:
         await reply_html(update, menus.QUAL_NEED_PHOTO, context, screen="qual")
         return
-    if len(payload) > 8 * 1024 * 1024 or not qual_card.is_image_bytes(payload):
+    if len(payload) > qual_card.PHOTO_MAX_BYTES or not qual_card.is_image_bytes(payload):
         await reply_html(update, menus.QUAL_BAD_PHOTO, context, screen="qual")
         return
     data["photo"] = payload
@@ -1078,15 +1078,22 @@ async def _finish_qual(
     await reply_html(update, menus.QUAL_READY, context, screen="qual")
     rank = qual_card.RANKS_BY_ID[rank_id]
     try:
-        jpeg = qual_card.build_card_jpeg(
-            orient=orient, rank_id=rank_id, photo=photo, name=name
+        if update.message:
+            await update.message.chat.send_action(ChatAction.UPLOAD_DOCUMENT)
+        png = await asyncio.to_thread(
+            lambda: qual_card.build_card_png(
+                orient=orient, rank_id=rank_id, photo=photo, name=name
+            )
         )
-        filename = f"IDera_qualification_{rank_id}_{orient}.jpg"
-        caption = f"🏅 {name} · {rank.label}"
+        filename = f"IDera_qualification_{rank_id}_{orient}.png"
+        caption = (
+            f"🏅 {name} · {rank.label}\n"
+            "PNG в полном качестве — скачайте файл, Telegram его не сожмёт."
+        )
 
         async def _send_card():
-            return await update.message.reply_photo(
-                photo=InputFile(BytesIO(jpeg), filename=filename),
+            return await update.message.reply_document(
+                document=InputFile(BytesIO(png), filename=filename),
                 caption=caption,
                 reply_markup=menus.business_tools_keyboard(),
             )
