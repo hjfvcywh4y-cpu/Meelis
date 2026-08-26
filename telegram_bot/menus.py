@@ -279,8 +279,11 @@ def materials_keyboard() -> ReplyKeyboardMarkup:
     )
 
 
-def business_tools_keyboard() -> ReplyKeyboardMarkup:
-    return kb(
+def business_tools_keyboard(*, can_download: bool = False) -> ReplyKeyboardMarkup:
+    rows: list[list[str]] = []
+    if can_download:
+        rows.append([BTN_QUAL_DOWNLOAD])
+    rows.extend(
         [
             [BTN_VISITKA],
             [BTN_QUAL],
@@ -288,6 +291,7 @@ def business_tools_keyboard() -> ReplyKeyboardMarkup:
             [BTN_BACK],
         ]
     )
+    return kb(rows)
 
 
 def qual_orient_keyboard() -> ReplyKeyboardMarkup:
@@ -311,6 +315,7 @@ def qual_rank_keyboard() -> ReplyKeyboardMarkup:
 
 def qual_step_keyboard(step: str | None, user=None) -> ReplyKeyboardMarkup:
     rows: list[list[KeyboardButton]] = []
+    rows.append([KeyboardButton(BTN_QUAL_DOWNLOAD)])
     if step == "name" and _telegram_profile_name(user):
         rows.append([KeyboardButton(BTN_VISITKA_USE_NAME)])
     rows.append([KeyboardButton(BTN_BACK)])
@@ -647,7 +652,8 @@ QUAL_ASK_PHOTO = (
     "Пришлите <b>портрет</b> — лицо крупно.\n"
     "Чтобы качество не потерялось, отправьте снимок <b>файлом</b> "
     "(скрепка 📎), а не обычным фото.\n"
-    "Потом покажу карточку в чате и кнопку «Скачать» — файл без сжатия Telegram."
+    "Макет в чате сжат Telegram. Оригинал — кнопка "
+    "<b>Скачать в хорошем качестве</b> внизу экрана."
 )
 
 QUAL_NEED_PHOTO = (

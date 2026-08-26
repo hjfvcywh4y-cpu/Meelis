@@ -144,13 +144,21 @@ class QualCardTests(unittest.TestCase):
         self.assertEqual(ranks[-1], menus.BTN_BACK)
         user = SimpleNamespace(first_name="Анна", last_name="Соколова", username="x")
         markup = menus.qual_step_keyboard("name", user=user)
-        self.assertEqual(markup.keyboard[0][0].text, menus.BTN_VISITKA_USE_NAME)
+        labels = [btn.text for row in markup.keyboard for btn in row]
+        self.assertEqual(labels[0], menus.BTN_QUAL_DOWNLOAD)
+        self.assertIn(menus.BTN_VISITKA_USE_NAME, labels)
         photo_kb = menus.qual_step_keyboard("photo", user=user)
+        photo_labels = [btn.text for row in photo_kb.keyboard for btn in row]
+        self.assertEqual(photo_labels[0], menus.BTN_QUAL_DOWNLOAD)
         self.assertIn("Анна Соколова", menus.QUAL_ASK_NAME)
         self.assertNotIn("Елена Тураева", menus.QUAL_ASK_NAME)
         self.assertIn("Скачать", menus.QUAL_ASK_PHOTO)
         self.assertIn("файлом", menus.QUAL_ASK_PHOTO)
         self.assertIn("карточку", menus.QUAL_READY)
+        done = [btn.text for row in menus.business_tools_keyboard(can_download=True).keyboard for btn in row]
+        self.assertEqual(done[0], menus.BTN_QUAL_DOWNLOAD)
+        plain = [btn.text for row in menus.business_tools_keyboard().keyboard for btn in row]
+        self.assertNotIn(menus.BTN_QUAL_DOWNLOAD, plain)
         dl = menus.qual_download_keyboard()
         self.assertEqual(dl.inline_keyboard[0][0].text, menus.BTN_QUAL_DOWNLOAD)
         self.assertEqual(dl.inline_keyboard[0][0].callback_data, menus.QUAL_DOWNLOAD_CB)

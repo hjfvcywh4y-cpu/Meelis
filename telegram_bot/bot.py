@@ -303,6 +303,10 @@ def keyboard_for(
         if context is not None:
             step = str((context.user_data.get("qual") or {}).get("step") or "photo")
         return menus.qual_step_keyboard(step, user=user)
+    if screen == "business_tools":
+        return menus.business_tools_keyboard(
+            can_download=_has_qual_download(context)
+        )
     return {
         "main": menus.main_keyboard(),
         "consent": menus.consent_keyboard(),
@@ -310,7 +314,6 @@ def keyboard_for(
         "about": menus.about_keyboard(),
         "partners": menus.partners_keyboard(),
         "materials": menus.materials_keyboard(),
-        "business_tools": menus.business_tools_keyboard(),
         "track": menus.track_keyboard(),
         "visitka": menus.visitka_keyboard(),
         "visitka_pick": menus.visitka_pick_keyboard(),
@@ -908,6 +911,13 @@ async def handle_visitka_contact(
     await reply_html(update, menus.VISITKA_ASK_TELEGRAM, context, screen="visitka")
 
 
+def _has_qual_download(context: ContextTypes.DEFAULT_TYPE | None) -> bool:
+    if context is None:
+        return False
+    data = context.user_data.get("qual_download")
+    return isinstance(data, dict) and bool(data.get("file") or data.get("png"))
+
+
 def _qual_data(context: ContextTypes.DEFAULT_TYPE) -> dict:
     data = context.user_data.get("qual")
     if not isinstance(data, dict):
@@ -958,6 +968,13 @@ async def choose_qual_rank(
         logger.exception("qual preview failed")
         await reply_html(update, caption, context, screen="qual")
         return
+    context.user_data["qual_download"] = {
+        "file": payload,
+        "filename": f"IDera_qualification_{rank_id}_{orient}.jpg",
+        "caption": (
+            f"Макет «{button}»\n{menus.QUAL_DOWNLOAD_CAPTION}"
+        ),
+    }
 
     async def _send_preview():
         return await update.message.reply_photo(
@@ -1076,8 +1093,6 @@ async def _finish_qual(
         return True
     data["name"] = name
     data["step"] = "done"
-    set_screen(context, "business_tools")
-    await reply_html(update, menus.QUAL_READY, context, screen="business_tools")
     rank = qual_card.RANKS_BY_ID[rank_id]
     try:
         if update.message:
@@ -1089,21 +1104,23 @@ async def _finish_qual(
         )
         filename = f"IDera_qualification_{rank_id}_{orient}.png"
         context.user_data["qual_download"] = {
-            "png": png,
+            "file": png,
             "filename": filename,
             "caption": f"🏅 {name} · {rank.label}\n{menus.QUAL_DOWNLOAD_CAPTION}",
         }
+        set_screen(context, "business_tools")
         caption = (
             f"🏅 {name} · {rank.label}\n"
             "Картинка в чате сжата Telegram. "
-            "Нажмите «Скачать» под фото — пришлю PNG в полном качестве."
+            "Нажмите «Скачать в хорошем качестве» внизу экрана."
         )
+        markup = menus.business_tools_keyboard(can_download=True)
 
         async def _send_card():
             return await update.message.reply_photo(
                 photo=InputFile(BytesIO(png), filename=filename),
                 caption=caption,
-                reply_markup=menus.qual_download_keyboard(),
+                reply_markup=markup,
             )
 
         sent = await _tg_retry(_send_card)
@@ -1126,20 +1143,26 @@ async def _finish_qual(
     return True
 
 
-async def handle_qual_download(
+async def send_qual_download_file(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
     query = update.callback_query
-    if query is None:
-        return
     payload = context.user_data.get("qual_download")
-    if not isinstance(payload, dict) or not payload.get("png"):
-        await query.answer(menus.QUAL_DOWNLOAD_MISSING, show_alert=True)
+    raw = None
+    filename = "IDera_qualification.png"
+    caption = menus.QUAL_DOWNLOAD_CAPTION
+    if isinstance(payload, dict):
+        raw = payload.get("file") or payload.get("png")
+        filename = str(payload.get("filename") or filename)
+        caption = str(payload.get("caption") or caption)
+    if not raw:
+        if query:
+            await query.answer(menus.QUAL_DOWNLOAD_MISSING, show_alert=True)
+        elif update.message:
+            await reply_html(update, menus.QUAL_DOWNLOAD_MISSING, context)
         return
-    await query.answer("Отправляю файл…")
-    png = payload["png"]
-    filename = str(payload.get("filename") or "IDera_qualification.png")
-    caption = str(payload.get("caption") or menus.QUAL_DOWNLOAD_CAPTION)
+    if query:
+        await query.answer("Отправляю файл…")
     chat = update.effective_chat
     if chat is None:
         return
@@ -1148,20 +1171,26 @@ async def handle_qual_download(
     async def _send_file():
         return await context.bot.send_document(
             chat_id=chat.id,
-            document=InputFile(BytesIO(png), filename=filename),
+            document=InputFile(BytesIO(raw), filename=filename),
             caption=caption,
         )
 
     try:
         sent = await _tg_retry(_send_file)
     except Exception:
-        logger.exception("qual png download failed")
+        logger.exception("qual download failed")
         await context.bot.send_message(
             chat_id=chat.id,
             text="Не удалось отправить файл. Попробуйте ещё раз.",
         )
         return
     track_message(chat.id, sent.message_id)
+
+
+async def handle_qual_download(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    await send_qual_download_file(update, context)
 
 
 async def handle_qual_back(
@@ -1933,6 +1962,10 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     if not user_has_consent(context, uid):
         await send_consent_flow(update, context)
+        return
+
+    if text == menus.BTN_QUAL_DOWNLOAD:
+        await send_qual_download_file(update, context)
         return
 
     if context.user_data.get("awaiting_feedback"):
