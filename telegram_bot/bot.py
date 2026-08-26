@@ -1066,7 +1066,7 @@ async def _finish_qual(
     data: dict,
     name: str,
 ) -> bool:
-    """Готовая квалификация — только PDF-файл, как визитка. Без фото в чате."""
+    """Готовая квалификация: PDF-файл, затем PNG. Без фото в чате."""
     photo = data.get("photo")
     orient = data.get("orient")
     rank_id = data.get("rank_id")
@@ -1080,18 +1080,24 @@ async def _finish_qual(
     rank = qual_card.RANKS_BY_ID[rank_id]
     path = None
     try:
-        path = await asyncio.to_thread(
-            lambda: qual_card.build_card_pdf(
+        path, png = await asyncio.to_thread(
+            lambda: qual_card.build_card_files(
                 orient=orient, rank_id=rank_id, photo=photo, name=name
             )
         )
-        payload = path.read_bytes()
-        caption = (
+        pdf_payload = path.read_bytes()
+        pdf_name = f"IDera_kvalifikaciya_{rank_id}_{orient}.pdf"
+        png_name = f"IDera_kvalifikaciya_{rank_id}_{orient}.png"
+        pdf_caption = (
             f"🏅 Квалификация {rank.label}\n"
             f"{name}\n\n"
-            "Это файл, не фото. Нажмите, чтобы скачать."
+            "PDF — нажмите, чтобы скачать файл."
         )
-        filename = f"IDera_kvalifikaciya_{rank_id}_{orient}.pdf"
+        png_caption = (
+            f"🏅 {name} · {rank.label}\n\n"
+            "PNG в полном размере — сохраните в Фото."
+        )
+        keyboard = menus.business_tools_keyboard()
 
         if update.message:
             try:
@@ -1099,16 +1105,31 @@ async def _finish_qual(
             except Exception:
                 logger.warning("qual card upload action failed", exc_info=True)
 
-        async def _send_qual():
+        async def _send_pdf():
             return await update.message.reply_document(
-                document=InputFile(BytesIO(payload), filename=filename),
-                caption=caption,
-                reply_markup=menus.business_tools_keyboard(),
+                document=InputFile(BytesIO(pdf_payload), filename=pdf_name),
+                caption=pdf_caption,
+                reply_markup=keyboard,
             )
 
-        sent = await _tg_retry(_send_qual)
+        sent = await _tg_retry(_send_pdf)
         if update.effective_chat:
             track_message(update.effective_chat.id, sent.message_id)
+
+        try:
+            async def _send_png():
+                return await update.message.reply_document(
+                    document=InputFile(BytesIO(png), filename=png_name),
+                    caption=png_caption,
+                    disable_content_type_detection=True,
+                    reply_markup=keyboard,
+                )
+
+            png_msg = await _tg_retry(_send_png)
+            if update.effective_chat:
+                track_message(update.effective_chat.id, png_msg.message_id)
+        except Exception:
+            logger.exception("qual card png failed")
     except Exception:
         logger.exception("qual card build failed")
         await reply_html(

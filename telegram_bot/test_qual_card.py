@@ -109,6 +109,20 @@ class QualCardTests(unittest.TestCase):
                 doc.close()
         finally:
             path.unlink(missing_ok=True)
+        files_path, png = qual_card.build_card_files(
+            orient="v",
+            rank_id="active",
+            photo=_dummy_photo(),
+            name="Анна Соколова",
+        )
+        try:
+            self.assertTrue(files_path.read_bytes().startswith(b"%PDF"))
+            with Image.open(io.BytesIO(png)) as out:
+                self.assertEqual(out.size, im_size)
+                self.assertEqual(out.format, "PNG")
+            self.assertGreater(len(png), 1000)
+        finally:
+            files_path.unlink(missing_ok=True)
 
     def test_normalize_name(self) -> None:
         self.assertEqual(qual_card.normalize_name("  Елена   Тураева "), "Елена Тураева")
@@ -165,8 +179,9 @@ class QualCardTests(unittest.TestCase):
         finish = src[start:end]
         self.assertNotIn("reply_photo", finish)
         self.assertIn("reply_document", finish)
-        self.assertIn("build_card_pdf", finish)
+        self.assertIn("build_card_files", finish)
         self.assertIn("kvalifikaciya", finish)
+        self.assertIn(".png", finish)
 
 
 if __name__ == "__main__":

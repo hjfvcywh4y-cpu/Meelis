@@ -262,15 +262,17 @@ def build_card_jpeg(
     return buf.getvalue()
 
 
-def build_card_pdf(
+def build_card_files(
     *,
     orient: str,
     rank_id: str,
     photo: Image.Image | bytes | Path,
     name: str,
-) -> Path:
-    """PDF карточки квалификации — как визитка, чтобы Telegram дал скачать файл, а не фото."""
+) -> tuple[Path, bytes]:
+    """PDF для скачивания в чате и PNG в полном размере для галереи."""
     im = build_card_image(orient=orient, rank_id=rank_id, photo=photo, name=name)
+    png_buf = io.BytesIO()
+    im.save(png_buf, format="PNG", compress_level=6)
     tmp = tempfile.NamedTemporaryFile(
         prefix="idera_qual_", suffix=".pdf", delete=False
     )
@@ -287,4 +289,18 @@ def build_card_pdf(
     out.save(tmp_path)
     out.close()
     jpg_path.unlink(missing_ok=True)
-    return tmp_path
+    return tmp_path, png_buf.getvalue()
+
+
+def build_card_pdf(
+    *,
+    orient: str,
+    rank_id: str,
+    photo: Image.Image | bytes | Path,
+    name: str,
+) -> Path:
+    """PDF карточки квалификации — как визитка, чтобы Telegram дал скачать файл, а не фото."""
+    path, _png = build_card_files(
+        orient=orient, rank_id=rank_id, photo=photo, name=name
+    )
+    return path
