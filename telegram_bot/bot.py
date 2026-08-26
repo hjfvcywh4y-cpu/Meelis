@@ -1097,41 +1097,43 @@ async def _finish_qual(
     try:
         if update.message:
             await update.message.chat.send_action(ChatAction.UPLOAD_PHOTO)
-        png, jpeg = await asyncio.to_thread(
-            lambda: qual_card.build_card_files(
+        pdf, jpeg = await asyncio.to_thread(
+            lambda: qual_card.build_card_preview_and_pdf(
                 orient=orient, rank_id=rank_id, photo=photo, name=name
             )
         )
-        filename = f"IDera_qualification_{rank_id}_{orient}.png"
+        filename = f"IDera_qualification_{rank_id}_{orient}.pdf"
+        caption = f"🏅 {name} · {rank.label}"
         context.user_data["qual_download"] = {
-            "file": png,
+            "file": pdf,
             "filename": filename,
-            "caption": f"🏅 {name} · {rank.label}\n{menus.QUAL_DOWNLOAD_CAPTION}",
+            "caption": f"{caption}\n{menus.QUAL_DOWNLOAD_CAPTION}",
         }
         set_screen(context, "business_tools")
-        caption = f"🏅 {name} · {rank.label}"
 
         async def _send_card():
             return await update.message.reply_photo(
-                photo=InputFile(BytesIO(jpeg), filename=filename.replace(".png", ".jpg")),
+                photo=InputFile(BytesIO(jpeg), filename=filename.replace(".pdf", ".jpg")),
                 caption=caption,
-                reply_markup=menus.qual_download_keyboard(),
             )
 
         sent = await _tg_retry(_send_card)
         if update.effective_chat:
             track_message(update.effective_chat.id, sent.message_id)
 
-        async def _send_download_hint():
-            return await update.message.reply_text(
-                "Кнопка «Скачать» — сразу под карточкой. "
-                "Пришлю PNG без сжатия Telegram.",
+        if update.message:
+            await update.message.chat.send_action(ChatAction.UPLOAD_DOCUMENT)
+
+        async def _send_pdf():
+            return await update.message.reply_document(
+                document=InputFile(BytesIO(pdf), filename=filename),
+                caption=f"{caption}\n{menus.QUAL_DOWNLOAD_CAPTION}",
                 reply_markup=menus.business_tools_keyboard(can_download=True),
             )
 
-        hint = await _tg_retry(_send_download_hint)
+        doc = await _tg_retry(_send_pdf)
         if update.effective_chat:
-            track_message(update.effective_chat.id, hint.message_id)
+            track_message(update.effective_chat.id, doc.message_id)
     except Exception:
         logger.exception("qual card build failed")
         context.user_data.pop("qual_download", None)
@@ -1155,7 +1157,7 @@ async def send_qual_download_file(
     query = update.callback_query
     payload = context.user_data.get("qual_download")
     raw = None
-    filename = "IDera_qualification.png"
+    filename = "IDera_qualification.pdf"
     caption = menus.QUAL_DOWNLOAD_CAPTION
     if isinstance(payload, dict):
         raw = payload.get("file") or payload.get("png")

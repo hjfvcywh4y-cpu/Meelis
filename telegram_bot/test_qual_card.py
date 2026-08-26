@@ -189,6 +189,14 @@ class QualCardTests(unittest.TestCase):
         with Image.open(io.BytesIO(jpeg2)) as preview:
             self.assertEqual(preview.format, "JPEG")
             self.assertEqual(preview.size, card.size)
+        pdf, jpeg3 = qual_card.build_card_preview_and_pdf(
+            orient="h", rank_id="active", photo=photo, name="Анна Соколова"
+        )
+        self.assertTrue(pdf.startswith(b"%PDF"))
+        self.assertGreater(len(pdf), 1000)
+        with Image.open(io.BytesIO(jpeg3)) as preview:
+            self.assertEqual(preview.format, "JPEG")
+            self.assertEqual(preview.size, card.size)
 
 
 if __name__ == "__main__":
