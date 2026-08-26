@@ -5,9 +5,11 @@ from __future__ import annotations
 
 import io
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 
 from PIL import Image
+import pymupdf
 
 import menus
 import qual_card
@@ -89,19 +91,24 @@ class QualCardTests(unittest.TestCase):
         with Image.open(io.BytesIO(jpeg)) as out:
             self.assertEqual(out.size, im_size)
             self.assertEqual(out.format, "JPEG")
-        preview, png = qual_card.build_card_preview_and_png(
+        path = qual_card.build_card_pdf(
             orient="v",
             rank_id="active",
             photo=_dummy_photo(),
             name="Анна Соколова",
         )
-        with Image.open(io.BytesIO(preview)) as out:
-            self.assertEqual(out.size, im_size)
-            self.assertEqual(out.format, "JPEG")
-        with Image.open(io.BytesIO(png)) as out:
-            self.assertEqual(out.size, im_size)
-            self.assertEqual(out.format, "PNG")
-        self.assertGreater(len(png), 1000)
+        try:
+            payload = path.read_bytes()
+            self.assertTrue(payload.startswith(b"%PDF"))
+            self.assertGreater(len(payload), 1000)
+            doc = pymupdf.open(path)
+            try:
+                page = doc[0]
+                self.assertLess(page.rect.width, 700)
+            finally:
+                doc.close()
+        finally:
+            path.unlink(missing_ok=True)
 
     def test_normalize_name(self) -> None:
         self.assertEqual(qual_card.normalize_name("  Елена   Тураева "), "Елена Тураева")
@@ -151,7 +158,15 @@ class QualCardTests(unittest.TestCase):
         photo_kb = menus.qual_step_keyboard("photo", user=user)
         self.assertIn("Анна Соколова", menus.QUAL_ASK_NAME)
         self.assertNotIn("Елена Тураева", menus.QUAL_ASK_NAME)
-        self.assertIn("качеств", menus.QUAL_READY.lower())
+        self.assertIn("квалификации", menus.QUAL_READY.lower())
+        src = Path(__file__).resolve().parent.joinpath("bot.py").read_text()
+        start = src.index("async def _finish_qual")
+        end = src.index("async def handle_qual_back")
+        finish = src[start:end]
+        self.assertNotIn("reply_photo", finish)
+        self.assertIn("reply_document", finish)
+        self.assertIn("build_card_pdf", finish)
+        self.assertIn("kvalifikaciya", finish)
 
 
 if __name__ == "__main__":

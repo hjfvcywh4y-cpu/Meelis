@@ -1066,6 +1066,7 @@ async def _finish_qual(
     data: dict,
     name: str,
 ) -> bool:
+    """Готовая квалификация — только PDF-файл, как визитка. Без фото в чате."""
     photo = data.get("photo")
     orient = data.get("orient")
     rank_id = data.get("rank_id")
@@ -1077,101 +1078,50 @@ async def _finish_qual(
     data["step"] = "done"
     await reply_html(update, menus.QUAL_READY, context, screen="qual")
     rank = qual_card.RANKS_BY_ID[rank_id]
+    path = None
     try:
-        jpeg, png = await asyncio.to_thread(
-            lambda: qual_card.build_card_preview_and_png(
+        path = await asyncio.to_thread(
+            lambda: qual_card.build_card_pdf(
                 orient=orient, rank_id=rank_id, photo=photo, name=name
             )
         )
-    except Exception:
-        logger.exception("qual card build failed")
-        await reply_html(
-            update,
-            "Не удалось собрать карточку. Попробуйте ещё раз позже.",
-            context,
-            screen="business_tools",
+        payload = path.read_bytes()
+        caption = (
+            f"🏅 Квалификация {rank.label}\n"
+            f"{name}\n\n"
+            "Это файл, не фото. Нажмите, чтобы скачать."
         )
-        context.user_data.pop("qual", None)
-        set_screen(context, "business_tools")
-        return True
+        filename = f"IDera_kvalifikaciya_{rank_id}_{orient}.pdf"
 
-    caption = f"🏅 {name} · {rank.label}"
-    file_caption = (
-        f"{caption}\n\n"
-        "🖼 Картинка в полном размере — нажмите, чтобы скачать.\n"
-        "Не сохраняйте превью из чата: Telegram его сжимает."
-    )
-    photo_msg = None
-    try:
-        async def _send_card():
-            return await update.message.reply_photo(
-                photo=InputFile(
-                    BytesIO(jpeg),
-                    filename=f"IDera_qualification_{rank_id}_{orient}.jpg",
-                ),
-                caption=caption,
-            )
-
-        photo_msg = await _tg_retry(_send_card)
-        if update.effective_chat:
-            track_message(update.effective_chat.id, photo_msg.message_id)
-    except Exception:
-        logger.exception("qual card preview send failed")
-
-    async def _send_qual_document(payload: bytes, filename: str):
         if update.message:
             try:
                 await update.message.chat.send_action(ChatAction.UPLOAD_DOCUMENT)
             except Exception:
                 logger.warning("qual card upload action failed", exc_info=True)
-        kwargs: dict = {
-            "document": InputFile(BytesIO(payload), filename=filename),
-            "caption": file_caption,
-            "disable_content_type_detection": True,
-            "reply_markup": menus.business_tools_keyboard(),
-            "write_timeout": 120,
-        }
-        if photo_msg is not None:
-            kwargs["reply_to_message_id"] = photo_msg.message_id
-        return await update.message.reply_document(**kwargs)
 
-    doc = None
-    try:
-        logger.info(
-            "qual card sending png rank=%s orient=%s bytes=%s",
-            rank_id,
-            orient,
-            len(png),
-        )
-        doc = await _tg_retry(
-            lambda: _send_qual_document(
-                png, f"IDera_qualification_{rank_id}_{orient}.png"
+        async def _send_qual():
+            return await update.message.reply_document(
+                document=InputFile(BytesIO(payload), filename=filename),
+                caption=caption,
+                reply_markup=menus.business_tools_keyboard(),
             )
-        )
+
+        sent = await _tg_retry(_send_qual)
+        if update.effective_chat:
+            track_message(update.effective_chat.id, sent.message_id)
     except Exception:
-        logger.exception("qual card png failed")
-        try:
-            doc = await _tg_retry(
-                lambda: _send_qual_document(
-                    jpeg, f"IDera_qualification_{rank_id}_{orient}.jpg"
-                )
-            )
-        except Exception:
-            logger.exception("qual card jpeg file failed")
-            await reply_html(
-                update,
-                "Карточка готова, но файл не отправился. "
-                "Нажмите «Квалификация» и соберите ещё раз.",
-                context,
-                screen="business_tools",
-            )
-            context.user_data.pop("qual", None)
-            set_screen(context, "business_tools")
-            return True
-    if update.effective_chat and doc is not None:
-        track_message(update.effective_chat.id, doc.message_id)
-    context.user_data.pop("qual", None)
-    set_screen(context, "business_tools")
+        logger.exception("qual card build failed")
+        await reply_html(
+            update,
+            "Не удалось собрать карточку квалификации. Попробуйте ещё раз позже.",
+            context,
+            screen="business_tools",
+        )
+    finally:
+        context.user_data.pop("qual", None)
+        set_screen(context, "business_tools")
+        if path is not None:
+            path.unlink(missing_ok=True)
     return True
 
 

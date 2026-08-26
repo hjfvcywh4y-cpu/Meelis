@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import io
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
+import pymupdf
 
 DOCS = Path(__file__).resolve().parent / "docs" / "qualifications"
 
@@ -260,17 +262,29 @@ def build_card_jpeg(
     return buf.getvalue()
 
 
-def build_card_preview_and_png(
+def build_card_pdf(
     *,
     orient: str,
     rank_id: str,
     photo: Image.Image | bytes | Path,
     name: str,
-) -> tuple[bytes, bytes]:
-    """JPEG-превью для чата и PNG в полном размере для скачивания."""
+) -> Path:
+    """PDF карточки квалификации — как визитка, чтобы Telegram дал скачать файл, а не фото."""
     im = build_card_image(orient=orient, rank_id=rank_id, photo=photo, name=name)
-    jpeg_buf = io.BytesIO()
-    im.save(jpeg_buf, format="JPEG", quality=90, optimize=True)
-    png_buf = io.BytesIO()
-    im.save(png_buf, format="PNG", compress_level=6)
-    return jpeg_buf.getvalue(), png_buf.getvalue()
+    tmp = tempfile.NamedTemporaryFile(
+        prefix="idera_qual_", suffix=".pdf", delete=False
+    )
+    tmp_path = Path(tmp.name)
+    tmp.close()
+    jpg_path = tmp_path.with_suffix(".jpg")
+    im.convert("RGB").save(jpg_path, format="JPEG", quality=95, optimize=True)
+    w, h = im.size
+    page_w = 160 / 25.4 * 72
+    page_h = page_w * h / w
+    out = pymupdf.open()
+    page = out.new_page(width=page_w, height=page_h)
+    page.insert_image(page.rect, filename=str(jpg_path))
+    out.save(tmp_path)
+    out.close()
+    jpg_path.unlink(missing_ok=True)
+    return tmp_path
