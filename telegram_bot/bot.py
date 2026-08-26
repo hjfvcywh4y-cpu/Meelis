@@ -31,6 +31,7 @@ from telegram.constants import ChatAction, ChatMemberStatus, ParseMode
 from telegram.error import NetworkError, TimedOut
 from telegram.ext import (
     Application,
+    CallbackQueryHandler,
     ChatMemberHandler,
     CommandHandler,
     ContextTypes,
@@ -302,6 +303,10 @@ def keyboard_for(
         if context is not None:
             step = str((context.user_data.get("qual") or {}).get("step") or "photo")
         return menus.qual_step_keyboard(step, user=user)
+    if screen == "business_tools":
+        return menus.business_tools_keyboard(
+            can_download=_has_qual_download(context)
+        )
     return {
         "main": menus.main_keyboard(),
         "consent": menus.consent_keyboard(),
@@ -309,7 +314,6 @@ def keyboard_for(
         "about": menus.about_keyboard(),
         "partners": menus.partners_keyboard(),
         "materials": menus.materials_keyboard(),
-        "business_tools": menus.business_tools_keyboard(),
         "track": menus.track_keyboard(),
         "visitka": menus.visitka_keyboard(),
         "visitka_pick": menus.visitka_pick_keyboard(),
@@ -907,6 +911,13 @@ async def handle_visitka_contact(
     await reply_html(update, menus.VISITKA_ASK_TELEGRAM, context, screen="visitka")
 
 
+def _has_qual_download(context: ContextTypes.DEFAULT_TYPE | None) -> bool:
+    if context is None:
+        return False
+    data = context.user_data.get("qual_download")
+    return isinstance(data, dict) and bool(data.get("file") or data.get("png"))
+
+
 def _qual_data(context: ContextTypes.DEFAULT_TYPE) -> dict:
     data = context.user_data.get("qual")
     if not isinstance(data, dict):
@@ -957,6 +968,13 @@ async def choose_qual_rank(
         logger.exception("qual preview failed")
         await reply_html(update, caption, context, screen="qual")
         return
+    context.user_data["qual_download"] = {
+        "file": payload,
+        "filename": f"IDera_qualification_{rank_id}_{orient}.jpg",
+        "caption": (
+            f"Макет «{button}»\n{menus.QUAL_DOWNLOAD_CAPTION}"
+        ),
+    }
 
     async def _send_preview():
         return await update.message.reply_photo(
@@ -1052,7 +1070,7 @@ async def handle_qual_media(
     if not payload:
         await reply_html(update, menus.QUAL_NEED_PHOTO, context, screen="qual")
         return
-    if len(payload) > 8 * 1024 * 1024 or not qual_card.is_image_bytes(payload):
+    if len(payload) > qual_card.PHOTO_MAX_BYTES or not qual_card.is_image_bytes(payload):
         await reply_html(update, menus.QUAL_BAD_PHOTO, context, screen="qual")
         return
     data["photo"] = payload
@@ -1075,27 +1093,50 @@ async def _finish_qual(
         return True
     data["name"] = name
     data["step"] = "done"
-    await reply_html(update, menus.QUAL_READY, context, screen="qual")
     rank = qual_card.RANKS_BY_ID[rank_id]
     try:
-        jpeg = qual_card.build_card_jpeg(
-            orient=orient, rank_id=rank_id, photo=photo, name=name
+        if update.message:
+            await update.message.chat.send_action(ChatAction.UPLOAD_PHOTO)
+        pdf, jpeg = await asyncio.to_thread(
+            lambda: qual_card.build_card_preview_and_pdf(
+                orient=orient, rank_id=rank_id, photo=photo, name=name
+            )
         )
-        filename = f"IDera_qualification_{rank_id}_{orient}.jpg"
+        filename = f"IDera_qualification_{rank_id}_{orient}.pdf"
         caption = f"🏅 {name} · {rank.label}"
+        context.user_data["qual_download"] = {
+            "file": pdf,
+            "filename": filename,
+            "caption": f"{caption}\n{menus.QUAL_DOWNLOAD_CAPTION}",
+        }
+        set_screen(context, "business_tools")
 
         async def _send_card():
             return await update.message.reply_photo(
-                photo=InputFile(BytesIO(jpeg), filename=filename),
+                photo=InputFile(BytesIO(jpeg), filename=filename.replace(".pdf", ".jpg")),
                 caption=caption,
-                reply_markup=menus.business_tools_keyboard(),
             )
 
         sent = await _tg_retry(_send_card)
         if update.effective_chat:
             track_message(update.effective_chat.id, sent.message_id)
+
+        if update.message:
+            await update.message.chat.send_action(ChatAction.UPLOAD_DOCUMENT)
+
+        async def _send_pdf():
+            return await update.message.reply_document(
+                document=InputFile(BytesIO(pdf), filename=filename),
+                caption=f"{caption}\n{menus.QUAL_DOWNLOAD_CAPTION}",
+                reply_markup=menus.business_tools_keyboard(can_download=True),
+            )
+
+        doc = await _tg_retry(_send_pdf)
+        if update.effective_chat:
+            track_message(update.effective_chat.id, doc.message_id)
     except Exception:
         logger.exception("qual card build failed")
+        context.user_data.pop("qual_download", None)
         await reply_html(
             update,
             "Не удалось собрать карточку. Попробуйте ещё раз позже.",
@@ -1108,6 +1149,56 @@ async def _finish_qual(
     context.user_data.pop("qual", None)
     set_screen(context, "business_tools")
     return True
+
+
+async def send_qual_download_file(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    query = update.callback_query
+    payload = context.user_data.get("qual_download")
+    raw = None
+    filename = "IDera_qualification.pdf"
+    caption = menus.QUAL_DOWNLOAD_CAPTION
+    if isinstance(payload, dict):
+        raw = payload.get("file") or payload.get("png")
+        filename = str(payload.get("filename") or filename)
+        caption = str(payload.get("caption") or caption)
+    if not raw:
+        if query:
+            await query.answer(menus.QUAL_DOWNLOAD_MISSING, show_alert=True)
+        elif update.message:
+            await reply_html(update, menus.QUAL_DOWNLOAD_MISSING, context)
+        return
+    if query:
+        await query.answer("Отправляю файл…")
+    chat = update.effective_chat
+    if chat is None:
+        return
+    await chat.send_action(ChatAction.UPLOAD_DOCUMENT)
+
+    async def _send_file():
+        return await context.bot.send_document(
+            chat_id=chat.id,
+            document=InputFile(BytesIO(raw), filename=filename),
+            caption=caption,
+        )
+
+    try:
+        sent = await _tg_retry(_send_file)
+    except Exception:
+        logger.exception("qual download failed")
+        await context.bot.send_message(
+            chat_id=chat.id,
+            text="Не удалось отправить файл. Попробуйте ещё раз.",
+        )
+        return
+    track_message(chat.id, sent.message_id)
+
+
+async def handle_qual_download(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    await send_qual_download_file(update, context)
 
 
 async def handle_qual_back(
@@ -1881,6 +1972,10 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await send_consent_flow(update, context)
         return
 
+    if text == menus.BTN_QUAL_DOWNLOAD:
+        await send_qual_download_file(update, context)
+        return
+
     if context.user_data.get("awaiting_feedback"):
         if text == menus.BTN_FEEDBACK_CANCEL:
             context.user_data.pop("awaiting_feedback", None)
@@ -2164,6 +2259,9 @@ def main() -> None:
             filters.FORWARDED & ~filters.TEXT & filters.ChatType.PRIVATE,
             on_service_forward,
         )
+    )
+    app.add_handler(
+        CallbackQueryHandler(handle_qual_download, pattern=rf"^{menus.QUAL_DOWNLOAD_CB}$")
     )
     app.add_handler(MessageHandler(filters.CONTACT, handle_visitka_contact))
     app.add_handler(

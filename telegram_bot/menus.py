@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
-from telegram import KeyboardButton, MessageEntity, ReplyKeyboardMarkup
+from telegram import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    MessageEntity,
+    ReplyKeyboardMarkup,
+)
 
 import qual_card
 
@@ -159,6 +165,8 @@ BTN_VISITKA = "💳 Визитка"
 BTN_QUAL = "🏅 Квалификация"
 BTN_QUAL_H = "Горизонтальные"
 BTN_QUAL_V = "Вертикальные"
+BTN_QUAL_DOWNLOAD = "⬇️ Скачать"
+QUAL_DOWNLOAD_CB = "qual_download"
 BTN_VISITKA_QR = "С QR-кодом"
 BTN_VISITKA_LIGHT = "Модель 1"
 BTN_VISITKA_BLUE = "Модель 2"
@@ -271,8 +279,11 @@ def materials_keyboard() -> ReplyKeyboardMarkup:
     )
 
 
-def business_tools_keyboard() -> ReplyKeyboardMarkup:
-    return kb(
+def business_tools_keyboard(*, can_download: bool = False) -> ReplyKeyboardMarkup:
+    rows: list[list[str]] = []
+    if can_download:
+        rows.append([BTN_QUAL_DOWNLOAD])
+    rows.extend(
         [
             [BTN_VISITKA],
             [BTN_QUAL],
@@ -280,6 +291,7 @@ def business_tools_keyboard() -> ReplyKeyboardMarkup:
             [BTN_BACK],
         ]
     )
+    return kb(rows)
 
 
 def qual_orient_keyboard() -> ReplyKeyboardMarkup:
@@ -307,6 +319,12 @@ def qual_step_keyboard(step: str | None, user=None) -> ReplyKeyboardMarkup:
         rows.append([KeyboardButton(BTN_VISITKA_USE_NAME)])
     rows.append([KeyboardButton(BTN_BACK)])
     return ReplyKeyboardMarkup(rows, resize_keyboard=True)
+
+
+def qual_download_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        [[InlineKeyboardButton(BTN_QUAL_DOWNLOAD, callback_data=QUAL_DOWNLOAD_CB)]]
+    )
 
 
 def track_keyboard() -> ReplyKeyboardMarkup:
@@ -630,11 +648,14 @@ QUAL_ORIENT_BUTTONS = {
 QUAL_RANK_BUTTONS = {rank.label: rank.id for rank in qual_card.RANKS}
 
 QUAL_ASK_PHOTO = (
-    "Пришлите <b>фото</b> — лучше портрет, лицо крупно.\n"
-    "Вставлю его в рамку на карточке."
+    "Пришлите <b>портрет</b> — лицо крупно.\n"
+    "Лучше файлом (скрепка 📎), чтобы Telegram не сжал снимок."
 )
 
-QUAL_NEED_PHOTO = "Нужно именно фото. Отправьте снимок как фото или файл-картинку."
+QUAL_NEED_PHOTO = (
+    "Нужна картинка. Лучше отправьте её <b>файлом</b> (скрепка), "
+    "так Telegram не сожмёт качество."
+)
 
 QUAL_BAD_PHOTO = "Не смог прочитать снимок. Пришлите другое фото."
 
@@ -647,6 +668,11 @@ QUAL_ASK_NAME = (
 QUAL_BAD_NAME = "Не понял имя. Пришлите имя и фамилию текстом."
 
 QUAL_READY = f"{idera('check')} Готово! Собираю карточку…"
+QUAL_DOWNLOAD_CAPTION = (
+    "PDF в полном качестве — скачайте этот файл. "
+    "Картинка в чате сжата Telegram, её сохранять не нужно."
+)
+QUAL_DOWNLOAD_MISSING = "Сначала соберите карточку ещё раз."
 
 TRACK_TEXT = (
     f"{idera('blue')} IDera GO {idera('blue')}\n\n"

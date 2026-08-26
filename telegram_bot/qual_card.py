@@ -7,8 +7,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
+import pymupdf
 
 DOCS = Path(__file__).resolve().parent / "docs" / "qualifications"
+PHOTO_MAX_BYTES = 20 * 1024 * 1024
 
 ORIENT_H = "h"
 ORIENT_V = "v"
@@ -246,6 +248,12 @@ def build_card_image(
     return out
 
 
+def _save_card_bytes(im: Image.Image, *, fmt: str, **save_kw) -> bytes:
+    buf = io.BytesIO()
+    im.save(buf, format=fmt, **save_kw)
+    return buf.getvalue()
+
+
 def build_card_jpeg(
     *,
     orient: str,
@@ -255,6 +263,64 @@ def build_card_jpeg(
     quality: int = 90,
 ) -> bytes:
     im = build_card_image(orient=orient, rank_id=rank_id, photo=photo, name=name)
-    buf = io.BytesIO()
-    im.save(buf, format="JPEG", quality=quality, optimize=True)
-    return buf.getvalue()
+    return _save_card_bytes(im, fmt="JPEG", quality=quality, optimize=True)
+
+
+def build_card_png(
+    *,
+    orient: str,
+    rank_id: str,
+    photo: Image.Image | bytes | Path,
+    name: str,
+) -> bytes:
+    """PNG без потерь в размере макета — чтобы скачать без сжатия Telegram."""
+    im = build_card_image(orient=orient, rank_id=rank_id, photo=photo, name=name)
+    return _save_card_bytes(im, fmt="PNG", compress_level=6)
+
+
+def build_card_files(
+    *,
+    orient: str,
+    rank_id: str,
+    photo: Image.Image | bytes | Path,
+    name: str,
+) -> tuple[bytes, bytes]:
+    """PNG для скачивания и JPEG для превью в чате."""
+    im = build_card_image(orient=orient, rank_id=rank_id, photo=photo, name=name)
+    png = _save_card_bytes(im, fmt="PNG", compress_level=6)
+    jpeg = _save_card_bytes(im, fmt="JPEG", quality=90, optimize=True)
+    return png, jpeg
+
+
+def png_to_pdf(png: bytes) -> bytes:
+    """PDF с PNG внутри — без повторного JPEG."""
+    src = pymupdf.open(stream=png, filetype="png")
+    try:
+        return src.convert_to_pdf()
+    finally:
+        src.close()
+
+
+def build_card_pdf(
+    *,
+    orient: str,
+    rank_id: str,
+    photo: Image.Image | bytes | Path,
+    name: str,
+) -> bytes:
+    png = build_card_png(orient=orient, rank_id=rank_id, photo=photo, name=name)
+    return png_to_pdf(png)
+
+
+def build_card_preview_and_pdf(
+    *,
+    orient: str,
+    rank_id: str,
+    photo: Image.Image | bytes | Path,
+    name: str,
+) -> tuple[bytes, bytes]:
+    """JPEG для чата и PDF для скачивания в полном качестве."""
+    im = build_card_image(orient=orient, rank_id=rank_id, photo=photo, name=name)
+    jpeg = _save_card_bytes(im, fmt="JPEG", quality=90, optimize=True)
+    png = _save_card_bytes(im, fmt="PNG", compress_level=6)
+    return png_to_pdf(png), jpeg
