@@ -165,7 +165,7 @@ BTN_VISITKA = "💳 Визитка"
 BTN_QUAL = "🏅 Квалификация"
 BTN_QUAL_H = "Горизонтальные"
 BTN_QUAL_V = "Вертикальные"
-BTN_QUAL_DOWNLOAD = "⬇️ Скачать в хорошем качестве"
+BTN_QUAL_DOWNLOAD = "⬇️ Скачать"
 QUAL_DOWNLOAD_CB = "qual_download"
 BTN_VISITKA_QR = "С QR-кодом"
 BTN_VISITKA_LIGHT = "Модель 1"
@@ -315,7 +315,6 @@ def qual_rank_keyboard() -> ReplyKeyboardMarkup:
 
 def qual_step_keyboard(step: str | None, user=None) -> ReplyKeyboardMarkup:
     rows: list[list[KeyboardButton]] = []
-    rows.append([KeyboardButton(BTN_QUAL_DOWNLOAD)])
     if step == "name" and _telegram_profile_name(user):
         rows.append([KeyboardButton(BTN_VISITKA_USE_NAME)])
     rows.append([KeyboardButton(BTN_BACK)])
@@ -650,10 +649,7 @@ QUAL_RANK_BUTTONS = {rank.label: rank.id for rank in qual_card.RANKS}
 
 QUAL_ASK_PHOTO = (
     "Пришлите <b>портрет</b> — лицо крупно.\n"
-    "Чтобы качество не потерялось, отправьте снимок <b>файлом</b> "
-    "(скрепка 📎), а не обычным фото.\n"
-    "Макет в чате сжат Telegram. Оригинал — кнопка "
-    "<b>Скачать в хорошем качестве</b> внизу экрана."
+    "Лучше файлом (скрепка 📎), чтобы Telegram не сжал снимок."
 )
 
 QUAL_NEED_PHOTO = (

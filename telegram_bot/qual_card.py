@@ -275,3 +275,17 @@ def build_card_png(
     """PNG без потерь в размере макета — чтобы скачать без сжатия Telegram."""
     im = build_card_image(orient=orient, rank_id=rank_id, photo=photo, name=name)
     return _save_card_bytes(im, fmt="PNG", compress_level=6)
+
+
+def build_card_files(
+    *,
+    orient: str,
+    rank_id: str,
+    photo: Image.Image | bytes | Path,
+    name: str,
+) -> tuple[bytes, bytes]:
+    """PNG для скачивания и JPEG для превью в чате."""
+    im = build_card_image(orient=orient, rank_id=rank_id, photo=photo, name=name)
+    png = _save_card_bytes(im, fmt="PNG", compress_level=6)
+    jpeg = _save_card_bytes(im, fmt="JPEG", quality=90, optimize=True)
+    return png, jpeg

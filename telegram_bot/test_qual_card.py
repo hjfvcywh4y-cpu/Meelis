@@ -144,15 +144,12 @@ class QualCardTests(unittest.TestCase):
         self.assertEqual(ranks[-1], menus.BTN_BACK)
         user = SimpleNamespace(first_name="Анна", last_name="Соколова", username="x")
         markup = menus.qual_step_keyboard("name", user=user)
-        labels = [btn.text for row in markup.keyboard for btn in row]
-        self.assertEqual(labels[0], menus.BTN_QUAL_DOWNLOAD)
-        self.assertIn(menus.BTN_VISITKA_USE_NAME, labels)
+        self.assertEqual(markup.keyboard[0][0].text, menus.BTN_VISITKA_USE_NAME)
         photo_kb = menus.qual_step_keyboard("photo", user=user)
         photo_labels = [btn.text for row in photo_kb.keyboard for btn in row]
-        self.assertEqual(photo_labels[0], menus.BTN_QUAL_DOWNLOAD)
+        self.assertNotIn(menus.BTN_QUAL_DOWNLOAD, photo_labels)
         self.assertIn("Анна Соколова", menus.QUAL_ASK_NAME)
         self.assertNotIn("Елена Тураева", menus.QUAL_ASK_NAME)
-        self.assertIn("Скачать", menus.QUAL_ASK_PHOTO)
         self.assertIn("файлом", menus.QUAL_ASK_PHOTO)
         self.assertIn("карточку", menus.QUAL_READY)
         done = [btn.text for row in menus.business_tools_keyboard(can_download=True).keyboard for btn in row]
@@ -162,6 +159,7 @@ class QualCardTests(unittest.TestCase):
         dl = menus.qual_download_keyboard()
         self.assertEqual(dl.inline_keyboard[0][0].text, menus.BTN_QUAL_DOWNLOAD)
         self.assertEqual(dl.inline_keyboard[0][0].callback_data, menus.QUAL_DOWNLOAD_CB)
+        self.assertEqual(menus.BTN_QUAL_DOWNLOAD, "⬇️ Скачать")
 
     def test_png_matches_composite_pixels(self) -> None:
         photo = _dummy_photo()
@@ -182,6 +180,15 @@ class QualCardTests(unittest.TestCase):
             self.assertNotEqual(
                 lossy.convert("RGB").tobytes(), card.convert("RGB").tobytes()
             )
+        png2, jpeg2 = qual_card.build_card_files(
+            orient="h", rank_id="active", photo=photo, name="Анна Соколова"
+        )
+        with Image.open(io.BytesIO(png2)) as out:
+            self.assertEqual(out.format, "PNG")
+            self.assertEqual(out.convert("RGB").tobytes(), card.convert("RGB").tobytes())
+        with Image.open(io.BytesIO(jpeg2)) as preview:
+            self.assertEqual(preview.format, "JPEG")
+            self.assertEqual(preview.size, card.size)
 
 
 if __name__ == "__main__":

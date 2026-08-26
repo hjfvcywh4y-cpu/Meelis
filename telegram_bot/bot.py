@@ -1097,8 +1097,8 @@ async def _finish_qual(
     try:
         if update.message:
             await update.message.chat.send_action(ChatAction.UPLOAD_PHOTO)
-        png = await asyncio.to_thread(
-            lambda: qual_card.build_card_png(
+        png, jpeg = await asyncio.to_thread(
+            lambda: qual_card.build_card_files(
                 orient=orient, rank_id=rank_id, photo=photo, name=name
             )
         )
@@ -1109,23 +1109,29 @@ async def _finish_qual(
             "caption": f"🏅 {name} · {rank.label}\n{menus.QUAL_DOWNLOAD_CAPTION}",
         }
         set_screen(context, "business_tools")
-        caption = (
-            f"🏅 {name} · {rank.label}\n"
-            "Картинка в чате сжата Telegram. "
-            "Нажмите «Скачать в хорошем качестве» внизу экрана."
-        )
-        markup = menus.business_tools_keyboard(can_download=True)
+        caption = f"🏅 {name} · {rank.label}"
 
         async def _send_card():
             return await update.message.reply_photo(
-                photo=InputFile(BytesIO(png), filename=filename),
+                photo=InputFile(BytesIO(jpeg), filename=filename.replace(".png", ".jpg")),
                 caption=caption,
-                reply_markup=markup,
+                reply_markup=menus.qual_download_keyboard(),
             )
 
         sent = await _tg_retry(_send_card)
         if update.effective_chat:
             track_message(update.effective_chat.id, sent.message_id)
+
+        async def _send_download_hint():
+            return await update.message.reply_text(
+                "Кнопка «Скачать» — сразу под карточкой. "
+                "Пришлю PNG без сжатия Telegram.",
+                reply_markup=menus.business_tools_keyboard(can_download=True),
+            )
+
+        hint = await _tg_retry(_send_download_hint)
+        if update.effective_chat:
+            track_message(update.effective_chat.id, hint.message_id)
     except Exception:
         logger.exception("qual card build failed")
         context.user_data.pop("qual_download", None)
