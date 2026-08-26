@@ -1083,8 +1083,20 @@ async def _finish_qual(
                 orient=orient, rank_id=rank_id, photo=photo, name=name
             )
         )
-        caption = f"🏅 {name} · {rank.label}"
+    except Exception:
+        logger.exception("qual card build failed")
+        await reply_html(
+            update,
+            "Не удалось собрать карточку. Попробуйте ещё раз позже.",
+            context,
+            screen="business_tools",
+        )
+        context.user_data.pop("qual", None)
+        set_screen(context, "business_tools")
+        return True
 
+    caption = f"🏅 {name} · {rank.label}"
+    try:
         async def _send_card():
             return await update.message.reply_photo(
                 photo=InputFile(
@@ -1097,7 +1109,10 @@ async def _finish_qual(
         sent = await _tg_retry(_send_card)
         if update.effective_chat:
             track_message(update.effective_chat.id, sent.message_id)
+    except Exception:
+        logger.exception("qual card preview send failed")
 
+    try:
         if update.message:
             await update.message.chat.send_action(ChatAction.UPLOAD_DOCUMENT)
 
@@ -1119,10 +1134,10 @@ async def _finish_qual(
         if update.effective_chat:
             track_message(update.effective_chat.id, doc.message_id)
     except Exception:
-        logger.exception("qual card build failed")
+        logger.exception("qual card pdf failed")
         await reply_html(
             update,
-            "Не удалось собрать карточку. Попробуйте ещё раз позже.",
+            "Карточка готова, но PDF не отправился. Нажмите «Квалификация» и соберите ещё раз.",
             context,
             screen="business_tools",
         )
