@@ -18,7 +18,8 @@ export function isPreviewEnabled(): boolean {
 export function isAdminCatalogEnabled(): boolean {
   if (readFlag('ENABLE_ADMIN_CATALOG')) return true;
   if (isPreviewEnabled()) return true;
-  return process.env.NODE_ENV !== 'production';
+  // Явное сравнение с development: при неизвестном окружении экран закрыт.
+  return process.env.NODE_ENV === 'development';
 }
 
 export function getAppMode(): AppMode {
