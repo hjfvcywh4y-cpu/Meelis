@@ -146,7 +146,7 @@ export function TrackStepViewport({ steps, status, sectionHref }: TrackStepViewp
   return (
     <section
       aria-label="Содержание трека"
-      className="blueprint grid min-h-[320px] place-items-center px-4 py-12 text-center sm:px-8"
+      className="blueprint grid h-full min-h-[320px] place-items-center px-4 py-12 text-center sm:px-8"
     >
       <div className="max-w-[540px]">
         <Eyebrow tone="dark">Структура готова</Eyebrow>
@@ -176,18 +176,18 @@ export function TrackEvidencePanel({ outcome }: { outcome: string }) {
         Что здесь появится
       </h3>
       <p className="mt-3 text-[16px] leading-relaxed text-muted">{outcome}</p>
-      <ul className="mt-5 grid gap-2 text-[14px] text-muted">
+      <ul className="mt-5 flex flex-wrap gap-2">
         {[
-          'текст или формулировка',
-          'список или база',
-          'подготовленное сообщение',
-          'аудиозапись разговора',
-          'скриншот или фото',
-          'ссылка на опубликованный материал',
-          'отметка совершённого действия',
-          'договорённость с датой',
+          'текст',
+          'список',
+          'сообщение',
+          'аудио',
+          'скриншот',
+          'ссылка',
+          'отметка факта',
+          'договорённость',
         ].map((item) => (
-          <li key={item} className="border-t border-line-soft pt-2">
+          <li key={item} className="border border-line-soft px-2 py-1 text-[13px] text-muted">
             {item}
           </li>
         ))}

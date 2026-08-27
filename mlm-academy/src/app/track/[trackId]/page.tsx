@@ -63,7 +63,7 @@ export default async function TrackPage({ params }: TrackPageProps) {
       <PageView event={{ name: 'open_track_shell', trackId: track.trackId }} />
 
       <div className="grid border-b-2 border-ink lg:grid-cols-[minmax(0,8fr)_minmax(300px,4fr)]">
-        <div className="border-b-2 border-ink px-4 py-8 sm:px-6 lg:border-r-2 lg:border-b-0 lg:px-8 lg:py-12">
+        <div className="flex flex-col border-b-2 border-ink px-4 py-8 sm:px-6 lg:border-r-2 lg:border-b-0 lg:px-8 lg:py-12">
           <TrackHeader
             track={track}
             section={section}
@@ -82,7 +82,7 @@ export default async function TrackPage({ params }: TrackPageProps) {
             <TrackStepNavigation steps={steps} activeStepId={null} />
           </div>
 
-          <div className="mt-8">
+          <div className="mt-8 flex-1">
             <TrackStepViewport
               steps={steps}
               status={status}
@@ -91,7 +91,7 @@ export default async function TrackPage({ params }: TrackPageProps) {
           </div>
         </div>
 
-        <aside className="grid content-start gap-4 bg-surface/60 px-4 py-8 sm:px-6 lg:px-7 lg:py-12">
+        <aside className="grid content-start gap-4 px-4 py-8 sm:px-6 lg:px-7 lg:py-12">
           <TrackPassport
             track={track}
             section={section}
