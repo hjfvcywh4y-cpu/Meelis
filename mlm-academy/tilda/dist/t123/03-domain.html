@@ -1,0 +1,652 @@
+<!-- Блок T123: доменная логика Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<script>
+/**
+ * Доменная логика MLM Academy для Tilda.
+ * Белый список публичных полей — единственный переход из реестра в UI.
+ */
+(function (root) {
+  'use strict';
+
+  var PUBLIC_FIELDS = [
+    'trackId',
+    'sectionId',
+    'module',
+    'title',
+    'situation',
+    'outcome',
+    'format',
+    'nextTrackIds',
+    'publicationStatus',
+    'contentStatus',
+    'visibility',
+    'access',
+  ];
+
+  var COMPACT_TO_PUBLIC = {
+    id: 'trackId',
+    s: 'sectionId',
+    m: 'module',
+    t: 'title',
+    sit: 'situation',
+    out: 'outcome',
+    f: 'format',
+    n: 'nextTrackIds',
+    ps: 'publicationStatus',
+    cs: 'contentStatus',
+    v: 'visibility',
+    a: 'access',
+  };
+
+  var SECTION_IDS = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6'];
+  var TRACK_ID_RE = /^A[1-6]-\d{3}$/;
+  var ACCENT_INK = { A1: '#ffffff', A2: '#111111', A3: '#111111', A4: '#111111', A5: '#111111', A6: '#111111' };
+  var SECTION_COLORS = {
+    A1: '#3157ff',
+    A2: '#d5ff43',
+    A3: '#ff6b35',
+    A4: '#64d8ff',
+    A5: '#ff5364',
+    A6: '#b892ff',
+  };
+
+  var PROFILE_KEY = 'mlma.profile.v1';
+  var PROGRESS_KEY = 'mlma.progress.v1';
+  var MAX_ALTERNATIVES = 3;
+  var GOAL_MAX = 240;
+
+  var EMPTY_PROFILE = {
+    selectedSectionId: null,
+    currentGoal: '',
+    savedTrackIds: [],
+    role: 'member',
+    updatedAt: '',
+  };
+
+  function clone(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function toPublicTrack(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    var src = raw;
+    if (raw.id && !raw.trackId) {
+      src = expandCompact(raw);
+    }
+    var next = [];
+    var ids = Array.isArray(src.nextTrackIds) ? src.nextTrackIds : [];
+    for (var i = 0; i < ids.length; i += 1) {
+      if (typeof ids[i] === 'string') next.push(ids[i]);
+    }
+    var track = {
+      trackId: typeof src.trackId === 'string' ? src.trackId : '',
+      sectionId: typeof src.sectionId === 'string' ? src.sectionId : '',
+      module: typeof src.module === 'string' ? src.module : '',
+      title: typeof src.title === 'string' ? src.title : '',
+      situation: typeof src.situation === 'string' ? src.situation : '',
+      outcome: typeof src.outcome === 'string' ? src.outcome : '',
+      format: typeof src.format === 'string' ? src.format : '',
+      nextTrackIds: next,
+      publicationStatus: typeof src.publicationStatus === 'string' ? src.publicationStatus : 'unknown',
+      contentStatus: typeof src.contentStatus === 'string' ? src.contentStatus : 'metadata_only',
+      visibility: typeof src.visibility === 'string' ? src.visibility : 'catalog',
+      access: typeof src.access === 'string' ? src.access : 'undecided',
+    };
+    if (!TRACK_ID_RE.test(track.trackId)) return null;
+    if (SECTION_IDS.indexOf(track.sectionId) === -1) return null;
+    return track;
+  }
+
+  function expandCompact(row) {
+    var out = {};
+    var keys = Object.keys(COMPACT_TO_PUBLIC);
+    for (var i = 0; i < keys.length; i += 1) {
+      var compact = keys[i];
+      if (Object.prototype.hasOwnProperty.call(row, compact)) {
+        out[COMPACT_TO_PUBLIC[compact]] = row[compact];
+      }
+    }
+    return out;
+  }
+
+  function compactTrack(track) {
+    var publicTrack = toPublicTrack(track);
+    if (!publicTrack) return null;
+    return {
+      id: publicTrack.trackId,
+      s: publicTrack.sectionId,
+      m: publicTrack.module,
+      t: publicTrack.title,
+      sit: publicTrack.situation,
+      out: publicTrack.outcome,
+      f: publicTrack.format,
+      n: publicTrack.nextTrackIds.slice(),
+      ps: publicTrack.publicationStatus,
+      cs: publicTrack.contentStatus,
+      v: publicTrack.visibility,
+      a: publicTrack.access,
+    };
+  }
+
+  function toPublicList(tracks) {
+    var out = [];
+    if (!Array.isArray(tracks)) return out;
+    for (var i = 0; i < tracks.length; i += 1) {
+      var item = toPublicTrack(tracks[i]);
+      if (item) out.push(item);
+    }
+    return out;
+  }
+
+  function normalizeSearchText(value) {
+    return String(value || '')
+      .toLowerCase()
+      .replace(/ё/g, 'е')
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .trim();
+  }
+
+  function buildSearchIndexEntry(track) {
+    return normalizeSearchText(
+      [track.trackId, track.title, track.situation, track.outcome, track.module, track.format].join(' '),
+    );
+  }
+
+  function matchesQuery(track, query) {
+    query = query || {};
+    if (query.sectionId && track.sectionId !== query.sectionId) return false;
+    if (query.format && track.format !== query.format) return false;
+    if (query.availability === 'available' && track.publicationStatus !== 'published') return false;
+    if (query.availability === 'preparing' && track.publicationStatus === 'published') return false;
+    var needle = normalizeSearchText(query.query || '');
+    if (!needle) return true;
+    var haystack = buildSearchIndexEntry(track);
+    var words = needle.split(' ');
+    for (var i = 0; i < words.length; i += 1) {
+      if (haystack.indexOf(words[i]) === -1) return false;
+    }
+    return true;
+  }
+
+  function filterTracks(tracks, query) {
+    var out = [];
+    for (var i = 0; i < tracks.length; i += 1) {
+      if (matchesQuery(tracks[i], query)) out.push(tracks[i]);
+    }
+    return out;
+  }
+
+  function getTrackAvailability(track, options) {
+    options = options || {};
+    var entitled = options.entitled !== false;
+    if (track.publicationStatus === 'archived' || track.contentStatus === 'archived') return 'archived';
+    if (track.publicationStatus !== 'published') return 'preparing';
+    if (!entitled) return 'locked';
+    return track.contentStatus === 'published' ? 'available' : 'published_empty';
+  }
+
+  function getTrackStatusView(track, options) {
+    var availability = getTrackAvailability(track, options);
+    if (availability === 'available') {
+      return {
+        availability: availability,
+        label: 'Доступен',
+        tone: 'positive',
+        canStart: true,
+        showProgress: true,
+        explanation: 'Трек открыт: внутри есть шаги, действие и фиксация результата.',
+      };
+    }
+    if (availability === 'published_empty') {
+      return {
+        availability: availability,
+        label: 'Открыт, содержание готовится',
+        tone: 'waiting',
+        canStart: false,
+        showProgress: false,
+        explanation: 'Карточка опубликована, но шаги ещё не добавлены. Кнопка действия появится вместе с ними.',
+      };
+    }
+    if (availability === 'archived') {
+      return {
+        availability: availability,
+        label: 'Снят с публикации',
+        tone: 'muted',
+        canStart: false,
+        showProgress: false,
+        explanation: 'Трек снят с публикации. История прохождений сохраняется.',
+      };
+    }
+    if (availability === 'locked') {
+      return {
+        availability: availability,
+        label: 'Нет доступа',
+        tone: 'muted',
+        canStart: false,
+        showProgress: false,
+        explanation: 'Трек существует, но для него нужен доступ.',
+      };
+    }
+    return {
+      availability: 'preparing',
+      label: 'Готовится',
+      tone: 'waiting',
+      canStart: false,
+      showProgress: false,
+      explanation: 'Структура трека готова. Содержание находится в производстве.',
+    };
+  }
+
+  function resolveNextAction(input) {
+    var profile = input.profile;
+    var tracks = input.tracks;
+    var byId = {};
+    for (var i = 0; i < tracks.length; i += 1) byId[tracks[i].trackId] = tracks[i];
+    var saved = [];
+    for (var s = 0; s < profile.savedTrackIds.length; s += 1) {
+      if (byId[profile.savedTrackIds[s]]) saved.push(byId[profile.savedTrackIds[s]]);
+    }
+    var sectionTracks = [];
+    if (profile.selectedSectionId) {
+      for (var t = 0; t < tracks.length; t += 1) {
+        if (tracks[t].sectionId === profile.selectedSectionId) sectionTracks.push(tracks[t]);
+      }
+    }
+    for (var a = 0; a < sectionTracks.length; a += 1) {
+      if (sectionTracks[a].publicationStatus === 'published') {
+        return { kind: 'open_track', track: sectionTracks[a], reason: 'section' };
+      }
+    }
+    for (var b = 0; b < saved.length; b += 1) {
+      if (saved[b].publicationStatus === 'published') {
+        return { kind: 'open_track', track: saved[b], reason: 'saved' };
+      }
+    }
+    if (profile.selectedSectionId) {
+      return { kind: 'section_preparing', sectionId: profile.selectedSectionId };
+    }
+    if (saved[0]) return { kind: 'saved_preparing', track: saved[0] };
+    return { kind: 'choose_situation' };
+  }
+
+  function resolveAlternatives(decision, input) {
+    var profile = input.profile;
+    var tracks = input.tracks;
+    var primaryId =
+      decision.kind === 'open_track' || decision.kind === 'saved_preparing'
+        ? decision.track.trackId
+        : null;
+    var byId = {};
+    for (var i = 0; i < tracks.length; i += 1) byId[tracks[i].trackId] = tracks[i];
+    var saved = [];
+    for (var s = 0; s < profile.savedTrackIds.length; s += 1) {
+      var item = byId[profile.savedTrackIds[s]];
+      if (item && item.trackId !== primaryId) saved.push(item);
+    }
+    if (saved.length >= MAX_ALTERNATIVES) return saved.slice(0, MAX_ALTERNATIVES);
+    var rest = [];
+    if (profile.selectedSectionId) {
+      for (var t = 0; t < tracks.length; t += 1) {
+        var track = tracks[t];
+        if (track.sectionId !== profile.selectedSectionId) continue;
+        if (track.trackId === primaryId) continue;
+        var already = false;
+        for (var k = 0; k < saved.length; k += 1) {
+          if (saved[k].trackId === track.trackId) already = true;
+        }
+        if (!already) rest.push(track);
+      }
+    }
+    return saved.concat(rest).slice(0, MAX_ALTERNATIVES);
+  }
+
+  var OUTCOME_SECTION_PREFERENCE = {
+    done: [],
+    question: ['A4', 'A5'],
+    pause: ['A5', 'A6'],
+    refusal: ['A5', 'A2'],
+    not_done: [],
+  };
+
+  var RECOMMENDATION_REASON_LABELS = {
+    explicit_next_edge: 'Следующий шаг по маршруту трека',
+    matches_completion_outcome: 'Подходит к тому, чем закончилось действие',
+    matches_profile_goal: 'Совпадает с выбранным разделом',
+    same_section: 'Продолжение внутри раздела',
+    smaller_step_of_current: 'Тот же трек меньшим шагом',
+  };
+
+  function compareSortKeys(a, b) {
+    for (var i = 0; i < a.length; i += 1) {
+      var diff = (a[i] || 0) - (b[i] || 0);
+      if (diff !== 0) return diff;
+    }
+    return 0;
+  }
+
+  function isTrackAvailable(track, isEntitled) {
+    var entitled = isEntitled ? isEntitled(track) : true;
+    return getTrackAvailability(track, { entitled: entitled }) === 'available';
+  }
+
+  function recommendNextTracks(input) {
+    var current = input.current;
+    var visibleTracks = input.visibleTracks;
+    var outcome = input.outcome || 'done';
+    var profile = input.profile || null;
+    var isEntitled = input.isEntitled;
+    if (outcome === 'not_done') {
+      return {
+        primary: {
+          track: current,
+          reason: 'smaller_step_of_current',
+          available: isTrackAvailable(current, isEntitled),
+        },
+        alternatives: [],
+        needsFallback: false,
+      };
+    }
+    var preferred = OUTCOME_SECTION_PREFERENCE[outcome] || [];
+    var candidates = [];
+    for (var e = 0; e < current.nextTrackIds.length; e += 1) {
+      var id = current.nextTrackIds[e];
+      var track = typeof visibleTracks.get === 'function' ? visibleTracks.get(id) : visibleTracks[id];
+      if (!track) continue;
+      var available = isTrackAvailable(track, isEntitled);
+      var outcomeRank = preferred.indexOf(track.sectionId);
+      var matchesGoal = !!(profile && profile.selectedSectionId && profile.selectedSectionId === track.sectionId);
+      var reason = 'explicit_next_edge';
+      if (outcomeRank >= 0) reason = 'matches_completion_outcome';
+      else if (matchesGoal) reason = 'matches_profile_goal';
+      else if (track.sectionId === current.sectionId) reason = 'same_section';
+      candidates.push({
+        recommendation: { track: track, reason: reason, available: available },
+        sort: [
+          available ? 0 : 1,
+          outcomeRank >= 0 ? outcomeRank : preferred.length,
+          matchesGoal ? 0 : 1,
+          track.sectionId === current.sectionId ? 0 : 1,
+          e,
+        ],
+      });
+    }
+    candidates.sort(function (a, b) {
+      return compareSortKeys(a.sort, b.sort);
+    });
+    var recs = [];
+    for (var c = 0; c < candidates.length; c += 1) recs.push(candidates[c].recommendation);
+    var primary = recs[0] || null;
+    return {
+      primary: primary,
+      alternatives: recs.slice(1, 4),
+      needsFallback: !primary || !primary.available,
+    };
+  }
+
+  function normalizeTrackId(raw) {
+    var candidate = String(raw || '').trim().toUpperCase();
+    try {
+      candidate = decodeURIComponent(candidate).trim().toUpperCase();
+    } catch (err) {
+      /* ignore */
+    }
+    return TRACK_ID_RE.test(candidate) ? candidate : null;
+  }
+
+  function normalizeSectionId(raw) {
+    var candidate = String(raw || '').trim().toUpperCase();
+    return SECTION_IDS.indexOf(candidate) === -1 ? null : candidate;
+  }
+
+  function routes(config) {
+    config = config || {};
+    var dedicated = config.dedicatedTrackPages || [];
+    var dedicatedSet = {};
+    for (var i = 0; i < dedicated.length; i += 1) dedicatedSet[String(dedicated[i]).toLowerCase()] = true;
+    return {
+      home: function () {
+        return '/academy';
+      },
+      start: function () {
+        return '/start';
+      },
+      library: function () {
+        return '/library';
+      },
+      section: function (sectionId) {
+        return '/library/' + String(sectionId).toLowerCase();
+      },
+      track: function (trackId) {
+        var slug = String(trackId).toLowerCase();
+        if (dedicatedSet[slug]) return '/track/' + slug;
+        return '/track?id=' + encodeURIComponent(slug);
+      },
+      my: function () {
+        return '/my';
+      },
+      myRoute: function () {
+        return '/my/route';
+      },
+      myResults: function () {
+        return '/my/results';
+      },
+      profile: function () {
+        return '/profile';
+      },
+      access: function () {
+        return '/access';
+      },
+      previewCatalog: function () {
+        return '/preview/catalog';
+      },
+    };
+  }
+
+  function isListed(track, preview) {
+    if (track.visibility !== 'catalog') return false;
+    if (preview) return track.publicationStatus !== 'archived';
+    return track.publicationStatus === 'published';
+  }
+
+  function isReachable(track, preview) {
+    if (track.visibility === 'hidden') return false;
+    if (preview) return true;
+    return track.publicationStatus === 'published';
+  }
+
+  function listVisible(tracks, preview) {
+    var out = [];
+    for (var i = 0; i < tracks.length; i += 1) {
+      if (isListed(tracks[i], preview)) out.push(tracks[i]);
+    }
+    return out;
+  }
+
+  function getById(tracks, trackId, preview) {
+    for (var i = 0; i < tracks.length; i += 1) {
+      if (tracks[i].trackId === trackId) {
+        return isReachable(tracks[i], preview) ? tracks[i] : null;
+      }
+    }
+    return null;
+  }
+
+  function indexById(tracks, preview) {
+    var map = {};
+    for (var i = 0; i < tracks.length; i += 1) {
+      if (!isReachable(tracks[i], preview)) continue;
+      map[tracks[i].trackId] = tracks[i];
+    }
+    return map;
+  }
+
+  function sectionStats(tracks, sectionId) {
+    var total = 0;
+    var published = 0;
+    var modules = [];
+    var seen = {};
+    for (var i = 0; i < tracks.length; i += 1) {
+      if (tracks[i].sectionId !== sectionId) continue;
+      total += 1;
+      if (tracks[i].publicationStatus === 'published') published += 1;
+      if (!seen[tracks[i].module]) {
+        seen[tracks[i].module] = true;
+        modules.push(tracks[i].module);
+      }
+    }
+    return { sectionId: sectionId, total: total, published: published, preparing: total - published, modules: modules };
+  }
+
+  function pluralTracks(count) {
+    var mod10 = count % 10;
+    var mod100 = count % 100;
+    if (mod10 === 1 && mod100 !== 11) return 'трек';
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'трека';
+    return 'треков';
+  }
+
+  function accentStyle(sectionId) {
+    return {
+      '--mlma-accent': SECTION_COLORS[sectionId] || '#d5ff43',
+      '--mlma-accent-ink': ACCENT_INK[sectionId] || '#111111',
+    };
+  }
+
+  function styleAttr(sectionId) {
+    var s = accentStyle(sectionId);
+    return '--mlma-accent:' + s['--mlma-accent'] + ';--mlma-accent-ink:' + s['--mlma-accent-ink'];
+  }
+
+  function hasStorage() {
+    try {
+      return typeof window !== 'undefined' && window.localStorage != null;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  function readJson(key, fallback) {
+    if (!hasStorage()) return fallback;
+    try {
+      var raw = window.localStorage.getItem(key);
+      if (!raw) return fallback;
+      return JSON.parse(raw);
+    } catch (err) {
+      return fallback;
+    }
+  }
+
+  function writeJson(key, value) {
+    if (!hasStorage()) return;
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch (err) {
+      /* private mode */
+    }
+  }
+
+  function sanitizeProfile(raw) {
+    if (!raw) return clone(EMPTY_PROFILE);
+    var selected = raw.selectedSectionId;
+    var saved = [];
+    if (Array.isArray(raw.savedTrackIds)) {
+      var seen = {};
+      for (var i = 0; i < raw.savedTrackIds.length; i += 1) {
+        var id = raw.savedTrackIds[i];
+        if (typeof id === 'string' && !seen[id]) {
+          seen[id] = true;
+          saved.push(id);
+        }
+      }
+    }
+    return {
+      selectedSectionId: selected && SECTION_IDS.indexOf(selected) !== -1 ? selected : null,
+      currentGoal: typeof raw.currentGoal === 'string' ? raw.currentGoal.slice(0, GOAL_MAX) : '',
+      savedTrackIds: saved,
+      role: raw.role || 'member',
+      updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : '',
+    };
+  }
+
+  function getProfile() {
+    return sanitizeProfile(readJson(PROFILE_KEY, null));
+  }
+
+  function saveProfile(patch) {
+    var next = sanitizeProfile(Object.assign({}, getProfile(), patch, { updatedAt: new Date().toISOString() }));
+    writeJson(PROFILE_KEY, next);
+    return next;
+  }
+
+  function toggleSavedTrack(trackId) {
+    var current = getProfile();
+    var saved = current.savedTrackIds.slice();
+    var idx = saved.indexOf(trackId);
+    if (idx === -1) saved.push(trackId);
+    else saved.splice(idx, 1);
+    return saveProfile({ savedTrackIds: saved });
+  }
+
+  function resetProfile() {
+    if (hasStorage()) {
+      window.localStorage.removeItem(PROFILE_KEY);
+      window.localStorage.removeItem(PROGRESS_KEY);
+    }
+    return clone(EMPTY_PROFILE);
+  }
+
+  function isPreviewHost(hostname) {
+    hostname = hostname || '';
+    if (hostname === 'localhost' || hostname === '127.0.0.1') return true;
+    if (/\.tilda\.ws$/i.test(hostname)) return true;
+    if (/(^|\.)tilda\.cc$/i.test(hostname)) return true;
+    return false;
+  }
+
+  var api = {
+    PUBLIC_FIELDS: PUBLIC_FIELDS,
+    SECTION_IDS: SECTION_IDS,
+    TRACK_ID_RE: TRACK_ID_RE,
+    MAX_ALTERNATIVES: MAX_ALTERNATIVES,
+    GOAL_MAX: GOAL_MAX,
+    EMPTY_PROFILE: EMPTY_PROFILE,
+    PROFILE_KEY: PROFILE_KEY,
+    RECOMMENDATION_REASON_LABELS: RECOMMENDATION_REASON_LABELS,
+    SECTION_COLORS: SECTION_COLORS,
+    toPublicTrack: toPublicTrack,
+    toPublicList: toPublicList,
+    compactTrack: compactTrack,
+    expandCompact: expandCompact,
+    normalizeSearchText: normalizeSearchText,
+    filterTracks: filterTracks,
+    matchesQuery: matchesQuery,
+    getTrackAvailability: getTrackAvailability,
+    getTrackStatusView: getTrackStatusView,
+    resolveNextAction: resolveNextAction,
+    resolveAlternatives: resolveAlternatives,
+    recommendNextTracks: recommendNextTracks,
+    normalizeTrackId: normalizeTrackId,
+    normalizeSectionId: normalizeSectionId,
+    routes: routes,
+    isListed: isListed,
+    isReachable: isReachable,
+    listVisible: listVisible,
+    getById: getById,
+    indexById: indexById,
+    sectionStats: sectionStats,
+    pluralTracks: pluralTracks,
+    accentStyle: accentStyle,
+    styleAttr: styleAttr,
+    getProfile: getProfile,
+    saveProfile: saveProfile,
+    toggleSavedTrack: toggleSavedTrack,
+    resetProfile: resetProfile,
+    sanitizeProfile: sanitizeProfile,
+    isPreviewHost: isPreviewHost,
+    clone: clone,
+  };
+
+  root.MLMA = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+
