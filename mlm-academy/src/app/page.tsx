@@ -68,7 +68,7 @@ export default function HomePage() {
             <p className="mt-4 text-[16px] leading-snug">
               входов по живым задачам партнёра. Не главы книги и не длинная учебная лестница.
             </p>
-            <p className="meta-text mt-6 border-t border-white/30 pt-4">
+            <p className="meta-text mt-6 border-t border-on-ink-line pt-4">
               {summary.totalTracks} треков в каталоге · доступно сейчас {publishedTotal}
             </p>
           </aside>
@@ -152,7 +152,7 @@ export default function HomePage() {
 
           <ul className="blueprint mt-8 grid gap-px p-4 md:grid-cols-2 xl:grid-cols-3">
             {TRACK_SHELL_BLOCKS.map((block) => (
-              <li key={block.label} className="card-soft bg-surface/80 p-5">
+              <li key={block.label} className="card-soft bg-surface p-5">
                 <span className="meta-text">{block.label}</span>
                 <p className="mt-3 text-[16px] leading-snug text-muted">{block.text}</p>
               </li>

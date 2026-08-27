@@ -16,7 +16,7 @@ export function Footer() {
       <div className="container-grid flex flex-col gap-6 py-8 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="text-[17px] font-extrabold tracking-[-0.03em]">MLM ACADEMY</p>
-          <p className="mt-2 max-w-[420px] text-[14px] leading-relaxed text-white/70">
+          <p className="mt-2 max-w-[420px] text-[14px] leading-relaxed text-on-ink-muted">
             Библиотека рабочих треков: ситуация, действие, зафиксированный результат и следующий
             шаг.
           </p>

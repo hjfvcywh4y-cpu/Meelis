@@ -16,6 +16,12 @@
   --color-line-soft: rgba(17, 17, 17, 0.16);
   --color-grid-line: rgba(17, 17, 17, 0.08);
 
+  /* Вторичный текст и линии на чёрном фоне. Сплошные цвета вместо прозрачности,
+     чтобы контраст был предсказуемым и проверяемым. */
+  --color-on-ink: #f3efe6;
+  --color-on-ink-muted: #b9b5ad;
+  --color-on-ink-line: #3a3a3a;
+
   --color-a1: #3157ff;
   --color-a2: #d5ff43;
   --color-a3: #ff6b35;
@@ -45,7 +51,11 @@
   --section-a5: #ff5364;
   --section-a6: #b892ff;
 
-  --accent: var(--section-a1);
+  /* Акцент без раздела — лаймовый: единственный цвет, который читается
+     чёрным текстом в любом контексте. Раздел подставляет свой через
+     sectionAccentStyle() вместе с корректным цветом текста. */
+  --accent: var(--section-a2);
+  --accent-ink: var(--color-ink);
 
   --space-1: 4px;
   --space-2: 8px;
@@ -63,57 +73,61 @@
   --content-max: 1440px;
 }
 
-* {
-  box-sizing: border-box;
-}
+/* Базовые стили обязаны лежать в слое base: неслоёные правила выигрывают
+   у любых слоёв, и `a { color: inherit }` тихо перебивал бы кнопки-ссылки. */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
 
-html {
-  -webkit-text-size-adjust: 100%;
-}
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
 
-body {
-  margin: 0;
-  min-height: 100vh;
-  background-color: var(--color-paper);
-  color: var(--color-ink);
-  font-family: var(--font-sans);
-  font-synthesis-weight: none;
-  overflow-x: hidden;
-}
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+    overflow-x: hidden;
+  }
 
-h1,
-h2,
-h3,
-h4,
-p,
-figure,
-ul,
-ol {
-  margin: 0;
-}
+  h1,
+  h2,
+  h3,
+  h4,
+  p,
+  figure,
+  ul,
+  ol {
+    margin: 0;
+  }
 
-ul,
-ol {
-  padding: 0;
-  list-style: none;
-}
+  ul,
+  ol {
+    padding: 0;
+    list-style: none;
+  }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
-  color: inherit;
-}
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 
-:focus-visible {
-  outline: 3px solid var(--color-a1);
-  outline-offset: 3px;
+  :focus-visible {
+    outline: 3px solid var(--color-a1);
+    outline-offset: 3px;
+  }
 }
 
 /* ---------------------------------------------------------------- сетка */
@@ -208,136 +222,148 @@ a {
   text-transform: uppercase;
 }
 
-/* ---------------------------------------------------------- компоненты */
+/* ---------------------------------------------------------- компоненты
+   Компонентные классы живут в слое components, а варианты записаны
+   составными селекторами (`.btn.btn-primary`). Так порядок генерации
+   утилит не может «перебить» вариант базовым классом, а Tailwind-утилиты
+   из слоя utilities по-прежнему остаются сверху.
+--------------------------------------------------------------------- */
 
-@utility eyebrow {
-  display: inline-flex;
-  align-items: center;
-  min-height: 30px;
-  padding-inline: 10px;
-  border: 1px solid var(--color-ink);
-  background: var(--color-surface);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
+@layer components {
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding-inline: 10px;
+    border: 1px solid var(--color-ink);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
 
-@utility eyebrow-dark {
-  background: var(--color-ink);
-  color: #fff;
-}
+  .eyebrow.eyebrow-dark {
+    background: var(--color-ink);
+    color: #fff;
+  }
 
-@utility eyebrow-accent {
-  background: var(--accent);
-  color: var(--color-ink);
-}
+  .eyebrow.eyebrow-accent {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
 
-@utility btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 48px;
-  padding-inline: 18px;
-  border: 2px solid var(--color-ink);
-  border-radius: 0;
-  background: var(--color-surface);
-  color: var(--color-ink);
-  font-weight: 700;
-  text-align: center;
-  cursor: pointer;
-  transition:
-    transform 160ms ease,
-    background-color 160ms ease,
-    color 160ms ease;
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding-inline: 18px;
+    border: 2px solid var(--color-ink);
+    border-radius: 0;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+    transition:
+      transform 160ms ease,
+      background-color 160ms ease,
+      color 160ms ease;
+  }
 
-  &:hover:not(:disabled) {
+  .btn:hover:not(:disabled) {
     transform: translate(-2px, -2px);
   }
 
-  &:active:not(:disabled) {
+  .btn:active:not(:disabled) {
     transform: translate(0, 0);
   }
 
-  &:disabled,
-  &[aria-disabled="true"] {
+  .btn:disabled,
+  .btn[aria-disabled='true'] {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
   }
-}
 
-@utility btn-primary {
-  background: var(--color-ink);
-  color: #fff;
-}
+  .btn.btn-primary {
+    background: var(--color-ink);
+    color: #fff;
+  }
 
-@utility btn-accent {
-  background: var(--accent);
-  color: var(--color-ink);
-}
+  /* Акцентная кнопка всегда лаймовая: цвет раздела на большой заливке
+     не гарантировал бы контраст AA. Раздел живёт в полосах и метках. */
+  .btn.btn-accent {
+    background: var(--color-a2);
+    color: var(--color-ink);
+  }
 
-@utility btn-small {
-  min-height: 44px;
-  padding-inline: 14px;
-  font-size: 14px;
-}
+  .btn.btn-small {
+    min-height: 44px;
+    padding-inline: 14px;
+    font-size: 14px;
+  }
 
-@utility card {
-  position: relative;
-  border: 2px solid var(--color-ink);
-  background: var(--color-surface);
-}
+  .card {
+    position: relative;
+    border: 2px solid var(--color-ink);
+    background: var(--color-surface);
+  }
 
-@utility card-soft {
-  position: relative;
-  border: 1px solid var(--color-line-soft);
-  background: var(--color-surface);
-}
+  .card-soft {
+    position: relative;
+    border: 1px solid var(--color-line-soft);
+    background: var(--color-surface);
+  }
 
-@utility card-interactive {
-  transition:
-    transform 160ms ease,
-    background-color 160ms ease;
+  .card-interactive {
+    transition:
+      transform 160ms ease,
+      background-color 160ms ease;
+  }
 
-  &:hover {
+  .card-interactive:hover {
     transform: translate(-3px, -3px);
   }
-}
 
-@utility accent-strip {
-  background: var(--accent);
-  border-bottom: 2px solid var(--color-ink);
-}
+  .accent-strip {
+    background: var(--accent);
+    border-bottom: 2px solid var(--color-ink);
+  }
 
-@utility chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding-inline: 14px;
-  border: 1px solid var(--color-ink);
-  background: var(--color-surface);
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-}
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 14px;
+    border: 1px solid var(--color-ink);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
 
-@utility chip-active {
-  background: var(--color-ink);
-  color: #fff;
-}
+  .chip.chip-active {
+    background: var(--color-ink);
+    color: #fff;
+  }
 
-@utility field {
-  width: 100%;
-  min-height: 52px;
-  padding-inline: 16px;
-  border: 2px solid var(--color-ink);
-  border-radius: 0;
-  background: var(--color-surface);
-  font-size: 17px;
+  .field {
+    width: 100%;
+    min-height: 52px;
+    padding-inline: 16px;
+    border: 2px solid var(--color-ink);
+    border-radius: 0;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-size: 17px;
+  }
 }
 
 /* Пустая область будущих шагов трека: честный blueprint, а не фейковый контент. */

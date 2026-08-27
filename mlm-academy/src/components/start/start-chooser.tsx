@@ -74,7 +74,7 @@ export function StartChooser({ options }: { options: StartOption[] }) {
                   <span
                     className={cn(
                       'mt-4 block text-[15px] leading-snug',
-                      isActive ? 'text-white/75' : 'text-muted',
+                      isActive ? 'text-on-ink-muted' : 'text-muted',
                     )}
                   >
                     {option.section.shortTitle} · {option.section.promise}
