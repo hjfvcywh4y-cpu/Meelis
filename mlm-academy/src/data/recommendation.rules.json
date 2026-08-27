@@ -1,0 +1,39 @@
+{
+  "version": "0.1",
+  "engine": "deterministic",
+  "principles": [
+    "Рекомендация выбирается только из Track ID, существующих в каталоге.",
+    "Публичный интерфейс никогда не придумывает новый трек и не показывает внутренний приоритет P0/P1/P2.",
+    "Если рекомендованный трек ещё не опубликован, система показывает его как продолжение в разработке и предлагает вернуться в раздел.",
+    "Пользователь всегда видит один главный следующий шаг и не более трёх альтернатив.",
+    "Отсутствие доступного продолжения не создаёт тупик: доступны библиотека, раздел и сохранение трека в маршрут."
+  ],
+  "entryRules": [
+    {"answer": "start", "sectionId": "A1"},
+    {"answer": "find_people", "sectionId": "A2"},
+    {"answer": "start_contact", "sectionId": "A3"},
+    {"answer": "understand_person", "sectionId": "A4"},
+    {"answer": "handle_doubt", "sectionId": "A5"},
+    {"answer": "follow_up", "sectionId": "A6"}
+  ],
+  "completionOutcomes": [
+    {"code": "done", "label": "Действие сделано", "behavior": "use_first_valid_next_edge"},
+    {"code": "question", "label": "У человека остался вопрос", "behavior": "rank_next_edges_toward_A4_or_A5"},
+    {"code": "pause", "label": "Человек взял паузу", "behavior": "rank_next_edges_toward_A5_or_A6"},
+    {"code": "refusal", "label": "Получен отказ", "behavior": "rank_next_edges_toward_A5_then_A2"},
+    {"code": "not_done", "label": "Действие пока не сделано", "behavior": "keep_current_track_and_offer_smaller_step"}
+  ],
+  "ranking": [
+    "published_and_entitled",
+    "explicit_nextTrackIds_order",
+    "matches_completion_outcome",
+    "matches_profile_goal",
+    "same_section_or_adjacent_section",
+    "catalog_order"
+  ],
+  "limits": {
+    "primaryNextActions": 1,
+    "alternativeNextActions": 3,
+    "recentlyCompletedCooldownDays": 14
+  }
+}

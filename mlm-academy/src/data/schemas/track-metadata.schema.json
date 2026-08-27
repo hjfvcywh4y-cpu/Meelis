@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlmacademy.ru/schemas/track-metadata.schema.json",
+  "title": "MLM Academy Track Metadata",
+  "type": "object",
+  "required": [
+    "order",
+    "sectionId",
+    "module",
+    "trackId",
+    "title",
+    "situation",
+    "outcome",
+    "priority",
+    "format",
+    "nextTrackIds",
+    "publicationStatus",
+    "contentStatus"
+  ],
+  "properties": {
+    "order": {"type": "integer", "minimum": 1},
+    "sectionId": {"type": "string", "pattern": "^A[1-6]$"},
+    "module": {"type": "string", "minLength": 1},
+    "trackId": {"type": "string", "pattern": "^A[1-6]-[0-9]{3}$"},
+    "title": {"type": "string", "minLength": 4},
+    "situation": {"type": "string", "minLength": 4},
+    "outcome": {"type": "string", "minLength": 4},
+    "priority": {"enum": ["P0", "P1", "P2", "Review"]},
+    "format": {"type": "string", "minLength": 1},
+    "nextTrackIds": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^A[1-6]-[0-9]{3}$"}
+    },
+    "legacyPublicUrl": {"type": ["string", "null"], "format": "uri"},
+    "pageStatusRaw": {"type": ["string", "null"]},
+    "publicationStatus": {"enum": ["planned", "draft", "review", "published", "archived", "unknown"]},
+    "visibility": {"enum": ["hidden", "catalog", "direct_only"]},
+    "access": {"enum": ["undecided", "free", "paid", "organization", "invite"]},
+    "contentStatus": {"enum": ["metadata_only", "draft", "review", "published", "archived"]},
+    "adaptationLevel": {"type": ["string", "null"]},
+    "transformationType": {"type": ["string", "null"]},
+    "internalNote": {"type": ["string", "null"]},
+    "source": {
+      "type": "object",
+      "required": ["sourceCode", "originalTitle", "pages", "adaptationDecision"],
+      "properties": {
+        "sourceCode": {"type": ["string", "null"]},
+        "originalTitle": {"type": ["string", "null"]},
+        "pages": {"type": ["string", "number", "null"]},
+        "adaptationDecision": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
