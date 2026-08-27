@@ -56,6 +56,23 @@ class FeedbackStatsTests(unittest.TestCase):
             menus.upcoming_button_label(menus.UPCOMING_EVENTS[0]),
             menus.MENU_LABELS,
         )
+        self.assertIn(menus.BTN_VIDEO_LESSONS, menus.MENU_LABELS)
+        self.assertEqual(menus.PARENT["video_lessons"], "partners")
+        self.assertEqual(menus.PARENT["video_lesson_item"], "video_lessons")
+        self.assertEqual(
+            menus.VIDEO_LESSONS[0]["url"],
+            "https://t.me/ideraofficial/143",
+        )
+        self.assertIn(
+            menus.video_lesson_button_label(menus.VIDEO_LESSONS[0]),
+            menus.MENU_LABELS,
+        )
+        partner_btns = [
+            btn.text
+            for row in menus.partners_keyboard().keyboard
+            for btn in row
+        ]
+        self.assertIn(menus.BTN_VIDEO_LESSONS, partner_btns)
 
     def test_service_chat_roundtrip(self) -> None:
         self.assertIsNone(stats.get_service_chat_id())
