@@ -16,7 +16,8 @@
     "postbuild": "node scripts/prepare-standalone.mjs",
     "tilda:generate": "node tilda/generate.mjs",
     "tilda:test": "node tilda/generate.mjs && node --test tilda/tests/*.test.mjs",
-    "tilda:serve": "node tilda/generate.mjs && node tilda/serve.mjs"
+    "tilda:serve": "node tilda/generate.mjs && node tilda/serve.mjs",
+    "tilda:smoke": "node tilda/tests/preview-smoke.mjs"
   },
   "dependencies": {
     "next": "16.3.3",
