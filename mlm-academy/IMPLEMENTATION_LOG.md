@@ -362,5 +362,10 @@ server-only слоем, серверными env-флагами и динами�
 - ссылка на трек: `/track?id=a3-002`, пока нет отдельной страницы;
 - кабинет закрывается Tilda Members; профиль — `localStorage` `mlma.profile.v1`.
 
-Сборка: `pnpm tilda:generate`, проверки: `pnpm tilda:test`, локальный просмотр:
-`pnpm tilda:serve`.
+Сборка: `pnpm tilda:generate`, проверки: `pnpm tilda:test` и `pnpm tilda:smoke`,
+локальный просмотр: `pnpm tilda:serve`.
+
+В Tilda (папка «MLM Academy», всё неопубликовано) заведены как минимум страницы
+`/academy`, `/start`, `/library` и разделы A1/A2. Остальные дублируются с того же
+мастера: меняются URL и последний T123 (mount). В редакторе T123 показывает код;
+оболочка выполняется после публикации страницы. Публикация `/academy` не трогает `/`.
