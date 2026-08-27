@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { INTERNAL_ONLY_TRACK_FIELDS } from '@/domain/internal-fields';
 import { toPublicTrackMetadata } from '@/domain/sanitize';
-import { INTERNAL_ONLY_TRACK_FIELDS } from '@/domain/types';
 import { getInternalTracks, getVisibleTrackIndex, listPublicTracks } from '@/server/catalog';
 
 const PUBLIC_FIELDS = [

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { TRACK_ID_PATTERN } from '@/domain/schemas';
+import { TRACK_ID_PATTERN } from '@/domain/track-id';
 import { SECTION_IDS } from '@/domain/types';
 import {
   getCatalogHealthReport,

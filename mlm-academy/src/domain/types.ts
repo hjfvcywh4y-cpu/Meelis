@@ -111,18 +111,6 @@ export interface PublicTrackMetadata {
   access: AccessLevel;
 }
 
-/** Поля, которые запрещено выносить за пределы сервера. */
-export const INTERNAL_ONLY_TRACK_FIELDS = [
-  'priority',
-  'source',
-  'adaptationLevel',
-  'transformationType',
-  'internalNote',
-  'pageStatusRaw',
-  'legacyPublicUrl',
-  'order',
-] as const;
-
 export interface PilotGraphNode {
   step: number;
   trackId: string;

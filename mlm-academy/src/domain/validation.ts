@@ -1,6 +1,6 @@
 import type { InternalTrackMetadata, PilotGraph, RegistrySummary, SectionId } from './types';
+import { TRACK_ID_PATTERN } from './track-id';
 import { SECTION_IDS } from './types';
-import { TRACK_ID_PATTERN } from './schemas';
 
 /**
  * Здоровье реестра. Ошибки не проглатываются:

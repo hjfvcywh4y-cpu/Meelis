@@ -1,5 +1,5 @@
+import { TRACK_ID_PATTERN } from './track-id';
 import { SECTION_IDS, type SectionId } from './types';
-import { TRACK_ID_PATTERN } from './schemas';
 
 /**
  * Все внутренние переходы строятся здесь.

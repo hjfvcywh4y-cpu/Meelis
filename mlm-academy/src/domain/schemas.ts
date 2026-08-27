@@ -1,13 +1,12 @@
 import { z } from 'zod';
 
+import { TRACK_ID_PATTERN } from './track-id';
 import { SECTION_IDS } from './types';
 
 /**
  * Zod-зеркала контрактов из MLM_Academy_Cursor_Package/schemas.
  * Каталог валидируется при загрузке; ошибки не проглатываются.
  */
-
-export const TRACK_ID_PATTERN = /^A[1-6]-\d{3}$/;
 
 export const sectionIdSchema = z.enum(SECTION_IDS);
 
