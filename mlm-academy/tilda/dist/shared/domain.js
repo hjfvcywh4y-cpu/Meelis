@@ -3631,6 +3631,12 @@
       featured = other.slice(0, 3);
       other = other.slice(3);
     }
+    if (featured.length < 3 && local.featured && local.featured.length) {
+      for (var lf = 0; lf < local.featured.length && featured.length < 3; lf += 1) {
+        if (featured.indexOf(local.featured[lf]) === -1) featured.push(local.featured[lf]);
+      }
+    }
+    other = other.filter(function (item) { return featured.indexOf(item) === -1; });
     if (!featured.length && !other.length) {
       var keep = Object.assign({}, local, { pendingAi: false, source: local.source || 'local' });
       if (clarify) keep.clarifyingQuestion = clarify;
