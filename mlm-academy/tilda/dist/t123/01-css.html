@@ -788,6 +788,11 @@ a.mlma-example {
 }
 .mlma-start-picks { display: grid; gap: 24px; margin-top: 24px; }
 @media (min-width: 1024px) { .mlma-start-picks { grid-template-columns: 1fr 1fr 1fr; } }
+.mlma-menu[hidden],
+.mlma-drawer[hidden],
+.mlma-drawer-backdrop[hidden] {
+  display: none !important;
+}
 .mlma-menu {
   display: grid;
   gap: 4px;
