@@ -1,9 +1,12 @@
-<!-- Блок T123: доменная логика 2/2 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: доменная логика 2/3 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
 (function (root) {
   'use strict';
   var api = root.MLMA;
   if (!api) return;
+
+  var PAGE_SIZE = 15;
+  var LIBRARY_STATE_KEY = 'mlma.library.v1';
 
   var STOP_WORDS = {
     а: 1, и: 1, или: 1, но: 1, да: 1, нет: 1, не: 1, ни: 1, на: 1, в: 1, во: 1, с: 1, со: 1,
@@ -14,689 +17,248 @@
     делать: 1, сделать: 1, надо: 1, нужно: 1, можно: 1, есть: 1, быть: 1, вот: 1,
     уже: 1, ещё: 1, еще: 1, же: 1, бы: 1, ли: 1, ведь: 1, там: 1, тут: 1, здесь: 1,
     очень: 1, просто: 1, также: 1, если: 1, только: 1, себе: 1, себя: 1, свой: 1,
-    все: 1, всё: 1, всего: 1, ну: 1, под: 1, над: 1, без: 1, мне: 1, тебя: 1,
+    все: 1, всё: 1, всего: 1, ну: 1, под: 1, над: 1, без: 1, тебя: 1, происходит: 1,
+    хочу: 1, сейчас: 1, больше: 1, человек: 1, сказал: 1,
   };
 
   var SYNONYMS = {
-    позвать: ['пригласить', 'написать', 'связаться'],
-    пригласить: ['позвать', 'написать'],
-    написать: ['позвать', 'пригласить', 'сообщение', 'текст', 'переписка'],
-    покупатель: ['клиент', 'человек', 'контакт'],
-    клиент: ['покупатель', 'человек', 'заказчик'],
-    страшно: ['боюсь', 'страх', 'стыдно', 'неловко'],
-    боюсь: ['страшно', 'страх', 'стыдно', 'неловко', 'тревога'],
-    страх: ['боюсь', 'страшно', 'неловко'],
-    неловко: ['стыдно', 'боюсь', 'навязываться'],
-    стыдно: ['неловко', 'боюсь', 'впаривание'],
-    начало: ['старт', 'новичок', 'начать', 'первые'],
+    покупатель: ['клиент', 'заказчик'],
+    клиент: ['покупатель', 'заказчик'],
+    страшно: ['боюсь', 'страх', 'неловко'],
+    боюсь: ['страшно', 'страх', 'тревога'],
+    страх: ['боюсь', 'страшно'],
+    неловко: ['стыдно', 'навязываться'],
+    стыдно: ['неловко', 'впаривание', 'навязываться'],
+    начало: ['старт', 'новичок', 'начать'],
     старт: ['начало', 'новичок', 'начать'],
-    новичок: ['новичку', 'новичка', 'новички'],
-    новичку: ['новичок', 'новичка'],
-    новичка: ['новичок', 'новичку'],
-    начать: ['старт', 'начало', 'первые'],
-    продажа: ['заказ', 'купить', 'продавать', 'сделка'],
-    заказ: ['продажа', 'купить', 'клиент'],
-    купить: ['заказ', 'продажа'],
-    разговор: ['диалог', 'общение', 'контакт', 'беседа'],
-    диалог: ['разговор', 'общение', 'контакт'],
-    общение: ['разговор', 'диалог', 'контакт'],
+    новичок: ['новичку', 'новичка'],
+    начать: ['старт', 'начало'],
+    продажа: ['продавать', 'сделка'],
+    разговор: ['диалог', 'беседа'],
+    диалог: ['разговор', 'беседа'],
     навязываться: ['впаривать', 'давить', 'навязывать'],
-    впаривать: ['навязываться', 'давить'],
-    продукт: ['товар', 'каталог', 'ассортимент'],
-    команда: ['структура', 'партнеры', 'рост'],
-    отказ: ['сомнение', 'пауза', 'нет'],
-    сомнение: ['отказ', 'пауза', 'возражение'],
-    пауза: ['сомнение', 'отказ', 'молчит'],
-    кому: ['база', 'контакт', 'люди'],
-    сообщение: ['написать', 'текст', 'переписка'],
-    первый: ['первые', 'начало', 'старт'],
-    видео: ['снять', 'ролик', 'контент'],
-    снять: ['видео', 'ролик'],
-    рассказать: ['презентация', 'продукт', 'объяснить'],
-    наставник: ['спонсор', 'лидер'],
+    впаривать: ['навязываться', 'впаривание'],
+    продукт: ['товар', 'каталог'],
+    команда: ['партнеры', 'наставник'],
+    отказ: ['сомнение', 'пауза'],
+    сомнение: ['пауза', 'возражение'],
+    пауза: ['сомнение', 'подумает'],
+    сообщение: ['текст', 'переписка', 'написать'],
+    написать: ['сообщение', 'текст', 'переписка'],
+    первый: ['первые', 'начало'],
+    рассказать: ['презентация', 'объяснить'],
+    наставник: ['спонсор', 'лидер', 'команда'],
+    пропал: ['молчит', 'не отвечает', 'followup'],
+    подумает: ['пауза', 'сомнение', 'не сейчас'],
   };
 
   var SECTION_ALIASES = {
-    A1: ['старт', 'система', 'новичок', 'начало', 'роль', 'план'],
-    A2: ['база', 'клиент', 'люди', 'контакты', 'кому', 'найти'],
-    A3: ['диалог', 'разговор', 'сообщение', 'контакт', 'написать', 'первый'],
-    A4: ['продукт', 'потребность', 'решение', 'рассказать', 'предложить'],
-    A5: ['отказ', 'сомнение', 'пауза', 'возражение'],
-    A6: ['команда', 'рост', 'повтор', 'лидерство', 'клиентская'],
+    A1: ['старт', 'система', 'новичок', 'роль', 'план', 'этика'],
+    A2: ['база', 'клиент', 'люди', 'контакты', 'круги'],
+    A3: ['диалог', 'разговор', 'сообщение', 'контакт', 'первый'],
+    A4: ['продукт', 'потребность', 'решение', 'предложить'],
+    A5: ['отказ', 'сомнение', 'пауза', 'возражение', 'подумает'],
+    A6: ['повтор', 'клиентский', 'ритм', 'followup', 'рост'],
   };
 
-  var GOALS = [
-    { id: 'first-result', title: 'Первый результат', stages: ['A1'] },
-    { id: 'find-client', title: 'Найти клиента', stages: ['A2'] },
-    { id: 'first-dialogue', title: 'Первый диалог', stages: ['A3'] },
-    { id: 'understand-need', title: 'Понять потребность', stages: ['A4'] },
-    { id: 'handle-doubt', title: 'Пройти сомнения', stages: ['A5'] },
-    { id: 'grow-repeat', title: 'Повтор и рост', stages: ['A6'] },
+  var TRACK_ALIASES = {
+    'A1-001': ['стыдно продавать', 'навязываться', 'впаривание', 'этика'],
+    'A1-004': ['роль', 'кем быть'],
+    'A1-006': ['зачем', 'личная причина'],
+    'A1-010': ['план действий', '30 дней'],
+    'A1-011': ['продуктовый фокус', 'один продукт'],
+    'A1-012': ['честная карточка', 'карточка продукта'],
+    'A1-013': ['вопросы и ограничения', 'что можно обещать'],
+    'A1-014': ['не стыдно рекомендовать'],
+    'A1-016': ['стандарт рекомендации'],
+    'A2-001': ['профиль клиента', 'кому подходит'],
+    'A2-006': ['аудит базы'],
+    'A2-007': ['сегментация базы'],
+    'A2-008': ['пять контактов', 'пять людей', 'с кем начать', 'некому писать'],
+    'A2-010': ['карта теплых кругов', 'теплые круги'],
+    'A2-011': ['реальные контексты', 'где искать'],
+    'A3-001': ['канал', 'написать или позвонить'],
+    'A3-002': ['первое сообщение', 'написать знакомому', 'теплый контакт', 'боюсь написать', 'что написать'],
+    'A3-003': ['позвонить по рекомендации', 'звонок'],
+    'A3-005': ['назначить разговор'],
+    'A3-008': ['зафиксировать результат', 'следующий контакт'],
+    'A3-016': ['открыть разговор', 'настоящий повод'],
+    'A4-001': ['от презентации к человеку', 'не рассказывать продукт сразу'],
+    'A5-001': ['диагностика сомнения', 'подумает'],
+    'A5-008': ['посоветоваться'],
+    'A5-009': ['не срочно'],
+    'A5-010': ['follow-up', 'не отвечает'],
+    'A5-011': ['план после паузы'],
+    'A5-014': ['завершить отказ'],
+    'A6-001': ['клиентский опыт', 'купил и пропал'],
+    'A6-006': ['дата повтора', 'вернуть клиента'],
+    'A6-010': ['статусы', 'следующие действия'],
+    'A6-011': ['рабочий ритм'],
+    'A6-012': ['план из действий'],
+    'A6-013': ['разбор практики', 'наставничество'],
+  };
+
+  var INTENTS = [
+    {
+      id: 'first-write',
+      why: ['первое сообщение', 'тёплый контакт', 'страх навязаться'],
+      phrases: ['боюсь написать', 'написать знакомому', 'первое сообщение', 'что написать', 'написать человеку', 'не знаю что написать', 'первым написать'],
+      boostIds: ['A3-002'],
+      writeBias: true,
+    },
+    {
+      id: 'no-people',
+      why: ['нет людей', 'база', 'пять контактов'],
+      phrases: ['некому писать', 'некому', 'с кем начать', 'нет людей', 'не знаю с кем', 'нет контактов', 'не понимаю с кем'],
+      boostIds: ['A2-008', 'A2-010', 'A2-006', 'A2-011', 'A2-001'],
+    },
+    {
+      id: 'ethics',
+      why: ['этика', 'без впаривания', 'стыд продавать'],
+      phrases: ['стыдно продавать', 'навязываться', 'впариван', 'стыдно предлагать', 'боюсь навязываться'],
+      boostIds: ['A1-001'],
+    },
+    {
+      id: 'pause',
+      why: ['пауза', 'сомнение', 'подумает'],
+      phrases: ['подумает', 'не сейчас', 'дорого', 'сомневается', 'надо подумать', 'сказал что подумает', 'взял паузу'],
+      boostIds: ['A5-001', 'A5-008', 'A5-009', 'A5-010', 'A5-011', 'A5-003'],
+    },
+    {
+      id: 'lost-client',
+      why: ['follow-up', 'клиентский опыт', 'повторный контакт'],
+      phrases: ['купил и пропал', 'больше не отвечает', 'вернуть клиента', 'не отвечает', 'клиент купил', 'пропал'],
+      boostIds: ['A6-001', 'A6-006', 'A5-010', 'A6-003', 'A6-010'],
+    },
+    {
+      id: 'product-talk',
+      why: ['карточка продукта', 'продуктовый фокус', 'ограничения'],
+      phrases: ['рассказать о продукте', 'не знаю продукт', 'как рассказать', 'не знаю как рассказать', 'что можно обещать', 'презентация продукта'],
+      boostIds: ['A1-012', 'A1-011', 'A1-013', 'A4-001', 'A1-014'],
+    },
+    {
+      id: 'team',
+      why: ['наставничество', 'ритм', 'стандарт'],
+      phrases: ['партнеры ничего не делают', 'партнёры ничего не делают', 'команда не работает', 'развивать команду', 'наставлять', 'партнеры не делают'],
+      boostIds: ['A1-016', 'A6-011', 'A6-012', 'A6-013', 'A6-010', 'A1-010'],
+      teamOnly: true,
+    },
   ];
 
-  var SITUATIONS = [
-    { id: 'need-system', title: 'Не понимаю, что делать дальше', stage: 'A1' },
-    { id: 'no-people', title: 'Не знаю, с кем начать', stage: 'A2' },
-    { id: 'how-to-write', title: 'Не знаю, как начать разговор', stage: 'A3' },
-    { id: 'afraid-impose', title: 'Боюсь навязываться', stage: 'A1' },
-    { id: 'tell-product', title: 'Хочу научиться рассказывать о продукте', stage: 'A4' },
-    { id: 'got-pause', title: 'Человек сомневается или взял паузу', stage: 'A5' },
-    { id: 'need-team', title: 'Хочу развивать команду', stage: 'A6' },
+  var PRESETS = [
+    { id: 'just-started', title: 'Я только начал', hint: 'Роль, причина, план и первые пять контактов', trackIds: ['A1-004', 'A1-006', 'A1-010', 'A1-011', 'A2-008'] },
+    { id: 'first-result', title: 'Хочу первый результат', hint: 'План, контакты, сообщение, разговор, фиксация', trackIds: ['A1-010', 'A2-008', 'A3-002', 'A3-016', 'A3-008'] },
+    { id: 'who-to-work', title: 'Не понимаю, с кем работать', hint: 'Профиль, база, круги и реальные контексты', trackIds: ['A2-001', 'A2-006', 'A2-007', 'A2-008', 'A2-010', 'A2-011'] },
+    { id: 'want-write', title: 'Хочу написать человеку', hint: 'Канал, первое сообщение, повод и фиксация', trackIds: ['A3-001', 'A3-002', 'A3-016', 'A3-005', 'A3-008'] },
+    { id: 'tell-product', title: 'Хочу нормально рассказать о продукте', hint: 'Фокус, честная карточка и переход к человеку', trackIds: ['A1-011', 'A1-012', 'A1-013', 'A1-014', 'A4-001'] },
+    { id: 'person-doubts', title: 'Человек сомневается', hint: 'Пауза, follow-up и корректное завершение', trackIds: ['A5-001', 'A5-009', 'A5-010', 'A5-011', 'A5-014'] },
+    { id: 'return-client', title: 'Хочу вернуть клиента', hint: 'Опыт, повтор и следующий контакт', trackIds: ['A6-001', 'A6-003', 'A6-006', 'A5-010', 'A6-010'] },
+    { id: 'grow-team', title: 'Хочу развивать команду', hint: 'Стандарт, ритм и разбор практики', trackIds: ['A1-010', 'A1-016', 'A6-010', 'A6-011', 'A6-012', 'A6-013'] },
+  ];
+
+  var GOALS = [
+    { id: 'first-result', title: 'Первый результат' },
+    { id: 'find-client', title: 'Найти клиента' },
+    { id: 'first-dialogue', title: 'Первый диалог' },
+    { id: 'understand-need', title: 'Понять потребность' },
+    { id: 'handle-doubt', title: 'Пройти сомнения' },
+    { id: 'grow-repeat', title: 'Повтор и рост' },
+  ];
+
+  var SIT_FILTERS = [
+    { id: 'start', title: 'Старт', test: function (m) { return m.sectionId === 'A1' || m.sit === 'start'; } },
+    { id: 'people', title: 'Поиск людей', test: function (m) { return m.sit === 'people'; } },
+    { id: 'contact', title: 'Первый контакт', test: function (m) { return m.sit === 'contact'; } },
+    { id: 'talk', title: 'Разговор', test: function (m) { return m.sit === 'talk'; } },
+    { id: 'offer', title: 'Предложение', test: function (m) { return m.sit === 'offer'; } },
+    { id: 'doubt', title: 'Сомнение', test: function (m) { return m.sit === 'doubt'; } },
+    { id: 'refuse', title: 'Отказ', test: function (m) { return m.sit === 'refuse'; } },
+    { id: 'followup', title: 'Follow-up', test: function (m) { return m.sit === 'followup'; } },
+    { id: 'repeat', title: 'Повтор', test: function (m) { return m.sit === 'repeat'; } },
+    { id: 'base', title: 'Управление базой', test: function (m) { return m.sit === 'base'; } },
+    { id: 'team', title: 'Команда', test: function (m) { return m.sit === 'team'; } },
+  ];
+
+  var FMT_FILTERS = [
+    { id: 'message', title: 'Сообщение' },
+    { id: 'list', title: 'Список' },
+    { id: 'map', title: 'Карта' },
+    { id: 'plan', title: 'План' },
+    { id: 'checklist', title: 'Чек-лист' },
+    { id: 'conversation', title: 'Разговор' },
+    { id: 'calculator', title: 'Калькулятор' },
+    { id: 'decision', title: 'Решение' },
+    { id: 'result', title: 'Фиксация результата' },
+  ];
+
+  var CH_FILTERS = [
+    { id: 'chat', title: 'Переписка' },
+    { id: 'call', title: 'Звонок' },
+    { id: 'meeting', title: 'Встреча' },
+    { id: 'content', title: 'Контент' },
+    { id: 'crm', title: 'CRM' },
+    { id: 'any', title: 'Универсальный' },
+  ];
+
+  var LVL_FILTERS = [
+    { id: 'beginner', title: 'Начинаю' },
+    { id: 'working', title: 'Уже работаю' },
+    { id: 'system', title: 'Развиваю систему' },
+    { id: 'mentor', title: 'Наставляю команду' },
+  ];
+
+  var AVAIL_FILTERS = [
+    { id: 'description', title: 'Описание готово' },
+    { id: 'playable', title: 'Можно пройти' },
   ];
 
   var EXPERIENCE = [
-    { id: 'start', title: 'Только начинаю', stages: ['A1'] },
-    { id: 'first-steps', title: 'Первые контакты', stages: ['A2', 'A3'] },
-    { id: 'practice', title: 'Уже веду разговоры', stages: ['A4', 'A5'] },
-    { id: 'growth', title: 'Расту и повторяю', stages: ['A6'] },
+    { id: 'start', title: 'Я только начинаю', level: 'beginner' },
+    { id: 'first-steps', title: 'Уже делал несколько попыток', level: 'working' },
+    { id: 'practice', title: 'У меня уже есть клиенты', level: 'system' },
+    { id: 'growth', title: 'Я развиваю команду', level: 'mentor' },
   ];
 
   var MATERIAL_TYPES = [{ id: 'track', title: 'Трек' }];
-
-  var PRESETS = [
-    { id: 'new-partner', title: 'Я только начал', hint: 'Старт и система', filters: { stage: 'A1' } },
-    { id: 'first-result', title: 'Хочу первый результат', hint: 'Первые рабочие шаги', filters: { goal: 'first-result' } },
-    { id: 'find-client', title: 'Хочу найти клиента', hint: 'Люди и база', filters: { stage: 'A2' } },
-    { id: 'learn-talk', title: 'Хочу научиться разговаривать', hint: 'Первый контакт', filters: { stage: 'A3' } },
-    { id: 'product', title: 'Хочу разобраться в продукте', hint: 'Потребность и решение', filters: { stage: 'A4' } },
-    { id: 'team', title: 'Хочу развивать команду', hint: 'Повтор и рост', filters: { stage: 'A6' } },
-  ];
+  var SITUATIONS = SIT_FILTERS.map(function (item) {
+    return { id: item.id, title: item.title };
+  });
 
   var FIELD_WEIGHTS = {
-    titleExact: 1000,
-    title: 80,
-    aliases: 70,
-    situation: 60,
-    outcome: 50,
-    module: 30,
-    format: 20,
-    section: 16,
-    id: 8,
+    titleExact: 400,
+    title: 60,
+    situation: 50,
+    aliases: 50,
+    outcome: 40,
+    tags: 30,
+    section: 20,
+    format: 10,
+    id: 16,
+    phrase: 48,
+    multi: 18,
+    intent: 220,
+    emotion: 24,
   };
 
-  function stem(word) {
-    var value = String(word || '');
-    if (value.length < 4) return value;
-    var suffixes = [
-      'ться', 'тся', 'ешь', 'ишь', 'ать', 'ять', 'ить', 'ость', 'ение', 'ание',
-      'ого', 'ему', 'ами', 'ями', 'ов', 'ев', 'ах', 'ях', 'ой', 'ый', 'ий',
-      'ая', 'ое', 'ые', 'ть', 'ся', 'сь', 'ам', 'ям', 'ом', 'ем',
-    ];
-    for (var i = 0; i < suffixes.length; i += 1) {
-      var sfx = suffixes[i];
-      if (value.length - sfx.length >= 3 && value.slice(-sfx.length) === sfx) {
-        return value.slice(0, -sfx.length);
-      }
-    }
-    return value;
-  }
-
-  function tokenize(value) {
-    var normalized = api.normalizeSearchText(value);
-    if (!normalized) return [];
-    return normalized.split(' ').filter(Boolean);
-  }
-
-  function isStopWord(token) {
-    return token.length < 2 || !!STOP_WORDS[token];
-  }
-
-  function usefulTokens(tokens) {
-    var out = [];
-    for (var i = 0; i < tokens.length; i += 1) {
-      if (!isStopWord(tokens[i])) out.push(tokens[i]);
-    }
-    return out;
-  }
-
-  function expandToken(token) {
-    var out = [token];
-    var stemmed = stem(token);
-    if (stemmed.length >= 4) out.push(stemmed);
-    var extras = SYNONYMS[token];
-    if (extras) {
-      for (var i = 0; i < extras.length; i += 1) {
-        out.push(extras[i]);
-        out.push(stem(extras[i]));
-      }
-    }
-    var seen = {};
-    var uniq = [];
-    for (var j = 0; j < out.length; j += 1) {
-      if (out[j] && !seen[out[j]]) {
-        seen[out[j]] = true;
-        uniq.push(out[j]);
-      }
-    }
-    return uniq;
-  }
-
-  function analyzeQuery(raw) {
-    var original = String(raw || '').trim();
-    var tokens = tokenize(original);
-    var useful = usefulTokens(tokens);
-    if (original && useful.length === 0) {
-      return { kind: 'need_more', original: original, tokens: tokens, useful: [], expanded: [] };
-    }
-    var expanded = [];
-    var seen = {};
-    for (var i = 0; i < useful.length; i += 1) {
-      var pack = expandToken(useful[i]);
-      for (var j = 0; j < pack.length; j += 1) {
-        if (!seen[pack[j]]) {
-          seen[pack[j]] = true;
-          expanded.push(pack[j]);
-        }
-      }
-    }
-    return { kind: 'ok', original: original, tokens: tokens, useful: useful, expanded: expanded };
-  }
-
-  function fieldHas(haystack, variants) {
-    var words = haystack.split(' ').filter(Boolean);
-    for (var i = 0; i < variants.length; i += 1) {
-      var needle = variants[i];
-      if (!needle || needle.length < 3) continue;
-      var needleStem = stem(needle);
-      var prefixLen = needle.length >= 5 ? 5 : 4;
-      var prefix = needle.length >= 4 ? needle.slice(0, prefixLen) : '';
-      for (var w = 0; w < words.length; w += 1) {
-        var word = words[w];
-        if (word === needle) return true;
-        if (needle.length >= 4 && word.indexOf(needle) === 0) return true;
-        if (needleStem.length >= 4 && stem(word) === needleStem) return true;
-        if (prefix && word.length >= prefix.length && word.slice(0, prefix.length) === prefix) return true;
-      }
-    }
-    return false;
-  }
-
-  function trackFields(track) {
-    var aliases = (SECTION_ALIASES[track.sectionId] || []).join(' ');
-    return {
-      title: api.normalizeSearchText(track.title),
-      situation: api.normalizeSearchText(track.situation),
-      outcome: api.normalizeSearchText(track.outcome),
-      module: api.normalizeSearchText(track.module),
-      format: api.normalizeSearchText(track.format),
-      aliases: api.normalizeSearchText(aliases),
-      section: api.normalizeSearchText(track.sectionId + ' ' + aliases),
-      id: api.normalizeSearchText(track.trackId),
-      all: api.normalizeSearchText(
-        [track.trackId, track.title, track.situation, track.outcome, track.module, track.format, aliases].join(' '),
-      ),
-    };
-  }
-
-  function scoreTrack(track, analysis, mode) {
-    if (!analysis || analysis.kind !== 'ok' || !analysis.useful.length) return 0;
-    var fields = trackFields(track);
-    var titleNorm = fields.title;
-    var queryNorm = api.normalizeSearchText(analysis.original);
-    var score = 0;
-    if (queryNorm && titleNorm === queryNorm) score += FIELD_WEIGHTS.titleExact;
-    var matchedUseful = 0;
-    for (var i = 0; i < analysis.useful.length; i += 1) {
-      var variants = expandToken(analysis.useful[i]);
-      var hit = false;
-      if (fieldHas(fields.title, variants)) {
-        score += FIELD_WEIGHTS.title;
-        hit = true;
-      }
-      if (fieldHas(fields.situation, variants)) {
-        score += FIELD_WEIGHTS.situation;
-        hit = true;
-      }
-      if (fieldHas(fields.outcome, variants)) {
-        score += FIELD_WEIGHTS.outcome;
-        hit = true;
-      }
-      if (fieldHas(fields.module, variants)) {
-        score += FIELD_WEIGHTS.module;
-        hit = true;
-      }
-      if (fieldHas(fields.format, variants)) {
-        score += FIELD_WEIGHTS.format;
-        hit = true;
-      }
-      if (fieldHas(fields.aliases, variants)) {
-        score += FIELD_WEIGHTS.aliases;
-        hit = true;
-      }
-      if (fieldHas(fields.section, variants)) {
-        score += FIELD_WEIGHTS.section;
-        hit = true;
-      }
-      if (fieldHas(fields.id, variants)) {
-        score += FIELD_WEIGHTS.id;
-        hit = true;
-      }
-      if (hit) matchedUseful += 1;
-    }
-    if (matchedUseful < analysis.useful.length) {
-      if (mode === 'soft' && matchedUseful > 0) {
-        return Math.floor(score * (matchedUseful / analysis.useful.length));
-      }
-      return 0;
-    }
-    return score;
-  }
-
-  function getPreset(id) {
-    for (var i = 0; i < PRESETS.length; i += 1) {
-      if (PRESETS[i].id === id) return PRESETS[i];
-    }
-    return null;
-  }
-
-  function getGoal(id) {
-    for (var i = 0; i < GOALS.length; i += 1) {
-      if (GOALS[i].id === id) return GOALS[i];
-    }
-    return null;
-  }
-
-  function getSituation(id) {
-    for (var i = 0; i < SITUATIONS.length; i += 1) {
-      if (SITUATIONS[i].id === id) return SITUATIONS[i];
-    }
-    return null;
-  }
-
-  function getExperience(id) {
-    for (var i = 0; i < EXPERIENCE.length; i += 1) {
-      if (EXPERIENCE[i].id === id) return EXPERIENCE[i];
-    }
-    return null;
-  }
-
-  function emptyLibraryState() {
-    return {
-      q: '',
-      stage: null,
-      goal: null,
-      situation: null,
-      type: null,
-      format: null,
-      skill: null,
-      experience: null,
-      sort: null,
-      preset: null,
-    };
-  }
-
-  function applyPresetToState(state, preset) {
-    if (!preset || !preset.filters) return state;
-    var keys = Object.keys(preset.filters);
-    for (var i = 0; i < keys.length; i += 1) {
-      var key = keys[i];
-      if (state[key] == null || state[key] === '') state[key] = preset.filters[key];
-    }
-    return state;
-  }
-
-  function parseLibraryState(search, extra) {
-    extra = extra || {};
-    var params;
-    try {
-      params = typeof search === 'string' ? new URLSearchParams(search.replace(/^\?/, '')) : new URLSearchParams();
-    } catch (err) {
-      params = new URLSearchParams();
-    }
-    var state = emptyLibraryState();
-    var q = (params.get('q') || extra.q || '').trim();
-    if (q) state.q = q;
-    var stage = api.normalizeSectionId(params.get('stage') || params.get('section') || extra.stage || '');
-    if (stage) state.stage = stage;
-    var goal = params.get('goal') || extra.goal || '';
-    if (goal && getGoal(goal)) state.goal = goal;
-    var situation = params.get('situation') || extra.situation || '';
-    if (situation && getSituation(situation)) state.situation = situation;
-    var type = params.get('type') || extra.type || '';
-    if (type && type !== 'track') state.type = type;
-    else if (type === 'track') state.type = 'track';
-    var format = params.get('format') || extra.format || '';
-    if (format) state.format = format;
-    var skill = params.get('skill') || extra.skill || '';
-    if (skill) state.skill = skill;
-    var experience = params.get('experience') || extra.experience || '';
-    if (experience && getExperience(experience)) state.experience = experience;
-    var sort = params.get('sort') || extra.sort || '';
-    if (sort && sort !== 'relevance') state.sort = sort;
-    var preset = params.get('preset') || extra.preset || '';
-    if (preset && getPreset(preset)) {
-      state.preset = preset;
-      applyPresetToState(state, getPreset(preset));
-    }
-    return state;
-  }
-
-  function serializeLibraryState(state) {
-    state = state || emptyLibraryState();
-    var params = new URLSearchParams();
-    if (state.q) params.set('q', state.q);
-    if (state.stage) params.set('stage', String(state.stage).toLowerCase());
-    if (state.goal) params.set('goal', state.goal);
-    if (state.situation) params.set('situation', state.situation);
-    if (state.type) params.set('type', state.type);
-    if (state.format) params.set('format', state.format);
-    if (state.skill) params.set('skill', state.skill);
-    if (state.experience) params.set('experience', state.experience);
-    if (state.sort && state.sort !== 'relevance') params.set('sort', state.sort);
-    if (state.preset) params.set('preset', state.preset);
-    return params.toString();
-  }
-
-  function libraryHref(state) {
-    var qs = serializeLibraryState(state);
-    return qs ? '/library?' + qs : '/library';
-  }
-
-  function hasActiveFilters(state) {
-    if (!state) return false;
-    return !!(state.q || state.stage || state.goal || state.situation || (state.type && state.type !== 'track') || state.format || state.skill || state.experience);
-  }
-
-  function stagesForState(state) {
-    var set = {};
-    if (state.stage) set[state.stage] = true;
-    var goal = state.goal ? getGoal(state.goal) : null;
-    if (goal) {
-      for (var i = 0; i < goal.stages.length; i += 1) set[goal.stages[i]] = true;
-    }
-    var sit = state.situation ? getSituation(state.situation) : null;
-    if (sit) set[sit.stage] = true;
-    var exp = state.experience ? getExperience(state.experience) : null;
-    if (exp) {
-      for (var j = 0; j < exp.stages.length; j += 1) set[exp.stages[j]] = true;
-    }
-    var keys = Object.keys(set);
-    return keys;
-  }
-
-  function itemType() {
-    return 'track';
-  }
-
-  function applyFacets(tracks, state) {
-    state = state || emptyLibraryState();
-    var out = [];
-    var requiredStages = [];
-    if (state.stage) requiredStages.push(state.stage);
-    var goal = state.goal ? getGoal(state.goal) : null;
-    if (goal) requiredStages = requiredStages.concat(goal.stages);
-    var sit = state.situation ? getSituation(state.situation) : null;
-    if (sit) requiredStages.push(sit.stage);
-    var exp = state.experience ? getExperience(state.experience) : null;
-    if (exp) requiredStages = requiredStages.concat(exp.stages);
-    var uniqueStages = [];
-    var seenStage = {};
-    for (var s = 0; s < requiredStages.length; s += 1) {
-      if (!seenStage[requiredStages[s]]) {
-        seenStage[requiredStages[s]] = true;
-        uniqueStages.push(requiredStages[s]);
-      }
-    }
-    var stageGroups = [];
-    if (state.stage) stageGroups.push([state.stage]);
-    if (goal) stageGroups.push(goal.stages);
-    if (sit) stageGroups.push([sit.stage]);
-    if (exp) stageGroups.push(exp.stages);
-    for (var i = 0; i < tracks.length; i += 1) {
-      var track = tracks[i];
-      if (state.type && state.type !== itemType(track)) continue;
-      if (state.format && track.format !== state.format) continue;
-      if (state.skill) continue;
-      var ok = true;
-      for (var g = 0; g < stageGroups.length; g += 1) {
-        if (stageGroups[g].indexOf(track.sectionId) === -1) {
-          ok = false;
-          break;
-        }
-      }
-      if (!ok) continue;
-      out.push(track);
-    }
-    return out;
-  }
-
-  function rankTracks(tracks, analysis, sort, mode) {
-    if (!analysis || analysis.kind !== 'ok' || !analysis.useful.length) {
-      var copy = tracks.slice();
-      if (sort === 'title') {
-        copy.sort(function (a, b) {
-          return a.title.localeCompare(b.title, 'ru');
-        });
-      }
-      return copy;
-    }
-    var scored = [];
-    for (var i = 0; i < tracks.length; i += 1) {
-      var score = scoreTrack(tracks[i], analysis, mode);
-      if (score > 0) scored.push({ track: tracks[i], score: score });
-    }
-    scored.sort(function (a, b) {
-      if (b.score !== a.score) return b.score - a.score;
-      return a.track.trackId.localeCompare(b.track.trackId);
-    });
-    var out = [];
-    for (var j = 0; j < scored.length; j += 1) out.push(scored[j].track);
-    return out;
-  }
-
-  function chipLabel(key, value) {
-    if (key === 'q') return '«' + value + '»';
-    if (key === 'stage') return value;
-    if (key === 'goal') {
-      var goal = getGoal(value);
-      return goal ? goal.title : value;
-    }
-    if (key === 'situation') {
-      var sit = getSituation(value);
-      return sit ? sit.title : value;
-    }
-    if (key === 'type') return value === 'track' ? 'Трек' : value;
-    if (key === 'format') return value;
-    if (key === 'experience') {
-      var exp = getExperience(value);
-      return exp ? exp.title : value;
-    }
-    if (key === 'preset') {
-      var preset = getPreset(value);
-      return preset ? preset.title : value;
-    }
-    return String(value);
-  }
-
-  function buildChips(state) {
-    var chips = [];
-    var keys = ['q', 'stage', 'goal', 'situation', 'type', 'format', 'experience'];
-    for (var i = 0; i < keys.length; i += 1) {
-      var key = keys[i];
-      var value = state[key];
-      if (!value) continue;
-      if (key === 'type' && value === 'track') continue;
-      chips.push({ key: key, value: value, label: chipLabel(key, value) });
-    }
-    return chips;
-  }
-
-  function relaxOrder() {
-    return ['format', 'experience', 'situation', 'goal', 'stage', 'q'];
-  }
-
-  function relaxSearch(tracks, state, analysis) {
-    var order = relaxOrder();
-    for (var i = 0; i < order.length; i += 1) {
-      var key = order[i];
-      if (!state[key]) continue;
-      var next = Object.assign({}, state);
-      next[key] = key === 'q' ? '' : null;
-      next.preset = null;
-      var faceted = applyFacets(tracks, next);
-      var ranked = rankTracks(faceted, next.q ? analysis : { kind: 'ok', useful: [] }, next.sort, 'soft');
-      if (ranked.length) {
-        return { key: key, items: ranked.slice(0, 6), close: ranked.slice(0, 6) };
-      }
-    }
-    var fallback = rankTracks(tracks, analysis && analysis.useful && analysis.useful.length ? analysis : { kind: 'ok', useful: [] }, state.sort, 'soft');
-    return { key: 'all', items: fallback.slice(0, 6), close: fallback.slice(0, 6) };
-  }
-
-  function searchCatalog(tracks, state) {
-    state = state || emptyLibraryState();
-    var analysis = analyzeQuery(state.q || '');
-    var chips = buildChips(state);
-    if (state.q && analysis.kind === 'need_more') {
-      return { kind: 'need_more', items: [], analysis: analysis, chips: chips, relaxedKey: null, close: [] };
-    }
-    var faceted = applyFacets(tracks, state);
-    var ranked = rankTracks(faceted, analysis, state.sort);
-    if (ranked.length) {
-      return { kind: 'ok', items: ranked, analysis: analysis, chips: chips, relaxedKey: null, close: [] };
-    }
-    if (!hasActiveFilters(state) && !state.q) {
-      return { kind: 'ok', items: [], analysis: analysis, chips: chips, relaxedKey: null, close: [] };
-    }
-    var relaxed = relaxSearch(tracks, state, analysis);
-    return {
-      kind: 'zero',
-      items: [],
-      analysis: analysis,
-      chips: chips,
-      relaxedKey: relaxed.key,
-      close: relaxed.close,
-    };
-  }
-
-  function matchesQuery(track, query) {
-    query = query || {};
-    var state = {
-      q: query.query || query.q || '',
-      stage: query.sectionId || query.stage || null,
-      format: query.format || null,
-      goal: query.goal || null,
-      situation: query.situation || null,
-      type: query.type || null,
-      experience: query.experience || null,
-    };
-    if (query.availability === 'available' && track.publicationStatus !== 'published') return false;
-    if (query.availability === 'preparing' && track.publicationStatus === 'published') return false;
-    var result = searchCatalog([track], state);
-    return result.kind === 'ok' && result.items.length > 0;
-  }
-
-  function filterTracks(tracks, query) {
-    query = query || {};
-    var state = parseLibraryState('', {
-      q: query.query || query.q || '',
-      stage: query.sectionId || query.stage || null,
-      format: query.format || null,
-      goal: query.goal || null,
-      situation: query.situation || null,
-      type: query.type || null,
-      experience: query.experience || null,
-    });
-    var filtered = [];
-    for (var i = 0; i < tracks.length; i += 1) {
-      var track = tracks[i];
-      if (query.availability === 'available' && track.publicationStatus !== 'published') continue;
-      if (query.availability === 'preparing' && track.publicationStatus === 'published') continue;
-      filtered.push(track);
-    }
-    var result = searchCatalog(filtered, state);
-    if (result.kind === 'need_more') return [];
-    return result.items;
-  }
-
-  function uniqueFormats(tracks) {
-    var seen = {};
-    var out = [];
-    for (var i = 0; i < tracks.length; i += 1) {
-      var format = tracks[i].format;
-      if (format && !seen[format]) {
-        seen[format] = true;
-        out.push(format);
-      }
-    }
-    out.sort(function (a, b) {
-      return a.localeCompare(b, 'ru');
-    });
-    return out;
-  }
-
-  function relatedTracks(track, catalog, limit) {
-    limit = limit || 3;
-    if (!track) return [];
-    var byId = {};
-    for (var i = 0; i < catalog.length; i += 1) byId[catalog[i].trackId] = catalog[i];
-    var out = [];
-    var seen = {};
-    seen[track.trackId] = true;
-    var ids = track.nextTrackIds || [];
-    for (var n = 0; n < ids.length && out.length < limit; n += 1) {
-      if (byId[ids[n]] && !seen[ids[n]]) {
-        seen[ids[n]] = true;
-        out.push(byId[ids[n]]);
-      }
-    }
-    for (var t = 0; t < catalog.length && out.length < limit; t += 1) {
-      var other = catalog[t];
-      if (seen[other.trackId]) continue;
-      if (other.sectionId === track.sectionId) {
-        seen[other.trackId] = true;
-        out.push(other);
-      }
-    }
-    return out;
-  }
-
-  function trackEvent(name, payload) {
-    var data = { event: name };
-    if (payload) {
-      var keys = Object.keys(payload);
-      for (var i = 0; i < keys.length; i += 1) {
-        if (payload[keys[i]] != null && payload[keys[i]] !== '') data[keys[i]] = payload[keys[i]];
-      }
-    }
-    try {
-      if (typeof window !== 'undefined') {
-        window.dataLayer = window.dataLayer || [];
-        window.dataLayer.push(data);
-      }
-    } catch (err) {
-      /* ignore */
-    }
-    return data;
-  }
 
   api.STOP_WORDS = STOP_WORDS;
   api.SYNONYMS = SYNONYMS;
+  api.INTENTS = INTENTS;
+  api.TRACK_ALIASES = TRACK_ALIASES;
+  api.SECTION_ALIASES = SECTION_ALIASES;
   api.GOALS = GOALS;
   api.SITUATIONS = SITUATIONS;
+  api.SIT_FILTERS = SIT_FILTERS;
+  api.FMT_FILTERS = FMT_FILTERS;
+  api.CH_FILTERS = CH_FILTERS;
+  api.LVL_FILTERS = LVL_FILTERS;
+  api.AVAIL_FILTERS = AVAIL_FILTERS;
   api.EXPERIENCE = EXPERIENCE;
   api.MATERIAL_TYPES = MATERIAL_TYPES;
   api.PRESETS = PRESETS;
-  api.analyzeQuery = analyzeQuery;
-  api.searchCatalog = searchCatalog;
-  api.parseLibraryState = parseLibraryState;
-  api.serializeLibraryState = serializeLibraryState;
-  api.libraryHref = libraryHref;
-  api.emptyLibraryState = emptyLibraryState;
-  api.getPreset = getPreset;
-  api.getGoal = getGoal;
-  api.getSituation = getSituation;
-  api.getExperience = getExperience;
-  api.buildChips = buildChips;
-  api.hasActiveFilters = hasActiveFilters;
-  api.uniqueFormats = uniqueFormats;
-  api.relatedTracks = relatedTracks;
-  api.trackEvent = trackEvent;
-  api.itemType = itemType;
-  api.stagesForState = stagesForState;
-  api.matchesQuery = matchesQuery;
-  api.filterTracks = filterTracks;
-
+  api.FIELD_WEIGHTS = FIELD_WEIGHTS;
+  api.PAGE_SIZE = 15;
+  api.LIBRARY_STATE_KEY = LIBRARY_STATE_KEY;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
 </script>

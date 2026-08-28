@@ -82,6 +82,8 @@ describe('честные статусы', () => {
     assert.equal(status.canStart, false);
     assert.equal(status.showProgress, false);
     assert.equal(status.availability, 'preparing');
+    assert.equal(status.cta, 'Открыть описание');
+    assert.notEqual(status.label, 'Скоро');
   });
 });
 
@@ -137,10 +139,13 @@ describe('URL state', () => {
     assert.equal(parsed.q, 'кому написать');
   });
 
-  it('раскрывает preset в фильтры', () => {
-    const parsed = MLMA.parseLibraryState('?preset=new-partner');
-    assert.equal(parsed.stage, 'A1');
-    assert.equal(parsed.preset, 'new-partner');
+  it('раскрывает preset без подмены целым разделом', () => {
+    const parsed = MLMA.parseLibraryState('?preset=just-started');
+    assert.equal(parsed.preset, 'just-started');
+    assert.equal(parsed.stage, null);
+    const preset = MLMA.getPreset('just-started');
+    assert.ok(preset.trackIds.includes('A1-004'));
+    assert.ok(preset.trackIds.length < 16);
   });
 });
 
@@ -206,12 +211,64 @@ describe('маршруты Tilda', () => {
     assert.equal(R.home(), '/academy');
     assert.equal(R.track('A3-002'), '/track?id=a3-002');
     assert.equal(R.section('A1'), '/library/a1');
+    assert.equal(R.about(), '/about');
   });
 
   it('переключается на красивый URL, когда страница заведена', () => {
     const R = MLMA.routes({ dedicatedTrackPages: ['a3-002'] });
     assert.equal(R.track('A3-002'), '/track/a3-002');
     assert.equal(R.track('A1-001'), '/track?id=a1-001');
+  });
+});
+
+describe('поисковые ситуации каталога', () => {
+  const catalogPath = path.join(__dirname, '../../src/data/tracks.catalog.json');
+  const raw = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
+  const tracks = MLMA.toPublicList(raw.tracks);
+
+  function ids(query) {
+    return MLMA.searchCatalog(tracks, MLMA.parseLibraryState('', { q: query })).items.map((item) => item.trackId);
+  }
+
+  it('боюсь написать знакомому → A3-002 первым', () => {
+    assert.equal(ids('боюсь написать знакомому')[0], 'A3-002');
+  });
+
+  it('мне некому писать поднимает базу и круги', () => {
+    const top = ids('мне некому писать').slice(0, 6).join(' ');
+    assert.match(top, /A2-008/);
+    assert.match(top, /A2-010|A2-006|A2-011/);
+  });
+
+  it('стыдно продавать и навязываться → A1-001', () => {
+    assert.equal(ids('стыдно продавать и навязываться')[0], 'A1-001');
+  });
+
+  it('человек сказал что подумает → A5', () => {
+    const top = ids('человек сказал что подумает').slice(0, 5);
+    assert.ok(top.every((id) => id.startsWith('A5')), top.join(','));
+  });
+
+  it('клиент купил и больше не отвечает → follow-up', () => {
+    const top = ids('клиент купил и больше не отвечает').slice(0, 5);
+    assert.ok(top.some((id) => id.startsWith('A6') || id === 'A5-010'), top.join(','));
+  });
+
+  it('не знаю как рассказать о продукте', () => {
+    const top = ids('не знаю как рассказать о продукте').slice(0, 6);
+    assert.ok(top.includes('A1-012') || top.includes('A1-011') || top.includes('A4-001'), top.join(','));
+  });
+
+  it('партнёры ничего не делают не выдаёт весь A6', () => {
+    const result = ids('партнёры ничего не делают');
+    assert.ok(result.length > 0 && result.length < 20, String(result.length));
+    assert.ok(result.includes('A6-013') || result.includes('A1-016') || result.includes('A6-011'));
+  });
+
+  it('пресет не открывает весь раздел', () => {
+    const result = MLMA.searchCatalog(tracks, MLMA.parseLibraryState('?preset=grow-team'));
+    assert.ok(result.items.length <= 8);
+    assert.ok(result.items.every((item) => ['A1', 'A6'].includes(item.sectionId)));
   });
 });
 

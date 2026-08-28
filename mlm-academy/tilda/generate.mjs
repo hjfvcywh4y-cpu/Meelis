@@ -106,6 +106,7 @@ const pages = [
   { id: 'a5', file: 'library-a5.html', url: '/library/a5', page: 'section', section: 'A5', title: 'A5 · Сомнения и отказ · MLM Academy', members: 'public' },
   { id: 'a6', file: 'library-a6.html', url: '/library/a6', page: 'section', section: 'A6', title: 'A6 · Повтор и рост · MLM Academy', members: 'public' },
   { id: 'track', file: 'track.html', url: '/track', page: 'track', title: 'Трек · MLM Academy', members: 'public' },
+  { id: 'about', file: 'about.html', url: '/about', page: 'about', title: 'Как создаётся библиотека · MLM Academy', members: 'public' },
   { id: 'my', file: 'my.html', url: '/my', page: 'my', title: 'Личная главная · MLM Academy', members: 'member' },
   { id: 'route', file: 'my-route.html', url: '/my/route', page: 'route', title: 'Мой маршрут · MLM Academy', members: 'member' },
   { id: 'results', file: 'my-results.html', url: '/my/results', page: 'results', title: 'Мои результаты · MLM Academy', members: 'member' },
@@ -154,6 +155,7 @@ for (const name of fs.readdirSync(path.join(DIST, 't123'))) {
 const head = `<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Onest:wght@400;700;800&display=swap" rel="stylesheet">
+<meta name="robots" content="noindex, nofollow">
 <meta name="description" content="MLM Academy — рабочий навигатор партнёра: ситуация, действие, результат и следующий шаг. Библиотека треков по старту, клиентам, коммуникации, продукту и команде.">
 <style>
   html, body, #allrecords, .t-records, .t-body { background: #f4f0e8 !important; }
@@ -209,6 +211,7 @@ for (const page of pages) {
       <a href="/academy">Academy</a>
       <a href="/library">Библиотека</a>
       <a href="/start">С чего начать</a>
+      <a href="/about">Как создаётся</a>
       <a href="/library/a1">Старт и система</a>
       <a href="/library/a2">Люди и база</a>
       <a href="/library/a3">Первый контакт</a>
@@ -317,7 +320,7 @@ ${pages.map((page) => `| ${page.title} | \`${page.url}\` | \`mounts/${page.id}.h
 | Editor | те же четыре + \`/preview/catalog\` |
 
 Публичные (не добавлять ни в одну группу): \`/academy\`, \`/start\`, \`/library\`,
-\`/library/a1\`…\`/library/a6\`, \`/track\`, \`/access\`. Живую главную \`/\` и прочие
+\`/library/a1\`…\`/library/a6\`, \`/track\`, \`/about\`, \`/access\`. Живую главную \`/\` и прочие
 маркетинговые страницы в группы не добавлять.
 
 После включения модуля проверить \`mlmacademy.ru\`: если на живой главной появилась

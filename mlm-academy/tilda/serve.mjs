@@ -41,6 +41,12 @@ const server = http.createServer((req, res) => {
     return;
   }
   const file = byUrl.get(pathname);
+  const trackPretty = pathname.match(/^\/track\/([a-z0-9-]+)$/i);
+  if (trackPretty) {
+    res.writeHead(302, { Location: '/track?id=' + encodeURIComponent(trackPretty[1].toLowerCase()) });
+    res.end();
+    return;
+  }
   if (!file) {
     res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end('<!doctype html><meta charset="utf-8"><p>Нет страницы ' + pathname + '</p>');

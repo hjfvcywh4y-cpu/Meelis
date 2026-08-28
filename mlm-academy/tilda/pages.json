@@ -86,6 +86,14 @@
     "members": "public"
   },
   {
+    "id": "about",
+    "file": "about.html",
+    "url": "/about",
+    "page": "about",
+    "title": "Как создаётся библиотека · MLM Academy",
+    "members": "public"
+  },
+  {
     "id": "my",
     "file": "my.html",
     "url": "/my",

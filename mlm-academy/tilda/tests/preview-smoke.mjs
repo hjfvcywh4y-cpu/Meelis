@@ -13,20 +13,30 @@ async function main() {
   const homeTitle = await page.locator('h1').first().innerText();
   const sectionCards = await page.locator('.mlma-section-card').count();
   if (sectionCards !== 6) throw new Error('home sections: ' + sectionCards);
+  const findBtn = page.locator('form.mlma-search button[type="submit"]').first();
+  const findText = (await findBtn.innerText()).trim();
+  if (!findText) throw new Error('home search button has no visible text');
+  const soon = await page.locator('text=Скоро').count();
+  if (soon) throw new Error('unexpected Скоро on home');
 
   await page.goto(BASE + '/library', { waitUntil: 'networkidle' });
   await page.waitForSelector('.mlma-track-card');
   const cards = await page.locator('.mlma-track-card').count();
-  if (cards !== 112) throw new Error('library cards: ' + cards);
+  if (cards < 12 || cards > 18) throw new Error('library first page cards: ' + cards);
   const leaked = await page.evaluate(() => document.documentElement.innerHTML);
-  for (const needle of ['pageStatusRaw', 'Осовременивание', 'adaptationLevel', '"P0"']) {
+  for (const needle of ['pageStatusRaw', 'Осовременивание', 'adaptationLevel', '"P0"', 'entitlement', 'Войти в кабинет']) {
     if (leaked.includes(needle)) throw new Error('leak: ' + needle);
   }
+  const catalogSoon = await page.locator('.mlma-track-card >> text=Скоро').count();
+  if (catalogSoon) throw new Error('Скоро on library cards');
 
-  await page.fill('#mlma-search', 'первое сообщение');
-  await page.waitForTimeout(280);
-  const filtered = await page.locator('.mlma-track-card').count();
-  if (filtered < 1 || filtered >= 112) throw new Error('search count: ' + filtered);
+  await page.getByRole('button', { name: 'Фильтры' }).click();
+  await page.waitForSelector('#mlma-drawer:not([hidden])');
+
+  await page.fill('#mlma-search', 'боюсь написать знакомому');
+  await page.waitForTimeout(350);
+  const firstTitle = await page.locator('.mlma-track-card h3').first().innerText();
+  if (!/первое сообщение/i.test(firstTitle)) throw new Error('search ranking: ' + firstTitle);
 
   await page.goto(BASE + '/library?stage=a3&q=кому+написать', { waitUntil: 'networkidle' });
   await page.waitForSelector('.mlma-track-card');
@@ -38,14 +48,21 @@ async function main() {
   const startBtns = await page.getByRole('link', { name: 'Начать трек' }).count();
   if (startBtns !== 0) throw new Error('unexpected start button');
   const blueprint = await page.locator('.mlma-blueprint').innerText();
-  if (!blueprint.includes('Материал в разработке')) throw new Error('missing blueprint');
+  if (!blueprint.includes('Материал готовится')) throw new Error('missing blueprint');
 
-  await page.getByRole('button', { name: /Сохранить в этом браузере/ }).click();
-  await page.waitForSelector('text=Убрать из маршрута');
+  await page.getByRole('button', { name: /Сохранить описание/ }).click();
+  await page.waitForSelector('text=Убрать описание');
 
   await page.goto(BASE + '/start', { waitUntil: 'networkidle' });
-  await page.getByRole('button', { name: /Я знаю, кому написать/ }).click();
-  await page.waitForSelector('text=Ваш раздел: A3');
+  await page.getByRole('button', { name: /написать/i }).first().click();
+  await page.waitForSelector('text=Начните с этого');
+
+  await page.goto(BASE + '/about', { waitUntil: 'networkidle' });
+  await page.waitForSelector('text=Как создаётся');
+
+  await page.goto(BASE + '/access', { waitUntil: 'networkidle' });
+  const accessHtml = await page.locator('#mlma-main').innerText();
+  if (/entitlement|organization|тариф не выбран/i.test(accessHtml)) throw new Error('access jargon');
 
   await page.goto(BASE + '/my', { waitUntil: 'networkidle' });
   await page.waitForSelector('text=Следующее действие');
@@ -62,7 +79,7 @@ async function main() {
     homeTitle,
     sectionCards,
     libraryCards: cards,
-    searchHits: filtered,
+    firstSearchTitle: firstTitle,
     startButtonsOnTrack: startBtns,
     nextActionCards: nextCount,
     mobileOverflow: overflow,

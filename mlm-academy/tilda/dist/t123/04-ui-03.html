@@ -21,7 +21,8 @@
     var filters = D.parseLibraryState(window.location.search, extra);
     var timer = null;
     var drawerOpen = false;
-    var lastKind = '';
+    var shown = D.PAGE_SIZE || 15;
+    var host = null;
 
     function syncUrl(mode) {
       var qs = D.serializeLibraryState(filters);
@@ -30,29 +31,59 @@
       else history.replaceState({ mlmaLib: 1 }, '', url);
     }
 
+    function persist() {
+      if (D.saveLibraryRestore) {
+        D.saveLibraryRestore({
+          href: window.location.pathname + window.location.search,
+          q: filters.q || '',
+          filters: D.serializeLibraryState(filters),
+          scroll: window.scrollY || 0,
+        });
+      }
+    }
+
     function setDrawer(open) {
       drawerOpen = open;
-      var drawer = target.querySelector('#mlma-drawer');
-      var back = target.querySelector('#mlma-drawer-backdrop');
+      var drawer = document.getElementById('mlma-drawer');
+      var back = document.getElementById('mlma-drawer-backdrop');
+      var btn = target.querySelector('#mlma-open-filters');
       if (drawer) drawer.hidden = !open;
       if (back) back.hidden = !open;
+      if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
       document.documentElement.classList.toggle('mlma-lock', !!open);
+    }
+
+    function toggleList(list, value) {
+      var next = (list || []).slice();
+      var idx = next.indexOf(value);
+      if (idx === -1) next.push(value);
+      else next.splice(idx, 1);
+      return next;
     }
 
     function emitSearch() {
       var result = D.searchCatalog(state.tracks, filters);
-      lastKind = result.kind;
       if (result.kind === 'zero' || result.kind === 'need_more') {
-        D.trackEvent('library_zero_results', {
-          query: filters.q || '',
-          filters: D.serializeLibraryState(filters),
-          source: 'library',
-        });
+        D.trackEvent('library_zero_results', { query: filters.q || '', filters: D.serializeLibraryState(filters), source: 'library' });
       } else if (filters.q) {
         D.trackEvent('library_search', { query: filters.q, filters: D.serializeLibraryState(filters), source: 'library' });
       } else {
         D.trackEvent('library_filter_change', { filters: D.serializeLibraryState(filters), source: 'library' });
       }
+    }
+
+    function placeDrawer() {
+      host = document.getElementById('mlma-drawer-host-live');
+      var source = target.querySelector('.mlma-drawer-host');
+      if (!source) return;
+      if (!host) {
+        host = document.createElement('div');
+        host.id = 'mlma-drawer-host-live';
+        host.className = 'mlma';
+        document.body.appendChild(host);
+      }
+      host.innerHTML = source.innerHTML;
+      source.parentNode.removeChild(source);
     }
 
     function bindChrome() {
@@ -64,6 +95,7 @@
           timer = window.setTimeout(function () {
             filters.q = value;
             filters.preset = null;
+            shown = D.PAGE_SIZE || 15;
             paint({ keepFocus: true, url: 'replace' });
           }, 200);
         });
@@ -74,71 +106,105 @@
           event.preventDefault();
           var field = target.querySelector('#mlma-search');
           filters.q = field ? field.value : '';
+          shown = D.PAGE_SIZE || 15;
           paint({ url: 'push' });
         });
       }
-      var format = target.querySelector('#mlma-format');
-      if (format) {
-        format.addEventListener('change', function () {
-          filters.format = format.value || null;
-          filters.preset = null;
-          paint({ url: 'push' });
-        });
+      function onToggle(attr, key, single) {
+        var nodes = document.querySelectorAll('[' + attr + ']');
+        for (var i = 0; i < nodes.length; i += 1) {
+          nodes[i].addEventListener('click', function (event) {
+            var el = event.currentTarget;
+            var value = el.getAttribute(attr) || '';
+            if (key === 'stage') {
+              value = D.normalizeSectionId(value);
+              filters.stages = toggleList(filters.stages || (filters.stage ? [filters.stage] : []), value);
+              filters.stage = filters.stages.length === 1 ? filters.stages[0] : null;
+            } else if (key === 'avail') {
+              filters.avail = filters.avail === value ? null : value;
+            } else if (single) {
+              filters[key] = filters[key] === value ? null : value;
+            } else {
+              filters[key] = toggleList(filters[key] || [], value);
+            }
+            filters.preset = null;
+            shown = D.PAGE_SIZE || 15;
+            paint({ url: 'push' });
+          });
+        }
       }
-      var exp = target.querySelector('#mlma-exp');
-      if (exp) {
-        exp.addEventListener('change', function () {
-          filters.experience = exp.value || null;
-          filters.preset = null;
-          paint({ url: 'push' });
-        });
-      }
-      target.querySelectorAll('[data-mlma-stage]').forEach(function (el) {
-        el.addEventListener('click', function () {
-          filters.stage = D.normalizeSectionId(el.getAttribute('data-mlma-stage') || '') || null;
-          filters.preset = null;
-          paint({ url: 'push' });
-        });
-      });
-      target.querySelectorAll('[data-mlma-goal]').forEach(function (el) {
-        el.addEventListener('click', function () {
-          var id = el.getAttribute('data-mlma-goal') || '';
-          filters.goal = filters.goal === id ? null : id;
-          filters.preset = null;
-          paint({ url: 'push' });
-        });
-      });
-      target.querySelectorAll('[data-mlma-clear]').forEach(function (el) {
-        el.addEventListener('click', function () {
+      onToggle('data-mlma-stage', 'stage');
+      onToggle('data-mlma-sit', 'sit');
+      onToggle('data-mlma-fmt', 'fmt');
+      onToggle('data-mlma-ch', 'ch');
+      onToggle('data-mlma-lvl', 'lvl');
+      onToggle('data-mlma-avail', 'avail', true);
+      var clearNodes = document.querySelectorAll('[data-mlma-clear]');
+      for (var c = 0; c < clearNodes.length; c += 1) {
+        clearNodes[c].addEventListener('click', function (event) {
+          var el = event.currentTarget;
           var key = el.getAttribute('data-mlma-clear');
+          var value = el.getAttribute('data-mlma-clear-value');
           if (key === 'q') filters.q = '';
-          else filters[key] = null;
-          filters.preset = null;
+          else if (key === 'stage') {
+            filters.stages = (filters.stages || []).filter(function (item) { return item !== value; });
+            filters.stage = filters.stages.length === 1 ? filters.stages[0] : null;
+          } else if (key === 'sit') {
+            filters.sit = (filters.sit || []).filter(function (item) { return item !== value; });
+            filters.situation = null;
+          } else if (Array.isArray(filters[key])) {
+            filters[key] = filters[key].filter(function (item) { return item !== value; });
+          } else filters[key] = null;
+          filters.preset = key === 'preset' ? null : filters.preset;
+          shown = D.PAGE_SIZE || 15;
           paint({ url: 'push' });
-        });
-      });
-      target.querySelectorAll('[data-mlma-reset]').forEach(function (el) {
-        el.addEventListener('click', function () {
-          filters = D.emptyLibraryState();
-          paint({ url: 'push' });
-        });
-      });
-      var openBtn = target.querySelector('#mlma-open-filters');
-      if (openBtn) {
-        openBtn.addEventListener('click', function () {
-          setDrawer(true);
         });
       }
-      target.querySelectorAll('[data-mlma-drawer-close]').forEach(function (el) {
-        el.addEventListener('click', function () {
-          setDrawer(false);
+      var resetNodes = document.querySelectorAll('[data-mlma-reset]');
+      for (var r = 0; r < resetNodes.length; r += 1) {
+        resetNodes[r].addEventListener('click', function () {
+          filters = D.emptyLibraryState();
+          shown = D.PAGE_SIZE || 15;
+          paint({ url: 'push' });
         });
-      });
-      var back = target.querySelector('#mlma-drawer-backdrop');
-      if (back) {
-        back.addEventListener('click', function () {
-          setDrawer(false);
+      }
+      var openBtn = target.querySelector('#mlma-open-filters');
+      if (openBtn) openBtn.addEventListener('click', function () { setDrawer(true); });
+      var closeNodes = document.querySelectorAll('[data-mlma-drawer-close]');
+      for (var x = 0; x < closeNodes.length; x += 1) {
+        closeNodes[x].addEventListener('click', function () { setDrawer(false); });
+      }
+      var back = document.getElementById('mlma-drawer-backdrop');
+      if (back) back.addEventListener('click', function () { setDrawer(false); });
+      var more = target.querySelector('[data-mlma-more]');
+      if (more) {
+        more.addEventListener('click', function () {
+          shown += D.PAGE_SIZE || 15;
+          paint({ url: 'replace' });
         });
+      }
+      var share = target.querySelector('#mlma-share');
+      if (share) {
+        share.addEventListener('click', function () {
+          var href = window.location.origin + (share.getAttribute('data-mlma-share') || '/library');
+          var msg = target.querySelector('#mlma-share-msg');
+          function done() {
+            if (msg) msg.textContent = 'Ссылка на подборку скопирована';
+          }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(href).then(done).catch(function () {
+              window.prompt('Скопируйте ссылку', href);
+              done();
+            });
+          } else {
+            window.prompt('Скопируйте ссылку', href);
+            done();
+          }
+        });
+      }
+      var links = target.querySelectorAll('.mlma-track-link');
+      for (var l = 0; l < links.length; l += 1) {
+        links[l].addEventListener('click', persist);
       }
     }
 
@@ -148,9 +214,11 @@
       var selection = null;
       var searchBefore = target.querySelector('#mlma-search');
       if (keep && searchBefore) selection = searchBefore.selectionStart;
-      target.innerHTML = catalogBrowserHtml(state, filters);
+      var wasOpen = drawerOpen;
+      target.innerHTML = catalogBrowserHtml(state, filters, { shown: shown });
+      placeDrawer();
       bindChrome();
-      if (drawerOpen) setDrawer(true);
+      if (wasOpen) setDrawer(true);
       var search = target.querySelector('#mlma-search');
       if (keep && search) {
         search.focus();
@@ -163,17 +231,25 @@
       }
       if (opts.url === 'push') syncUrl('push');
       else if (opts.url === 'replace') syncUrl('replace');
+      persist();
       emitSearch();
     }
 
     window.addEventListener('popstate', function () {
       filters = D.parseLibraryState(window.location.search, extra);
+      shown = D.PAGE_SIZE || 15;
       paint();
     });
     document.addEventListener('keydown', function (event) {
       if (event.key === 'Escape' && drawerOpen) setDrawer(false);
     });
     paint();
+    var restore = D.readLibraryRestore ? D.readLibraryRestore() : null;
+    if (restore && restore.scroll && window.location.search) {
+      window.setTimeout(function () {
+        window.scrollTo(0, restore.scroll);
+      }, 0);
+    }
   }
 
   function bind(state, rootEl) {
@@ -185,6 +261,23 @@
         mount(rootEl);
       });
     });
+    rootEl.querySelectorAll('[data-mlma-level]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = el.getAttribute('data-mlma-level') || '';
+        var current = state.profile.currentGoal === id ? '' : id;
+        state.profile = D.saveProfile({ currentGoal: current });
+        mount(rootEl);
+      });
+    });
+    var menuBtn = rootEl.querySelector('#mlma-open-menu');
+    var menu = rootEl.querySelector('#mlma-menu');
+    if (menuBtn && menu) {
+      menuBtn.addEventListener('click', function () {
+        var open = menu.hidden;
+        menu.hidden = !open;
+        menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+    }
     rootEl.querySelectorAll('[data-mlma-save]').forEach(function (el) {
       el.addEventListener('click', function () {
         var id = el.getAttribute('data-mlma-save');
@@ -217,8 +310,6 @@
         mount(rootEl);
       });
     });
-    var searchBtn = rootEl.querySelector('#mlma-search-btn');
-    if (searchBtn) searchBtn.style.display = 'inline-flex';
     rootEl.querySelectorAll('[data-mlma-preset]').forEach(function (el) {
       el.addEventListener('click', function () {
         D.trackEvent('academy_preset_click', { itemId: el.getAttribute('data-mlma-preset') || '', source: 'home' });
@@ -232,6 +323,42 @@
       });
     }
     bindLibrary(state, rootEl);
+    applySeo(state);
+  }
+
+  function applySeo(state) {
+    try {
+      var robots = document.querySelector('meta[name="robots"]');
+      if (!robots) {
+        robots = document.createElement('meta');
+        robots.setAttribute('name', 'robots');
+        document.head.appendChild(robots);
+      }
+      robots.setAttribute('content', 'noindex, nofollow');
+      var path = (window.location.pathname || '').replace(/\/+$/, '') || '/';
+      if (path.indexOf('/track/') === 0) {
+        var slug = path.slice('/track/'.length);
+        var id = D.normalizeTrackId(slug);
+        if (id && !queryParam('id')) {
+          window.location.replace('/track?id=' + encodeURIComponent(String(id).toLowerCase()));
+          return;
+        }
+      }
+      if (state.page === 'track') {
+        var opened = D.normalizeTrackId(queryParam('id'));
+        if (opened) {
+          var canon = document.querySelector('link[rel="canonical"]');
+          if (!canon) {
+            canon = document.createElement('link');
+            canon.setAttribute('rel', 'canonical');
+            document.head.appendChild(canon);
+          }
+          canon.setAttribute('href', window.location.origin + '/track?id=' + encodeURIComponent(String(opened).toLowerCase()));
+        }
+      }
+    } catch (err) {
+      /* ignore */
+    }
   }
 
   function mount(existingRoot) {

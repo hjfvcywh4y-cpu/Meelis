@@ -36,6 +36,7 @@
 | A5 · Сомнения и отказ · MLM Academy | `/library/a5` | `mounts/a5.html` | public |
 | A6 · Повтор и рост · MLM Academy | `/library/a6` | `mounts/a6.html` | public |
 | Трек · MLM Academy | `/track` | `mounts/track.html` | public |
+| Как создаётся библиотека · MLM Academy | `/about` | `mounts/about.html` | public |
 | Личная главная · MLM Academy | `/my` | `mounts/my.html` | member |
 | Мой маршрут · MLM Academy | `/my/route` | `mounts/route.html` | member |
 | Мои результаты · MLM Academy | `/my/results` | `mounts/results.html` | member |
@@ -68,7 +69,7 @@
 | Editor | те же четыре + `/preview/catalog` |
 
 Публичные (не добавлять ни в одну группу): `/academy`, `/start`, `/library`,
-`/library/a1`…`/library/a6`, `/track`, `/access`. Живую главную `/` и прочие
+`/library/a1`…`/library/a6`, `/track`, `/about`, `/access`. Живую главную `/` и прочие
 маркетинговые страницы в группы не добавлять.
 
 После включения модуля проверить `mlmacademy.ru`: если на живой главной появилась
