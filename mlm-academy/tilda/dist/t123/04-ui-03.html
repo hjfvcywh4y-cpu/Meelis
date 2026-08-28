@@ -23,6 +23,8 @@
     var drawerOpen = false;
     var shown = D.PAGE_SIZE || 15;
     var host = null;
+    var rerankSeq = 0;
+    var lastResult = null;
 
     function syncUrl(mode) {
       var qs = D.serializeLibraryState(filters);
@@ -215,7 +217,8 @@
       var searchBefore = target.querySelector('#mlma-search');
       if (keep && searchBefore) selection = searchBefore.selectionStart;
       var wasOpen = drawerOpen;
-      target.innerHTML = catalogBrowserHtml(state, filters, { shown: shown });
+      lastResult = opts.result || D.searchCatalog(state.tracks, filters);
+      target.innerHTML = catalogBrowserHtml(state, filters, { shown: shown, result: lastResult });
       placeDrawer();
       bindChrome();
       if (wasOpen) setDrawer(true);
@@ -233,6 +236,40 @@
       else if (opts.url === 'replace') syncUrl('replace');
       persist();
       emitSearch();
+      if (!opts.skipRerank) requestRerank();
+    }
+
+    function requestRerank() {
+      var url = typeof window !== 'undefined' ? window.MLMA_RERANK_URL : '';
+      if (!url || !filters.q || !D.rerankPayload || !D.applyRerankResponse) return;
+      var local = lastResult || D.searchCatalog(state.tracks, filters);
+      var payload = D.rerankPayload(local, filters.q);
+      if (!payload.candidates.length) return;
+      var seq = (rerankSeq += 1);
+      var qNow = filters.q;
+      var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      var timerId = setTimeout(function () {
+        if (ctrl) ctrl.abort();
+      }, 2500);
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload),
+        signal: ctrl ? ctrl.signal : undefined,
+      })
+        .then(function (res) {
+          if (!res.ok) throw new Error('rerank ' + res.status);
+          return res.json();
+        })
+        .then(function (data) {
+          if (seq !== rerankSeq || filters.q !== qNow) return;
+          var next = D.applyRerankResponse(local, data);
+          if (next && next.source === 'ai') paint({ keepFocus: true, skipRerank: true, result: next });
+        })
+        .catch(function () {})
+        .then(function () {
+          clearTimeout(timerId);
+        });
     }
 
     window.addEventListener('popstate', function () {

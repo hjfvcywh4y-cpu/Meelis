@@ -270,13 +270,32 @@
     );
   }
 
+  function whyHtml(why) {
+    if (!why) return '';
+    if (Array.isArray(why) && why.length) {
+      return '<div class="mlma-why"><p class="mlma-meta">Почему предложено</p><span><b>Буквальное совпадение.</b> ' + esc(why.slice(0, 4).join(', ')) + '</span></div>';
+    }
+    var parts = '';
+    if (why.literal && why.literal.length) {
+      parts += '<span><b>Буквальное совпадение.</b> ' + esc(why.literal.slice(0, 3).join(', ')) + '</span>';
+    }
+    if (why.situation && why.situation.length) {
+      parts += '<span><b>Распознанная ситуация.</b> ' + esc(why.situation.slice(0, 3).join(', ')) + '</span>';
+    }
+    if (why.intent && why.intent.length) {
+      parts += '<span><b>Предполагаемое намерение.</b> ' + esc(why.intent.slice(0, 2).join('. ')) + '</span>';
+    }
+    if (!parts) return '';
+    return '<div class="mlma-why"><p class="mlma-meta">Почему предложено</p>' + parts + '</div>';
+  }
+
   function trackCard(track, section, R, opts) {
     opts = opts || {};
     var status = D.getTrackStatusView(track);
     var shortTitle = section ? section.shortTitle : track.sectionId;
     var cta = status.canStart ? 'Пройти трек' : 'Открыть описание';
-    var why = opts.why && opts.why.length
-      ? '<p class="mlma-why">Почему предложено: совпало — ' + esc(opts.why.slice(0, 4).join(', ')) + '.</p>'
+    var why = opts.why
+      ? whyHtml(opts.why)
       : '';
     var cls = 'mlma-card mlma-card-hover mlma-track-card' + (opts.featured ? ' mlma-track-featured' : '') + (opts.compact ? ' mlma-track-compact' : '');
     var badgeHtml = status.showCatalogBadge && status.label ? badge(status.label, status.tone) : '';
@@ -612,7 +631,7 @@
   function catalogBrowserHtml(state, filters, options) {
     options = options || {};
     var R = state.R;
-    var result = D.searchCatalog(state.tracks, filters);
+    var result = options.result || D.searchCatalog(state.tracks, filters);
     var facets = D.facetOptions ? D.facetOptions(state.tracks) : { sit: [], fmt: [], ch: [], lvl: [], avail: [] };
     var pageSize = D.PAGE_SIZE || 15;
     var shown = options.shown || pageSize;
@@ -696,8 +715,10 @@
       body =
         emptyState({
           eyebrow: 'Точного совпадения нет',
-          title: 'Точного совпадения пока нет. Попробуйте описать ситуацию проще или выберите ближайшее направление.',
-          description: 'Ниже — уточняющие формулировки, шесть направлений и ближайшие результаты с меньшим рейтингом.',
+          title: result.clarifyingQuestion || 'Точного совпадения пока нет. Попробуйте описать ситуацию проще или выберите ближайшее направление.',
+          description: result.clarifyingQuestion
+            ? 'Точного совпадения пока нет. Можно выбрать направление ниже или уточнить запрос.'
+            : 'Ниже — уточняющие формулировки и шесть направлений.',
           actions:
             '<button type="button" class="mlma-btn mlma-btn-primary" data-mlma-reset="1">Сбросить запрос</button>' +
             btn(R.start(), 'Описать ситуацию'),
@@ -1748,6 +1769,8 @@
     var drawerOpen = false;
     var shown = D.PAGE_SIZE || 15;
     var host = null;
+    var rerankSeq = 0;
+    var lastResult = null;
 
     function syncUrl(mode) {
       var qs = D.serializeLibraryState(filters);
@@ -1940,7 +1963,8 @@
       var searchBefore = target.querySelector('#mlma-search');
       if (keep && searchBefore) selection = searchBefore.selectionStart;
       var wasOpen = drawerOpen;
-      target.innerHTML = catalogBrowserHtml(state, filters, { shown: shown });
+      lastResult = opts.result || D.searchCatalog(state.tracks, filters);
+      target.innerHTML = catalogBrowserHtml(state, filters, { shown: shown, result: lastResult });
       placeDrawer();
       bindChrome();
       if (wasOpen) setDrawer(true);
@@ -1958,6 +1982,40 @@
       else if (opts.url === 'replace') syncUrl('replace');
       persist();
       emitSearch();
+      if (!opts.skipRerank) requestRerank();
+    }
+
+    function requestRerank() {
+      var url = typeof window !== 'undefined' ? window.MLMA_RERANK_URL : '';
+      if (!url || !filters.q || !D.rerankPayload || !D.applyRerankResponse) return;
+      var local = lastResult || D.searchCatalog(state.tracks, filters);
+      var payload = D.rerankPayload(local, filters.q);
+      if (!payload.candidates.length) return;
+      var seq = (rerankSeq += 1);
+      var qNow = filters.q;
+      var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      var timerId = setTimeout(function () {
+        if (ctrl) ctrl.abort();
+      }, 2500);
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload),
+        signal: ctrl ? ctrl.signal : undefined,
+      })
+        .then(function (res) {
+          if (!res.ok) throw new Error('rerank ' + res.status);
+          return res.json();
+        })
+        .then(function (data) {
+          if (seq !== rerankSeq || filters.q !== qNow) return;
+          var next = D.applyRerankResponse(local, data);
+          if (next && next.source === 'ai') paint({ keepFocus: true, skipRerank: true, result: next });
+        })
+        .catch(function () {})
+        .then(function () {
+          clearTimeout(timerId);
+        });
     }
 
     window.addEventListener('popstate', function () {

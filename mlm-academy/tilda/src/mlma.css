@@ -313,7 +313,19 @@ a.mlma-card:hover, a.mlma-card-soft:hover { text-decoration: none; color: inheri
   align-items: stretch;
 }
 .mlma-search .mlma-field { flex: 1 1 180px; }
-.mlma-search .mlma-btn-primary { flex: 0 0 auto; }
+.mlma-why {
+  margin-top: 12px;
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(196, 95, 66, 0.1);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--mlma-muted);
+}
+.mlma-why span { display: block; }
+.mlma-why b { color: var(--academy-text); font-weight: 700; }
 .mlma-blueprint {
   border: 1.5px dashed var(--academy-border);
   border-radius: var(--academy-radius-lg);
@@ -729,14 +741,6 @@ a.mlma-example {
   min-height: 120px;
 }
 .mlma-route-demo p { margin-top: 10px; font-weight: 800; line-height: 1.3; }
-.mlma-why {
-  margin-top: 12px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: rgba(196, 95, 66, 0.1);
-  font-size: 13px;
-  line-height: 1.4;
-}
 .mlma-track-featured { box-shadow: 0 0 0 2px var(--mlma-accent); }
 .mlma-card-cta {
   font-size: 14px;

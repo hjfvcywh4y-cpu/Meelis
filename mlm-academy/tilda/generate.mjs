@@ -92,7 +92,9 @@ if (/"P[012]"/.test(json)) {
 }
 
 const css = fs.readFileSync(path.join(SRC, 'mlma.css'), 'utf8');
-const domainJs = fs.readFileSync(path.join(SRC, 'domain.js'), 'utf8');
+const domainCore = fs.readFileSync(path.join(SRC, 'domain.js'), 'utf8');
+const searchJs = fs.readFileSync(path.join(SRC, 'search.js'), 'utf8');
+const domainJs = domainCore.trim() + '\n\n' + searchJs;
 const uiJs = fs.readFileSync(path.join(SRC, 'ui.js'), 'utf8');
 
 const pages = [

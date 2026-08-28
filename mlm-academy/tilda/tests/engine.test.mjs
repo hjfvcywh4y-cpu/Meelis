@@ -6,7 +6,8 @@ import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
-const MLMA = require('../src/domain.js');
+require('../src/domain.js');
+const MLMA = require('../src/search.js');
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const PUBLIC_FIELDS = MLMA.PUBLIC_FIELDS.slice().sort();

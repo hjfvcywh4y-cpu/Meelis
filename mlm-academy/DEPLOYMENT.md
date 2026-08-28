@@ -82,6 +82,8 @@ docker run --rm -p 3000:3000 -e ENABLE_CATALOG_PREVIEW=true mlm-academy
 | `ENABLE_CATALOG_PREVIEW` | не задавать | `true` |
 | `ENABLE_ADMIN_CATALOG` | не задавать | `true` при необходимости |
 | `NEXT_PUBLIC_SHOWCASE_URL` | ссылка на витрину Tilda, необязательно | то же |
+| `OPENAI_API_KEY` или `GROQ_API_KEY` | только на сервере rerank, не в Tilda | то же |
+| `SEARCH_RERANK_MODEL` | `gpt-4o-mini` по умолчанию | то же |
 
 Значения задаются только в панели площадки или в локальном `.env.local`.
 В репозитории лежит `.env.example` — имена без значений.
