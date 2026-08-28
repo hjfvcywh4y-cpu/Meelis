@@ -273,7 +273,7 @@ const FAVICON_SVG =
   encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#C45F42"/><rect x="7" y="7" width="18" height="18" rx="3" fill="none" stroke="#1c1914" stroke-width="2"/></svg>',
   );
-const RERANK_PUBLIC_URL = process.env.MLMA_RERANK_PUBLIC_URL || '';
+const RERANK_PUBLIC_URL = process.env.MLMA_RERANK_PUBLIC_URL || 'https://mlma-search.mlmacademy-search.workers.dev/api/rerank';
 
 function robotsForPage(page) {
   if (page.members === 'member' || page.members === 'editor') return 'noindex, nofollow';

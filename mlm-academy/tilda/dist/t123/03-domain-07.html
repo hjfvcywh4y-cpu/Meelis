@@ -5,8 +5,117 @@
   var api = root.MLMA;
   if (!api) return;
   var TRACK_ALIASES = api.TRACK_ALIASES;
-  var CANDIDATE_LIMIT = 15;
+  var CANDIDATE_LIMIT = 20;
   var deriveMeta = api.deriveMeta;
+  var rankTracks = api.rankTracks;
+  var analyzeQuery = api.analyzeQuery;
+  var applyFacets = api.applyFacets;
+  var emptyLibraryState = api.emptyLibraryState;
+  var buildChips = api.buildChips;
+  var foundLabel = api.foundLabel;
+  var hasActiveFilters = api.hasActiveFilters;
+  var parseLibraryState = api.parseLibraryState;
+  var emptyWhy = api.emptyWhy;
+  var humanWhy = api.humanWhy;
+  var defaultClarify = api.defaultClarify;
+
+  function tracksById(tracks) {
+    var map = {};
+    for (var i = 0; i < tracks.length; i += 1) map[tracks[i].trackId] = tracks[i];
+    return map;
+  }
+
+  function searchDocument(track) {
+    var aliases = (TRACK_ALIASES[track.trackId] || []).slice();
+    var meta = deriveMeta ? deriveMeta(track) : null;
+    if (meta && meta.aliases && meta.aliases.length) aliases = meta.aliases.slice();
+    var fields = api.searchFields ? api.searchFields(track) : null;
+    return {
+      trackId: track.trackId,
+      title: track.title || '',
+      situations: [track.situation || ''].filter(Boolean),
+      goals: [track.outcome || ''].filter(Boolean),
+      painSignals: aliases.slice(0, 12),
+      audiences: [],
+      stage: [track.sectionId || '', track.stage || ''].filter(Boolean),
+      actions: [track.title || '', (fields && fields.mainTask) || ''].filter(Boolean),
+      outcome: track.outcome || '',
+      aliases: aliases,
+      negativeSignals: [],
+    };
+  }
+
+  function compactSearchRow(track) {
+    var doc = searchDocument(track);
+    return {
+      trackId: doc.trackId,
+      title: doc.title,
+      situation: (doc.situations && doc.situations[0]) || '',
+      result: doc.outcome,
+      sectionId: track.sectionId,
+      aliases: doc.aliases.slice(0, 10),
+      tags: doc.aliases.slice(0, 8),
+    };
+  }
+
+  function ensureIntentRows(ranked, tracks, analysis) {
+    var have = {};
+    for (var i = 0; i < ranked.length; i += 1) have[ranked[i].track.trackId] = true;
+    var index = tracksById(tracks);
+    var intents = (analysis && analysis.intents) || [];
+    var extra = [];
+    for (var n = 0; n < intents.length; n += 1) {
+      var ids = (intents[n].featuredIds || []).concat(intents[n].boostIds || []);
+      for (var k = 0; k < ids.length; k += 1) {
+        if (have[ids[k]] || !index[ids[k]]) continue;
+        have[ids[k]] = true;
+        extra.push({
+          track: index[ids[k]],
+          score: 260 - k * 8,
+          why: api.emptyWhy ? api.emptyWhy() : { literal: [], situation: [], intent: [intents[n].goal || ''] },
+        });
+      }
+    }
+    return extra.concat(ranked);
+  }
+
+  function mergeCandidates(ranked, tracks, analysis) {
+    var seen = {};
+    var out = [];
+    function push(row) {
+      var track = row.track || row;
+      if (!track || !track.trackId || seen[track.trackId]) return;
+      seen[track.trackId] = true;
+      out.push(row.track ? row : { track: track, score: row.score || 0, why: row.why });
+    }
+    var intents = (analysis && analysis.intents) || [];
+    var index = tracksById(tracks);
+    for (var n = 0; n < intents.length; n += 1) {
+      var ids = (intents[n].featuredIds || []).concat(intents[n].boostIds || []);
+      for (var k = 0; k < ids.length; k += 1) if (index[ids[k]]) push({ track: index[ids[k]], score: 280 - k * 6 });
+    }
+    for (var r = 0; r < ranked.length; r += 1) push(ranked[r]);
+    if (out.length < 12) {
+      var sectionHint = '';
+      if (intents.length && intents[0].boostIds && intents[0].boostIds[0] && index[intents[0].boostIds[0]]) {
+        sectionHint = index[intents[0].boostIds[0]].sectionId;
+      }
+      for (var t = 0; t < tracks.length && out.length < 12; t += 1) {
+        if (sectionHint && tracks[t].sectionId !== sectionHint) continue;
+        push({ track: tracks[t], score: 20 });
+      }
+    }
+    return out.slice(0, CANDIDATE_LIMIT);
+  }
+
+  function inAcademyTheme(analysis) {
+    if (!analysis) return false;
+    if (analysis.outOfScope) return false;
+    if (analysis.adjacentScope) return true;
+    if (analysis.intents && analysis.intents.length) return true;
+    var blob = String(analysis.norm || '');
+    return /(mlm|продаж|клиент|контакт|партн|команд|продукт|план|новичк|старт|сообщен|написа|звон|встреч|отказ|дорог|рекоменд|баз|ритм|дисципл|настав|лидер|роль|заработ|диалог|разговор|потребност|возраст|пауз|повтор|систем|порядок|хаотич|успева)/.test(blob);
+  }
   var rankTracks = api.rankTracks;
   var analyzeQuery = api.analyzeQuery;
   var applyFacets = api.applyFacets;
@@ -41,10 +150,25 @@
     var intents = (analysis && analysis.intents) || [];
     var boost = {};
     var teamOnly = false;
+    var featuredIds = [];
     for (var n = 0; n < intents.length; n += 1) {
       if (intents[n].teamOnly) teamOnly = true;
       var ids = intents[n].boostIds || [];
       for (var k = 0; k < ids.length; k += 1) boost[ids[k]] = true;
+      if (!featuredIds.length && intents[n].featuredIds && intents[n].featuredIds.length) {
+        featuredIds = intents[n].featuredIds.slice();
+      }
+    }
+    var byId = {};
+    for (var b = 0; b < ranked.length; b += 1) byId[ranked[b].track.trackId] = ranked[b];
+    if (featuredIds.length) {
+      for (var fi = 0; fi < featuredIds.length && featured.length < 3; fi += 1) {
+        var forced = byId[featuredIds[fi]];
+        if (!forced) continue;
+        featured.push(forced.track);
+        scores[forced.track.trackId] = forced.score;
+        whyMap[forced.track.trackId] = attachWhyText(forced.why, forced.track, analysis);
+      }
     }
     var strong = [];
     var relax = !!(state && state._relaxInFilter);
@@ -60,6 +184,7 @@
     for (var f = 0; f < strong.length && featured.length < 3; f += 1) {
       var minFeat = boost[strong[f].track.trackId] ? 80 : 100;
       if (strong[f].score < minFeat) continue;
+      if (featured.indexOf(strong[f].track) !== -1) continue;
       featured.push(strong[f].track);
       scores[strong[f].track.trackId] = strong[f].score;
       whyMap[strong[f].track.trackId] = attachWhyText(strong[f].why, strong[f].track, analysis);
@@ -102,12 +227,55 @@
         clarifyingOptions: analysis.outOfScope.options || defaultClarify().options,
         source: 'local',
         total: tracks.length,
+        matchType: 'out_of_scope',
         label: 'Точного трека пока нет',
       };
     }
+    var index = tracksById(tracks);
+    if (state.q && analysis.adjacentScope && analysis.adjacentScope.trackIds) {
+      var adj = analysis.adjacentScope;
+      var featuredAdj = [];
+      var whyAdj = {};
+      for (var a = 0; a < adj.trackIds.length && featuredAdj.length < 3; a += 1) {
+        if (!index[adj.trackIds[a]]) continue;
+        featuredAdj.push(index[adj.trackIds[a]]);
+        whyAdj[adj.trackIds[a]] = attachWhyText(emptyWhy(), index[adj.trackIds[a]], analysis, adj.reason);
+      }
+      var adjCandidates = mergeCandidates(
+        featuredAdj.map(function (track) { return { track: track, score: 200, why: emptyWhy() }; }),
+        tracks,
+        analysis,
+      );
+      return {
+        kind: 'ok',
+        items: featuredAdj,
+        featured: featuredAdj,
+        other: [],
+        whyMap: whyAdj,
+        scores: {},
+        analysis: analysis,
+        chips: chips,
+        relaxedKey: null,
+        close: [],
+        candidates: adjCandidates,
+        clarifyingQuestion: adj.question,
+        clarifyingOptions: adj.options || [],
+        source: 'local',
+        total: tracks.length,
+        matchType: 'adjacent',
+        label: 'Можно начать с этих треков',
+        expandCatalog: true,
+      };
+    }
     var faceted = applyFacets(tracks, state);
-    var ranked = rankTracks(faceted, analysis, state.sort);
-    var candidates = ranked.slice(0, CANDIDATE_LIMIT);
+    var ranked = ensureIntentRows(rankTracks(faceted, analysis, state.sort), faceted, analysis);
+    var candidatePool = faceted.length ? faceted : tracks;
+    var candidates = mergeCandidates(ranked, candidatePool, analysis);
+    if (inAcademyTheme(analysis) && !candidates.length) {
+      candidates = tracks.slice(0, CANDIDATE_LIMIT).map(function (track) {
+        return { track: track, score: 1, why: emptyWhy() };
+      });
+    }
     var split = splitDisplay(ranked, analysis, state);
     if (!state.q) {
       return {
@@ -132,6 +300,14 @@
     if (!(split.featured.length || split.other.length) && hasActiveFilters(Object.assign({}, state, { q: '' })) && ranked.length) {
       split = splitDisplay(ranked, analysis, Object.assign({}, state, { _relaxInFilter: true }));
     }
+    if (!(split.featured.length || split.other.length) && inAcademyTheme(analysis) && ranked.length) {
+      split = splitDisplay(ranked, analysis, Object.assign({}, state, { _relaxInFilter: true }));
+    }
+    var leadIntent = (analysis.intents && analysis.intents[0]) || null;
+    var matchType = leadIntent && leadIntent.matchType
+      ? leadIntent.matchType
+      : (split.featured.length ? 'strong' : (split.other.length ? 'adjacent' : ''));
+    var clarifyQ = (leadIntent && leadIntent.clarification) || null;
     if (split.featured.length || split.other.length) {
       return {
         kind: 'ok',
@@ -145,15 +321,47 @@
         relaxedKey: null,
         close: [],
         candidates: candidates,
-        clarifyingQuestion: null,
+        clarifyingQuestion: clarifyQ,
         clarifyingOptions: [],
         source: 'local',
         total: tracks.length,
-        label: split.featured.length ? 'Подходит лучше всего' : 'Также может помочь',
+        matchType: matchType,
+        label: matchType === 'adjacent' || (leadIntent && leadIntent.wide)
+          ? 'Можно начать с этих треков'
+          : (split.featured.length ? 'Подходит лучше всего' : 'Можно начать с этих треков'),
+        expandCatalog: split.featured.length < 2,
       };
     }
     if (!hasActiveFilters(state) && !state.q) {
       return { kind: 'ok', items: [], featured: [], other: [], whyMap: {}, scores: {}, analysis: analysis, chips: chips, relaxedKey: null, close: [], candidates: [], clarifyingQuestion: null, clarifyingOptions: [], source: 'local', total: tracks.length, label: foundLabel(0, tracks.length, state) };
+    }
+    if (inAcademyTheme(analysis) && candidates.length) {
+      var fallbackFeat = [];
+      var fallbackWhy = {};
+      for (var c = 0; c < candidates.length && fallbackFeat.length < 3; c += 1) {
+        fallbackFeat.push(candidates[c].track);
+        fallbackWhy[candidates[c].track.trackId] = attachWhyText(candidates[c].why, candidates[c].track, analysis);
+      }
+      return {
+        kind: 'ok',
+        items: fallbackFeat,
+        featured: fallbackFeat,
+        other: [],
+        whyMap: fallbackWhy,
+        scores: {},
+        analysis: analysis,
+        chips: chips,
+        relaxedKey: null,
+        close: [],
+        candidates: candidates,
+        clarifyingQuestion: defaultClarify().question,
+        clarifyingOptions: defaultClarify().options,
+        source: 'local',
+        total: tracks.length,
+        matchType: 'adjacent',
+        label: 'Можно начать с этих треков',
+        expandCatalog: true,
+      };
     }
     var clarify = defaultClarify();
     return {
@@ -172,6 +380,7 @@
       clarifyingOptions: clarify.options,
       source: 'local',
       total: tracks.length,
+      matchType: 'out_of_scope',
       label: 'Точного трека пока нет',
     };
   }
@@ -214,43 +423,66 @@
     return result.items;
   }
 
-  function rerankPayload(result, query) {
+  function rerankPayload(result, query, allTracks) {
     var rows = (result && result.candidates) || [];
     var candidates = [];
-    for (var i = 0; i < rows.length && candidates.length < CANDIDATE_LIMIT; i += 1) {
-      var track = rows[i].track || rows[i];
-      var aliases = TRACK_ALIASES[track.trackId] || [];
+    var seen = {};
+    function pushTrack(track, score) {
+      if (!track || !track.trackId || seen[track.trackId]) return;
+      seen[track.trackId] = true;
+      var doc = searchDocument(track);
       candidates.push({
-        trackId: track.trackId,
-        title: track.title,
-        situation: track.situation,
-        result: track.outcome,
+        trackId: doc.trackId,
+        title: doc.title,
+        situation: (doc.situations && doc.situations[0]) || '',
+        result: doc.outcome,
         sectionId: track.sectionId,
-        tags: aliases.slice(0, 8),
-        score: rows[i].score || 0,
+        aliases: doc.aliases.slice(0, 10),
+        tags: doc.aliases.slice(0, 8),
+        score: score || 0,
       });
+    }
+    for (var i = 0; i < rows.length && candidates.length < CANDIDATE_LIMIT; i += 1) {
+      pushTrack(rows[i].track || rows[i], rows[i].score || 0);
+    }
+    var catalog = [];
+    var list = allTracks || [];
+    for (var t = 0; t < list.length && catalog.length < 112; t += 1) {
+      catalog.push(compactSearchRow(list[t]));
+    }
+    var weakLocal = !candidates.length || candidates.length < 8 || (result && (result.matchType === 'adjacent' || result.expandCatalog));
+    if (weakLocal && catalog.length) {
+      for (var c = 0; c < catalog.length && candidates.length < CANDIDATE_LIMIT; c += 1) {
+        var row = catalog[c];
+        if (seen[row.trackId]) continue;
+        seen[row.trackId] = true;
+        candidates.push(row);
+      }
     }
     return {
       query: String(query || ''),
       candidates: candidates,
+      catalog: weakLocal ? catalog : undefined,
     };
   }
 
-  function applyRerankResponse(local, data) {
+  function applyRerankResponse(local, data, allTracks) {
     if (!local || !data || typeof data !== 'object') return local;
     var catalog = {};
     var source = (local.candidates && local.candidates.length ? local.candidates : []).concat(
       (local.items || []).map(function (track) { return { track: track }; }),
     );
     var byId = {};
-    for (var i = 0; i < source.length; i += 1) {
-      var track = source[i].track || source[i];
-      if (track && track.trackId) {
-        catalog[track.trackId] = true;
-        byId[track.trackId] = track;
-      }
+    function remember(track) {
+      if (!track || !track.trackId) return;
+      catalog[track.trackId] = true;
+      byId[track.trackId] = track;
     }
-    for (var t = 0; t < (local.items || []).length; t += 1) byId[local.items[t].trackId] = local.items[t];
+    for (var i = 0; i < source.length; i += 1) remember(source[i].track || source[i]);
+    for (var t = 0; t < (local.items || []).length; t += 1) remember(local.items[t]);
+    if (allTracks && allTracks.length) {
+      for (var a = 0; a < allTracks.length; a += 1) remember(allTracks[a]);
+    }
     var topIn = Array.isArray(data.topMatches) ? data.topMatches : [];
     var relIn = Array.isArray(data.relatedMatches) ? data.relatedMatches : [];
     if (!topIn.length && !relIn.length && Array.isArray(data.results)) {
@@ -260,6 +492,7 @@
     var confidence = Number(data.confidence);
     if (!isFinite(confidence)) confidence = topIn[0] && typeof topIn[0].confidence === 'number' ? topIn[0].confidence : 0;
     var clarify = data.clarification || data.clarifyingQuestion || null;
+    var matchType = data.matchType || (confidence >= 0.7 ? 'exact' : confidence >= 0.45 ? 'strong' : confidence >= 0.2 ? 'adjacent' : 'out_of_scope');
     function take(rows, limit, minConf) {
       var out = [];
       var whyMap = {};
@@ -273,7 +506,7 @@
       }
       return { items: out, whyMap: whyMap };
     }
-    if (confidence < 0.45 || (!topIn.length && !relIn.length)) {
+    if (matchType === 'out_of_scope' && confidence < 0.2 && !topIn.length && !relIn.length) {
       var low = Object.assign({}, local);
       low.kind = 'zero';
       low.items = [];
@@ -281,48 +514,53 @@
       low.other = [];
       low.close = [];
       low.whyMap = {};
+      low.pendingAi = false;
+      low.matchType = 'out_of_scope';
       low.clarifyingQuestion = clarify || (defaultClarify().question);
       low.clarifyingOptions = local.clarifyingOptions && local.clarifyingOptions.length ? local.clarifyingOptions : defaultClarify().options;
       low.source = 'ai';
       low.label = 'Точного трека пока нет';
       return low;
     }
-    var top = take(topIn, 3, 0.6);
-    var related = take(relIn, 5, 0.45);
+    var minTop = confidence >= 0.7 ? 0.45 : 0.2;
+    var top = take(topIn, 3, minTop);
+    var related = take(relIn, 5, 0.2);
     var featured = top.items;
     var other = related.items.filter(function (item) {
       return featured.indexOf(item) === -1;
     });
-    if (!featured.length && !other.length) {
-      var empty = Object.assign({}, local);
-      empty.kind = 'zero';
-      empty.items = [];
-      empty.featured = [];
-      empty.other = [];
-      empty.close = [];
-      empty.source = 'ai';
-      empty.clarifyingQuestion = clarify || defaultClarify().question;
-      empty.clarifyingOptions = defaultClarify().options;
-      empty.label = 'Точного трека пока нет';
-      return empty;
+    if (!featured.length && other.length) {
+      featured = other.slice(0, 3);
+      other = other.slice(3);
     }
-    var whyMap = Object.assign({}, top.whyMap, related.whyMap);
+    if (!featured.length && !other.length) {
+      var keep = Object.assign({}, local, { pendingAi: false, source: local.source || 'local' });
+      if (clarify) keep.clarifyingQuestion = clarify;
+      return keep;
+    }
+    var whyMap = Object.assign({}, local.whyMap || {}, top.whyMap, related.whyMap);
+    var label = 'Можно начать с этих треков';
+    if (matchType === 'exact' || matchType === 'strong') label = 'Подходит лучше всего';
+    else if (matchType === 'adjacent') label = 'Можно начать с этих треков';
     return Object.assign({}, local, {
       kind: 'ok',
       items: featured.concat(other),
       featured: featured,
       other: other,
       whyMap: whyMap,
-      clarifyingQuestion: clarify,
-      recognizedSituation: data.reason || data.recognizedSituation || '',
+      clarifyingQuestion: clarify || local.clarifyingQuestion || null,
+      recognizedSituation: data.recognizedSituation || data.reason || '',
       source: 'ai',
-      label: featured.length ? 'Подходит лучше всего' : 'Также может помочь',
+      pendingAi: false,
+      matchType: matchType,
+      label: label,
     });
   }
 
   api.searchCatalog = searchCatalog;
   api.rerankPayload = rerankPayload;
   api.applyRerankResponse = applyRerankResponse;
+  api.searchDocument = searchDocument;
   api.matchesQuery = matchesQuery;
   api.filterTracks = filterTracks;
 

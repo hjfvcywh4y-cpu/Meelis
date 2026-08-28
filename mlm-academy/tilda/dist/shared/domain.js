@@ -1664,7 +1664,9 @@
     стыдно: ['неловко', 'впаривание', 'навязываться'],
     начало: ['старт', 'новичок', 'начать'],
     старт: ['начало', 'новичок', 'начать'],
-    новичок: ['новичку', 'новичка'],
+    план: ['планирование', 'порядок', 'ритм', 'система'],
+    планирование: ['план', 'порядок', 'ритм'],
+    новичок: ['новичку', 'новичка', 'старт', 'начало'],
     начать: ['старт', 'начало'],
     продажа: ['продавать', 'сделка'],
     понимаю: ['знаю'],
@@ -1714,11 +1716,12 @@
 
   var TRACK_ALIASES = {
     'A1-001': ['стыдно продавать', 'навязываться', 'впаривание', 'этика'],
-    'A1-004': ['роль', 'кем быть', 'лидер', 'собрать команду'],
-    'A1-006': ['зачем', 'личная причина'],
-    'A1-007': ['больше зарабатывать', 'не понимаю что делать', 'наблюдаемая цель', 'желание в цель'],
-    'A1-010': ['план действий', '30 дней', 'ритм', 'откладываю'],
-    'A1-011': ['продуктовый фокус', 'один продукт'],
+    'A1-004': ['роль', 'кем быть', 'лидер', 'собрать команду', 'новичок теряется', 'с чего начать', 'после регистрации'],
+    'A1-006': ['зачем', 'личная причина', 'новичок теряется', 'запутался', 'много информации'],
+    'A1-007': ['больше зарабатывать', 'не понимаю что делать', 'наблюдаемая цель', 'желание в цель', 'планирование', 'нужен план'],
+    'A1-008': ['план жизни', 'личный план', 'планирование', 'без фантазий', 'навести порядок', 'нужна система'],
+    'A1-010': ['план действий', '30 дней', 'ритм', 'откладываю', 'планирование', 'план на месяц', 'план на неделю', 'распланировать', 'нет дисциплины', 'всё хаотично', 'не успеваю'],
+    'A1-011': ['продуктовый фокус', 'один продукт', 'новичок теряется', 'слишком много информации', 'первый фокус'],
     'A1-012': ['честная карточка', 'карточка продукта'],
     'A1-013': ['вопросы и ограничения', 'что можно обещать'],
     'A1-014': ['не стыдно рекомендовать'],
@@ -1726,7 +1729,8 @@
     'A2-001': ['профиль клиента', 'кому подходит', 'кому предложить', 'целевая аудитория'],
     'A2-006': ['аудит базы', 'контактов много', 'в голове', 'держу в голове', 'crm'],
     'A2-007': ['сегментация базы', 'разделить базу'],
-    'A2-008': ['пять контактов', 'пять людей', 'с кем начать', 'некому писать'],
+    'A2-008': ['пять контактов', 'пять людей', 'с кем начать', 'некому писать', 'новичок теряется', 'первые люди', 'кому написать'],
+    'A2-009': ['план поиска', 'недельный план', 'планирование поиска', 'поиск людей план'],
     'A2-010': ['карта теплых кругов', 'теплые круги'],
     'A2-011': ['реальные контексты', 'где искать'],
     'A3-001': ['канал', 'написать или позвонить', 'как позвонить', 'выбрать канал'],
@@ -1751,8 +1755,9 @@
     'A6-003': ['встроить продукт', 'клиентский опыт'],
     'A6-006': ['дата повтора', 'вернуть клиента', 'повторные продажи'],
     'A6-010': ['статусы', 'следующие действия', 'crm', 'мини-crm', 'в голове'],
-    'A6-011': ['рабочий ритм', 'рабочее время', 'устал', 'откладываю'],
-    'A6-012': ['план из действий', 'лидер', 'команда'],
+    'A6-011': ['рабочий ритм', 'рабочее время', 'устал', 'откладываю', 'нет системы', 'не успеваю', 'дисциплина', 'хаотично'],
+    'A6-012': ['план из действий', 'лидер', 'команда', 'планирование роста'],
+    'A6-021': ['личное изменение', 'дисциплина', 'одно изменение', 'нет дисциплины'],
     'A6-013': ['разбор практики', 'наставничество', 'партнёры ничего не делают'],
     'A6-020': ['страх действия', 'откладываю', 'устал'],
     'A2-012': ['холодный поиск', 'незнакомым', 'холодный контакт'],
@@ -1772,7 +1777,7 @@
       id: 'no-people',
       goal: 'найти, с кем начать работу',
       why: ['нет людей', 'база', 'пять контактов'],
-      phrases: ['некому писать', 'некому', 'с кем начать', 'нет людей', 'не знаю с кем', 'нет контактов', 'не понимаю с кем', 'кому написать', 'не знаю кому написать'],
+      phrases: ['некому писать', 'некому', 'с кем начать', 'нет людей', 'не знаю с кем', 'нет контактов', 'не понимаю с кем', 'кому написать', 'не знаю кому написать', 'кому писать', 'не понимаю кому писать'],
       boostIds: ['A2-008', 'A2-010', 'A2-006', 'A2-011', 'A2-001'],
       reason: 'Подходит, потому что вам нужно понять, с кем начать, а не сразу писать первое сообщение.',
     },
@@ -1788,7 +1793,7 @@
       id: 'first-result',
       goal: 'получить первый рабочий результат',
       why: ['первый результат', 'план действий', 'первые контакты'],
-      phrases: ['первый результат', 'получить первый результат', 'хочу первый результат', 'хочу первого клиента', 'первый клиент'],
+      phrases: ['первый результат', 'получить первый результат', 'хочу первый результат', 'хочу первого клиента', 'первый клиент', 'хочу найти первых клиентов', 'первых клиентов', 'найти первых клиентов'],
       boostIds: ['A1-010', 'A2-008', 'A3-002', 'A3-016'],
       reason: 'Подходит, потому что вы хотите получить первый рабочий результат, а не просто посмотреть урок.',
     },
@@ -1799,6 +1804,38 @@
       phrases: ['только начал', 'я новичок', 'только начинаю', 'я только начал', 'как начать', 'что делать новичку', 'новичку'],
       boostIds: ['A1-004', 'A1-006', 'A1-010'],
       reason: 'Подходит, потому что вы только начинаете и сначала нужно понять роль и ближайшие шаги.',
+    },
+    {
+      id: 'planning',
+      goal: 'собрать рабочий план и навести порядок',
+      why: ['план', 'ритм', 'порядок'],
+      phrases: [
+        'планирование', 'план', 'распланировать', 'составить план', 'нужен порядок', 'нет системы',
+        'не понимаю что делать каждый день', 'не успеваю', 'нет рабочего ритма', 'всё хаотично', 'все хаотично',
+        'хочу организовать работу', 'план на месяц', 'план на неделю', 'нужна система', 'нет дисциплины',
+        'навести порядок', 'хочу навести порядок',
+      ],
+      boostIds: ['A1-010', 'A1-008', 'A1-004', 'A1-007', 'A2-009', 'A6-011', 'A6-012', 'A6-021'],
+      featuredIds: ['A1-010', 'A1-008', 'A1-004'],
+      matchType: 'strong',
+      reason: 'Подходит, потому что нужно превратить общую цель в конкретный план действий.',
+    },
+    {
+      id: 'lost-novice',
+      goal: 'дать новичку стартовый маршрут',
+      why: ['новичок', 'старт', 'первые шаги'],
+      phrases: [
+        'новичок теряется', 'только пришёл и не понимает', 'не знает с чего начать', 'много информации',
+        'всё непонятно', 'все непонятно', 'запутался', 'потерялся', 'новичку сложно', 'нет первых шагов',
+        'куда идти сначала', 'что делать после регистрации', 'нужен стартовый маршрут',
+        'я только зарегистрировался', 'слишком много информации', 'с чего начать новичку',
+      ],
+      boostIds: ['A1-004', 'A1-006', 'A1-010', 'A1-011', 'A2-008', 'A3-002'],
+      featuredIds: ['A1-004', 'A1-010', 'A1-011'],
+      matchType: 'adjacent',
+      wide: true,
+      clarification: 'Где именно человек теряется: не понимает свою роль, не знает, кому написать или не умеет рассказать о продукте?',
+      reason: 'Подходит как стартовый маршрут: сначала роль, затем план первых действий и фокус.',
     },
     {
       id: 'claim',
@@ -1820,7 +1857,7 @@
       id: 'crm-head',
       goal: 'навести порядок в контактах, статусах и следующих действиях',
       why: ['аудит базы', 'crm', 'статусы и next action'],
-      phrases: ['держу в голове', 'в голове', 'контактов много', 'нет системы в базе', 'crm', 'аудит базы', 'все в голове', 'всё держу в голове', 'таблицу контактов', 'вести таблицу'],
+      phrases: ['держу в голове', 'в голове', 'контактов много', 'нет системы в базе', 'crm', 'аудит базы', 'все в голове', 'всё держу в голове', 'таблицу контактов', 'вести таблицу', 'работать с контактами', 'не успеваю работать с контактами'],
       boostIds: ['A2-006', 'A2-007', 'A6-010'],
       reason: 'Подходит, потому что контактов уже много, и их нельзя держать только в голове.',
     },
@@ -1860,7 +1897,7 @@
       id: 'team',
       goal: 'наставить партнёров и собрать рабочую команду',
       why: ['наставничество', 'ритм', 'стандарт'],
-      phrases: ['партнеры ничего не делают', 'партнёры ничего не делают', 'команда не работает', 'развивать команду', 'наставлять', 'партнеры не делают', 'стать лидером', 'собрать команду', 'хочу стать лидером', 'как развивать команду'],
+      phrases: ['партнеры ничего не делают', 'партнёры ничего не делают', 'команда не работает', 'развивать команду', 'наставлять', 'партнеры не делают', 'стать лидером', 'собрать команду', 'хочу стать лидером', 'как развивать команду', 'хочу выстроить команду', 'выстроить команду', 'партнеры стоят', 'партнёры стоят', 'команда стоит', 'стоят на месте'],
       boostIds: ['A6-013', 'A6-012', 'A6-011', 'A1-016', 'A6-010', 'A1-010', 'A1-004'],
       teamOnly: true,
       reason: 'Подходит, потому что это задача про команду и наставничество, а не личный первый диалог.',
@@ -1869,7 +1906,7 @@
       id: 'price',
       goal: 'разобрать ценовое возражение, а не общее сомнение',
       why: ['ценовое возражение', 'что стоит за «дорого»'],
-      phrases: ['сказал что дорого', 'что дорого', 'это дорого', 'слишком дорого', 'дорого для него', 'не по карману', 'цена смущает'],
+      phrases: ['сказал что дорого', 'что дорого', 'это дорого', 'слишком дорого', 'дорого для него', 'не по карману', 'цена смущает', 'сказали что дорого', 'мне сказали что дорого'],
       boostIds: ['A5-005', 'A4-013', 'A5-001', 'A5-007'],
       reason: 'Подходит, потому что человек упёрся в цену, и нужно понять, что стоит за этой репликой.',
     },
@@ -1901,7 +1938,7 @@
       id: 'silent-message',
       goal: 'продолжить контакт, если человек молчит после сообщения',
       why: ['follow-up после сообщения', 'человек молчит'],
-      phrases: ['молчит после', 'не отвечает на сообщение', 'прочитал и молчит', 'тишина после сообщения'],
+      phrases: ['молчит после', 'не отвечает на сообщение', 'прочитал и молчит', 'тишина после сообщения', 'человек молчит', 'люди молчат', 'он молчит'],
       boostIds: ['A5-010', 'A3-008', 'A5-011'],
       reason: 'Подходит, потому что человек молчит после сообщения, и нужен следующий контакт без преследования.',
     },
@@ -1939,18 +1976,32 @@
   ];
   var OUT_OF_SCOPE = [
     {
+      test: /(ремонт\w*\s+(автомобил|машин)|починить\s+(машин|авто)|автомобил\w*\s+ремонт|как отремонтировать)/,
+      question: 'Этот запрос не относится к библиотеке MLM Academy. Опишите рабочую ситуацию в партнёрской работе.',
+      options: CLARIFY_OPTIONS.slice(),
+      trueOut: true,
+    },
+    {
+      test: /(погода на марсе|квантовый единорог|asdfgh|qwerty)/,
+      question: 'Этот запрос не относится к библиотеке. Напишите, что происходит в работе с людьми, продуктом или планом.',
+      options: CLARIFY_OPTIONS.slice(),
+      trueOut: true,
+    },
+  ];
+  var ADJACENT_SCOPE = [
+    {
       test: /(нов(ый|ого|ом)\s+город|открыть\s+(новый\s+)?город|новый\s+(филиал|регион|рынок)|географи|запуск\s+города)/,
-      question: 'В библиотеке пока нет трека про запуск нового города. Что вам нужно сделать сейчас?',
-      options: [
-        { id: 'people', label: 'Найти людей в текущем круге', q: 'мне некому писать' },
-        { id: 'write', label: 'Начать разговор с человеком', q: 'боюсь написать знакомому' },
-        { id: 'team', label: 'Выстроить работу команды', q: 'партнёры ничего не делают' },
-      ],
+      question: 'Отдельного трека про запуск нового города пока нет. Можно начать с ближайших шагов в текущем круге.',
+      trackIds: ['A2-008', 'A2-011', 'A1-010', 'A2-001'],
+      matchType: 'adjacent',
+      reason: 'Ближайший полезный шаг — найти людей и собрать план в текущем круге, пока нет трека про запуск региона.',
     },
     {
       test: /(снять\s+видео|монтаж|риелс|reels|тикток)/,
       question: 'Трека про съёмку видео пока нет. Какая рабочая задача ближе?',
-      options: CLARIFY_OPTIONS.slice(),
+      trackIds: ['A3-002', 'A3-016', 'A1-012'],
+      matchType: 'adjacent',
+      reason: 'Ближайший полезный шаг — начать разговор или честно рассказать о продукте, а не снимать ролик.',
     },
   ];
 
@@ -2080,6 +2131,7 @@
   api.CLARIFY_QUESTION = CLARIFY_QUESTION;
   api.CLARIFY_OPTIONS = CLARIFY_OPTIONS;
   api.OUT_OF_SCOPE = OUT_OF_SCOPE;
+  api.ADJACENT_SCOPE = ADJACENT_SCOPE;
   api.TRACK_ALIASES = TRACK_ALIASES;
   api.SECTION_ALIASES = SECTION_ALIASES;
   api.GOALS = GOALS;
@@ -2112,6 +2164,7 @@
   var CLARIFY_QUESTION = api.CLARIFY_QUESTION || 'Вам нужно найти людей, начать разговор, продолжить после паузы или организовать команду?';
   var CLARIFY_OPTIONS = api.CLARIFY_OPTIONS || [];
   var OUT_OF_SCOPE = api.OUT_OF_SCOPE || [];
+  var ADJACENT_SCOPE = api.ADJACENT_SCOPE || [];
   var TRACK_ALIASES = api.TRACK_ALIASES;
   var SECTION_ALIASES = api.SECTION_ALIASES;
   var GOALS = api.GOALS;
@@ -2227,6 +2280,7 @@
     var norm = tokens.join(' ') || api.normalizeSearchText(original);
     var intents = matchIntents(norm);
     var scoped = detectOutOfScope(norm);
+    var adjacent = detectAdjacentScope(norm);
     return {
       kind: scoped ? 'out_of_scope' : 'ok',
       original: original,
@@ -2237,6 +2291,7 @@
       intents: intents,
       negated: collectNegated(norm),
       outOfScope: scoped,
+      adjacentScope: adjacent,
     };
   }
 
@@ -2306,12 +2361,22 @@
     if (ids.team) {
       hits = hits.filter(function (item) { return item.id !== 'first-result' && item.id !== 'just-started'; });
     }
+    if (ids['crm-head'] || ids.price || ids['cold-call'] || ids['silent-message'] || ids['lost-client'] || ids['first-write'] || ids['no-people'] || ids.team) {
+      hits = hits.filter(function (item) { return item.id !== 'planning'; });
+    }
     return hits;
   }
 
   function detectOutOfScope(norm) {
     for (var i = 0; i < OUT_OF_SCOPE.length; i += 1) {
       if (OUT_OF_SCOPE[i].test && OUT_OF_SCOPE[i].test.test(norm)) return OUT_OF_SCOPE[i];
+    }
+    return null;
+  }
+
+  function detectAdjacentScope(norm) {
+    for (var i = 0; i < ADJACENT_SCOPE.length; i += 1) {
+      if (ADJACENT_SCOPE[i].test && ADJACENT_SCOPE[i].test.test(norm)) return ADJACENT_SCOPE[i];
     }
     return null;
   }
@@ -3038,8 +3103,117 @@
   var api = root.MLMA;
   if (!api) return;
   var TRACK_ALIASES = api.TRACK_ALIASES;
-  var CANDIDATE_LIMIT = 15;
+  var CANDIDATE_LIMIT = 20;
   var deriveMeta = api.deriveMeta;
+  var rankTracks = api.rankTracks;
+  var analyzeQuery = api.analyzeQuery;
+  var applyFacets = api.applyFacets;
+  var emptyLibraryState = api.emptyLibraryState;
+  var buildChips = api.buildChips;
+  var foundLabel = api.foundLabel;
+  var hasActiveFilters = api.hasActiveFilters;
+  var parseLibraryState = api.parseLibraryState;
+  var emptyWhy = api.emptyWhy;
+  var humanWhy = api.humanWhy;
+  var defaultClarify = api.defaultClarify;
+
+  function tracksById(tracks) {
+    var map = {};
+    for (var i = 0; i < tracks.length; i += 1) map[tracks[i].trackId] = tracks[i];
+    return map;
+  }
+
+  function searchDocument(track) {
+    var aliases = (TRACK_ALIASES[track.trackId] || []).slice();
+    var meta = deriveMeta ? deriveMeta(track) : null;
+    if (meta && meta.aliases && meta.aliases.length) aliases = meta.aliases.slice();
+    var fields = api.searchFields ? api.searchFields(track) : null;
+    return {
+      trackId: track.trackId,
+      title: track.title || '',
+      situations: [track.situation || ''].filter(Boolean),
+      goals: [track.outcome || ''].filter(Boolean),
+      painSignals: aliases.slice(0, 12),
+      audiences: [],
+      stage: [track.sectionId || '', track.stage || ''].filter(Boolean),
+      actions: [track.title || '', (fields && fields.mainTask) || ''].filter(Boolean),
+      outcome: track.outcome || '',
+      aliases: aliases,
+      negativeSignals: [],
+    };
+  }
+
+  function compactSearchRow(track) {
+    var doc = searchDocument(track);
+    return {
+      trackId: doc.trackId,
+      title: doc.title,
+      situation: (doc.situations && doc.situations[0]) || '',
+      result: doc.outcome,
+      sectionId: track.sectionId,
+      aliases: doc.aliases.slice(0, 10),
+      tags: doc.aliases.slice(0, 8),
+    };
+  }
+
+  function ensureIntentRows(ranked, tracks, analysis) {
+    var have = {};
+    for (var i = 0; i < ranked.length; i += 1) have[ranked[i].track.trackId] = true;
+    var index = tracksById(tracks);
+    var intents = (analysis && analysis.intents) || [];
+    var extra = [];
+    for (var n = 0; n < intents.length; n += 1) {
+      var ids = (intents[n].featuredIds || []).concat(intents[n].boostIds || []);
+      for (var k = 0; k < ids.length; k += 1) {
+        if (have[ids[k]] || !index[ids[k]]) continue;
+        have[ids[k]] = true;
+        extra.push({
+          track: index[ids[k]],
+          score: 260 - k * 8,
+          why: api.emptyWhy ? api.emptyWhy() : { literal: [], situation: [], intent: [intents[n].goal || ''] },
+        });
+      }
+    }
+    return extra.concat(ranked);
+  }
+
+  function mergeCandidates(ranked, tracks, analysis) {
+    var seen = {};
+    var out = [];
+    function push(row) {
+      var track = row.track || row;
+      if (!track || !track.trackId || seen[track.trackId]) return;
+      seen[track.trackId] = true;
+      out.push(row.track ? row : { track: track, score: row.score || 0, why: row.why });
+    }
+    var intents = (analysis && analysis.intents) || [];
+    var index = tracksById(tracks);
+    for (var n = 0; n < intents.length; n += 1) {
+      var ids = (intents[n].featuredIds || []).concat(intents[n].boostIds || []);
+      for (var k = 0; k < ids.length; k += 1) if (index[ids[k]]) push({ track: index[ids[k]], score: 280 - k * 6 });
+    }
+    for (var r = 0; r < ranked.length; r += 1) push(ranked[r]);
+    if (out.length < 12) {
+      var sectionHint = '';
+      if (intents.length && intents[0].boostIds && intents[0].boostIds[0] && index[intents[0].boostIds[0]]) {
+        sectionHint = index[intents[0].boostIds[0]].sectionId;
+      }
+      for (var t = 0; t < tracks.length && out.length < 12; t += 1) {
+        if (sectionHint && tracks[t].sectionId !== sectionHint) continue;
+        push({ track: tracks[t], score: 20 });
+      }
+    }
+    return out.slice(0, CANDIDATE_LIMIT);
+  }
+
+  function inAcademyTheme(analysis) {
+    if (!analysis) return false;
+    if (analysis.outOfScope) return false;
+    if (analysis.adjacentScope) return true;
+    if (analysis.intents && analysis.intents.length) return true;
+    var blob = String(analysis.norm || '');
+    return /(mlm|продаж|клиент|контакт|партн|команд|продукт|план|новичк|старт|сообщен|написа|звон|встреч|отказ|дорог|рекоменд|баз|ритм|дисципл|настав|лидер|роль|заработ|диалог|разговор|потребност|возраст|пауз|повтор|систем|порядок|хаотич|успева)/.test(blob);
+  }
   var rankTracks = api.rankTracks;
   var analyzeQuery = api.analyzeQuery;
   var applyFacets = api.applyFacets;
@@ -3074,10 +3248,25 @@
     var intents = (analysis && analysis.intents) || [];
     var boost = {};
     var teamOnly = false;
+    var featuredIds = [];
     for (var n = 0; n < intents.length; n += 1) {
       if (intents[n].teamOnly) teamOnly = true;
       var ids = intents[n].boostIds || [];
       for (var k = 0; k < ids.length; k += 1) boost[ids[k]] = true;
+      if (!featuredIds.length && intents[n].featuredIds && intents[n].featuredIds.length) {
+        featuredIds = intents[n].featuredIds.slice();
+      }
+    }
+    var byId = {};
+    for (var b = 0; b < ranked.length; b += 1) byId[ranked[b].track.trackId] = ranked[b];
+    if (featuredIds.length) {
+      for (var fi = 0; fi < featuredIds.length && featured.length < 3; fi += 1) {
+        var forced = byId[featuredIds[fi]];
+        if (!forced) continue;
+        featured.push(forced.track);
+        scores[forced.track.trackId] = forced.score;
+        whyMap[forced.track.trackId] = attachWhyText(forced.why, forced.track, analysis);
+      }
     }
     var strong = [];
     var relax = !!(state && state._relaxInFilter);
@@ -3093,6 +3282,7 @@
     for (var f = 0; f < strong.length && featured.length < 3; f += 1) {
       var minFeat = boost[strong[f].track.trackId] ? 80 : 100;
       if (strong[f].score < minFeat) continue;
+      if (featured.indexOf(strong[f].track) !== -1) continue;
       featured.push(strong[f].track);
       scores[strong[f].track.trackId] = strong[f].score;
       whyMap[strong[f].track.trackId] = attachWhyText(strong[f].why, strong[f].track, analysis);
@@ -3135,12 +3325,55 @@
         clarifyingOptions: analysis.outOfScope.options || defaultClarify().options,
         source: 'local',
         total: tracks.length,
+        matchType: 'out_of_scope',
         label: 'Точного трека пока нет',
       };
     }
+    var index = tracksById(tracks);
+    if (state.q && analysis.adjacentScope && analysis.adjacentScope.trackIds) {
+      var adj = analysis.adjacentScope;
+      var featuredAdj = [];
+      var whyAdj = {};
+      for (var a = 0; a < adj.trackIds.length && featuredAdj.length < 3; a += 1) {
+        if (!index[adj.trackIds[a]]) continue;
+        featuredAdj.push(index[adj.trackIds[a]]);
+        whyAdj[adj.trackIds[a]] = attachWhyText(emptyWhy(), index[adj.trackIds[a]], analysis, adj.reason);
+      }
+      var adjCandidates = mergeCandidates(
+        featuredAdj.map(function (track) { return { track: track, score: 200, why: emptyWhy() }; }),
+        tracks,
+        analysis,
+      );
+      return {
+        kind: 'ok',
+        items: featuredAdj,
+        featured: featuredAdj,
+        other: [],
+        whyMap: whyAdj,
+        scores: {},
+        analysis: analysis,
+        chips: chips,
+        relaxedKey: null,
+        close: [],
+        candidates: adjCandidates,
+        clarifyingQuestion: adj.question,
+        clarifyingOptions: adj.options || [],
+        source: 'local',
+        total: tracks.length,
+        matchType: 'adjacent',
+        label: 'Можно начать с этих треков',
+        expandCatalog: true,
+      };
+    }
     var faceted = applyFacets(tracks, state);
-    var ranked = rankTracks(faceted, analysis, state.sort);
-    var candidates = ranked.slice(0, CANDIDATE_LIMIT);
+    var ranked = ensureIntentRows(rankTracks(faceted, analysis, state.sort), faceted, analysis);
+    var candidatePool = faceted.length ? faceted : tracks;
+    var candidates = mergeCandidates(ranked, candidatePool, analysis);
+    if (inAcademyTheme(analysis) && !candidates.length) {
+      candidates = tracks.slice(0, CANDIDATE_LIMIT).map(function (track) {
+        return { track: track, score: 1, why: emptyWhy() };
+      });
+    }
     var split = splitDisplay(ranked, analysis, state);
     if (!state.q) {
       return {
@@ -3165,6 +3398,14 @@
     if (!(split.featured.length || split.other.length) && hasActiveFilters(Object.assign({}, state, { q: '' })) && ranked.length) {
       split = splitDisplay(ranked, analysis, Object.assign({}, state, { _relaxInFilter: true }));
     }
+    if (!(split.featured.length || split.other.length) && inAcademyTheme(analysis) && ranked.length) {
+      split = splitDisplay(ranked, analysis, Object.assign({}, state, { _relaxInFilter: true }));
+    }
+    var leadIntent = (analysis.intents && analysis.intents[0]) || null;
+    var matchType = leadIntent && leadIntent.matchType
+      ? leadIntent.matchType
+      : (split.featured.length ? 'strong' : (split.other.length ? 'adjacent' : ''));
+    var clarifyQ = (leadIntent && leadIntent.clarification) || null;
     if (split.featured.length || split.other.length) {
       return {
         kind: 'ok',
@@ -3178,15 +3419,47 @@
         relaxedKey: null,
         close: [],
         candidates: candidates,
-        clarifyingQuestion: null,
+        clarifyingQuestion: clarifyQ,
         clarifyingOptions: [],
         source: 'local',
         total: tracks.length,
-        label: split.featured.length ? 'Подходит лучше всего' : 'Также может помочь',
+        matchType: matchType,
+        label: matchType === 'adjacent' || (leadIntent && leadIntent.wide)
+          ? 'Можно начать с этих треков'
+          : (split.featured.length ? 'Подходит лучше всего' : 'Можно начать с этих треков'),
+        expandCatalog: split.featured.length < 2,
       };
     }
     if (!hasActiveFilters(state) && !state.q) {
       return { kind: 'ok', items: [], featured: [], other: [], whyMap: {}, scores: {}, analysis: analysis, chips: chips, relaxedKey: null, close: [], candidates: [], clarifyingQuestion: null, clarifyingOptions: [], source: 'local', total: tracks.length, label: foundLabel(0, tracks.length, state) };
+    }
+    if (inAcademyTheme(analysis) && candidates.length) {
+      var fallbackFeat = [];
+      var fallbackWhy = {};
+      for (var c = 0; c < candidates.length && fallbackFeat.length < 3; c += 1) {
+        fallbackFeat.push(candidates[c].track);
+        fallbackWhy[candidates[c].track.trackId] = attachWhyText(candidates[c].why, candidates[c].track, analysis);
+      }
+      return {
+        kind: 'ok',
+        items: fallbackFeat,
+        featured: fallbackFeat,
+        other: [],
+        whyMap: fallbackWhy,
+        scores: {},
+        analysis: analysis,
+        chips: chips,
+        relaxedKey: null,
+        close: [],
+        candidates: candidates,
+        clarifyingQuestion: defaultClarify().question,
+        clarifyingOptions: defaultClarify().options,
+        source: 'local',
+        total: tracks.length,
+        matchType: 'adjacent',
+        label: 'Можно начать с этих треков',
+        expandCatalog: true,
+      };
     }
     var clarify = defaultClarify();
     return {
@@ -3205,6 +3478,7 @@
       clarifyingOptions: clarify.options,
       source: 'local',
       total: tracks.length,
+      matchType: 'out_of_scope',
       label: 'Точного трека пока нет',
     };
   }
@@ -3247,43 +3521,66 @@
     return result.items;
   }
 
-  function rerankPayload(result, query) {
+  function rerankPayload(result, query, allTracks) {
     var rows = (result && result.candidates) || [];
     var candidates = [];
-    for (var i = 0; i < rows.length && candidates.length < CANDIDATE_LIMIT; i += 1) {
-      var track = rows[i].track || rows[i];
-      var aliases = TRACK_ALIASES[track.trackId] || [];
+    var seen = {};
+    function pushTrack(track, score) {
+      if (!track || !track.trackId || seen[track.trackId]) return;
+      seen[track.trackId] = true;
+      var doc = searchDocument(track);
       candidates.push({
-        trackId: track.trackId,
-        title: track.title,
-        situation: track.situation,
-        result: track.outcome,
+        trackId: doc.trackId,
+        title: doc.title,
+        situation: (doc.situations && doc.situations[0]) || '',
+        result: doc.outcome,
         sectionId: track.sectionId,
-        tags: aliases.slice(0, 8),
-        score: rows[i].score || 0,
+        aliases: doc.aliases.slice(0, 10),
+        tags: doc.aliases.slice(0, 8),
+        score: score || 0,
       });
+    }
+    for (var i = 0; i < rows.length && candidates.length < CANDIDATE_LIMIT; i += 1) {
+      pushTrack(rows[i].track || rows[i], rows[i].score || 0);
+    }
+    var catalog = [];
+    var list = allTracks || [];
+    for (var t = 0; t < list.length && catalog.length < 112; t += 1) {
+      catalog.push(compactSearchRow(list[t]));
+    }
+    var weakLocal = !candidates.length || candidates.length < 8 || (result && (result.matchType === 'adjacent' || result.expandCatalog));
+    if (weakLocal && catalog.length) {
+      for (var c = 0; c < catalog.length && candidates.length < CANDIDATE_LIMIT; c += 1) {
+        var row = catalog[c];
+        if (seen[row.trackId]) continue;
+        seen[row.trackId] = true;
+        candidates.push(row);
+      }
     }
     return {
       query: String(query || ''),
       candidates: candidates,
+      catalog: weakLocal ? catalog : undefined,
     };
   }
 
-  function applyRerankResponse(local, data) {
+  function applyRerankResponse(local, data, allTracks) {
     if (!local || !data || typeof data !== 'object') return local;
     var catalog = {};
     var source = (local.candidates && local.candidates.length ? local.candidates : []).concat(
       (local.items || []).map(function (track) { return { track: track }; }),
     );
     var byId = {};
-    for (var i = 0; i < source.length; i += 1) {
-      var track = source[i].track || source[i];
-      if (track && track.trackId) {
-        catalog[track.trackId] = true;
-        byId[track.trackId] = track;
-      }
+    function remember(track) {
+      if (!track || !track.trackId) return;
+      catalog[track.trackId] = true;
+      byId[track.trackId] = track;
     }
-    for (var t = 0; t < (local.items || []).length; t += 1) byId[local.items[t].trackId] = local.items[t];
+    for (var i = 0; i < source.length; i += 1) remember(source[i].track || source[i]);
+    for (var t = 0; t < (local.items || []).length; t += 1) remember(local.items[t]);
+    if (allTracks && allTracks.length) {
+      for (var a = 0; a < allTracks.length; a += 1) remember(allTracks[a]);
+    }
     var topIn = Array.isArray(data.topMatches) ? data.topMatches : [];
     var relIn = Array.isArray(data.relatedMatches) ? data.relatedMatches : [];
     if (!topIn.length && !relIn.length && Array.isArray(data.results)) {
@@ -3293,6 +3590,7 @@
     var confidence = Number(data.confidence);
     if (!isFinite(confidence)) confidence = topIn[0] && typeof topIn[0].confidence === 'number' ? topIn[0].confidence : 0;
     var clarify = data.clarification || data.clarifyingQuestion || null;
+    var matchType = data.matchType || (confidence >= 0.7 ? 'exact' : confidence >= 0.45 ? 'strong' : confidence >= 0.2 ? 'adjacent' : 'out_of_scope');
     function take(rows, limit, minConf) {
       var out = [];
       var whyMap = {};
@@ -3306,7 +3604,7 @@
       }
       return { items: out, whyMap: whyMap };
     }
-    if (confidence < 0.45 || (!topIn.length && !relIn.length)) {
+    if (matchType === 'out_of_scope' && confidence < 0.2 && !topIn.length && !relIn.length) {
       var low = Object.assign({}, local);
       low.kind = 'zero';
       low.items = [];
@@ -3314,48 +3612,53 @@
       low.other = [];
       low.close = [];
       low.whyMap = {};
+      low.pendingAi = false;
+      low.matchType = 'out_of_scope';
       low.clarifyingQuestion = clarify || (defaultClarify().question);
       low.clarifyingOptions = local.clarifyingOptions && local.clarifyingOptions.length ? local.clarifyingOptions : defaultClarify().options;
       low.source = 'ai';
       low.label = 'Точного трека пока нет';
       return low;
     }
-    var top = take(topIn, 3, 0.6);
-    var related = take(relIn, 5, 0.45);
+    var minTop = confidence >= 0.7 ? 0.45 : 0.2;
+    var top = take(topIn, 3, minTop);
+    var related = take(relIn, 5, 0.2);
     var featured = top.items;
     var other = related.items.filter(function (item) {
       return featured.indexOf(item) === -1;
     });
-    if (!featured.length && !other.length) {
-      var empty = Object.assign({}, local);
-      empty.kind = 'zero';
-      empty.items = [];
-      empty.featured = [];
-      empty.other = [];
-      empty.close = [];
-      empty.source = 'ai';
-      empty.clarifyingQuestion = clarify || defaultClarify().question;
-      empty.clarifyingOptions = defaultClarify().options;
-      empty.label = 'Точного трека пока нет';
-      return empty;
+    if (!featured.length && other.length) {
+      featured = other.slice(0, 3);
+      other = other.slice(3);
     }
-    var whyMap = Object.assign({}, top.whyMap, related.whyMap);
+    if (!featured.length && !other.length) {
+      var keep = Object.assign({}, local, { pendingAi: false, source: local.source || 'local' });
+      if (clarify) keep.clarifyingQuestion = clarify;
+      return keep;
+    }
+    var whyMap = Object.assign({}, local.whyMap || {}, top.whyMap, related.whyMap);
+    var label = 'Можно начать с этих треков';
+    if (matchType === 'exact' || matchType === 'strong') label = 'Подходит лучше всего';
+    else if (matchType === 'adjacent') label = 'Можно начать с этих треков';
     return Object.assign({}, local, {
       kind: 'ok',
       items: featured.concat(other),
       featured: featured,
       other: other,
       whyMap: whyMap,
-      clarifyingQuestion: clarify,
-      recognizedSituation: data.reason || data.recognizedSituation || '',
+      clarifyingQuestion: clarify || local.clarifyingQuestion || null,
+      recognizedSituation: data.recognizedSituation || data.reason || '',
       source: 'ai',
-      label: featured.length ? 'Подходит лучше всего' : 'Также может помочь',
+      pendingAi: false,
+      matchType: matchType,
+      label: label,
     });
   }
 
   api.searchCatalog = searchCatalog;
   api.rerankPayload = rerankPayload;
   api.applyRerankResponse = applyRerankResponse;
+  api.searchDocument = searchDocument;
   api.matchesQuery = matchesQuery;
   api.filterTracks = filterTracks;
 

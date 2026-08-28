@@ -308,15 +308,17 @@
     var ctaHref = action && action.href ? esc(action.href) : href;
     var badgeHtml = status.showCatalogBadge && status.label ? badge(status.label, status.tone) : (status.pageStatus ? badge(status.pageStatus, status.tone) : '');
     var best = !!opts.best;
+    var adjacent = !!opts.adjacent;
+    var flag = best ? 'Лучшее совпадение' : (adjacent ? 'Ближайший полезный шаг' : '');
     return (
       '<article class="mlma-card mlma-card-hover mlma-track-card' +
       (opts.featured ? ' mlma-track-featured' : '') +
-      (best ? ' mlma-track-best' : '') +
+      (best || adjacent ? ' mlma-track-best' : '') +
       (opts.compact ? ' mlma-track-compact' : '') +
       '" style="' + D.styleAttr(track.sectionId) +
       '">' +
       trackCover(track) +
-      (best ? '<span class="mlma-best-flag">Лучшее совпадение</span>' : '') +
+      (flag ? '<span class="mlma-best-flag">' + esc(flag) + '</span>' : '') +
       '<div class="mlma-strip" aria-hidden="true"></div><div style="display:flex;flex-direction:column;flex:1;padding:18px">' +
       '<div class="mlma-chip-row" style="flex-wrap:wrap"><span class="mlma-meta">' +
       esc(track.trackId) + ' · ' + esc(section ? section.shortTitle : track.sectionId) +
@@ -349,6 +351,7 @@
           featured: !!opts.featured,
           compact: !!opts.compact,
           best: !!(opts.bestFirst && i === 0 && opts.featured),
+          adjacent: !!(opts.adjacentFirst && i === 0 && opts.featured),
           account: opts.account,
         }) +
         '</li>';
@@ -626,6 +629,43 @@
     return html;
   }
 
+  D._ui = {
+    esc: esc,
+    btn: btn,
+    pageHead: pageHead,
+    crumbs: crumbs,
+    badge: badge,
+    emptyState: emptyState,
+    header: header,
+    footer: footer,
+    mobileNav: mobileNav,
+    isCabinetPage: isCabinetPage,
+    readCatalog: readCatalog,
+    currentPage: currentPage,
+    queryParam: queryParam,
+    pathName: pathName,
+    renderHome: renderHome,
+    renderStart: renderStart,
+    startResult: startResult,
+    trackCard: trackCard,
+    trackGrid: trackGrid,
+    sectionCard: sectionCard,
+    whyHtml: whyHtml,
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* __MLMA_UI_SPLIT__ */
+(function (root) {
+  'use strict';
+  var D = root.MLMA;
+  if (!D || !D._ui) return;
+  var esc = D._ui.esc;
+  var btn = D._ui.btn;
+  var pageHead = D._ui.pageHead;
+  var emptyState = D._ui.emptyState;
+  var trackCard = D._ui.trackCard;
+  var trackGrid = D._ui.trackGrid;
+
   function renderLibrary(state) {
     var R = state.R;
     var head = pageHead(
@@ -692,8 +732,15 @@
     var stageChips = chipGroup('data-mlma-stage', stageItems, stages);
     var sitChips = chipGroup('data-mlma-sit', facets.sit, filters.sit || []);
     var fmtChips = chipGroup('data-mlma-fmt', facets.fmt, filters.fmt || []);
+    var pending = !!result.pendingAi;
+    var matchType = result.matchType || '';
+    var exactish = matchType === 'exact' || matchType === 'strong';
+    var adjacentish = matchType === 'adjacent';
     var body;
-    if (result.kind === 'need_more' || result.kind === 'zero') {
+    var pendingBanner = pending
+      ? '<p class="mlma-muted" id="mlma-rerank-status" style="margin:0 0 20px;font-size:15px">Подбираем наиболее подходящий маршрут…</p>'
+      : '';
+    if ((result.kind === 'need_more' || result.kind === 'zero') && !pending && !(result.featured && result.featured.length) && !(result.items && result.items.length)) {
       var options = result.clarifyingOptions && result.clarifyingOptions.length
         ? result.clarifyingOptions
         : (D.CLARIFY_OPTIONS || []);
@@ -721,16 +768,32 @@
       var visible = searching ? rest.slice(0, 5) : rest.slice(0, shown);
       var more = !searching && rest.length > shown;
       body = '';
+      if (pending) body += pendingBanner;
       if (featured.length) {
+        var featTitle = adjacentish ? 'Можно начать с этих треков' : 'Подходит лучше всего';
         body +=
-          '<section class="mlma-featured"><div class="mlma-section-head"><h2 class="mlma-h3">Подходит лучше всего</h2></div>' +
-          trackGrid(featured, state.sectionById, R, { whyMap: result.whyMap, featured: true, bestFirst: true, account: state.account }) +
+          '<section class="mlma-featured"><div class="mlma-section-head"><h2 class="mlma-h3">' +
+          esc(featTitle) +
+          '</h2></div>' +
+          trackGrid(featured, state.sectionById, R, {
+            whyMap: result.whyMap,
+            featured: true,
+            bestFirst: exactish,
+            adjacentFirst: adjacentish,
+            account: state.account,
+          }) +
           '</section>';
+      }
+      if (result.clarifyingQuestion && featured.length) {
+        body +=
+          '<p class="mlma-muted" style="margin-top:20px;max-width:54ch;font-size:15px;line-height:1.45">' +
+          esc(result.clarifyingQuestion) +
+          '</p>';
       }
       if (visible.length) {
         body +=
           (searching
-            ? '<section style="margin-top:36px"><div class="mlma-section-head"><h2 class="mlma-h3">Также может помочь</h2></div>'
+            ? '<section style="margin-top:36px"><div class="mlma-section-head"><h2 class="mlma-h3">Можно начать с этого</h2></div>'
             : '') +
           trackGrid(visible, state.sectionById, R, { whyMap: searching ? result.whyMap : null, account: state.account }) +
           (searching ? '</section>' : '');
@@ -740,11 +803,13 @@
           '<div style="margin-top:28px;text-align:center"><button type="button" class="mlma-btn mlma-btn-primary" data-mlma-more="1">Показать ещё</button></div>';
       }
       if (!featured.length && !visible.length) {
-        body = emptyState({
-          title: 'Каталог ещё наполняется',
-          description: 'Структура направлений уже есть. Откройте раздел или выберите ситуацию.',
-          actions: btn(R.start(), 'С чего начать', 'primary'),
-        });
+        body = pending
+          ? pendingBanner
+          : emptyState({
+              title: 'Каталог ещё наполняется',
+              description: 'Структура направлений уже есть. Откройте раздел или выберите ситуацию.',
+              actions: btn(R.start(), 'С чего начать', 'primary'),
+            });
       }
     }
     var share = D.libraryHref(filters);
@@ -789,7 +854,7 @@
       esc(share) +
       '">Ссылка на подборку</button><span id="mlma-share-msg" class="mlma-muted" style="font-size:13px" aria-live="polite"></span></div></div>' +
       '<div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;padding:12px 0 20px"><p style="font-size:16px;font-weight:700" id="mlma-count">' +
-      esc(result.label || '') +
+      esc(pending ? 'Подбираем наиболее подходящий маршрут…' : (result.label || '')) +
       '</p></div><div id="mlma-results" style="padding-bottom:64px">' +
       body +
       '</div>' +
@@ -894,31 +959,9 @@
     );
   }
 
-  D._ui = {
-    esc: esc,
-    btn: btn,
-    pageHead: pageHead,
-    crumbs: crumbs,
-    badge: badge,
-    emptyState: emptyState,
-    header: header,
-    footer: footer,
-    mobileNav: mobileNav,
-    isCabinetPage: isCabinetPage,
-    catalogBrowserHtml: catalogBrowserHtml,
-    readCatalog: readCatalog,
-    currentPage: currentPage,
-    queryParam: queryParam,
-    pathName: pathName,
-    renderHome: renderHome,
-    renderStart: renderStart,
-    renderLibrary: renderLibrary,
-    renderSection: renderSection,
-    trackCard: trackCard,
-    trackGrid: trackGrid,
-    sectionCard: sectionCard,
-    startResult: startResult,
-  };
+  D._ui.catalogBrowserHtml = catalogBrowserHtml;
+  D._ui.renderLibrary = renderLibrary;
+  D._ui.renderSection = renderSection;
 })(typeof window !== 'undefined' ? window : globalThis);
 
 /* __MLMA_UI_SPLIT__ */
@@ -2336,7 +2379,11 @@
       var searchBefore = target.querySelector('#mlma-search');
       if (keep && searchBefore) selection = searchBefore.selectionStart;
       var wasOpen = drawerOpen;
+      var scrollY = opts.preserveScroll ? (window.scrollY || 0) : null;
       lastResult = opts.result || D.searchCatalog(state.tracks, filters);
+      if (!opts.skipRerank && filters.q && window.MLMA_RERANK_URL) {
+        lastResult = Object.assign({}, lastResult, { pendingAi: true });
+      }
       target.innerHTML = catalogBrowserHtml(state, filters, { shown: shown, result: lastResult });
       placeDrawer();
       bindChrome();
@@ -2351,6 +2398,9 @@
           /* ignore */
         }
       }
+      if (scrollY != null) {
+        try { window.scrollTo(0, scrollY); } catch (err2) { /* ignore */ }
+      }
       if (opts.url === 'push') syncUrl('push');
       else if (opts.url === 'replace') syncUrl('replace');
       persist();
@@ -2362,15 +2412,15 @@
       var url = typeof window !== 'undefined' ? window.MLMA_RERANK_URL : '';
       if (!url || !filters.q || !D.rerankPayload || !D.applyRerankResponse) return;
       var local = lastResult || D.searchCatalog(state.tracks, filters);
-      if (local.kind === 'need_more' || (local.analysis && local.analysis.outOfScope)) return;
-      var payload = D.rerankPayload(local, filters.q);
+      if (local.kind === 'need_more') return;
+      var payload = D.rerankPayload(local, filters.q, state.tracks);
       if (!payload.candidates.length) return;
       var seq = (rerankSeq += 1);
       var qNow = filters.q;
       var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
       var timerId = setTimeout(function () {
         if (ctrl) ctrl.abort();
-      }, 2500);
+      }, 14000);
       fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -2383,12 +2433,17 @@
         })
         .then(function (data) {
           if (seq !== rerankSeq || filters.q !== qNow) return;
-          var next = D.applyRerankResponse(local, data);
-          if (next && (next.source === 'ai' || next.source === 'local')) {
-            paint({ keepFocus: true, skipRerank: true, result: next });
+          var next = D.applyRerankResponse(local, data, state.tracks);
+          if (next) {
+            next.pendingAi = false;
+            paint({ keepFocus: true, skipRerank: true, preserveScroll: true, result: next });
           }
         })
-        .catch(function () {})
+        .catch(function () {
+          if (seq !== rerankSeq || filters.q !== qNow) return;
+          var fallback = Object.assign({}, local, { pendingAi: false });
+          paint({ keepFocus: true, skipRerank: true, preserveScroll: true, result: fallback });
+        })
         .then(function () {
           clearTimeout(timerId);
         });
