@@ -21,8 +21,10 @@ Tilda вызывает этот endpoint с запросом и максимум
 
 ```bash
 npx vercel --prod
-# без аккаунта:
+# без аккаунта Vercel (временный URL):
 npx vercel deploy --temporary --yes
+# без Vercel вообще — любой HTTPS перед процессом:
+GROQ_API_KEY=... PORT=8787 node server.mjs
 ```
 
 После деплоя в HEAD страниц Academy:
