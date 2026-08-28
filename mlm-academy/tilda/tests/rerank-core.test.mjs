@@ -65,7 +65,7 @@ describe('rerank-core', () => {
     assert.equal(cfg.provider, null);
   });
 
-  it('Groq-ключ сам ставит Groq endpoint и быструю модель', () => {
+  it('Groq-ключ сам ставит Groq endpoint и gpt-oss-20b', () => {
     const cfg = resolveModelConfig({ GROQ_API_KEY: 'gsk_test' });
     assert.equal(cfg.provider, 'groq');
     assert.equal(cfg.endpoint, GROQ_ENDPOINT);

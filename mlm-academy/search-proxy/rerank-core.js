@@ -6,7 +6,7 @@ export const TIMEOUT_MS = 2500;
 export const MODEL_DEFAULT = 'gpt-4o-mini';
 export const ENDPOINT_DEFAULT = 'https://api.openai.com/v1/chat/completions';
 export const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
-export const GROQ_MODEL_DEFAULT = 'llama-3.1-8b-instant';
+export const GROQ_MODEL_DEFAULT = 'openai/gpt-oss-20b';
 
 export function resolveModelConfig(env = {}) {
   const openaiKey = String((env && env.OPENAI_API_KEY) || '');
@@ -152,6 +152,7 @@ export async function callModel({ query, candidates, env, fetchImpl }) {
       headers: {
         Authorization: 'Bearer ' + key,
         'Content-Type': 'application/json',
+        'User-Agent': 'mlma-search-rerank/1',
       },
       signal: ctrl.signal,
       body: JSON.stringify({

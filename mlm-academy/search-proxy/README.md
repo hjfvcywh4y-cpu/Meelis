@@ -14,7 +14,7 @@ Tilda вызывает этот endpoint с запросом и максимум
 Переменные площадки:
 
 - `OPENAI_API_KEY` или `GROQ_API_KEY` **обязательно** (достаточно одного)
-- `SEARCH_RERANK_MODEL` — `gpt-4o-mini` для OpenAI, `llama-3.1-8b-instant` для Groq
+- `SEARCH_RERANK_MODEL` — `gpt-4o-mini` для OpenAI, `openai/gpt-oss-20b` для Groq
 - `SEARCH_RERANK_ENDPOINT` — сам выбирается по ключу; для Groq это `https://api.groq.com/openai/v1/chat/completions`
 
 Деплой из каталога `mlm-academy/search-proxy`:

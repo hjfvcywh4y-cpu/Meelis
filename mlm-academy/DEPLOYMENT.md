@@ -83,7 +83,7 @@ docker run --rm -p 3000:3000 -e ENABLE_CATALOG_PREVIEW=true mlm-academy
 | `ENABLE_ADMIN_CATALOG` | не задавать | `true` при необходимости |
 | `NEXT_PUBLIC_SHOWCASE_URL` | ссылка на витрину Tilda, необязательно | то же |
 | `OPENAI_API_KEY` или `GROQ_API_KEY` | только на сервере rerank (`search-proxy`), не в Tilda | то же |
-| `SEARCH_RERANK_MODEL` | `gpt-4o-mini` (OpenAI) или `llama-3.1-8b-instant` (Groq) | то же |
+| `SEARCH_RERANK_MODEL` | `gpt-4o-mini` (OpenAI) или `openai/gpt-oss-20b` (Groq) | то же |
 | `SEARCH_RERANK_ENDPOINT` | сам по ключу; OpenAI chat/completions или Groq | то же |
 | `MLMA_RERANK_PUBLIC_URL` | публичный URL proxy, только при сборке Tilda HEAD | то же |
 
