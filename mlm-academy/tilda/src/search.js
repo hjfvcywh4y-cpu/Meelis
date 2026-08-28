@@ -110,11 +110,11 @@
     'A2-010': ['карта теплых кругов', 'теплые круги'],
     'A2-011': ['реальные контексты', 'где искать'],
     'A3-001': ['канал', 'написать или позвонить', 'как позвонить', 'выбрать канал'],
-    'A3-002': ['первое сообщение', 'написать знакомому', 'теплый контакт', 'боюсь написать', 'что написать'],
+    'A3-002': ['первое сообщение', 'написать знакомому', 'теплый контакт', 'боюсь написать', 'что написать', 'первый диалог', 'страшно написать'],
     'A3-003': ['позвонить по рекомендации', 'звонок'],
     'A3-004': ['первый звонок', 'структура звонка', 'позвонить незнакомому'],
     'A3-007': ['подготовиться к звонку', 'холодный контакт'],
-    'A3-005': ['назначить разговор'],
+    'A3-005': ['назначить разговор', 'пригласить на встречу', 'назначить встречу'],
     'A3-008': ['зафиксировать результат', 'следующий контакт'],
     'A3-016': ['открыть разговор', 'настоящий повод'],
     'A4-001': ['от презентации к человеку', 'не рассказывать продукт сразу'],
@@ -125,11 +125,11 @@
     'A5-009': ['не срочно'],
     'A5-010': ['follow-up', 'не отвечает'],
     'A5-011': ['план после паузы'],
-    'A5-014': ['завершить отказ'],
+    'A5-014': ['завершить отказ', 'мне отказали', 'после отказа'],
     'A6-001': ['клиентский опыт', 'купил и пропал', 'недоволен', 'обслуживание', 'претензия'],
     'A6-002': ['границы ответственности', 'претензия', 'недоволен продуктом'],
     'A6-003': ['встроить продукт', 'клиентский опыт'],
-    'A6-006': ['дата повтора', 'вернуть клиента'],
+    'A6-006': ['дата повтора', 'вернуть клиента', 'повторные продажи'],
     'A6-010': ['статусы', 'следующие действия', 'crm', 'мини-crm', 'в голове'],
     'A6-011': ['рабочий ритм', 'рабочее время', 'устал', 'откладываю'],
     'A6-012': ['план из действий', 'лидер', 'команда'],
@@ -143,15 +143,15 @@
       id: 'first-write',
       goal: 'начать разговор с знакомым без давления',
       why: ['первое сообщение', 'тёплый контакт', 'страх навязаться'],
-      phrases: ['боюсь написать', 'написать знакомому', 'первое сообщение', 'что написать', 'написать человеку', 'не знаю что написать', 'первым написать'],
-      boostIds: ['A3-002'],
+      phrases: ['боюсь написать', 'написать знакомому', 'первое сообщение', 'что написать', 'написать человеку', 'не знаю что написать', 'первым написать', 'страшно написать', 'страшно написать человеку', 'первый диалог'],
+      boostIds: ['A3-002', 'A3-016'],
       writeBias: true,
     },
     {
       id: 'no-people',
       goal: 'найти, с кем начать работу',
       why: ['нет людей', 'база', 'пять контактов'],
-      phrases: ['некому писать', 'некому', 'с кем начать', 'нет людей', 'не знаю с кем', 'нет контактов', 'не понимаю с кем'],
+      phrases: ['некому писать', 'некому', 'с кем начать', 'нет людей', 'не знаю с кем', 'нет контактов', 'не понимаю с кем', 'кому написать', 'не знаю кому написать'],
       boostIds: ['A2-008', 'A2-010', 'A2-006', 'A2-011', 'A2-001'],
     },
     {
@@ -165,14 +165,14 @@
       id: 'first-result',
       goal: 'получить первый рабочий результат',
       why: ['первый результат', 'план действий', 'первые контакты'],
-      phrases: ['первый результат', 'получить первый результат', 'хочу первый результат'],
+      phrases: ['первый результат', 'получить первый результат', 'хочу первый результат', 'хочу первого клиента', 'первый клиент'],
       boostIds: ['A1-010', 'A2-008', 'A3-002', 'A3-016'],
     },
     {
       id: 'just-started',
       goal: 'понять роль и первые шаги',
       why: ['старт', 'роль', 'план'],
-      phrases: ['только начал', 'я новичок', 'только начинаю', 'я только начал'],
+      phrases: ['только начал', 'я новичок', 'только начинаю', 'я только начал', 'как начать', 'что делать новичку', 'новичку'],
       boostIds: ['A1-004', 'A1-006', 'A1-010'],
     },
     {
@@ -228,8 +228,8 @@
       id: 'team',
       goal: 'наставить партнёров и собрать рабочую команду',
       why: ['наставничество', 'ритм', 'стандарт'],
-      phrases: ['партнеры ничего не делают', 'партнёры ничего не делают', 'команда не работает', 'развивать команду', 'наставлять', 'партнеры не делают', 'стать лидером', 'собрать команду', 'хочу стать лидером'],
-      boostIds: ['A1-016', 'A6-011', 'A6-012', 'A6-013', 'A6-010', 'A1-010', 'A1-004'],
+      phrases: ['партнеры ничего не делают', 'партнёры ничего не делают', 'команда не работает', 'развивать команду', 'наставлять', 'партнеры не делают', 'стать лидером', 'собрать команду', 'хочу стать лидером', 'как развивать команду'],
+      boostIds: ['A6-013', 'A6-012', 'A6-011', 'A1-016', 'A6-010', 'A1-010', 'A1-004'],
       teamOnly: true,
     },
     {
@@ -243,7 +243,7 @@
       id: 'pause',
       goal: 'продолжить диалог после паузы и сомнения',
       why: ['пауза', 'сомнение', 'подумает'],
-      phrases: ['подумает', 'не сейчас', 'сомневается', 'надо подумать', 'сказал что подумает', 'взял паузу'],
+      phrases: ['подумает', 'не сейчас', 'сомневается', 'надо подумать', 'сказал что подумает', 'взял паузу', 'человек думает'],
       boostIds: ['A5-001', 'A5-008', 'A5-009', 'A5-010', 'A5-011', 'A5-003'],
     },
     {
@@ -257,7 +257,7 @@
       id: 'product-talk',
       goal: 'честно рассказать о продукте',
       why: ['карточка продукта', 'продуктовый фокус', 'ограничения'],
-      phrases: ['рассказать о продукте', 'не знаю продукт', 'как рассказать', 'не знаю как рассказать', 'что можно обещать', 'презентация продукта'],
+      phrases: ['рассказать о продукте', 'не знаю продукт', 'как рассказать', 'не знаю как рассказать', 'что можно обещать', 'презентация продукта', 'как рассказать о продукте'],
       boostIds: ['A1-012', 'A1-011', 'A1-013', 'A4-001', 'A1-014'],
     },
     {
@@ -266,6 +266,27 @@
       why: ['follow-up после сообщения', 'человек молчит'],
       phrases: ['молчит после', 'не отвечает на сообщение', 'прочитал и молчит', 'тишина после сообщения'],
       boostIds: ['A5-010', 'A3-008', 'A5-011'],
+    },
+    {
+      id: 'invite-meeting',
+      goal: 'пригласить на разговор или встречу',
+      why: ['назначить встречу', 'конкретное время'],
+      phrases: ['пригласить на встречу', 'как пригласить', 'назначить встречу', 'назначить разговор'],
+      boostIds: ['A3-005', 'A3-013', 'A3-016'],
+    },
+    {
+      id: 'refused',
+      goal: 'сохранить движение после отказа',
+      why: ['отказ', 'завершить корректно'],
+      phrases: ['мне отказали', 'отказали', 'человек отказал', 'после отказа'],
+      boostIds: ['A5-014', 'A5-001', 'A5-011'],
+    },
+    {
+      id: 'repeat-sales',
+      goal: 'вернуть повторную покупку без выдуманных цифр',
+      why: ['повтор', 'следующий контакт после покупки'],
+      phrases: ['повторные продажи', 'повторную продажу', 'хочу повторные продажи', 'повторная продажа'],
+      boostIds: ['A6-006', 'A6-003', 'A6-001'],
     },
   ];
 
@@ -345,7 +366,23 @@
     { id: 'growth', title: 'Я развиваю команду', level: 'mentor' },
   ];
 
-  var MATERIAL_TYPES = [{ id: 'track', title: 'Трек' }];
+  var MATERIAL_TYPES = [
+    { id: 'track', title: 'Трек' },
+    { id: 'material', title: 'Материал' },
+  ];
+  var TIME_FILTERS = [
+    { id: '10', title: 'До 10 минут' },
+    { id: '20', title: 'До 20 минут' },
+    { id: '30', title: '20 минут и дольше' },
+  ];
+  var GOAL_SECTIONS = {
+    'first-result': ['A1', 'A3'],
+    'find-client': ['A2'],
+    'first-dialogue': ['A3'],
+    'understand-need': ['A4'],
+    'handle-doubt': ['A5'],
+    'grow-repeat': ['A6'],
+  };
   var SITUATIONS = SIT_FILTERS.map(function (item) {
     return { id: item.id, title: item.title };
   });
@@ -356,6 +393,13 @@
     situation: 80,
     aliases: 55,
     outcome: 55,
+    trigger: 70,
+    inputState: 70,
+    targetState: 50,
+    mainTask: 40,
+    mechanic: 18,
+    artifact: 22,
+    evidence: 16,
     tags: 25,
     section: 16,
     format: 10,
@@ -383,6 +427,8 @@
   api.AVAIL_FILTERS = AVAIL_FILTERS;
   api.EXPERIENCE = EXPERIENCE;
   api.MATERIAL_TYPES = MATERIAL_TYPES;
+  api.TIME_FILTERS = TIME_FILTERS;
+  api.GOAL_SECTIONS = GOAL_SECTIONS;
   api.PRESETS = PRESETS;
   api.FIELD_WEIGHTS = FIELD_WEIGHTS;
   api.PAGE_SIZE = 15;
@@ -411,6 +457,8 @@
   var AVAIL_FILTERS = api.AVAIL_FILTERS;
   var EXPERIENCE = api.EXPERIENCE;
   var PRESETS = api.PRESETS;
+  var TIME_FILTERS = api.TIME_FILTERS || [];
+  var GOAL_SECTIONS = api.GOAL_SECTIONS || {};
   var FIELD_WEIGHTS = api.FIELD_WEIGHTS;
   var PAGE_SIZE = api.PAGE_SIZE || 15;
   var LIBRARY_STATE_KEY = api.LIBRARY_STATE_KEY || 'mlma.library.v1';
@@ -661,6 +709,14 @@
     return 'working';
   }
 
+  function timeOf(track) {
+    var f = api.normalizeSearchText(track.format || '');
+    if (/чек|решен|калькулятор|gate|микро/.test(f)) return 10;
+    if (/сообщен|практик|реплик|сценари/.test(f)) return 15;
+    if (/конструктор|план|карт|диагност|crm/.test(f)) return 25;
+    return 20;
+  }
+
   function deriveMeta(track) {
     var cacheKey = track.trackId + '\n' + track.title + '\n' + track.situation + '\n' + track.format;
     if (metaCache[cacheKey]) return metaCache[cacheKey];
@@ -674,7 +730,9 @@
       sit: sitOf(track),
       lvl: levelOf(track),
       aliases: aliases,
-      playable: track.publicationStatus === 'published' && track.contentStatus === 'published',
+      playable: !!(api.derivePassport ? api.derivePassport(track).executable : false),
+      kind: api.itemKind ? api.itemKind(track) : 'track',
+      time: timeOf(track),
       fields: {
         title: api.normalizeSearchText(track.title),
         situation: api.normalizeSearchText(track.situation),
@@ -686,6 +744,16 @@
         id: api.normalizeSearchText(track.trackId),
       },
     };
+    if (api.searchFields) {
+      var extra = api.searchFields(track);
+      meta.fields.trigger = extra.trigger;
+      meta.fields.inputState = extra.inputState;
+      meta.fields.targetState = extra.targetState;
+      meta.fields.mainTask = extra.mainTask;
+      meta.fields.mechanic = extra.mechanic;
+      meta.fields.artifact = extra.artifact;
+      meta.fields.evidence = extra.evidence;
+    }
     metaCache[cacheKey] = meta;
     return meta;
   }
@@ -763,6 +831,14 @@
         score += FIELD_WEIGHTS.format;
         hits += 1;
       }
+      if (fieldHas(fields.mechanic, variants) || fieldHas(fields.artifact, variants) || fieldHas(fields.evidence, variants)) {
+        score += FIELD_WEIGHTS.mechanic || 18;
+        hits += 1;
+      }
+      if (fieldHas(fields.mainTask, variants) && !fieldHas(fields.title, variants)) {
+        score += FIELD_WEIGHTS.mainTask || 40;
+        hits += 1;
+      }
       if (fieldHas(fields.section, variants)) {
         score += FIELD_WEIGHTS.section;
         hits += 1;
@@ -802,7 +878,8 @@
 
     var writeQ = queryHasWrite(analysis);
     var callQ = queryHasCall(analysis);
-    if (writeQ && !callQ) {
+    var whoWrite = writeQ && /кому/.test(queryNorm);
+    if (writeQ && !callQ && !whoWrite) {
       if (meta.ch === 'call' && fields.title.indexOf('написа') === -1 && fields.aliases.indexOf('первое сообщение') === -1) {
         score -= 140;
       }
@@ -813,11 +890,14 @@
     if (callQ && !writeQ) {
       if (meta.ch === 'call' || /звон|телефон|позвон/.test(fields.title + ' ' + fields.aliases)) score += 80;
     }
+    if (whoWrite && track.sectionId === 'A2') score += 90;
+    if (whoWrite && track.sectionId === 'A3') score -= 40;
 
     var intents = analysis.intents || [];
     var intentHit = false;
     for (var n = 0; n < intents.length; n += 1) {
       var intent = intents[n];
+      if (whoWrite && intent.id === 'first-write') continue;
       if (intent.boostIds.indexOf(track.trackId) !== -1) {
         var boostIndex = intent.boostIds.indexOf(track.trackId);
         score += FIELD_WEIGHTS.intent + Math.max(0, 48 - n * 8) + Math.max(0, 32 - boostIndex * 8);
@@ -908,6 +988,7 @@
       avail: null,
       skill: null,
       experience: null,
+      time: null,
       sort: null,
       preset: null,
     };
@@ -956,6 +1037,8 @@
       var exp = getExperience(experience);
       if (exp.level && state.lvl.indexOf(exp.level) === -1) state.lvl.push(exp.level);
     }
+    var time = params.get('time') || extra.time || '';
+    if (time && (time === '10' || time === '20' || time === '30')) state.time = time;
     var sort = params.get('sort') || extra.sort || '';
     if (sort && sort !== 'relevance') state.sort = sort;
     var preset = params.get('preset') || extra.preset || '';
@@ -980,6 +1063,7 @@
     if (state.avail) params.set('avail', state.avail);
     if (state.skill) params.set('skill', state.skill);
     if (state.experience) params.set('experience', state.experience);
+    if (state.time) params.set('time', state.time);
     if (state.sort && state.sort !== 'relevance') params.set('sort', state.sort);
     if (state.preset) params.set('preset', state.preset);
     return params.toString();
@@ -1007,6 +1091,7 @@
       state.avail ||
       state.skill ||
       state.experience ||
+      state.time ||
       state.preset
     );
   }
@@ -1031,17 +1116,25 @@
     for (var i = 0; i < tracks.length; i += 1) {
       var track = tracks[i];
       if (allowed && !allowed[track.trackId]) continue;
-      if (state.type && state.type !== 'track') continue;
       var meta = deriveMeta(track);
+      if (state.type === 'material' && meta.kind !== 'material') continue;
+      if (state.type === 'track' && meta.kind === 'material') continue;
       if (stages.length && stages.indexOf(track.sectionId) === -1) continue;
       if (sit.length && sit.indexOf(meta.sit) === -1) continue;
       if (fmt.length && fmt.indexOf(meta.fmt) === -1) continue;
       if (state.format && track.format !== state.format && fmt.length === 0) continue;
       if (!inGroup(state.ch, meta.ch)) continue;
       if (!inGroup(state.lvl, meta.lvl)) continue;
+      if (state.goal && GOAL_SECTIONS[state.goal] && GOAL_SECTIONS[state.goal].indexOf(track.sectionId) === -1) continue;
+      if (state.time === '10' && meta.time > 10) continue;
+      if (state.time === '20' && meta.time > 20) continue;
+      if (state.time === '30' && meta.time < 20) continue;
       if (state.avail === 'playable' && !meta.playable) continue;
       if (state.avail === 'description' && meta.playable) continue;
-      if (state.skill) continue;
+      if (state.skill) {
+        var skillNeedle = api.normalizeSearchText(state.skill);
+        if (!skillNeedle || (meta.fields.format + ' ' + meta.fields.situation + ' ' + meta.fields.title).indexOf(skillNeedle) === -1) continue;
+      }
       out.push(track);
     }
     return out;
@@ -1082,7 +1175,7 @@
       var sit = getSituation(value);
       return sit ? sit.title : value;
     }
-    if (key === 'type') return value === 'track' ? 'Трек' : value;
+    if (key === 'type') return value === 'material' ? 'Материал' : 'Трек';
     if (key === 'format') return value;
     if (key === 'fmt') {
       for (var f = 0; f < FMT_FILTERS.length; f += 1) if (FMT_FILTERS[f].id === value) return FMT_FILTERS[f].title;
@@ -1104,6 +1197,10 @@
       var exp = getExperience(value);
       return exp ? exp.title : value;
     }
+    if (key === 'time') {
+      for (var tm = 0; tm < TIME_FILTERS.length; tm += 1) if (TIME_FILTERS[tm].id === value) return TIME_FILTERS[tm].title;
+      return value;
+    }
     if (key === 'preset') {
       var preset = getPreset(value);
       return preset ? preset.title : value;
@@ -1124,7 +1221,7 @@
     if (state.goal) pushChip(chips, 'goal', state.goal);
     var sit = state.sit && state.sit.length ? state.sit : (state.situation ? [state.situation] : []);
     for (var i = 0; i < sit.length; i += 1) pushChip(chips, 'sit', sit[i]);
-    if (state.type && state.type !== 'track') pushChip(chips, 'type', state.type);
+    if (state.type && state.type !== 'all') pushChip(chips, 'type', state.type);
     if (state.fmt && state.fmt.length) {
       for (var f = 0; f < state.fmt.length; f += 1) pushChip(chips, 'fmt', state.fmt[f]);
     } else if (state.format) pushChip(chips, 'format', state.format);
@@ -1132,6 +1229,7 @@
     if (state.lvl) for (var l = 0; l < state.lvl.length; l += 1) pushChip(chips, 'lvl', state.lvl[l]);
     if (state.avail) pushChip(chips, 'avail', state.avail);
     if (state.experience) pushChip(chips, 'experience', state.experience);
+    if (state.time) pushChip(chips, 'time', state.time);
     if (state.preset) pushChip(chips, 'preset', state.preset);
     return chips;
   }
@@ -1486,16 +1584,22 @@
   }
 
   function nextTrackBundle(track, catalog, context) {
-    var byId = {};
-    for (var i = 0; i < catalog.length; i += 1) byId[catalog[i].trackId] = catalog[i];
-    var primary = null;
-    if (track.nextTrackIds && track.nextTrackIds[0] && byId[track.nextTrackIds[0]]) {
-      primary = byId[track.nextTrackIds[0]];
+    context = context || {};
+    var runtime = context.runtime || (api.getRuntime ? api.getRuntime(track.trackId) : null);
+    var nba = api.nextBestAction ? api.nextBestAction(track, catalog, runtime, context.profile) : null;
+    var primary = nba && nba.track ? nba.track : null;
+    if (!primary && track.nextTrackIds && track.nextTrackIds[0]) {
+      for (var i = 0; i < catalog.length; i += 1) {
+        if (catalog[i].trackId === track.nextTrackIds[0]) {
+          primary = catalog[i];
+          break;
+        }
+      }
     }
-    var variants = relatedTracks(track, catalog, 4, context).filter(function (item) {
+    var variants = (api.relatedContent ? api.relatedContent(track, catalog, 3) : relatedTracks(track, catalog, 4, context)).filter(function (item) {
       return !primary || item.trackId !== primary.trackId;
     }).slice(0, 3);
-    return { primary: primary, variants: variants };
+    return { primary: primary, variants: variants, nba: nba };
   }
 
   function startPicks(sectionId, level, catalog) {
@@ -1599,8 +1703,8 @@
     return data;
   }
 
-  function itemType() {
-    return 'track';
+  function itemType(track) {
+    return api.itemKind ? api.itemKind(track) : 'track';
   }
 
   function stagesForState(state) {

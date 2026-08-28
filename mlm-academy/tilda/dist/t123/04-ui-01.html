@@ -294,45 +294,31 @@
   function trackCard(track, section, R, opts) {
     opts = opts || {};
     var status = D.getTrackStatusView(track);
-    var shortTitle = section ? section.shortTitle : track.sectionId;
-    var cta = status.canStart ? 'Пройти трек' : 'Открыть описание';
-    var why = opts.why
-      ? whyHtml(opts.why)
-      : '';
-    var cls = 'mlma-card mlma-card-hover mlma-track-card' + (opts.featured ? ' mlma-track-featured' : '') + (opts.compact ? ' mlma-track-compact' : '');
-    var badgeHtml = status.showCatalogBadge && status.label ? badge(status.label, status.tone) : '';
+    var kind = status.itemKind || 'track';
+    var minutes = D.deriveMeta ? D.deriveMeta(track).time : 20;
+    var href = esc(R.track(track.trackId));
+    var badgeHtml = status.showCatalogBadge && status.label ? badge(status.label, status.tone) : (status.pageStatus ? badge(status.pageStatus, status.tone) : '');
     return (
-      '<article class="' +
-      cls +
-      '" style="' +
-      D.styleAttr(track.sectionId) +
+      '<article class="mlma-card mlma-card-hover mlma-track-card' +
+      (opts.featured ? ' mlma-track-featured' : '') +
+      (opts.compact ? ' mlma-track-compact' : '') +
+      '" style="' + D.styleAttr(track.sectionId) +
       '"><div class="mlma-strip" aria-hidden="true"></div><div style="display:flex;flex-direction:column;flex:1;padding:18px">' +
-      '<div class="mlma-chip-row" style="flex-wrap:wrap">' +
-      '<span class="mlma-meta">' +
-      esc(track.trackId) +
-      ' · ' +
-      esc(shortTitle) +
-      '</span>' +
-      badgeHtml +
-      '</div><h3 class="mlma-h3" style="margin-top:14px;font-size:20px"><a class="mlma-track-link" href="' +
-      esc(R.track(track.trackId)) +
-      '" style="color:inherit">' +
-      esc(track.title) +
-      '</a></h3><p style="margin-top:12px;font-size:15px;line-height:1.4">' +
-      esc(track.situation) +
-      '</p>' +
-      (opts.compact ? '' : '<p class="mlma-muted" style="margin-top:8px;font-size:14px;line-height:1.4">Результат: ' + esc(track.outcome) + '</p>') +
-      why +
+      '<div class="mlma-chip-row" style="flex-wrap:wrap"><span class="mlma-meta">' +
+      esc(track.trackId) + ' · ' + esc(section ? section.shortTitle : track.sectionId) +
+      '</span><span class="mlma-meta mlma-muted">' + esc(kind === 'material' ? 'Материал' : 'Трек') + '</span>' +
+      badgeHtml + '</div><h3 class="mlma-h3" style="margin-top:14px;font-size:20px"><a class="mlma-track-link" href="' +
+      href + '" style="color:inherit" data-mlma-result-open="' + esc(track.trackId) + '">' +
+      esc(track.title) + '</a></h3><p style="margin-top:12px;font-size:15px;line-height:1.4">' +
+      esc(track.situation) + '</p>' +
+      (opts.compact ? '' : '<p class="mlma-muted" style="margin-top:8px;font-size:14px;line-height:1.4">' +
+        (kind === 'material' ? 'Что получит: ' : 'Результат: ') + esc(track.outcome) + '</p>') +
+      (opts.why ? whyHtml(opts.why) : '') +
       '<div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--mlma-line-soft);display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:center">' +
-      '<span class="mlma-meta mlma-muted">' +
-      esc(track.format) +
-      '</span>' +
-      '<a class="mlma-btn mlma-btn-small' +
-      (status.canStart ? ' mlma-btn-primary' : '') +
-      ' mlma-track-link" href="' +
-      esc(R.track(track.trackId)) +
-      '">' +
-      esc(cta) +
+      '<span class="mlma-meta mlma-muted">' + esc(track.format) + ' · ≈ ' + minutes + ' мин</span>' +
+      '<a class="mlma-btn mlma-btn-small' + (status.canStart ? ' mlma-btn-primary' : '') +
+      ' mlma-track-link" href="' + href + '" data-mlma-result-open="' + esc(track.trackId) + '">' +
+      esc(status.cta || (status.canStart ? 'Начать трек' : 'Открыть описание')) +
       '</a></div></div></article>'
     );
   }
@@ -690,9 +676,6 @@
     var stageChips = chipGroup('data-mlma-stage', stageItems, stages);
     var sitChips = chipGroup('data-mlma-sit', facets.sit, filters.sit || []);
     var fmtChips = chipGroup('data-mlma-fmt', facets.fmt, filters.fmt || []);
-    var chChips = chipGroup('data-mlma-ch', facets.ch, filters.ch || []);
-    var lvlChips = chipGroup('data-mlma-lvl', facets.lvl, filters.lvl || []);
-    var availChips = chipGroup('data-mlma-avail', facets.avail, filters.avail ? [filters.avail] : []);
     var body;
     if (result.kind === 'need_more') {
       var sitPresets = '';
@@ -783,12 +766,21 @@
       if (!inner) return '';
       return '<div class="mlma-facet"><p class="mlma-meta mlma-facet-title">' + esc(title) + '</p><div class="mlma-chip-row">' + inner + '</div></div>';
     }
-    drawerFacets += facetBlock('Направление', stageChips);
-    drawerFacets += facetBlock('Ситуация или задача', sitChips);
-    drawerFacets += facetBlock('Формат результата', fmtChips);
-    drawerFacets += facetBlock('Канал', chChips);
-    drawerFacets += facetBlock('Уровень', lvlChips);
-    drawerFacets += facetBlock('Доступность', availChips);
+    drawerFacets += facetBlock('Этап', stageChips);
+    drawerFacets += facetBlock('Моя ситуация', sitChips);
+    var goalItems = D.GOALS || [];
+    var goalChips = chipGroup('data-mlma-goal', goalItems, filters.goal ? [filters.goal] : []);
+    drawerFacets += facetBlock('Что хочу получить', goalChips);
+    var expItems = D.EXPERIENCE || [];
+    var expChips = chipGroup('data-mlma-experience', expItems, filters.experience ? [filters.experience] : []);
+    drawerFacets += facetBlock('Опыт', expChips);
+    var typeItems = D.MATERIAL_TYPES || [];
+    var typeChips = chipGroup('data-mlma-type', typeItems, filters.type ? [filters.type] : []);
+    drawerFacets += facetBlock('Тип', typeChips);
+    var timeItems = D.TIME_FILTERS || [];
+    var timeChips = chipGroup('data-mlma-time', timeItems, filters.time ? [filters.time] : []);
+    drawerFacets += facetBlock('Время', timeChips);
+    drawerFacets += facetBlock('Формат', fmtChips);
     var drawer =
       '<div class="mlma-drawer-host">' +
       '<div class="mlma-drawer-backdrop" id="mlma-drawer-backdrop" hidden></div>' +

@@ -862,5 +862,45 @@ a.mlma-btn-on-ink {
 @media (max-width: 720px) {
   .mlma-research-cta { padding: 24px 18px; }
 }
+.mlma-runtime textarea.mlma-field {
+  min-height: 7.5em;
+  width: 100%;
+  resize: vertical;
+}
+.mlma-runtime-steps {
+  display: grid;
+  gap: 12px;
+  padding-left: 18px;
+}
+.mlma-runtime-steps p { margin-top: 4px; }
+.mlma-feedback dt { font-weight: 700; }
+.mlma-genre {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--mlma-line-soft);
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.mlma-genre-investigation { box-shadow: inset 3px 0 0 var(--mlma-accent, #2F4F8A); }
+.mlma-genre-expedition { box-shadow: inset 3px 0 0 var(--mlma-accent, #3D6B4F); }
+.mlma-genre-workshop { box-shadow: inset 3px 0 0 var(--mlma-accent, #C4922A); }
+.mlma-genre-mission { box-shadow: inset 3px 0 0 var(--mlma-accent, #C45F42); }
+.mlma-genre-practice { box-shadow: inset 3px 0 0 var(--mlma-accent, #2A7A72); }
+.mlma-blueprint.mlma-genre-investigation,
+.mlma-blueprint.mlma-genre-expedition,
+.mlma-blueprint.mlma-genre-workshop,
+.mlma-blueprint.mlma-genre-mission,
+.mlma-blueprint.mlma-genre-practice {
+  border-left: 4px solid var(--mlma-accent);
+}
+.mlma-card-soon .mlma-btn-primary { background: transparent; color: inherit; }
+@media (max-width: 430px) {
+  .mlma-runtime { padding: 18px; }
+  .mlma-h1 { font-size: 28px; }
+}
 </style>
 

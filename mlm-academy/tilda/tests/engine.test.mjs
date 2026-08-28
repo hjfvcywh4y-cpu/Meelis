@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 require('../src/domain.js');
-const MLMA = require('../src/search.js');
+require('../src/search.js');
+const MLMA = require('../src/ontology.js');
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const PUBLIC_FIELDS = MLMA.PUBLIC_FIELDS.slice().sort();
@@ -78,13 +79,13 @@ describe('санитайзер Tilda', () => {
 });
 
 describe('честные статусы', () => {
-  it('не даёт кнопку «Начать», пока содержания нет', () => {
+  it('даёт контур прохождения, а не фальшивый урок', () => {
     const status = MLMA.getTrackStatusView(MLMA.toPublicTrack(sampleTrack()));
-    assert.equal(status.canStart, false);
-    assert.equal(status.showProgress, false);
-    assert.equal(status.availability, 'preparing');
-    assert.equal(status.cta, 'Открыть описание');
+    assert.equal(status.canStart, true);
+    assert.equal(status.cta, 'Начать трек');
+    assert.equal(status.availability, 'shell');
     assert.notEqual(status.label, 'Скоро');
+    assert.match(status.explanation, /след/);
   });
 });
 
@@ -298,6 +299,83 @@ describe('собранный каталог', () => {
       const chars = fs.readFileSync(path.join(dir, name), 'utf8').length;
       assert.ok(chars <= 45000, name + ' = ' + chars);
     }
+  });
+});
+
+describe('онтология и runtime', () => {
+  const catalogPath = path.join(__dirname, '../../src/data/tracks.catalog.json');
+  const raw = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
+  const tracks = MLMA.toPublicList(raw.tracks);
+
+  it('разводит трек и материал', () => {
+    const track = MLMA.toPublicTrack(sampleTrack());
+    const material = MLMA.toPublicTrack(sampleTrack({ format: 'Статья / гайд', trackId: 'A1-002' }));
+    assert.equal(MLMA.itemKind(track), 'track');
+    assert.equal(MLMA.itemKind(material), 'material');
+    assert.equal(MLMA.getTrackStatusView(material).cta, 'Открыть материал');
+    assert.equal(MLMA.getTrackStatusView(track).cta, 'Начать трек');
+  });
+
+  it('validateTrack ловит дыры паспорта и битые связи', () => {
+    const broken = MLMA.toPublicTrack(sampleTrack({ nextTrackIds: ['A9-999'], situation: '' }));
+    const result = MLMA.validateTrack(broken, tracks);
+    assert.equal(result.ok, false);
+    assert.ok(result.issues.includes('missing_trigger'));
+    assert.ok(result.issues.includes('broken_nextTrackId'));
+  });
+
+  it('validateCatalog проходит по 112 объектам без критичных дыр', () => {
+    const report = MLMA.validateCatalog(tracks);
+    assert.equal(report.total, 112);
+    assert.equal(report.ok, true, JSON.stringify(report.failures.slice(0, 5)));
+  });
+
+  it('самоотметка «готово» не завершает трек', () => {
+    const track = MLMA.toPublicTrack(sampleTrack());
+    const check = MLMA.qualityCheck(track, { artifact: 'готово', evidenceNote: 'я сделал' });
+    assert.equal(check.branch, 'error');
+    assert.ok(check.gaps.some((item) => /доказательств|коротк|сделал/i.test(item)));
+  });
+
+  it('принимает конкретный артефакт и отделяет NBA от related', () => {
+    const track = tracks.find((item) => item.trackId === 'A3-002');
+    const artifact = 'Короткое сообщение знакомому Марине: написать про встречу в субботу и спросить, удобно ли созвониться. Без гарантий дохода.';
+    const note = 'Черновик сохранён в заметках и готов к отправке в чат.';
+    const check = MLMA.qualityCheck(track, { artifact, evidenceNote: note });
+    assert.ok(check.branch === 'success' || check.branch === 'highResult', check.branch);
+    const nba = MLMA.nextBestAction(track, tracks, { branch: 'success', attempts: 1 }, { selectedSectionId: 'A3' });
+    assert.equal(nba.kind, 'open_track');
+    assert.ok(track.nextTrackIds.includes(nba.track.trackId));
+    const related = MLMA.relatedContent(track, tracks, 3);
+    assert.ok(related.every((item) => item.trackId !== nba.track.trackId));
+    const retry = MLMA.nextBestAction(track, tracks, { branch: 'error', attempts: 1 }, null);
+    assert.equal(retry.kind, 'retry');
+  });
+
+  it('пасспорт не показывает служебные ID как пользовательский текст', () => {
+    const passport = MLMA.derivePassport(tracks[0]);
+    assert.ok(passport.trigger);
+    assert.ok(passport.targetState);
+    assert.notEqual(passport.trigger, passport.targetState);
+    assert.match(passport.leadingMechanic.id, /^MEC-/);
+    assert.match(passport.dominantGenre, /^GEN-/);
+  });
+});
+
+describe('статический fallback', () => {
+  it('A1–A6 и track имеют собственный H1', () => {
+    const dir = path.join(__dirname, '../dist/t123/mounts');
+    const a1 = fs.readFileSync(path.join(dir, 'a1.html'), 'utf8');
+    const a2 = fs.readFileSync(path.join(dir, 'a2.html'), 'utf8');
+    const track = fs.readFileSync(path.join(dir, 'track.html'), 'utf8');
+    const library = fs.readFileSync(path.join(dir, 'library.html'), 'utf8');
+    assert.match(a1, /<h1>A1 · Старт и система<\/h1>/);
+    assert.match(a2, /<h1>A2 · Люди и база<\/h1>/);
+    assert.notEqual(a1.match(/<h1>[^<]+<\/h1>/)[0], a2.match(/<h1>[^<]+<\/h1>/)[0]);
+    assert.match(track, /<h1>Карточка трека MLM Academy<\/h1>/);
+    assert.match(library, /<h1>Библиотека MLM Academy<\/h1>/);
+    assert.match(a1, /href="\/library"/);
+    assert.match(a1, /href="\/academy"/);
   });
 });
 

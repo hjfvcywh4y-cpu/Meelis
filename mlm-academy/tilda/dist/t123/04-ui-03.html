@@ -68,8 +68,10 @@
       if (result.kind === 'zero' || result.kind === 'need_more') {
         D.trackEvent('library_zero_results', { query: filters.q || '', filters: D.serializeLibraryState(filters), source: 'library' });
       } else if (filters.q) {
+        D.trackEvent('search_query', { query: filters.q, filters: D.serializeLibraryState(filters), source: 'library' });
         D.trackEvent('library_search', { query: filters.q, filters: D.serializeLibraryState(filters), source: 'library' });
       } else {
+        D.trackEvent('filter_change', { filters: D.serializeLibraryState(filters), source: 'library' });
         D.trackEvent('library_filter_change', { filters: D.serializeLibraryState(filters), source: 'library' });
       }
     }
@@ -124,6 +126,10 @@
               filters.stage = filters.stages.length === 1 ? filters.stages[0] : null;
             } else if (key === 'avail') {
               filters.avail = filters.avail === value ? null : value;
+            } else if (key === 'experience') {
+              filters.experience = filters.experience === value ? null : value;
+              var exp = D.getExperience ? D.getExperience(filters.experience) : null;
+              filters.lvl = exp && exp.level ? [exp.level] : [];
             } else if (single) {
               filters[key] = filters[key] === value ? null : value;
             } else {
@@ -138,9 +144,10 @@
       onToggle('data-mlma-stage', 'stage');
       onToggle('data-mlma-sit', 'sit');
       onToggle('data-mlma-fmt', 'fmt');
-      onToggle('data-mlma-ch', 'ch');
-      onToggle('data-mlma-lvl', 'lvl');
-      onToggle('data-mlma-avail', 'avail', true);
+      onToggle('data-mlma-goal', 'goal', true);
+      onToggle('data-mlma-experience', 'experience', true);
+      onToggle('data-mlma-time', 'time', true);
+      onToggle('data-mlma-type', 'type', true);
       var clearNodes = document.querySelectorAll('[data-mlma-clear]');
       for (var c = 0; c < clearNodes.length; c += 1) {
         clearNodes[c].addEventListener('click', function (event) {
@@ -315,6 +322,57 @@
         menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
       });
     }
+    rootEl.querySelectorAll('[data-mlma-run-start]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = D.normalizeTrackId(el.getAttribute('data-mlma-run-start'));
+        var track = id ? D.getById(state.allTracks, id, true) : null;
+        if (track && D.startRuntime) D.startRuntime(track);
+        D.trackEvent('track_start', { itemId: id || '', source_page: '/track', article_slug: id || '' });
+      });
+    });
+    var runForm = rootEl.querySelector('#mlma-runtime-form');
+    if (runForm) {
+      runForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var id = D.normalizeTrackId(queryParam('id'));
+        var track = id ? D.getById(state.allTracks, id, true) : null;
+        if (!track || !D.submitRuntime) return;
+        var artifact = (runForm.querySelector('#mlma-artifact') || {}).value || '';
+        var evidenceNote = (runForm.querySelector('#mlma-evidence') || {}).value || '';
+        D.trackEvent('track_action_submitted', { itemId: id, source_page: '/track' });
+        D.trackEvent('track_evidence_submitted', { itemId: id, source_page: '/track' });
+        var result = D.submitRuntime(track, { artifact: artifact, evidenceNote: evidenceNote });
+        var branch = result && result.check ? result.check.branch : '';
+        D.trackEvent(branch === 'success' || branch === 'highResult' ? 'track_evidence_verified' : 'track_evidence_rejected', {
+          itemId: id,
+          cta_position: branch,
+        });
+        D.trackEvent('track_branch_selected', { itemId: id, cta_position: branch });
+        D.trackEvent('track_feedback_shown', { itemId: id, cta_position: branch });
+        if (branch === 'success' || branch === 'highResult') D.trackEvent('track_complete', { itemId: id });
+        if (branch === 'error' || branch === 'risk') D.trackEvent('track_retry', { itemId: id });
+        if (branch === 'risk') D.trackEvent('leader_escalation', { itemId: id, cta_position: 'risk' });
+        if (result && result.state && result.state.attempts >= 2 && (branch === 'error' || branch === 'risk')) {
+          D.trackEvent('corrective_track_assigned', { itemId: id, cta_position: branch });
+        }
+        mount(rootEl);
+      });
+    }
+    rootEl.querySelectorAll('[data-mlma-run-retry]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = D.normalizeTrackId(el.getAttribute('data-mlma-run-retry'));
+        var track = id ? D.getById(state.allTracks, id, true) : null;
+        if (track && D.retryRuntime) D.retryRuntime(track);
+        D.trackEvent('track_retry', { itemId: id || '' });
+        mount(rootEl);
+      });
+    });
+    rootEl.querySelectorAll('[data-mlma-nba]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        D.trackEvent('track_next_open', { itemId: el.getAttribute('data-mlma-nba') || '', source_page: '/track' });
+        D.trackEvent('track_next_recommended', { itemId: el.getAttribute('data-mlma-nba') || '', source_page: '/track' });
+      });
+    });
     rootEl.querySelectorAll('[data-mlma-save]').forEach(function (el) {
       el.addEventListener('click', function () {
         var id = el.getAttribute('data-mlma-save');
@@ -361,6 +419,7 @@
     });
     rootEl.querySelectorAll('[data-mlma-preset]').forEach(function (el) {
       el.addEventListener('click', function () {
+        D.trackEvent('preset_open', { itemId: el.getAttribute('data-mlma-preset') || '', source: 'home' });
         D.trackEvent('academy_preset_click', { itemId: el.getAttribute('data-mlma-preset') || '', source: 'home' });
       });
     });
@@ -368,9 +427,15 @@
     if (homeForm && state.page === 'home') {
       homeForm.addEventListener('submit', function () {
         var field = homeForm.querySelector('#mlma-home-q');
+        D.trackEvent('search_query', { query: field ? field.value : '', source: 'home' });
         D.trackEvent('academy_search', { query: field ? field.value : '', source: 'home' });
       });
     }
+    rootEl.querySelectorAll('[data-mlma-result-open]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        D.trackEvent('search_result_open', { itemId: el.getAttribute('data-mlma-result-open') || '', source: state.page });
+      });
+    });
     bindLibrary(state, rootEl);
     applySeo(state);
   }
@@ -393,8 +458,54 @@
           return;
         }
       }
-      if (state.page === 'track') {
+      var seo = {
+        home: {
+          title: 'MLM Academy — библиотека действий',
+          desc: 'Рабочий навигатор партнёра: ситуация, действие, результат и следующий шаг. Шесть направлений от старта до роста команды.',
+        },
+        start: {
+          title: 'С чего начать · MLM Academy',
+          desc: 'Выберите ситуацию, в которой сейчас застряли. Академия подберёт первый трек без кабинета и без оплаты.',
+        },
+        library: {
+          title: 'Библиотека · MLM Academy',
+          desc: 'Каталог треков и материалов: этап, ситуация, цель, опыт, тип и время. Поиск понимает живой запрос, а не только название.',
+        },
+        about: {
+          title: 'Как создаётся библиотека · MLM Academy',
+          desc: 'Как устроена MLM Academy: трек как маршрут изменения состояния, а не страница с видео. Честные статусы и рабочие следы.',
+        },
+        access: {
+          title: 'Доступ · MLM Academy',
+          desc: 'Каталог открыт без входа. Кабинет нужен только для личной истории, и система объясняет зачем.',
+        },
+      };
+      var sectionSeo = {
+        A1: { title: 'A1 · Старт и система · MLM Academy', desc: 'Понять роль, причину, продукт и рабочий план. Треки старта без выдуманных уроков.' },
+        A2: { title: 'A2 · Люди и база · MLM Academy', desc: 'Найти, с кем начать, собрать базу и сегменты. Треки про людей, а не про «набор контактов ради списка».' },
+        A3: { title: 'A3 · Первый контакт · MLM Academy', desc: 'Выбрать канал, написать, позвонить и договориться о разговоре без давления.' },
+        A4: { title: 'A4 · Потребность и решение · MLM Academy', desc: 'Услышать человека и собрать рекомендацию на его языке, а не прочитать презентацию.' },
+        A5: { title: 'A5 · Сомнения и отказ · MLM Academy', desc: 'Разобрать паузу, возражение или отказ и зафиксировать следующий шаг.' },
+        A6: { title: 'A6 · Повтор и рост · MLM Academy', desc: 'Вернуть клиента, выстроить ритм и работу с командой без ложных обещаний роста продаж.' },
+      };
+      var title = 'MLM Academy';
+      var desc = 'MLM Academy — рабочий навигатор партнёра: ситуация, действие, результат и следующий шаг.';
+      if (state.page === 'section') {
+        var sid = D.normalizeSectionId(state.root.getAttribute('data-mlma-section') || '');
+        if (sid && sectionSeo[sid]) {
+          title = sectionSeo[sid].title;
+          desc = sectionSeo[sid].desc;
+        }
+      } else if (state.page === 'track') {
         var opened = D.normalizeTrackId(queryParam('id'));
+        var openedTrack = opened ? D.getById(state.allTracks, opened, true) : null;
+        if (openedTrack) {
+          title = openedTrack.title + ' · MLM Academy';
+          desc = openedTrack.situation + ' Результат: ' + openedTrack.outcome;
+        } else {
+          title = 'Трек · MLM Academy';
+          desc = 'Карточка трека MLM Academy. Откройте трек по идентификатору, чтобы увидеть ситуацию, действие и рабочий след.';
+        }
         if (opened) {
           var canon = document.querySelector('link[rel="canonical"]');
           if (!canon) {
@@ -404,7 +515,18 @@
           }
           canon.setAttribute('href', window.location.origin + '/track?id=' + encodeURIComponent(String(opened).toLowerCase()));
         }
+      } else if (seo[state.page]) {
+        title = seo[state.page].title;
+        desc = seo[state.page].desc;
       }
+      document.title = title;
+      var meta = document.querySelector('meta[name="description"]');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', 'description');
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', desc);
     } catch (err) {
       /* ignore */
     }
@@ -446,17 +568,23 @@
       footer(state) +
       mobileNav(state);
     bind(state, rootEl);
-    if (state.page === 'home') D.trackEvent('academy_home_open', { source: 'home' });
+    if (state.page === 'home') {
+      D.trackEvent('academy_open', { source: 'home' });
+      D.trackEvent('academy_home_open', { source: 'home' });
+    }
     if (state.page === 'library' || state.page === 'preview') D.trackEvent('library_open', { source: state.page });
     if (state.page === 'track') {
       var opened = D.normalizeTrackId(queryParam('id'));
       var openedTrack = opened ? D.getById(state.allTracks, opened, true) : null;
       var canStart = openedTrack ? D.getTrackStatusView(openedTrack).canStart : false;
-      D.trackEvent(canStart ? 'track_open' : 'track_preview_open', {
+      var openedRuntime = opened && D.getRuntime ? D.getRuntime(opened) : null;
+      D.trackEvent(canStart ? 'track_preview_open' : 'track_preview_open', {
         itemId: opened || '',
         status: openedTrack ? D.getTrackStatusView(openedTrack).contentStatus : 'missing',
         source: 'track',
       });
+      if (queryParam('run') === '1') D.trackEvent('track_step_open', { itemId: opened || '', cta_position: openedRuntime ? openedRuntime.step : 'action' });
+      if (D.isInactive && D.isInactive(openedRuntime)) D.trackEvent('track_inactive', { itemId: opened || '' });
     }
   }
 

@@ -292,45 +292,31 @@
   function trackCard(track, section, R, opts) {
     opts = opts || {};
     var status = D.getTrackStatusView(track);
-    var shortTitle = section ? section.shortTitle : track.sectionId;
-    var cta = status.canStart ? 'Пройти трек' : 'Открыть описание';
-    var why = opts.why
-      ? whyHtml(opts.why)
-      : '';
-    var cls = 'mlma-card mlma-card-hover mlma-track-card' + (opts.featured ? ' mlma-track-featured' : '') + (opts.compact ? ' mlma-track-compact' : '');
-    var badgeHtml = status.showCatalogBadge && status.label ? badge(status.label, status.tone) : '';
+    var kind = status.itemKind || 'track';
+    var minutes = D.deriveMeta ? D.deriveMeta(track).time : 20;
+    var href = esc(R.track(track.trackId));
+    var badgeHtml = status.showCatalogBadge && status.label ? badge(status.label, status.tone) : (status.pageStatus ? badge(status.pageStatus, status.tone) : '');
     return (
-      '<article class="' +
-      cls +
-      '" style="' +
-      D.styleAttr(track.sectionId) +
+      '<article class="mlma-card mlma-card-hover mlma-track-card' +
+      (opts.featured ? ' mlma-track-featured' : '') +
+      (opts.compact ? ' mlma-track-compact' : '') +
+      '" style="' + D.styleAttr(track.sectionId) +
       '"><div class="mlma-strip" aria-hidden="true"></div><div style="display:flex;flex-direction:column;flex:1;padding:18px">' +
-      '<div class="mlma-chip-row" style="flex-wrap:wrap">' +
-      '<span class="mlma-meta">' +
-      esc(track.trackId) +
-      ' · ' +
-      esc(shortTitle) +
-      '</span>' +
-      badgeHtml +
-      '</div><h3 class="mlma-h3" style="margin-top:14px;font-size:20px"><a class="mlma-track-link" href="' +
-      esc(R.track(track.trackId)) +
-      '" style="color:inherit">' +
-      esc(track.title) +
-      '</a></h3><p style="margin-top:12px;font-size:15px;line-height:1.4">' +
-      esc(track.situation) +
-      '</p>' +
-      (opts.compact ? '' : '<p class="mlma-muted" style="margin-top:8px;font-size:14px;line-height:1.4">Результат: ' + esc(track.outcome) + '</p>') +
-      why +
+      '<div class="mlma-chip-row" style="flex-wrap:wrap"><span class="mlma-meta">' +
+      esc(track.trackId) + ' · ' + esc(section ? section.shortTitle : track.sectionId) +
+      '</span><span class="mlma-meta mlma-muted">' + esc(kind === 'material' ? 'Материал' : 'Трек') + '</span>' +
+      badgeHtml + '</div><h3 class="mlma-h3" style="margin-top:14px;font-size:20px"><a class="mlma-track-link" href="' +
+      href + '" style="color:inherit" data-mlma-result-open="' + esc(track.trackId) + '">' +
+      esc(track.title) + '</a></h3><p style="margin-top:12px;font-size:15px;line-height:1.4">' +
+      esc(track.situation) + '</p>' +
+      (opts.compact ? '' : '<p class="mlma-muted" style="margin-top:8px;font-size:14px;line-height:1.4">' +
+        (kind === 'material' ? 'Что получит: ' : 'Результат: ') + esc(track.outcome) + '</p>') +
+      (opts.why ? whyHtml(opts.why) : '') +
       '<div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--mlma-line-soft);display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:center">' +
-      '<span class="mlma-meta mlma-muted">' +
-      esc(track.format) +
-      '</span>' +
-      '<a class="mlma-btn mlma-btn-small' +
-      (status.canStart ? ' mlma-btn-primary' : '') +
-      ' mlma-track-link" href="' +
-      esc(R.track(track.trackId)) +
-      '">' +
-      esc(cta) +
+      '<span class="mlma-meta mlma-muted">' + esc(track.format) + ' · ≈ ' + minutes + ' мин</span>' +
+      '<a class="mlma-btn mlma-btn-small' + (status.canStart ? ' mlma-btn-primary' : '') +
+      ' mlma-track-link" href="' + href + '" data-mlma-result-open="' + esc(track.trackId) + '">' +
+      esc(status.cta || (status.canStart ? 'Начать трек' : 'Открыть описание')) +
       '</a></div></div></article>'
     );
   }
@@ -688,9 +674,6 @@
     var stageChips = chipGroup('data-mlma-stage', stageItems, stages);
     var sitChips = chipGroup('data-mlma-sit', facets.sit, filters.sit || []);
     var fmtChips = chipGroup('data-mlma-fmt', facets.fmt, filters.fmt || []);
-    var chChips = chipGroup('data-mlma-ch', facets.ch, filters.ch || []);
-    var lvlChips = chipGroup('data-mlma-lvl', facets.lvl, filters.lvl || []);
-    var availChips = chipGroup('data-mlma-avail', facets.avail, filters.avail ? [filters.avail] : []);
     var body;
     if (result.kind === 'need_more') {
       var sitPresets = '';
@@ -781,12 +764,21 @@
       if (!inner) return '';
       return '<div class="mlma-facet"><p class="mlma-meta mlma-facet-title">' + esc(title) + '</p><div class="mlma-chip-row">' + inner + '</div></div>';
     }
-    drawerFacets += facetBlock('Направление', stageChips);
-    drawerFacets += facetBlock('Ситуация или задача', sitChips);
-    drawerFacets += facetBlock('Формат результата', fmtChips);
-    drawerFacets += facetBlock('Канал', chChips);
-    drawerFacets += facetBlock('Уровень', lvlChips);
-    drawerFacets += facetBlock('Доступность', availChips);
+    drawerFacets += facetBlock('Этап', stageChips);
+    drawerFacets += facetBlock('Моя ситуация', sitChips);
+    var goalItems = D.GOALS || [];
+    var goalChips = chipGroup('data-mlma-goal', goalItems, filters.goal ? [filters.goal] : []);
+    drawerFacets += facetBlock('Что хочу получить', goalChips);
+    var expItems = D.EXPERIENCE || [];
+    var expChips = chipGroup('data-mlma-experience', expItems, filters.experience ? [filters.experience] : []);
+    drawerFacets += facetBlock('Опыт', expChips);
+    var typeItems = D.MATERIAL_TYPES || [];
+    var typeChips = chipGroup('data-mlma-type', typeItems, filters.type ? [filters.type] : []);
+    drawerFacets += facetBlock('Тип', typeChips);
+    var timeItems = D.TIME_FILTERS || [];
+    var timeChips = chipGroup('data-mlma-time', timeItems, filters.time ? [filters.time] : []);
+    drawerFacets += facetBlock('Время', timeChips);
+    drawerFacets += facetBlock('Формат', fmtChips);
     var drawer =
       '<div class="mlma-drawer-host">' +
       '<div class="mlma-drawer-backdrop" id="mlma-drawer-backdrop" hidden></div>' +
@@ -972,41 +964,63 @@
     if (!track) return renderNotFound(state, 'Такого трека нет');
     var section = state.sectionById[track.sectionId];
     var status = D.getTrackStatusView(track);
+    var passport = D.derivePassport ? D.derivePassport(track) : null;
+    var runtime = D.getRuntime ? D.getRuntime(track.trackId) : null;
+    var running = queryParam('run') === '1' || (runtime && runtime.status && runtime.status !== 'preview');
     var saved = state.profile.savedTrackIds.indexOf(track.trackId) !== -1;
     var restore = D.readLibraryRestore ? D.readLibraryRestore() : null;
     var backHref = restore && restore.href ? restore.href : R.library();
-    var context = { query: restore && restore.q ? restore.q : queryParam('from') };
+    var context = { query: restore && restore.q ? restore.q : queryParam('from'), profile: state.profile, runtime: runtime };
     var bundle = D.nextTrackBundle(track, state.tracks, context);
-    var recs = D.recommendNextTracks({
-      current: track,
-      visibleTracks: state.index,
-      profile: state.profile,
-    });
-    var primaryTrack = bundle.primary || (recs.primary ? recs.primary.track : null);
-    var variantNotes = [
-      'Если ещё не выбрали канал',
-      'Если разговор уже состоялся',
-      'Если человек взял паузу',
-    ];
-    var cta = status.canStart
-      ? btn(R.track(track.trackId), 'Пройти трек', 'primary', 'mlma-btn-block')
-      : '';
-    var primaryHtml = primaryTrack
-      ? recBlock({ track: primaryTrack, reason: 'explicit_next_edge', available: false }, state, true) +
-        '<p class="mlma-muted" style="margin-top:12px;font-size:14px">Продолжите сюда, если первое действие уже выполнено.</p>'
-      : '<p class="mlma-lead mlma-muted" style="margin-top:16px;max-width:62ch">Продолжение появится вместе с маршрутом.</p>';
-    var alts = '';
-    if (bundle.variants && bundle.variants.length) {
-      alts = '<div style="margin-top:24px"><span class="mlma-meta">Другие варианты</span><ul style="margin-top:16px;display:grid;gap:12px">';
-      for (var a = 0; a < bundle.variants.length; a += 1) {
-        alts +=
-          '<li>' +
-          recBlock({ track: bundle.variants[a], reason: 'same_section', available: false }, state, false) +
-          '<p class="mlma-muted" style="margin-top:6px;font-size:13px">' +
-          esc(variantNotes[a] || 'Связанный материал') +
-          '</p></li>';
+    var nba = bundle.nba || (D.nextBestAction ? D.nextBestAction(track, state.tracks, runtime, state.profile) : null);
+    var related = D.relatedContent ? D.relatedContent(track, state.tracks, 3) : bundle.variants || [];
+    var startHref = R.track(track.trackId) + (R.track(track.trackId).indexOf('?') === -1 ? '?' : '&') + 'run=1';
+    var genre = passport ? '<span class="mlma-genre mlma-genre-' + esc(passport.genreAccent || 'practice') + '">' + esc(passport.genreLabel) + '</span>' : '';
+    var inactive = D.isInactive && D.isInactive(runtime);
+    var runtimeHtml = '';
+    if (status.itemKind === 'material') {
+      runtimeHtml =
+        '<section class="mlma-card mlma-pad"><span class="mlma-meta">Материал</span><p style="margin-top:10px">Это материал библиотеки: его можно открыть и использовать. Он не заменяет исполняемый трек с рабочим следом.</p></section>';
+    } else if (running && status.canStart) {
+      runtimeHtml = renderTrackRuntime(track, passport, runtime, nba, R, inactive);
+    } else {
+      runtimeHtml =
+        '<section class="mlma-blueprint mlma-pad mlma-genre-' +
+        esc((passport && passport.genreAccent) || 'practice') +
+        '" aria-label="Контур трека"><span class="mlma-eyebrow mlma-eyebrow-dark">Контур прохождения</span><h2 class="mlma-h3" style="margin-top:12px">' +
+        esc((passport && passport.genrePattern) || 'Состояние → действие → след → следующее действие') +
+        '</h2>' +
+        '<ol class="mlma-runtime-steps" style="margin-top:16px">' +
+        '<li><span class="mlma-meta">Исходное состояние</span><p>' + esc(track.situation) + '</p></li>' +
+        '<li><span class="mlma-meta">Действие</span><p>' + esc(track.title) + '</p></li>' +
+        '<li><span class="mlma-meta">Рабочий след</span><p>' + esc(track.outcome) + '</p></li>' +
+        '<li><span class="mlma-meta">Дальше</span><p>Следующее лучшее действие, не похожий материал.</p></li></ol>' +
+        (inactive ? '<p class="mlma-lead" style="margin-top:16px">Есть незавершённая попытка. Можно продолжить с того же шага.</p>' : '') +
+        '<div class="mlma-actions" style="margin-top:20px">' +
+        (status.canStart
+          ? '<a class="mlma-btn mlma-btn-primary" href="' + esc(startHref) + '" data-mlma-run-start="' + esc(track.trackId) + '">Начать трек</a>'
+          : '') +
+        '</div></section>';
+    }
+    var nbaHtml = '';
+    if (nba && nba.kind === 'open_track' && nba.track) {
+      nbaHtml =
+        recBlock({ track: nba.track, reason: nba.reason || 'explicit_next_edge', available: true }, state, true) +
+        '<p class="mlma-muted" style="margin-top:12px;font-size:14px">' +
+        esc(nba.why || 'Это следующее лучшее действие.') +
+        '</p>';
+    } else if (nba && (nba.kind === 'retry' || nba.kind === 'corrective')) {
+      nbaHtml = '<p class="mlma-lead">Сначала закройте разрыв в этом треке, затем переходите дальше.</p>';
+    } else {
+      nbaHtml = '<p class="mlma-lead mlma-muted">Продолжение появится после рабочего следа.</p>';
+    }
+    var relatedHtml = '';
+    if (related.length) {
+      relatedHtml = '<div style="margin-top:24px"><span class="mlma-meta">Связанные материалы</span><p class="mlma-muted" style="margin-top:6px;font-size:13px">Это соседняя тема, а не следующее обязательное действие.</p><ul style="margin-top:16px;display:grid;gap:12px">';
+      for (var a = 0; a < related.length; a += 1) {
+        relatedHtml += '<li>' + recBlock({ track: related[a], reason: 'same_section', available: false }, state, false) + '</li>';
       }
-      alts += '</ul></div>';
+      relatedHtml += '</ul></div>';
     }
     return (
       '<div style="' +
@@ -1025,8 +1039,11 @@
       '<span class="mlma-eyebrow">' +
       esc(track.trackId) +
       '</span>' +
+      genre +
       (status.pageStatus ? badge(status.pageStatus, status.tone) : '') +
       '<span class="mlma-meta mlma-muted">' +
+      esc(status.itemKind === 'material' ? 'Материал' : 'Трек') +
+      ' · ' +
       esc(track.format) +
       '</span></div>' +
       '<h1 class="mlma-h1" style="margin-top:16px;max-width:22ch;text-transform:none">' +
@@ -1034,31 +1051,27 @@
       '</h1></div>' +
       '<div class="mlma-wrap mlma-split mlma-split-84" style="padding-bottom:48px">' +
       '<div style="display:grid;gap:20px">' +
-      '<section class="mlma-card mlma-pad"><span class="mlma-meta">С какой ситуацией сюда</span><p style="margin-top:10px;font-size:17px;line-height:1.45">' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-meta">Почему этот трек сейчас</span><p style="margin-top:10px;font-size:17px;line-height:1.45">' +
       esc(track.situation) +
       '</p></section>' +
-      '<section class="mlma-card mlma-pad"><span class="mlma-meta">Ожидаемый результат</span><p style="margin-top:10px;font-size:17px;line-height:1.45">' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-meta">Куда нужно перейти</span><p style="margin-top:10px;font-size:17px;line-height:1.45">' +
       esc(track.outcome) +
       '</p></section>' +
-      '<section class="mlma-blueprint mlma-pad" aria-label="Содержание трека"><span class="mlma-eyebrow mlma-eyebrow-dark">Состояние</span><h2 class="mlma-h3" style="margin-top:12px">' +
-      esc(status.pageStatus || 'Материал готовится') +
-      '</h2>' +
-      '<p class="mlma-muted" style="margin-top:12px;font-size:16px;line-height:1.5">' +
-      esc(status.explanation) +
-      '</p><p class="mlma-muted" style="margin-top:8px;font-size:15px">Пока нет уроков, длительности и заданий — только описание маршрута.</p></section>' +
-      '<section class="mlma-card mlma-pad"><span class="mlma-meta">Будущий стандарт завершения</span><p class="mlma-muted" style="margin-top:8px;font-size:14px">Это объяснение того, как трек будет работать позже, а не уже включённая практика.</p><ol style="margin-top:12px;display:grid;gap:10px;font-size:15px"><li class="mlma-row">Действие выполнено в реальной работе.</li><li class="mlma-row">Результат зафиксирован.</li><li class="mlma-row">Выбран следующий шаг.</li></ol></section>' +
-      '<section class="mlma-card mlma-pad-lg" style="padding:24px"><span class="mlma-eyebrow mlma-eyebrow-accent">Что дальше</span><h2 class="mlma-h3" style="margin-top:12px">' +
-      (primaryTrack ? primaryTrack.title : 'Вернуться к подборке') +
+      runtimeHtml +
+      '<section class="mlma-card mlma-pad-lg" style="padding:24px"><span class="mlma-eyebrow mlma-eyebrow-accent">Следующее лучшее действие</span><h2 class="mlma-h3" style="margin-top:12px">' +
+      (nba && nba.track ? nba.track.title : nba && nba.title ? nba.title : 'После рабочего следа') +
       '</h2><div style="margin-top:16px">' +
-      primaryHtml +
-      alts +
+      nbaHtml +
+      relatedHtml +
       '</div><div class="mlma-actions" style="margin-top:20px">' +
       btn(R.section(track.sectionId), 'В раздел') +
       btn(backHref, 'Вернуться к подборке') +
       '</div></section></div>' +
       '<aside style="display:grid;gap:16px;align-content:start">' +
       '<div class="mlma-card mlma-pad">' +
-      cta +
+      (status.canStart && !running
+        ? '<a class="mlma-btn mlma-btn-primary mlma-btn-block" href="' + esc(startHref) + '" data-mlma-run-start="' + esc(track.trackId) + '">Начать трек</a>'
+        : '') +
       '<button type="button" class="mlma-btn' +
       (saved ? ' mlma-btn-accent' : ' mlma-btn-primary') +
       ' mlma-btn-block" style="margin-top:12px" data-mlma-save="' +
@@ -1078,6 +1091,68 @@
       esc(track.format) +
       '</dd></div></dl></section></aside></div></div>'
     );
+  }
+
+  function renderTrackRuntime(track, passport, runtime, nba, R, inactive) {
+    runtime = runtime || { status: 'active', step: 'action', artifact: '', evidenceNote: '', attempts: 0 };
+    var html = '<section class="mlma-runtime mlma-card mlma-pad-lg" id="mlma-runtime" data-mlma-track-runtime="' + esc(track.trackId) + '">';
+    html += '<span class="mlma-eyebrow">Текущий шаг</span>';
+    if (inactive) {
+      html += '<p class="mlma-lead" style="margin-top:12px">Вы остановились. Можно продолжить с черновика.</p>';
+    }
+    if (runtime.step !== 'feedback') {
+      html +=
+        '<h2 class="mlma-h3" style="margin-top:12px">Сделать действие и оставить след</h2>' +
+        '<p style="margin-top:10px;font-size:16px;line-height:1.45">Задание: ' +
+        esc(track.title) +
+        '. Результат, который система может проверить: ' +
+        esc(track.outcome) +
+        '.</p>' +
+        '<form id="mlma-runtime-form" style="margin-top:16px;display:grid;gap:12px">' +
+        '<label class="mlma-meta" for="mlma-artifact">Рабочий артефакт</label>' +
+        '<textarea id="mlma-artifact" class="mlma-field" name="artifact" rows="7" required placeholder="Опишите конкретный результат работы, а не «готово»">' +
+        esc(runtime.artifact || '') +
+        '</textarea>' +
+        '<label class="mlma-meta" for="mlma-evidence">Доказательство действия</label>' +
+        '<textarea id="mlma-evidence" class="mlma-field" name="evidenceNote" rows="3" required placeholder="Какой след остался: текст сохранён, сообщение отправлено, план записан">' +
+        esc(runtime.evidenceNote || '') +
+        '</textarea>' +
+        '<p class="mlma-muted" style="font-size:13px">Просмотр страницы не завершает трек. Нужен объект работы и проверяемый след.</p>' +
+        '<button class="mlma-btn mlma-btn-primary" type="submit" data-mlma-run-submit="' +
+        esc(track.trackId) +
+        '">Сдать результат</button></form>';
+    } else if (runtime.feedback) {
+      var fb = runtime.feedback;
+      html +=
+        '<h2 class="mlma-h3" style="margin-top:12px">' +
+        esc(fb.title) +
+        '</h2>' +
+        '<dl class="mlma-feedback" style="margin-top:16px;display:grid;gap:10px">' +
+        '<div><dt class="mlma-meta">Что получилось</dt><dd>' +
+        esc(fb.got) +
+        '</dd></div><div><dt class="mlma-meta">Что не соответствует</dt><dd>' +
+        esc(fb.gap) +
+        '</dd></div><div><dt class="mlma-meta">Что изменить</dt><dd>' +
+        esc(fb.change) +
+        '</dd></div><div><dt class="mlma-meta">Что делать сейчас</dt><dd>' +
+        esc(fb.now) +
+        '</dd></div></dl>';
+      if (fb.retry) {
+        html +=
+          '<div class="mlma-actions" style="margin-top:20px"><button type="button" class="mlma-btn mlma-btn-primary" data-mlma-run-retry="' +
+          esc(track.trackId) +
+          '">Повторить попытку</button></div>';
+      } else if (nba && nba.track) {
+        html +=
+          '<div class="mlma-actions" style="margin-top:20px"><a class="mlma-btn mlma-btn-primary" href="' +
+          esc(R.track(nba.track.trackId)) +
+          '" data-mlma-nba="' +
+          esc(nba.track.trackId) +
+          '">Следующее действие</a></div>';
+      }
+    }
+    html += '</section>';
+    return html;
   }
 
   function recBlock(item, state, emphasis) {
@@ -1825,8 +1900,10 @@
       if (result.kind === 'zero' || result.kind === 'need_more') {
         D.trackEvent('library_zero_results', { query: filters.q || '', filters: D.serializeLibraryState(filters), source: 'library' });
       } else if (filters.q) {
+        D.trackEvent('search_query', { query: filters.q, filters: D.serializeLibraryState(filters), source: 'library' });
         D.trackEvent('library_search', { query: filters.q, filters: D.serializeLibraryState(filters), source: 'library' });
       } else {
+        D.trackEvent('filter_change', { filters: D.serializeLibraryState(filters), source: 'library' });
         D.trackEvent('library_filter_change', { filters: D.serializeLibraryState(filters), source: 'library' });
       }
     }
@@ -1881,6 +1958,10 @@
               filters.stage = filters.stages.length === 1 ? filters.stages[0] : null;
             } else if (key === 'avail') {
               filters.avail = filters.avail === value ? null : value;
+            } else if (key === 'experience') {
+              filters.experience = filters.experience === value ? null : value;
+              var exp = D.getExperience ? D.getExperience(filters.experience) : null;
+              filters.lvl = exp && exp.level ? [exp.level] : [];
             } else if (single) {
               filters[key] = filters[key] === value ? null : value;
             } else {
@@ -1895,9 +1976,10 @@
       onToggle('data-mlma-stage', 'stage');
       onToggle('data-mlma-sit', 'sit');
       onToggle('data-mlma-fmt', 'fmt');
-      onToggle('data-mlma-ch', 'ch');
-      onToggle('data-mlma-lvl', 'lvl');
-      onToggle('data-mlma-avail', 'avail', true);
+      onToggle('data-mlma-goal', 'goal', true);
+      onToggle('data-mlma-experience', 'experience', true);
+      onToggle('data-mlma-time', 'time', true);
+      onToggle('data-mlma-type', 'type', true);
       var clearNodes = document.querySelectorAll('[data-mlma-clear]');
       for (var c = 0; c < clearNodes.length; c += 1) {
         clearNodes[c].addEventListener('click', function (event) {
@@ -2072,6 +2154,57 @@
         menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
       });
     }
+    rootEl.querySelectorAll('[data-mlma-run-start]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = D.normalizeTrackId(el.getAttribute('data-mlma-run-start'));
+        var track = id ? D.getById(state.allTracks, id, true) : null;
+        if (track && D.startRuntime) D.startRuntime(track);
+        D.trackEvent('track_start', { itemId: id || '', source_page: '/track', article_slug: id || '' });
+      });
+    });
+    var runForm = rootEl.querySelector('#mlma-runtime-form');
+    if (runForm) {
+      runForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var id = D.normalizeTrackId(queryParam('id'));
+        var track = id ? D.getById(state.allTracks, id, true) : null;
+        if (!track || !D.submitRuntime) return;
+        var artifact = (runForm.querySelector('#mlma-artifact') || {}).value || '';
+        var evidenceNote = (runForm.querySelector('#mlma-evidence') || {}).value || '';
+        D.trackEvent('track_action_submitted', { itemId: id, source_page: '/track' });
+        D.trackEvent('track_evidence_submitted', { itemId: id, source_page: '/track' });
+        var result = D.submitRuntime(track, { artifact: artifact, evidenceNote: evidenceNote });
+        var branch = result && result.check ? result.check.branch : '';
+        D.trackEvent(branch === 'success' || branch === 'highResult' ? 'track_evidence_verified' : 'track_evidence_rejected', {
+          itemId: id,
+          cta_position: branch,
+        });
+        D.trackEvent('track_branch_selected', { itemId: id, cta_position: branch });
+        D.trackEvent('track_feedback_shown', { itemId: id, cta_position: branch });
+        if (branch === 'success' || branch === 'highResult') D.trackEvent('track_complete', { itemId: id });
+        if (branch === 'error' || branch === 'risk') D.trackEvent('track_retry', { itemId: id });
+        if (branch === 'risk') D.trackEvent('leader_escalation', { itemId: id, cta_position: 'risk' });
+        if (result && result.state && result.state.attempts >= 2 && (branch === 'error' || branch === 'risk')) {
+          D.trackEvent('corrective_track_assigned', { itemId: id, cta_position: branch });
+        }
+        mount(rootEl);
+      });
+    }
+    rootEl.querySelectorAll('[data-mlma-run-retry]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = D.normalizeTrackId(el.getAttribute('data-mlma-run-retry'));
+        var track = id ? D.getById(state.allTracks, id, true) : null;
+        if (track && D.retryRuntime) D.retryRuntime(track);
+        D.trackEvent('track_retry', { itemId: id || '' });
+        mount(rootEl);
+      });
+    });
+    rootEl.querySelectorAll('[data-mlma-nba]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        D.trackEvent('track_next_open', { itemId: el.getAttribute('data-mlma-nba') || '', source_page: '/track' });
+        D.trackEvent('track_next_recommended', { itemId: el.getAttribute('data-mlma-nba') || '', source_page: '/track' });
+      });
+    });
     rootEl.querySelectorAll('[data-mlma-save]').forEach(function (el) {
       el.addEventListener('click', function () {
         var id = el.getAttribute('data-mlma-save');
@@ -2118,6 +2251,7 @@
     });
     rootEl.querySelectorAll('[data-mlma-preset]').forEach(function (el) {
       el.addEventListener('click', function () {
+        D.trackEvent('preset_open', { itemId: el.getAttribute('data-mlma-preset') || '', source: 'home' });
         D.trackEvent('academy_preset_click', { itemId: el.getAttribute('data-mlma-preset') || '', source: 'home' });
       });
     });
@@ -2125,9 +2259,15 @@
     if (homeForm && state.page === 'home') {
       homeForm.addEventListener('submit', function () {
         var field = homeForm.querySelector('#mlma-home-q');
+        D.trackEvent('search_query', { query: field ? field.value : '', source: 'home' });
         D.trackEvent('academy_search', { query: field ? field.value : '', source: 'home' });
       });
     }
+    rootEl.querySelectorAll('[data-mlma-result-open]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        D.trackEvent('search_result_open', { itemId: el.getAttribute('data-mlma-result-open') || '', source: state.page });
+      });
+    });
     bindLibrary(state, rootEl);
     applySeo(state);
   }
@@ -2150,8 +2290,54 @@
           return;
         }
       }
-      if (state.page === 'track') {
+      var seo = {
+        home: {
+          title: 'MLM Academy — библиотека действий',
+          desc: 'Рабочий навигатор партнёра: ситуация, действие, результат и следующий шаг. Шесть направлений от старта до роста команды.',
+        },
+        start: {
+          title: 'С чего начать · MLM Academy',
+          desc: 'Выберите ситуацию, в которой сейчас застряли. Академия подберёт первый трек без кабинета и без оплаты.',
+        },
+        library: {
+          title: 'Библиотека · MLM Academy',
+          desc: 'Каталог треков и материалов: этап, ситуация, цель, опыт, тип и время. Поиск понимает живой запрос, а не только название.',
+        },
+        about: {
+          title: 'Как создаётся библиотека · MLM Academy',
+          desc: 'Как устроена MLM Academy: трек как маршрут изменения состояния, а не страница с видео. Честные статусы и рабочие следы.',
+        },
+        access: {
+          title: 'Доступ · MLM Academy',
+          desc: 'Каталог открыт без входа. Кабинет нужен только для личной истории, и система объясняет зачем.',
+        },
+      };
+      var sectionSeo = {
+        A1: { title: 'A1 · Старт и система · MLM Academy', desc: 'Понять роль, причину, продукт и рабочий план. Треки старта без выдуманных уроков.' },
+        A2: { title: 'A2 · Люди и база · MLM Academy', desc: 'Найти, с кем начать, собрать базу и сегменты. Треки про людей, а не про «набор контактов ради списка».' },
+        A3: { title: 'A3 · Первый контакт · MLM Academy', desc: 'Выбрать канал, написать, позвонить и договориться о разговоре без давления.' },
+        A4: { title: 'A4 · Потребность и решение · MLM Academy', desc: 'Услышать человека и собрать рекомендацию на его языке, а не прочитать презентацию.' },
+        A5: { title: 'A5 · Сомнения и отказ · MLM Academy', desc: 'Разобрать паузу, возражение или отказ и зафиксировать следующий шаг.' },
+        A6: { title: 'A6 · Повтор и рост · MLM Academy', desc: 'Вернуть клиента, выстроить ритм и работу с командой без ложных обещаний роста продаж.' },
+      };
+      var title = 'MLM Academy';
+      var desc = 'MLM Academy — рабочий навигатор партнёра: ситуация, действие, результат и следующий шаг.';
+      if (state.page === 'section') {
+        var sid = D.normalizeSectionId(state.root.getAttribute('data-mlma-section') || '');
+        if (sid && sectionSeo[sid]) {
+          title = sectionSeo[sid].title;
+          desc = sectionSeo[sid].desc;
+        }
+      } else if (state.page === 'track') {
         var opened = D.normalizeTrackId(queryParam('id'));
+        var openedTrack = opened ? D.getById(state.allTracks, opened, true) : null;
+        if (openedTrack) {
+          title = openedTrack.title + ' · MLM Academy';
+          desc = openedTrack.situation + ' Результат: ' + openedTrack.outcome;
+        } else {
+          title = 'Трек · MLM Academy';
+          desc = 'Карточка трека MLM Academy. Откройте трек по идентификатору, чтобы увидеть ситуацию, действие и рабочий след.';
+        }
         if (opened) {
           var canon = document.querySelector('link[rel="canonical"]');
           if (!canon) {
@@ -2161,7 +2347,18 @@
           }
           canon.setAttribute('href', window.location.origin + '/track?id=' + encodeURIComponent(String(opened).toLowerCase()));
         }
+      } else if (seo[state.page]) {
+        title = seo[state.page].title;
+        desc = seo[state.page].desc;
       }
+      document.title = title;
+      var meta = document.querySelector('meta[name="description"]');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', 'description');
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', desc);
     } catch (err) {
       /* ignore */
     }
@@ -2203,17 +2400,23 @@
       footer(state) +
       mobileNav(state);
     bind(state, rootEl);
-    if (state.page === 'home') D.trackEvent('academy_home_open', { source: 'home' });
+    if (state.page === 'home') {
+      D.trackEvent('academy_open', { source: 'home' });
+      D.trackEvent('academy_home_open', { source: 'home' });
+    }
     if (state.page === 'library' || state.page === 'preview') D.trackEvent('library_open', { source: state.page });
     if (state.page === 'track') {
       var opened = D.normalizeTrackId(queryParam('id'));
       var openedTrack = opened ? D.getById(state.allTracks, opened, true) : null;
       var canStart = openedTrack ? D.getTrackStatusView(openedTrack).canStart : false;
-      D.trackEvent(canStart ? 'track_open' : 'track_preview_open', {
+      var openedRuntime = opened && D.getRuntime ? D.getRuntime(opened) : null;
+      D.trackEvent(canStart ? 'track_preview_open' : 'track_preview_open', {
         itemId: opened || '',
         status: openedTrack ? D.getTrackStatusView(openedTrack).contentStatus : 'missing',
         source: 'track',
       });
+      if (queryParam('run') === '1') D.trackEvent('track_step_open', { itemId: opened || '', cta_position: openedRuntime ? openedRuntime.step : 'action' });
+      if (D.isInactive && D.isInactive(openedRuntime)) D.trackEvent('track_inactive', { itemId: opened || '' });
     }
   }
 

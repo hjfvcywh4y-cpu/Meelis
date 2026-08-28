@@ -94,7 +94,8 @@ if (/"P[012]"/.test(json)) {
 const css = fs.readFileSync(path.join(SRC, 'mlma.css'), 'utf8');
 const domainCore = fs.readFileSync(path.join(SRC, 'domain.js'), 'utf8');
 const searchJs = fs.readFileSync(path.join(SRC, 'search.js'), 'utf8');
-const domainJs = domainCore.trim() + '\n\n' + searchJs;
+const ontologyJs = fs.readFileSync(path.join(SRC, 'ontology.js'), 'utf8');
+const domainJs = domainCore.trim() + '\n\n/* __MLMA_UI_SPLIT__ */\n\n' + searchJs.trim() + '\n\n' + ontologyJs.trim();
 const uiJs = fs.readFileSync(path.join(SRC, 'ui.js'), 'utf8');
 
 const pages = [
@@ -154,11 +155,137 @@ for (const name of fs.readdirSync(path.join(DIST, 't123'))) {
   if (name.endsWith('.html')) fs.unlinkSync(full);
 }
 
-const head = `<link rel="preconnect" href="https://fonts.googleapis.com">
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function tracksForSection(sectionId) {
+  return tracks.filter((row) => row.s === sectionId).slice(0, 8);
+}
+
+function trackListHtml(rows) {
+  if (!rows.length) return '';
+  return `<ul>
+      ${rows.map((row) => `<li><a href="/track?id=${String(row.id).toLowerCase()}">${escapeHtml(row.t)}</a></li>`).join('\n      ')}
+    </ul>`;
+}
+
+function noscriptFor(page) {
+  const section = page.section ? payload.sections.find((item) => item.sectionId === page.section) : null;
+  const back = `<p><a href="/library">Библиотека</a> · <a href="/academy">Academy</a></p>`;
+  if (page.page === 'section' && section) {
+    const list = tracksForSection(section.sectionId);
+    return `<noscript>
+  <div class="mlma-noscript">
+    <h1>${escapeHtml(section.sectionId)} · ${escapeHtml(section.shortTitle)}</h1>
+    <p>${escapeHtml(section.promise)}</p>
+    <p>Здесь можно открыть описания треков направления и понять, какое действие делать первым. Поиск и фильтры работают с JavaScript.</p>
+    ${trackListHtml(list)}
+    ${back}
+  </div>
+</noscript>`;
+  }
+  if (page.page === 'library') {
+    return `<noscript>
+  <div class="mlma-noscript">
+    <h1>Библиотека MLM Academy</h1>
+    <p>Каталог рабочих треков: ситуация, действие, результат и следующий шаг.</p>
+    <p>Можно выбрать направление A1–A6 или открыть карточку трека по ссылке.</p>
+    <nav>
+      <a href="/library/a1">A1 Старт и система</a>
+      <a href="/library/a2">A2 Люди и база</a>
+      <a href="/library/a3">A3 Первый контакт</a>
+      <a href="/library/a4">A4 Потребность и решение</a>
+      <a href="/library/a5">A5 Сомнения и отказ</a>
+      <a href="/library/a6">A6 Повтор и рост</a>
+    </nav>
+    <p><a href="/academy">Academy</a></p>
+  </div>
+</noscript>`;
+  }
+  if (page.page === 'home') {
+    return `<noscript>
+  <div class="mlma-noscript">
+    <h1>MLM Academy — библиотека действий</h1>
+    <p>Рабочий навигатор партнёра: ситуация → действие → результат → следующий шаг.</p>
+    <p>Выберите направление или опишите, что происходит сейчас.</p>
+    <nav>
+      <a href="/start">С чего начать</a>
+      <a href="/library">Библиотека</a>
+      <a href="/about">Как создаётся</a>
+    </nav>
+  </div>
+</noscript>`;
+  }
+  if (page.page === 'start') {
+    return `<noscript>
+  <div class="mlma-noscript">
+    <h1>С чего начать</h1>
+    <p>Один ответ по ситуации определяет раздел и первый шаг. Кабинет для этого не нужен.</p>
+    <p>Шесть направлений: старт, люди, первый контакт, потребность, сомнения, повтор и рост.</p>
+    ${back}
+  </div>
+</noscript>`;
+  }
+  if (page.page === 'about') {
+    return `<noscript>
+  <div class="mlma-noscript">
+    <h1>Как создаётся библиотека</h1>
+    <p>Трек — это маршрут изменения состояния, а не страница с видео. Материал можно открыть. Трек нужно выполнить и оставить проверяемый след.</p>
+    ${back}
+  </div>
+</noscript>`;
+  }
+  if (page.page === 'track') {
+    const samples = ['A1-004', 'A2-008', 'A3-002', 'A4-001', 'A5-001', 'A6-001']
+      .map((id) => tracks.find((row) => row.id === id))
+      .filter(Boolean);
+    return `<noscript>
+  <div class="mlma-noscript">
+    <h1>Карточка трека MLM Academy</h1>
+    <p>Откройте трек по адресу /track?id=a3-002. Даже без JavaScript видно назначение: ситуация, действие и рабочий след.</p>
+    <p>Статус большинства карточек сейчас — контур прохождения. Уроки появятся, когда содержание будет готово. Просмотр страницы не завершает трек.</p>
+    ${trackListHtml(samples)}
+    ${back}
+  </div>
+</noscript>`;
+  }
+  return `<noscript>
+  <div class="mlma-noscript">
+    <h1>${escapeHtml(page.title)}</h1>
+    <p>MLM Academy. Для поиска и фильтров включите JavaScript.</p>
+    ${back}
+  </div>
+</noscript>`;
+}
+
+function seoHead(page) {
+  const map = {
+    home: 'Рабочий навигатор партнёра: ситуация, действие, результат и следующий шаг. Шесть направлений от старта до роста команды.',
+    start: 'Выберите ситуацию, в которой сейчас застряли. Академия подберёт первый трек без кабинета.',
+    library: 'Каталог треков и материалов по этапам A1–A6. Поиск понимает живой запрос, а не только название.',
+    about: 'Как устроена MLM Academy: трек как маршрут изменения состояния, а не страница с видео.',
+    track: 'Карточка трека: ситуация, действие, рабочий след и следующее лучшее действие.',
+    access: 'Каталог открыт без входа. Кабинет нужен только для личной истории.',
+  };
+  const sectionMap = {
+    A1: 'A1 Старт и система: роль, причина, продукт и рабочий план.',
+    A2: 'A2 Люди и база: с кем начать, база и сегменты.',
+    A3: 'A3 Первый контакт: канал, сообщение, звонок и договорённость.',
+    A4: 'A4 Потребность и решение: услышать человека и собрать рекомендацию.',
+    A5: 'A5 Сомнения и отказ: пауза, возражение и следующий шаг.',
+    A6: 'A6 Повтор и рост: клиент, ритм и команда без ложных обещаний.',
+  };
+  const desc = page.section ? sectionMap[page.section] : map[page.page] || map.home;
+  return `<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Onest:wght@400;700;800&display=swap" rel="stylesheet">
 <meta name="robots" content="noindex, nofollow">
-<meta name="description" content="MLM Academy — рабочий навигатор партнёра: ситуация, действие, результат и следующий шаг. Библиотека треков по старту, клиентам, коммуникации, продукту и команде.">
+<meta name="description" content="${escapeHtml(desc)}">
 <style>
   html, body, #allrecords, .t-records, .t-body { background: #f4f0e8 !important; }
   body { margin: 0 !important; }
@@ -166,7 +293,16 @@ const head = `<link rel="preconnect" href="https://fonts.googleapis.com">
   .t-text { font-family: Onest, Arial, Helvetica, sans-serif !important; }
 </style>
 `;
-write(path.join(DIST, 't123/00-head.html'), t123Wrap(head.trim() + '\n', 'HTML для вставки внутрь HEAD этой страницы (Настройки страницы).'));
+}
+
+write(path.join(DIST, 't123/00-head.html'), t123Wrap(seoHead(pages[0]).trim() + '\n', 'HTML для вставки внутрь HEAD этой страницы (Настройки страницы). Для разделов используйте t123/heads/<id>.html.'));
+ensureDir(path.join(DIST, 't123/heads'));
+for (const page of pages) {
+  write(
+    path.join(DIST, 't123/heads', `${page.id}.html`),
+    t123Wrap(seoHead(page).trim() + '\n', `HEAD «${page.title}». URL: ${page.url}`),
+  );
+}
 
 const cssBlock = `<style>\n${css.trim()}\n</style>\n`;
 if (cssBlock.length > T123_LIMIT) throw new Error('CSS больше лимита T123: ' + cssBlock.length);
@@ -205,24 +341,7 @@ for (const page of pages) {
     `data-mlma-page="${page.page}"`,
   ];
   if (page.section) attrs.push(`data-mlma-section="${page.section}"`);
-  const noscript = `<noscript>
-  <div class="mlma-noscript">
-    <h1>MLM Academy</h1>
-    <p>Рабочий навигатор партнёра: ситуация → действие → результат → следующий шаг. Для поиска и фильтров включите JavaScript.</p>
-    <nav>
-      <a href="/academy">Academy</a>
-      <a href="/library">Библиотека</a>
-      <a href="/start">С чего начать</a>
-      <a href="/about">Как создаётся</a>
-      <a href="/library/a1">Старт и система</a>
-      <a href="/library/a2">Люди и база</a>
-      <a href="/library/a3">Первый контакт</a>
-      <a href="/library/a4">Потребность и решение</a>
-      <a href="/library/a5">Сомнения и отказ</a>
-      <a href="/library/a6">Повтор и рост</a>
-    </nav>
-  </div>
-</noscript>`;
+  const noscript = noscriptFor(page);
   const mount = `<div ${attrs.join(' ')}>\n  ${noscript}\n</div>\n`;
   write(path.join(DIST, 't123/mounts', `${page.id}.html`), t123Wrap(mount, `Блок T123: монтирование «${page.title}». Members: ${page.members}. URL: ${page.url}`));
 }
@@ -242,18 +361,12 @@ function previewHtml(page) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>${page.title}</title>
-  ${head}
+  ${seoHead(page)}
   <link rel="stylesheet" href="/shared/mlma.css">
 </head>
 <body>
   <div ${attrs.join(' ')}>
-    <noscript>
-      <div class="mlma-noscript">
-        <h1>MLM Academy</h1>
-        <p>Рабочий навигатор партнёра: ситуация → действие → результат → следующий шаг.</p>
-        <p><a href="/library">Библиотека</a> · <a href="/start">С чего начать</a></p>
-      </div>
-    </noscript>
+    ${noscriptFor(page)}
   </div>
   <script src="/shared/catalog-data.js"></script>
   <script src="/shared/domain.js"></script>

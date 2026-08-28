@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 require('../src/domain.js');
-const MLMA = require('../src/search.js');
+require('../src/search.js');
+const MLMA = require('../src/ontology.js');
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const catalogPath = path.join(__dirname, '../../src/data/tracks.catalog.json');
 const tracks = MLMA.toPublicList(JSON.parse(fs.readFileSync(catalogPath, 'utf8')).tracks);
@@ -78,6 +79,21 @@ const CASES = [
   { q: 'надо вести таблицу контактов', expect: ['A2-006', 'A6-010'], group: 'crm' },
   { q: 'страшно звонить холодным', expect: ['A3-001', 'A3-004', 'A3-007', 'A2-012'], group: 'call' },
   { q: 'хочу развивать команду', expect: ['A6-013', 'A1-016', 'A6-012'], group: 'team' },
+  { q: 'первый диалог', expect: ['A3-002', 'A3-016'], group: 'exact' },
+  { q: 'кому написать', expect: ['A2-008', 'A2-010', 'A2-001'], group: 'people' },
+  { q: 'не знаю кому написать', expect: ['A2-008', 'A2-010'], group: 'people' },
+  { q: 'боюсь навязываться', expect: ['A1-001'], group: 'ethics' },
+  { q: 'страшно написать человеку', expect: ['A3-002'], group: 'exact' },
+  { q: 'хочу первого клиента', expect: ['A1-010', 'A2-008', 'A3-002'], group: 'start' },
+  { q: 'как начать', expect: ['A1-004', 'A1-006', 'A1-010'], group: 'start' },
+  { q: 'что делать новичку', expect: ['A1-004', 'A1-006', 'A1-010'], group: 'start' },
+  { q: 'как рассказать о продукте', expect: ['A1-012', 'A1-011', 'A4-001'], group: 'product' },
+  { q: 'как снять видео', expect: [], group: 'none', empty: true },
+  { q: 'как пригласить на встречу', expect: ['A3-005', 'A3-013', 'A3-016'], group: 'call' },
+  { q: 'мне отказали', expect: ['A5-014', 'A5-001', 'A5-011'], group: 'pause' },
+  { q: 'человек думает', expect: ['A5-001', 'A5-009', 'A5-011'], group: 'pause' },
+  { q: 'хочу повторные продажи', expect: ['A6-006', 'A6-003', 'A6-001'], group: 'followup' },
+  { q: 'как развивать команду', expect: ['A6-013', 'A1-016', 'A6-012'], group: 'team' },
 ];
 
 describe('50 пользовательских запросов', () => {

@@ -44,11 +44,21 @@ async function main() {
   if (combo < 1 || combo >= 112) throw new Error('combo count: ' + combo);
 
   await page.goto(BASE + '/track?id=a3-002', { waitUntil: 'networkidle' });
-  await page.waitForSelector('.mlma-blueprint');
+  await page.waitForSelector('.mlma-blueprint, .mlma-runtime');
   const startBtns = await page.getByRole('link', { name: 'Начать трек' }).count();
-  if (startBtns !== 0) throw new Error('unexpected start button');
-  const blueprint = await page.locator('.mlma-blueprint').innerText();
-  if (!blueprint.includes('Материал готовится')) throw new Error('missing blueprint');
+  if (startBtns < 1) throw new Error('missing start button');
+  await page.getByRole('link', { name: 'Начать трек' }).first().click();
+  await page.waitForSelector('#mlma-runtime-form');
+  await page.fill('#mlma-artifact', 'готово');
+  await page.fill('#mlma-evidence', 'я сделал');
+  await page.getByRole('button', { name: 'Сдать результат' }).click();
+  await page.waitForSelector('text=Пока нельзя принять');
+  await page.getByRole('button', { name: 'Повторить попытку' }).click();
+  await page.waitForSelector('#mlma-artifact');
+  await page.fill('#mlma-artifact', 'Короткое сообщение знакомой Марине: спросить, удобно ли созвониться в субботу, без обещания дохода.');
+  await page.fill('#mlma-evidence', 'Черновик сохранён в заметках и готов к отправке.');
+  await page.getByRole('button', { name: 'Сдать результат' }).click();
+  await page.waitForSelector('text=Следующее действие');
 
   await page.getByRole('button', { name: /Сохранить описание/ }).click();
   await page.waitForSelector('text=Убрать описание');

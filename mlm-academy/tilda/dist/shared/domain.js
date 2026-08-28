@@ -184,34 +184,12 @@
 
   function getTrackStatusView(track, options) {
     var availability = getTrackAvailability(track, options);
-    if (availability === 'available') {
-      return {
-        availability: availability,
-        contentStatus: 'available',
-        label: 'Доступен',
-        cta: 'Пройти трек',
-        tone: 'positive',
-        canStart: true,
-        showProgress: true,
-        explanation: 'Трек открыт: внутри есть шаги, действие и фиксация результата.',
-      };
-    }
-    if (availability === 'published_empty') {
-      return {
-        availability: availability,
-        contentStatus: 'in-progress',
-        label: 'Готовим',
-        cta: 'Открыть описание',
-        tone: 'waiting',
-        canStart: false,
-        showProgress: false,
-        explanation: 'Описание уже можно открыть. Шаги и практика появятся здесь, как только материал будет готов.',
-      };
-    }
+    var kind = api.itemKind ? api.itemKind(track) : 'track';
     if (availability === 'archived') {
       return {
         availability: availability,
         contentStatus: 'archived',
+        itemKind: kind,
         label: 'Снят с публикации',
         cta: 'Открыть описание',
         tone: 'muted',
@@ -224,12 +202,55 @@
       return {
         availability: availability,
         contentStatus: 'locked',
+        itemKind: kind,
         label: 'Нужен доступ',
         cta: 'Как получить доступ',
         tone: 'muted',
         canStart: false,
         showProgress: false,
         explanation: 'Трек существует, но для него нужен доступ.',
+      };
+    }
+    if (kind === 'material') {
+      return {
+        availability: availability,
+        contentStatus: 'material',
+        itemKind: 'material',
+        label: 'Материал',
+        cta: 'Открыть материал',
+        tone: 'waiting',
+        canStart: false,
+        showProgress: false,
+        explanation: 'Это материал: информация без обязательного рабочего следа.',
+      };
+    }
+    if (kind === 'track' && track.situation && track.outcome && track.title) {
+      var ready = availability === 'available';
+      return {
+        availability: ready ? 'available' : 'shell',
+        contentStatus: ready ? 'available' : 'shell',
+        itemKind: 'track',
+        label: ready ? 'Доступен' : '',
+        pageStatus: ready ? '' : 'Контур прохождения',
+        cta: 'Начать трек',
+        tone: 'positive',
+        canStart: true,
+        showProgress: true,
+        showCatalogBadge: ready,
+        explanation: 'Трек — исполняемый маршрут: исходное состояние, действие, рабочий след и следующее лучшее действие. Отдельные уроки появятся, когда содержание будет готово.',
+      };
+    }
+    if (availability === 'published_empty') {
+      return {
+        availability: availability,
+        contentStatus: 'in-progress',
+        itemKind: kind,
+        label: 'Готовим',
+        cta: kind === 'material' ? 'Открыть материал' : 'Открыть описание',
+        tone: 'waiting',
+        canStart: false,
+        showProgress: false,
+        explanation: 'Описание уже можно открыть. Шаги и практика появятся здесь, как только материал будет готов.',
       };
     }
     return {
@@ -706,6 +727,8 @@
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
 
+/* __MLMA_UI_SPLIT__ */
+
 (function (root) {
   'use strict';
   var api = root.MLMA;
@@ -818,11 +841,11 @@
     'A2-010': ['карта теплых кругов', 'теплые круги'],
     'A2-011': ['реальные контексты', 'где искать'],
     'A3-001': ['канал', 'написать или позвонить', 'как позвонить', 'выбрать канал'],
-    'A3-002': ['первое сообщение', 'написать знакомому', 'теплый контакт', 'боюсь написать', 'что написать'],
+    'A3-002': ['первое сообщение', 'написать знакомому', 'теплый контакт', 'боюсь написать', 'что написать', 'первый диалог', 'страшно написать'],
     'A3-003': ['позвонить по рекомендации', 'звонок'],
     'A3-004': ['первый звонок', 'структура звонка', 'позвонить незнакомому'],
     'A3-007': ['подготовиться к звонку', 'холодный контакт'],
-    'A3-005': ['назначить разговор'],
+    'A3-005': ['назначить разговор', 'пригласить на встречу', 'назначить встречу'],
     'A3-008': ['зафиксировать результат', 'следующий контакт'],
     'A3-016': ['открыть разговор', 'настоящий повод'],
     'A4-001': ['от презентации к человеку', 'не рассказывать продукт сразу'],
@@ -833,11 +856,11 @@
     'A5-009': ['не срочно'],
     'A5-010': ['follow-up', 'не отвечает'],
     'A5-011': ['план после паузы'],
-    'A5-014': ['завершить отказ'],
+    'A5-014': ['завершить отказ', 'мне отказали', 'после отказа'],
     'A6-001': ['клиентский опыт', 'купил и пропал', 'недоволен', 'обслуживание', 'претензия'],
     'A6-002': ['границы ответственности', 'претензия', 'недоволен продуктом'],
     'A6-003': ['встроить продукт', 'клиентский опыт'],
-    'A6-006': ['дата повтора', 'вернуть клиента'],
+    'A6-006': ['дата повтора', 'вернуть клиента', 'повторные продажи'],
     'A6-010': ['статусы', 'следующие действия', 'crm', 'мини-crm', 'в голове'],
     'A6-011': ['рабочий ритм', 'рабочее время', 'устал', 'откладываю'],
     'A6-012': ['план из действий', 'лидер', 'команда'],
@@ -851,15 +874,15 @@
       id: 'first-write',
       goal: 'начать разговор с знакомым без давления',
       why: ['первое сообщение', 'тёплый контакт', 'страх навязаться'],
-      phrases: ['боюсь написать', 'написать знакомому', 'первое сообщение', 'что написать', 'написать человеку', 'не знаю что написать', 'первым написать'],
-      boostIds: ['A3-002'],
+      phrases: ['боюсь написать', 'написать знакомому', 'первое сообщение', 'что написать', 'написать человеку', 'не знаю что написать', 'первым написать', 'страшно написать', 'страшно написать человеку', 'первый диалог'],
+      boostIds: ['A3-002', 'A3-016'],
       writeBias: true,
     },
     {
       id: 'no-people',
       goal: 'найти, с кем начать работу',
       why: ['нет людей', 'база', 'пять контактов'],
-      phrases: ['некому писать', 'некому', 'с кем начать', 'нет людей', 'не знаю с кем', 'нет контактов', 'не понимаю с кем'],
+      phrases: ['некому писать', 'некому', 'с кем начать', 'нет людей', 'не знаю с кем', 'нет контактов', 'не понимаю с кем', 'кому написать', 'не знаю кому написать'],
       boostIds: ['A2-008', 'A2-010', 'A2-006', 'A2-011', 'A2-001'],
     },
     {
@@ -873,14 +896,14 @@
       id: 'first-result',
       goal: 'получить первый рабочий результат',
       why: ['первый результат', 'план действий', 'первые контакты'],
-      phrases: ['первый результат', 'получить первый результат', 'хочу первый результат'],
+      phrases: ['первый результат', 'получить первый результат', 'хочу первый результат', 'хочу первого клиента', 'первый клиент'],
       boostIds: ['A1-010', 'A2-008', 'A3-002', 'A3-016'],
     },
     {
       id: 'just-started',
       goal: 'понять роль и первые шаги',
       why: ['старт', 'роль', 'план'],
-      phrases: ['только начал', 'я новичок', 'только начинаю', 'я только начал'],
+      phrases: ['только начал', 'я новичок', 'только начинаю', 'я только начал', 'как начать', 'что делать новичку', 'новичку'],
       boostIds: ['A1-004', 'A1-006', 'A1-010'],
     },
     {
@@ -936,8 +959,8 @@
       id: 'team',
       goal: 'наставить партнёров и собрать рабочую команду',
       why: ['наставничество', 'ритм', 'стандарт'],
-      phrases: ['партнеры ничего не делают', 'партнёры ничего не делают', 'команда не работает', 'развивать команду', 'наставлять', 'партнеры не делают', 'стать лидером', 'собрать команду', 'хочу стать лидером'],
-      boostIds: ['A1-016', 'A6-011', 'A6-012', 'A6-013', 'A6-010', 'A1-010', 'A1-004'],
+      phrases: ['партнеры ничего не делают', 'партнёры ничего не делают', 'команда не работает', 'развивать команду', 'наставлять', 'партнеры не делают', 'стать лидером', 'собрать команду', 'хочу стать лидером', 'как развивать команду'],
+      boostIds: ['A6-013', 'A6-012', 'A6-011', 'A1-016', 'A6-010', 'A1-010', 'A1-004'],
       teamOnly: true,
     },
     {
@@ -951,7 +974,7 @@
       id: 'pause',
       goal: 'продолжить диалог после паузы и сомнения',
       why: ['пауза', 'сомнение', 'подумает'],
-      phrases: ['подумает', 'не сейчас', 'сомневается', 'надо подумать', 'сказал что подумает', 'взял паузу'],
+      phrases: ['подумает', 'не сейчас', 'сомневается', 'надо подумать', 'сказал что подумает', 'взял паузу', 'человек думает'],
       boostIds: ['A5-001', 'A5-008', 'A5-009', 'A5-010', 'A5-011', 'A5-003'],
     },
     {
@@ -965,7 +988,7 @@
       id: 'product-talk',
       goal: 'честно рассказать о продукте',
       why: ['карточка продукта', 'продуктовый фокус', 'ограничения'],
-      phrases: ['рассказать о продукте', 'не знаю продукт', 'как рассказать', 'не знаю как рассказать', 'что можно обещать', 'презентация продукта'],
+      phrases: ['рассказать о продукте', 'не знаю продукт', 'как рассказать', 'не знаю как рассказать', 'что можно обещать', 'презентация продукта', 'как рассказать о продукте'],
       boostIds: ['A1-012', 'A1-011', 'A1-013', 'A4-001', 'A1-014'],
     },
     {
@@ -974,6 +997,27 @@
       why: ['follow-up после сообщения', 'человек молчит'],
       phrases: ['молчит после', 'не отвечает на сообщение', 'прочитал и молчит', 'тишина после сообщения'],
       boostIds: ['A5-010', 'A3-008', 'A5-011'],
+    },
+    {
+      id: 'invite-meeting',
+      goal: 'пригласить на разговор или встречу',
+      why: ['назначить встречу', 'конкретное время'],
+      phrases: ['пригласить на встречу', 'как пригласить', 'назначить встречу', 'назначить разговор'],
+      boostIds: ['A3-005', 'A3-013', 'A3-016'],
+    },
+    {
+      id: 'refused',
+      goal: 'сохранить движение после отказа',
+      why: ['отказ', 'завершить корректно'],
+      phrases: ['мне отказали', 'отказали', 'человек отказал', 'после отказа'],
+      boostIds: ['A5-014', 'A5-001', 'A5-011'],
+    },
+    {
+      id: 'repeat-sales',
+      goal: 'вернуть повторную покупку без выдуманных цифр',
+      why: ['повтор', 'следующий контакт после покупки'],
+      phrases: ['повторные продажи', 'повторную продажу', 'хочу повторные продажи', 'повторная продажа'],
+      boostIds: ['A6-006', 'A6-003', 'A6-001'],
     },
   ];
 
@@ -1053,7 +1097,23 @@
     { id: 'growth', title: 'Я развиваю команду', level: 'mentor' },
   ];
 
-  var MATERIAL_TYPES = [{ id: 'track', title: 'Трек' }];
+  var MATERIAL_TYPES = [
+    { id: 'track', title: 'Трек' },
+    { id: 'material', title: 'Материал' },
+  ];
+  var TIME_FILTERS = [
+    { id: '10', title: 'До 10 минут' },
+    { id: '20', title: 'До 20 минут' },
+    { id: '30', title: '20 минут и дольше' },
+  ];
+  var GOAL_SECTIONS = {
+    'first-result': ['A1', 'A3'],
+    'find-client': ['A2'],
+    'first-dialogue': ['A3'],
+    'understand-need': ['A4'],
+    'handle-doubt': ['A5'],
+    'grow-repeat': ['A6'],
+  };
   var SITUATIONS = SIT_FILTERS.map(function (item) {
     return { id: item.id, title: item.title };
   });
@@ -1064,6 +1124,13 @@
     situation: 80,
     aliases: 55,
     outcome: 55,
+    trigger: 70,
+    inputState: 70,
+    targetState: 50,
+    mainTask: 40,
+    mechanic: 18,
+    artifact: 22,
+    evidence: 16,
     tags: 25,
     section: 16,
     format: 10,
@@ -1091,6 +1158,8 @@
   api.AVAIL_FILTERS = AVAIL_FILTERS;
   api.EXPERIENCE = EXPERIENCE;
   api.MATERIAL_TYPES = MATERIAL_TYPES;
+  api.TIME_FILTERS = TIME_FILTERS;
+  api.GOAL_SECTIONS = GOAL_SECTIONS;
   api.PRESETS = PRESETS;
   api.FIELD_WEIGHTS = FIELD_WEIGHTS;
   api.PAGE_SIZE = 15;
@@ -1119,6 +1188,8 @@
   var AVAIL_FILTERS = api.AVAIL_FILTERS;
   var EXPERIENCE = api.EXPERIENCE;
   var PRESETS = api.PRESETS;
+  var TIME_FILTERS = api.TIME_FILTERS || [];
+  var GOAL_SECTIONS = api.GOAL_SECTIONS || {};
   var FIELD_WEIGHTS = api.FIELD_WEIGHTS;
   var PAGE_SIZE = api.PAGE_SIZE || 15;
   var LIBRARY_STATE_KEY = api.LIBRARY_STATE_KEY || 'mlma.library.v1';
@@ -1369,6 +1440,14 @@
     return 'working';
   }
 
+  function timeOf(track) {
+    var f = api.normalizeSearchText(track.format || '');
+    if (/чек|решен|калькулятор|gate|микро/.test(f)) return 10;
+    if (/сообщен|практик|реплик|сценари/.test(f)) return 15;
+    if (/конструктор|план|карт|диагност|crm/.test(f)) return 25;
+    return 20;
+  }
+
   function deriveMeta(track) {
     var cacheKey = track.trackId + '\n' + track.title + '\n' + track.situation + '\n' + track.format;
     if (metaCache[cacheKey]) return metaCache[cacheKey];
@@ -1382,7 +1461,9 @@
       sit: sitOf(track),
       lvl: levelOf(track),
       aliases: aliases,
-      playable: track.publicationStatus === 'published' && track.contentStatus === 'published',
+      playable: !!(api.derivePassport ? api.derivePassport(track).executable : false),
+      kind: api.itemKind ? api.itemKind(track) : 'track',
+      time: timeOf(track),
       fields: {
         title: api.normalizeSearchText(track.title),
         situation: api.normalizeSearchText(track.situation),
@@ -1394,6 +1475,16 @@
         id: api.normalizeSearchText(track.trackId),
       },
     };
+    if (api.searchFields) {
+      var extra = api.searchFields(track);
+      meta.fields.trigger = extra.trigger;
+      meta.fields.inputState = extra.inputState;
+      meta.fields.targetState = extra.targetState;
+      meta.fields.mainTask = extra.mainTask;
+      meta.fields.mechanic = extra.mechanic;
+      meta.fields.artifact = extra.artifact;
+      meta.fields.evidence = extra.evidence;
+    }
     metaCache[cacheKey] = meta;
     return meta;
   }
@@ -1471,6 +1562,14 @@
         score += FIELD_WEIGHTS.format;
         hits += 1;
       }
+      if (fieldHas(fields.mechanic, variants) || fieldHas(fields.artifact, variants) || fieldHas(fields.evidence, variants)) {
+        score += FIELD_WEIGHTS.mechanic || 18;
+        hits += 1;
+      }
+      if (fieldHas(fields.mainTask, variants) && !fieldHas(fields.title, variants)) {
+        score += FIELD_WEIGHTS.mainTask || 40;
+        hits += 1;
+      }
       if (fieldHas(fields.section, variants)) {
         score += FIELD_WEIGHTS.section;
         hits += 1;
@@ -1510,7 +1609,8 @@
 
     var writeQ = queryHasWrite(analysis);
     var callQ = queryHasCall(analysis);
-    if (writeQ && !callQ) {
+    var whoWrite = writeQ && /кому/.test(queryNorm);
+    if (writeQ && !callQ && !whoWrite) {
       if (meta.ch === 'call' && fields.title.indexOf('написа') === -1 && fields.aliases.indexOf('первое сообщение') === -1) {
         score -= 140;
       }
@@ -1521,11 +1621,14 @@
     if (callQ && !writeQ) {
       if (meta.ch === 'call' || /звон|телефон|позвон/.test(fields.title + ' ' + fields.aliases)) score += 80;
     }
+    if (whoWrite && track.sectionId === 'A2') score += 90;
+    if (whoWrite && track.sectionId === 'A3') score -= 40;
 
     var intents = analysis.intents || [];
     var intentHit = false;
     for (var n = 0; n < intents.length; n += 1) {
       var intent = intents[n];
+      if (whoWrite && intent.id === 'first-write') continue;
       if (intent.boostIds.indexOf(track.trackId) !== -1) {
         var boostIndex = intent.boostIds.indexOf(track.trackId);
         score += FIELD_WEIGHTS.intent + Math.max(0, 48 - n * 8) + Math.max(0, 32 - boostIndex * 8);
@@ -1616,6 +1719,7 @@
       avail: null,
       skill: null,
       experience: null,
+      time: null,
       sort: null,
       preset: null,
     };
@@ -1664,6 +1768,8 @@
       var exp = getExperience(experience);
       if (exp.level && state.lvl.indexOf(exp.level) === -1) state.lvl.push(exp.level);
     }
+    var time = params.get('time') || extra.time || '';
+    if (time && (time === '10' || time === '20' || time === '30')) state.time = time;
     var sort = params.get('sort') || extra.sort || '';
     if (sort && sort !== 'relevance') state.sort = sort;
     var preset = params.get('preset') || extra.preset || '';
@@ -1688,6 +1794,7 @@
     if (state.avail) params.set('avail', state.avail);
     if (state.skill) params.set('skill', state.skill);
     if (state.experience) params.set('experience', state.experience);
+    if (state.time) params.set('time', state.time);
     if (state.sort && state.sort !== 'relevance') params.set('sort', state.sort);
     if (state.preset) params.set('preset', state.preset);
     return params.toString();
@@ -1715,6 +1822,7 @@
       state.avail ||
       state.skill ||
       state.experience ||
+      state.time ||
       state.preset
     );
   }
@@ -1739,17 +1847,25 @@
     for (var i = 0; i < tracks.length; i += 1) {
       var track = tracks[i];
       if (allowed && !allowed[track.trackId]) continue;
-      if (state.type && state.type !== 'track') continue;
       var meta = deriveMeta(track);
+      if (state.type === 'material' && meta.kind !== 'material') continue;
+      if (state.type === 'track' && meta.kind === 'material') continue;
       if (stages.length && stages.indexOf(track.sectionId) === -1) continue;
       if (sit.length && sit.indexOf(meta.sit) === -1) continue;
       if (fmt.length && fmt.indexOf(meta.fmt) === -1) continue;
       if (state.format && track.format !== state.format && fmt.length === 0) continue;
       if (!inGroup(state.ch, meta.ch)) continue;
       if (!inGroup(state.lvl, meta.lvl)) continue;
+      if (state.goal && GOAL_SECTIONS[state.goal] && GOAL_SECTIONS[state.goal].indexOf(track.sectionId) === -1) continue;
+      if (state.time === '10' && meta.time > 10) continue;
+      if (state.time === '20' && meta.time > 20) continue;
+      if (state.time === '30' && meta.time < 20) continue;
       if (state.avail === 'playable' && !meta.playable) continue;
       if (state.avail === 'description' && meta.playable) continue;
-      if (state.skill) continue;
+      if (state.skill) {
+        var skillNeedle = api.normalizeSearchText(state.skill);
+        if (!skillNeedle || (meta.fields.format + ' ' + meta.fields.situation + ' ' + meta.fields.title).indexOf(skillNeedle) === -1) continue;
+      }
       out.push(track);
     }
     return out;
@@ -1790,7 +1906,7 @@
       var sit = getSituation(value);
       return sit ? sit.title : value;
     }
-    if (key === 'type') return value === 'track' ? 'Трек' : value;
+    if (key === 'type') return value === 'material' ? 'Материал' : 'Трек';
     if (key === 'format') return value;
     if (key === 'fmt') {
       for (var f = 0; f < FMT_FILTERS.length; f += 1) if (FMT_FILTERS[f].id === value) return FMT_FILTERS[f].title;
@@ -1812,6 +1928,10 @@
       var exp = getExperience(value);
       return exp ? exp.title : value;
     }
+    if (key === 'time') {
+      for (var tm = 0; tm < TIME_FILTERS.length; tm += 1) if (TIME_FILTERS[tm].id === value) return TIME_FILTERS[tm].title;
+      return value;
+    }
     if (key === 'preset') {
       var preset = getPreset(value);
       return preset ? preset.title : value;
@@ -1832,7 +1952,7 @@
     if (state.goal) pushChip(chips, 'goal', state.goal);
     var sit = state.sit && state.sit.length ? state.sit : (state.situation ? [state.situation] : []);
     for (var i = 0; i < sit.length; i += 1) pushChip(chips, 'sit', sit[i]);
-    if (state.type && state.type !== 'track') pushChip(chips, 'type', state.type);
+    if (state.type && state.type !== 'all') pushChip(chips, 'type', state.type);
     if (state.fmt && state.fmt.length) {
       for (var f = 0; f < state.fmt.length; f += 1) pushChip(chips, 'fmt', state.fmt[f]);
     } else if (state.format) pushChip(chips, 'format', state.format);
@@ -1840,6 +1960,7 @@
     if (state.lvl) for (var l = 0; l < state.lvl.length; l += 1) pushChip(chips, 'lvl', state.lvl[l]);
     if (state.avail) pushChip(chips, 'avail', state.avail);
     if (state.experience) pushChip(chips, 'experience', state.experience);
+    if (state.time) pushChip(chips, 'time', state.time);
     if (state.preset) pushChip(chips, 'preset', state.preset);
     return chips;
   }
@@ -2194,16 +2315,22 @@
   }
 
   function nextTrackBundle(track, catalog, context) {
-    var byId = {};
-    for (var i = 0; i < catalog.length; i += 1) byId[catalog[i].trackId] = catalog[i];
-    var primary = null;
-    if (track.nextTrackIds && track.nextTrackIds[0] && byId[track.nextTrackIds[0]]) {
-      primary = byId[track.nextTrackIds[0]];
+    context = context || {};
+    var runtime = context.runtime || (api.getRuntime ? api.getRuntime(track.trackId) : null);
+    var nba = api.nextBestAction ? api.nextBestAction(track, catalog, runtime, context.profile) : null;
+    var primary = nba && nba.track ? nba.track : null;
+    if (!primary && track.nextTrackIds && track.nextTrackIds[0]) {
+      for (var i = 0; i < catalog.length; i += 1) {
+        if (catalog[i].trackId === track.nextTrackIds[0]) {
+          primary = catalog[i];
+          break;
+        }
+      }
     }
-    var variants = relatedTracks(track, catalog, 4, context).filter(function (item) {
+    var variants = (api.relatedContent ? api.relatedContent(track, catalog, 3) : relatedTracks(track, catalog, 4, context)).filter(function (item) {
       return !primary || item.trackId !== primary.trackId;
     }).slice(0, 3);
-    return { primary: primary, variants: variants };
+    return { primary: primary, variants: variants, nba: nba };
   }
 
   function startPicks(sectionId, level, catalog) {
@@ -2307,8 +2434,8 @@
     return data;
   }
 
-  function itemType() {
-    return 'track';
+  function itemType(track) {
+    return api.itemKind ? api.itemKind(track) : 'track';
   }
 
   function stagesForState(state) {
@@ -2329,6 +2456,548 @@
   api.stagesForState = stagesForState;
   api.saveLibraryRestore = saveLibraryRestore;
   api.readLibraryRestore = readLibraryRestore;
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
+
+/* __MLMA_UI_SPLIT__ */
+/**
+ * Онтология и runtime трека. Справочники из библиотеки конструкций.
+ * Не показывает служебные ID в пользовательском UI.
+ */
+(function (root) {
+  'use strict';
+  var api = root.MLMA;
+  if (!api) return;
+
+  var RUNTIME_KEY = 'mlma.runtime.v1';
+  var INACTIVITY_MS = 36 * 60 * 60 * 1000;
+  var PRESSURE_RE = /гарант\w* доход|обязательно куп|впари|развед[её]нн|дави на человека/;
+
+  var GENRE = {
+    'GEN-003': { label: 'Расследование', pattern: 'Факт → версия → проверка → заключение', accent: 'investigation' },
+    'GEN-001': { label: 'Путешествие', pattern: 'Карта → точка → открытие', accent: 'expedition' },
+    'GEN-008': { label: 'Создание', pattern: 'Черновик → сборка → версия', accent: 'workshop' },
+    'GEN-004': { label: 'Миссия', pattern: 'Цель → этап → контроль → завершение', accent: 'mission' },
+    'GEN-011': { label: 'Практика', pattern: 'Задача → действие → след', accent: 'practice' },
+    'GEN-024': { label: 'Тренировка', pattern: 'Попытка → разбор → повтор', accent: 'practice' },
+    'GEN-012': { label: 'Переговоры', pattern: 'Контакт → ответ → следующий шаг', accent: 'mission' },
+    'GEN-010': { label: 'Эксперимент', pattern: 'Гипотеза → проба → вывод', accent: 'investigation' },
+    'GEN-016': { label: 'Самопроверка', pattern: 'Состояние → выбор → фиксация', accent: 'practice' },
+    'GEN-022': { label: 'Сборка системы', pattern: 'Элемент → связь → контур', accent: 'workshop' },
+  };
+
+  var TOPOLOGY = {
+    linear: 'TOP-001',
+    'linear-with-checkpoints': 'TOP-002',
+    ladder: 'TOP-003',
+    cycle: 'TOP-005',
+    'retry-loop': 'TOP-006',
+    branch: 'TOP-007',
+    'branch-and-converge': 'TOP-008',
+    'multiple-endings': 'TOP-009',
+    adaptive: 'TOP-010',
+    'hub-and-spoke': 'TOP-011',
+    'stage-gate': 'TOP-015',
+    detour: 'TOP-016',
+    unlock: 'TOP-017',
+    accumulation: 'TOP-018',
+    'time-limited': 'TOP-019',
+  };
+
+  function fmt(track) {
+    return api.normalizeSearchText(track.format || '');
+  }
+
+  function blob(track) {
+    return api.normalizeSearchText([track.title, track.situation, track.outcome, track.format, track.module].join(' '));
+  }
+
+  function itemKind(track) {
+    if (track && (track.type === 'material' || track.k === 'm')) return 'material';
+    var f = fmt(track || {});
+    if (/видео|статья|лонгрид|презентац|pdf|памятк|гайд|инструкц лекц/.test(f) && !/практик|конструктор|чек|карт|план|диагност/.test(f)) {
+      return 'material';
+    }
+    return 'track';
+  }
+
+  function mapMechanic(track) {
+    var f = fmt(track);
+    var t = blob(track);
+    if (/диагност|самодиагност|шкал/.test(f + ' ' + t)) return { id: 'MEC-010', name: 'Шкала самооценки' };
+    if (/decision tree|развилк/.test(f)) return { id: 'MEC-009', name: 'Ветвящийся диагностический тест' };
+    if (/decision gate|матриц|выбор/.test(f)) return { id: 'MEC-001', name: 'Тест с одним выбором' };
+    if (/тренаж|практик реплик|микропрактик|аудио/.test(f)) return { id: 'MEC-012', name: 'Демонстрация и повтор' };
+    if (/конструктор|редактор|переформулир/.test(f)) return { id: 'MEC-031', name: 'Сборка рабочего объекта' };
+    if (/карт/.test(f)) return { id: 'MEC-012', name: 'Карточная сортировка' };
+    if (/план|календар|crm|мини-crm/.test(f)) return { id: 'MEC-031', name: 'Сборка рабочего объекта' };
+    if (/чек/.test(f)) return { id: 'MEC-003', name: 'Верно / неверно' };
+    if (/калькулятор|приоритиз/.test(f)) return { id: 'MEC-025', name: 'Когнитивная работа' };
+    return { id: 'MEC-007', name: 'Открытый вопрос' };
+  }
+
+  function mapGenre(track) {
+    var f = fmt(track);
+    var t = blob(track);
+    if (/диагност|разбор|аудит/.test(f + ' ' + t)) return 'GEN-003';
+    if (/эксперимент|микроэкспозиц/.test(f + ' ' + t)) return 'GEN-010';
+    if (/конструктор|сборк|прототип/.test(f)) return 'GEN-008';
+    if (/план|календар|маршрут|crm/.test(f + ' ' + t)) return 'GEN-004';
+    if (/практик|тренаж|реплик/.test(f)) return 'GEN-024';
+    if (/самодиагност|рефлекс/.test(f)) return 'GEN-016';
+    if (/сообщен|звон|встреч|диалог/.test(t)) return 'GEN-012';
+    return 'GEN-011';
+  }
+
+  function mapScenario(track) {
+    var f = fmt(track);
+    if (/диагност/.test(f)) return { id: 'SCN-015', name: 'Самодиагностика → выбор шага' };
+    if (/практик|тренаж|реплик/.test(f)) return { id: 'SCN-002', name: 'Демонстрация → повтор' };
+    if (/конструктор|форм/.test(f)) return { id: 'SCN-001', name: 'Объяснение → применение' };
+    if (/план-факт|отклонен/.test(f + ' ' + blob(track))) return { id: 'SCN-050', name: 'План-факт → корректировка' };
+    if (/план|crm/.test(f)) return { id: 'SCN-032', name: 'Приоритет → фокус' };
+    if (/чек|gate/.test(f)) return { id: 'SCN-054', name: 'Чек-лист → исполнение' };
+    return { id: 'SCN-051', name: 'Подготовка → действие → фиксация' };
+  }
+
+  function mapArtifact(track) {
+    var f = fmt(track);
+    var o = api.normalizeSearchText(track.outcome || '');
+    if (/сообщен|реплик|фраз|текст/.test(f + ' ' + o)) return { id: 'ART-021', name: 'Текст сообщения' };
+    if (/план|календар/.test(f + ' ' + o)) return { id: 'ART-006', name: 'План действий' };
+    if (/карт/.test(f)) return { id: 'ART-013', name: 'Карта' };
+    if (/решен|выбор|роль/.test(f + ' ' + o)) return { id: 'ART-001', name: 'Зафиксированное решение' };
+    return { id: 'ART-003', name: 'Заполненная форма' };
+  }
+
+  function mapEvidence(track) {
+    var f = fmt(track);
+    if (/сообщен|реплик|практик|отправ/.test(f + ' ' + api.normalizeSearchText(track.title || ''))) {
+      return { id: 'EVD-002', name: 'Короткий ответ', source: 'artifact+note', strength: 'medium' };
+    }
+    if (/план|карт|конструктор|форм/.test(f)) {
+      return { id: 'EVD-003', name: 'Заполненная форма', source: 'artifact', strength: 'medium' };
+    }
+    return { id: 'EVD-002', name: 'Короткий ответ', source: 'artifact+note', strength: 'medium' };
+  }
+
+  function mapFunction(track) {
+    var f = fmt(track);
+    if (/диагност/.test(f)) return { id: 'FUN-010', name: 'Диагностика' };
+    if (/практик|тренаж/.test(f)) return { id: 'FUN-012', name: 'Тренировка' };
+    if (/конструктор|форм/.test(f)) return { id: 'FUN-014', name: 'Создание артефакта' };
+    if (/план/.test(f)) return { id: 'FUN-006', name: 'Подготовка к действию' };
+    if (track.sectionId === 'A3') return { id: 'FUN-007', name: 'Активация' };
+    if (track.sectionId === 'A1') return { id: 'FUN-001', name: 'Ориентация' };
+    return { id: 'FUN-008', name: 'Исполнение' };
+  }
+
+  function mapTopology(track) {
+    var f = fmt(track);
+    if (/развилк|decision tree/.test(f)) return 'TOP-007';
+    if (/повторн|диагност \+/.test(f)) return 'TOP-006';
+    if (/gate|чек/.test(f)) return 'TOP-015';
+    if (/план-факт|ритм|привыч/.test(f + ' ' + blob(track))) return 'TOP-005';
+    return 'TOP-002';
+  }
+
+  function isPerformanceTrack(track) {
+    var t = blob(track);
+    return /план-факт|отклонен|ритм|повторн продаж|клиентск опыт/.test(t) || track.sectionId === 'A6' && /план|crm|ритм/.test(fmt(track));
+  }
+
+  function defaultReactions() {
+    return [
+      { event: 'track_evidence_rejected', reaction: 'retry' },
+      { event: 'track_inactive', reaction: 'hint' },
+      { event: 'track_complete', reaction: 'next_track' },
+      { event: 'track_retry', reaction: 'corrective_track' },
+      { event: 'leader_escalation', reaction: 'escalation' },
+    ];
+  }
+
+  function knownTaxonomy(id) {
+    return /^(FUN|MEC|GEN|TOP|SCN|ART|EVD|CMP|FDB|BRN|CNT|SET|TON|EVT|REA)-\d{3}$/.test(id || '');
+  }
+
+  function derivePassport(track) {
+    if (!track) return null;
+    var kind = itemKind(track);
+    var mechanic = mapMechanic(track);
+    var genreId = mapGenre(track);
+    var scenario = mapScenario(track);
+    var artifact = mapArtifact(track);
+    var evidence = mapEvidence(track);
+    var fn = mapFunction(track);
+    var genre = GENRE[genreId] || GENRE['GEN-011'];
+    return {
+      trackId: track.trackId,
+      type: kind,
+      status: track.publicationStatus || 'planned',
+      title: track.title,
+      trigger: track.situation,
+      inputState: track.situation,
+      targetState: track.outcome,
+      mainTask: track.title,
+      businessFunction: fn,
+      leadingMechanic: mechanic,
+      dominantGenre: genreId,
+      genreLabel: genre.label,
+      genrePattern: genre.pattern,
+      genreAccent: genre.accent,
+      setting: 'SET-001',
+      tone: ['TON-005', 'TON-023'],
+      topology: mapTopology(track),
+      scenarioPattern: scenario,
+      artifact: artifact,
+      evidence: evidence,
+      completionCriteria: {
+        technical: 'CMP-002',
+        quality: 'CMP-011',
+        business: null,
+      },
+      feedbackRules: ['FDB-001', 'FDB-006', 'FDB-022'],
+      branches: {
+        success: 'BRN-001',
+        error: 'BRN-007',
+        inactivity: 'BRN-009',
+        highResult: 'BRN-003',
+        risk: 'BRN-006',
+      },
+      container: 'CNT-001',
+      nextTrackIds: (track.nextTrackIds || []).slice(),
+      relatedMaterialIds: [],
+      needsContent: track.contentStatus === 'metadata_only',
+      executable: kind === 'track' && !!(track.situation && track.outcome && track.title),
+      class: isPerformanceTrack(track) ? 'performance' : kind,
+      economicHypothesis: {
+        process: isPerformanceTrack(track) ? (track.module || '') : '',
+        metric: null,
+        proxyMetric: null,
+        expectedInfluence: null,
+        measurementDesign: null,
+      },
+      managementReactions: defaultReactions(),
+      analyticsEvents: ['track_preview_open', 'track_start', 'track_action_submitted', 'track_evidence_submitted', 'track_complete', 'track_next_recommended'],
+    };
+  }
+
+  function validateTrack(track, catalog) {
+    var issues = [];
+    if (!track || !api.TRACK_ID_RE.test(track.trackId || '')) issues.push('broken_id');
+    var passport = derivePassport(track);
+    if (!passport) return { ok: false, issues: ['missing_track'], passport: null };
+    var kind = passport.type;
+    if (!passport.trigger) issues.push('missing_trigger');
+    if (!passport.inputState) issues.push('missing_input_state');
+    if (!passport.targetState) issues.push('missing_target_state');
+    if (!passport.mainTask) issues.push('missing_main_task');
+    if (!passport.leadingMechanic || !passport.leadingMechanic.id) issues.push('missing_mechanic');
+    if (!passport.evidence || !passport.evidence.id) issues.push('missing_evidence');
+    if (passport.completionCriteria && passport.completionCriteria.technical === 'view-only') issues.push('completion-by-view-only');
+    if (kind === 'track' && !passport.nextTrackIds.length) issues.push('missing_next_step');
+    var byId = {};
+    if (Array.isArray(catalog)) {
+      for (var i = 0; i < catalog.length; i += 1) byId[catalog[i].trackId] = catalog[i];
+    }
+    for (var n = 0; n < passport.nextTrackIds.length; n += 1) {
+      if (catalog && !byId[passport.nextTrackIds[n]]) issues.push('broken_nextTrackId');
+    }
+    var prereq = track.prerequisiteIds || [];
+    for (var p = 0; p < prereq.length; p += 1) {
+      if (catalog && !byId[prereq[p]]) issues.push('broken_prerequisite');
+    }
+    var related = track.relatedMaterialIds || passport.relatedMaterialIds || [];
+    for (var r = 0; r < related.length; r += 1) {
+      if (catalog && !byId[related[r]]) issues.push('broken_material_relation');
+    }
+    if (!knownTaxonomy(passport.businessFunction.id)) issues.push('unknown_taxonomy_id');
+    if (!knownTaxonomy(passport.leadingMechanic.id)) issues.push('unknown_taxonomy_id');
+    if (!knownTaxonomy(passport.dominantGenre)) issues.push('unknown_taxonomy_id');
+    if (!knownTaxonomy(passport.topology)) issues.push('unknown_taxonomy_id');
+    if (!knownTaxonomy(passport.scenarioPattern.id)) issues.push('unknown_taxonomy_id');
+    if (!knownTaxonomy(passport.artifact.id)) issues.push('unknown_taxonomy_id');
+    if (!knownTaxonomy(passport.evidence.id)) issues.push('unknown_taxonomy_id');
+    var branchValues = [passport.branches.success, passport.branches.error, passport.branches.inactivity, passport.branches.highResult, passport.branches.risk];
+    var same = branchValues.every(function (id) { return id === branchValues[0]; });
+    if (same) issues.push('same_result_in_all_branches');
+    if (!passport.executable && kind === 'track' && track.publicationStatus === 'planned') issues.push('coming-soon-without-preview');
+    if (!passport.executable && kind === 'track') issues.push('coming-soon-with-start-cta');
+    if (itemKind(track) === 'track' && !track.title) issues.push('track_without_title');
+    if (kind === 'track' && !track.trackId) issues.push('track_without_url');
+    return { ok: issues.filter(function (code) { return code !== 'missing_next_step'; }).length === 0, issues: issues, passport: passport };
+  }
+
+  function validateCatalog(catalog) {
+    var rows = [];
+    var seen = {};
+    var pointed = {};
+    for (var i = 0; i < catalog.length; i += 1) {
+      var track = catalog[i];
+      if (seen[track.trackId]) rows.push({ trackId: track.trackId, issues: ['duplicate_id'] });
+      seen[track.trackId] = true;
+      var ids = track.nextTrackIds || [];
+      for (var n = 0; n < ids.length; n += 1) pointed[ids[n]] = true;
+      var result = validateTrack(track, catalog);
+      var critical = result.issues.filter(function (code) {
+        return code !== 'missing_next_step';
+      });
+      if (critical.length) rows.push({ trackId: track.trackId, issues: critical });
+    }
+    for (var j = 0; j < catalog.length; j += 1) {
+      if (!pointed[catalog[j].trackId] && catalog[j].sectionId !== 'A1') {
+        /* entry tracks may be orphans by design; only flag if also no next */
+      }
+    }
+    return { ok: rows.length === 0, failures: rows, total: catalog.length };
+  }
+
+  function emptyRuntime(trackId) {
+    return {
+      trackId: trackId,
+      status: 'preview',
+      step: 'preview',
+      attempts: 0,
+      artifact: '',
+      evidenceNote: '',
+      evidenceDone: false,
+      branch: '',
+      feedback: null,
+      updatedAt: '',
+    };
+  }
+
+  function readRuntimeAll() {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return {};
+      var raw = window.localStorage.getItem(RUNTIME_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (err) {
+      return {};
+    }
+  }
+
+  function writeRuntimeAll(all) {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return;
+      window.localStorage.setItem(RUNTIME_KEY, JSON.stringify(all));
+    } catch (err) {
+      /* ignore */
+    }
+  }
+
+  function getRuntime(trackId) {
+    var all = readRuntimeAll();
+    return all[trackId] || emptyRuntime(trackId);
+  }
+
+  function saveRuntime(state) {
+    var all = readRuntimeAll();
+    state.updatedAt = new Date().toISOString();
+    all[state.trackId] = state;
+    writeRuntimeAll(all);
+    return state;
+  }
+
+  function isInactive(state) {
+    if (!state || !state.updatedAt || state.status === 'preview' || state.status === 'complete') return false;
+    var then = Date.parse(state.updatedAt);
+    if (!then) return false;
+    return Date.now() - then > INACTIVITY_MS;
+  }
+
+  function qualityCheck(track, payload) {
+    var artifact = String(payload.artifact || '').trim();
+    var note = String(payload.evidenceNote || '').trim();
+    var gaps = [];
+    if (artifact.length < 40) gaps.push('Результат слишком короткий: опишите конкретный рабочий объект, а не намёк.');
+    if (/^(готово|сделал|ок|yes|да)[.!\s]*$/i.test(artifact)) gaps.push('Самоотметка «готово» не считается доказательством.');
+    if (!note || note.length < 12) gaps.push('Нет следа действия: кратко напишите, что именно зафиксировано.');
+    if (/^я сделал/i.test(note) && note.length < 24) gaps.push('«Я сделал» без факта не принимается. Укажите, что создано или куда отправлено.');
+    if (PRESSURE_RE.test(artifact.toLowerCase())) {
+      return { branch: 'risk', gaps: ['В тексте есть давление или недопустимое обещание. Такой результат нельзя принимать.'], high: false };
+    }
+    var outcome = api.normalizeSearchText(track.outcome || '');
+    var artNorm = api.normalizeSearchText(artifact);
+    var tokens = outcome.split(' ').filter(function (w) { return w.length > 4; }).slice(0, 4);
+    var hits = 0;
+    for (var i = 0; i < tokens.length; i += 1) {
+      if (artNorm.indexOf(tokens[i]) !== -1) hits += 1;
+    }
+    if (tokens.length && hits === 0) {
+      gaps.push('Результат не связан с ожидаемым следом трека. Вернитесь к формулировке результата.');
+    }
+    if (gaps.length) return { branch: 'error', gaps: gaps, high: false };
+    var high = artifact.length > 280 && /(следующ|дата|когда|кому)/.test(artNorm);
+    return { branch: high ? 'highResult' : 'success', gaps: [], high: high };
+  }
+
+  function buildFeedback(track, check) {
+    if (check.branch === 'risk') {
+      return {
+        title: 'Остановка: риск в формулировке',
+        got: 'Система прочитала недопустимое обещание или давление.',
+        gap: check.gaps[0],
+        change: 'Уберите гарантии дохода, принуждение и чужие обещания. Оставьте только конкретное действие.',
+        now: 'Исправьте текст и отправьте попытку снова.',
+        retry: true,
+      };
+    }
+    if (check.branch === 'error') {
+      return {
+        title: 'Пока нельзя принять результат',
+        got: 'Черновик получен, но не проходит качественный порог.',
+        gap: check.gaps.join(' '),
+        change: 'Сделайте объект конкретным: что создано, для какой ситуации, какой следующий факт.',
+        now: 'Исправьте артефакт и повторите сдачу.',
+        retry: true,
+      };
+    }
+    return {
+      title: check.high ? 'Сильный результат. Можно ускорить маршрут' : 'Результат принят как рабочий след',
+      got: 'Есть наблюдаемый объект и короткое подтверждение действия.',
+      gap: 'Бизнес-событие вне этого трека не требуется.',
+      change: 'Если позже появится внешний факт, вернитесь и дополните след.',
+      now: check.high ? 'Можно перейти к следующему действию без дополнительного закрепления.' : 'Дальше — следующее лучшее действие, а не похожий материал.',
+      retry: false,
+    };
+  }
+
+  function startRuntime(track) {
+    var state = getRuntime(track.trackId);
+    state.status = 'active';
+    state.step = 'action';
+    state.branch = '';
+    state.feedback = null;
+    return saveRuntime(state);
+  }
+
+  function submitRuntime(track, payload) {
+    var state = getRuntime(track.trackId);
+    state.attempts += 1;
+    state.artifact = String(payload.artifact || '');
+    state.evidenceNote = String(payload.evidenceNote || '');
+    state.evidenceDone = !!payload.evidenceDone;
+    var check = qualityCheck(track, payload);
+    state.branch = check.branch;
+    state.feedback = buildFeedback(track, check);
+    state.step = 'feedback';
+    state.status = check.branch === 'success' || check.branch === 'highResult' ? 'complete' : 'retry';
+    saveRuntime(state);
+    return { state: state, check: check };
+  }
+
+  function retryRuntime(track) {
+    var state = getRuntime(track.trackId);
+    state.status = 'active';
+    state.step = 'action';
+    state.branch = 'error';
+    return saveRuntime(state);
+  }
+
+  function nextBestAction(track, catalog, runtime, profile) {
+    catalog = catalog || [];
+    var byId = {};
+    for (var i = 0; i < catalog.length; i += 1) byId[catalog[i].trackId] = catalog[i];
+    var branch = runtime && runtime.branch;
+    if (branch === 'error' || branch === 'risk') {
+      if (runtime && runtime.attempts >= 2) {
+        return {
+          kind: 'corrective',
+          reason: 'quality_gap',
+          track: track,
+          title: 'Повторить этот трек меньшим шагом',
+          why: 'Критерий снова не пройден. Сначала закрыть разрыв, затем идти дальше.',
+        };
+      }
+      return {
+        kind: 'retry',
+        reason: 'quality_gap',
+        track: track,
+        title: 'Повторить этот трек',
+        why: 'Критерий не пройден. Сначала закрыть разрыв, затем идти дальше.',
+      };
+    }
+    var ids = track.nextTrackIds || [];
+    var goal = profile && profile.selectedSectionId;
+    var picked = null;
+    var reason = 'explicit_next_edge';
+    for (var n = 0; n < ids.length; n += 1) {
+      var cand = byId[ids[n]];
+      if (!cand) continue;
+      if (goal && cand.sectionId === goal) {
+        picked = cand;
+        reason = 'matches_profile_goal';
+        break;
+      }
+      if (!picked) picked = cand;
+    }
+    if (!picked) {
+      return { kind: 'section', reason: 'same_section', track: null, sectionId: track.sectionId, title: 'Вернуться в раздел', why: 'Прямого следующего трека нет.' };
+    }
+    if (branch === 'highResult' && ids[1] && byId[ids[1]]) {
+      picked = byId[ids[1]];
+      reason = 'high_result_skip';
+    }
+    return {
+      kind: 'open_track',
+      reason: reason,
+      track: picked,
+      title: picked.title,
+      why: 'Следующее состояние после «' + track.title + '».',
+    };
+  }
+
+  function relatedContent(track, catalog, limit) {
+    limit = limit || 3;
+    if (typeof api.relatedTracks === 'function') {
+      var related = api.relatedTracks(track, catalog, limit + 3, {});
+      var next = {};
+      var ids = track.nextTrackIds || [];
+      for (var i = 0; i < ids.length; i += 1) next[ids[i]] = true;
+      var out = [];
+      for (var r = 0; r < related.length && out.length < limit; r += 1) {
+        if (next[related[r].trackId]) continue;
+        out.push(related[r]);
+      }
+      return out;
+    }
+    return [];
+  }
+
+  function searchFields(track) {
+    var p = derivePassport(track);
+    return {
+      trigger: api.normalizeSearchText(p.trigger),
+      inputState: api.normalizeSearchText(p.inputState),
+      targetState: api.normalizeSearchText(p.targetState),
+      mainTask: api.normalizeSearchText(p.mainTask),
+      mechanic: api.normalizeSearchText(p.leadingMechanic.name),
+      artifact: api.normalizeSearchText(p.artifact.name),
+      evidence: api.normalizeSearchText(p.evidence.name),
+      functionName: api.normalizeSearchText(p.businessFunction.name),
+    };
+  }
+
+  api.RUNTIME_KEY = RUNTIME_KEY;
+  api.TOPOLOGY = TOPOLOGY;
+  api.GENRE = GENRE;
+  api.itemKind = itemKind;
+  api.derivePassport = derivePassport;
+  api.validateTrack = validateTrack;
+  api.validateCatalog = validateCatalog;
+  api.getRuntime = getRuntime;
+  api.startRuntime = startRuntime;
+  api.submitRuntime = submitRuntime;
+  api.retryRuntime = retryRuntime;
+  api.isInactive = isInactive;
+  api.nextBestAction = nextBestAction;
+  api.relatedContent = relatedContent;
+  api.searchFields = searchFields;
+  api.qualityCheck = qualityCheck;
+  api.isPerformanceTrack = isPerformanceTrack;
+  api.defaultReactions = defaultReactions;
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);

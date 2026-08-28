@@ -184,34 +184,12 @@
 
   function getTrackStatusView(track, options) {
     var availability = getTrackAvailability(track, options);
-    if (availability === 'available') {
-      return {
-        availability: availability,
-        contentStatus: 'available',
-        label: 'Доступен',
-        cta: 'Пройти трек',
-        tone: 'positive',
-        canStart: true,
-        showProgress: true,
-        explanation: 'Трек открыт: внутри есть шаги, действие и фиксация результата.',
-      };
-    }
-    if (availability === 'published_empty') {
-      return {
-        availability: availability,
-        contentStatus: 'in-progress',
-        label: 'Готовим',
-        cta: 'Открыть описание',
-        tone: 'waiting',
-        canStart: false,
-        showProgress: false,
-        explanation: 'Описание уже можно открыть. Шаги и практика появятся здесь, как только материал будет готов.',
-      };
-    }
+    var kind = api.itemKind ? api.itemKind(track) : 'track';
     if (availability === 'archived') {
       return {
         availability: availability,
         contentStatus: 'archived',
+        itemKind: kind,
         label: 'Снят с публикации',
         cta: 'Открыть описание',
         tone: 'muted',
@@ -224,12 +202,55 @@
       return {
         availability: availability,
         contentStatus: 'locked',
+        itemKind: kind,
         label: 'Нужен доступ',
         cta: 'Как получить доступ',
         tone: 'muted',
         canStart: false,
         showProgress: false,
         explanation: 'Трек существует, но для него нужен доступ.',
+      };
+    }
+    if (kind === 'material') {
+      return {
+        availability: availability,
+        contentStatus: 'material',
+        itemKind: 'material',
+        label: 'Материал',
+        cta: 'Открыть материал',
+        tone: 'waiting',
+        canStart: false,
+        showProgress: false,
+        explanation: 'Это материал: информация без обязательного рабочего следа.',
+      };
+    }
+    if (kind === 'track' && track.situation && track.outcome && track.title) {
+      var ready = availability === 'available';
+      return {
+        availability: ready ? 'available' : 'shell',
+        contentStatus: ready ? 'available' : 'shell',
+        itemKind: 'track',
+        label: ready ? 'Доступен' : '',
+        pageStatus: ready ? '' : 'Контур прохождения',
+        cta: 'Начать трек',
+        tone: 'positive',
+        canStart: true,
+        showProgress: true,
+        showCatalogBadge: ready,
+        explanation: 'Трек — исполняемый маршрут: исходное состояние, действие, рабочий след и следующее лучшее действие. Отдельные уроки появятся, когда содержание будет готово.',
+      };
+    }
+    if (availability === 'published_empty') {
+      return {
+        availability: availability,
+        contentStatus: 'in-progress',
+        itemKind: kind,
+        label: 'Готовим',
+        cta: kind === 'material' ? 'Открыть материал' : 'Открыть описание',
+        tone: 'waiting',
+        canStart: false,
+        showProgress: false,
+        explanation: 'Описание уже можно открыть. Шаги и практика появятся здесь, как только материал будет готов.',
       };
     }
     return {
