@@ -1,0 +1,105 @@
+<!-- nominify begin -->
+<style>
+  .mlm-research-proof,
+  .mlm-research-proof * { box-sizing: border-box; font-family: 'TildaSans', Arial, sans-serif !important; }
+  .mlm-research-proof { width: 100%; margin: 0; padding: 0; background: #ffffff; color: #ffffff; }
+  .mlm-research-proof__inner {
+    width: min(1160px, calc(100% - 40px));
+    margin: 0 auto;
+    padding: 38px 44px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 34px;
+    align-items: center;
+    background: #283944;
+  }
+  .mlm-research-proof__label {
+    margin: 0 0 8px;
+    font-size: 12px;
+    line-height: 1.3;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #d5ff43;
+  }
+  .mlm-research-proof__title {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.2;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: #ffffff;
+  }
+  .mlm-research-proof__text {
+    max-width: 820px;
+    margin: 13px 0 0;
+    font-size: 16px;
+    line-height: 1.5;
+    font-weight: 400;
+    color: #ffffff;
+    opacity: .88;
+  }
+  .mlm-research-proof__button {
+    min-width: 218px;
+    min-height: 50px;
+    padding: 0 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 0;
+    background: #d5ff43;
+    color: #283944 !important;
+    font-size: 14px;
+    line-height: 1.2;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none !important;
+    white-space: nowrap;
+    box-shadow: none;
+  }
+  .mlm-research-proof__button:hover { background: #e8ff7a; color: #283944 !important; }
+  @media (max-width: 768px) {
+    .mlm-research-proof__inner {
+      width: calc(100% - 24px);
+      padding: 28px 20px;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    .mlm-research-proof__title { font-size: 22px; }
+    .mlm-research-proof__button { width: 100%; min-width: 0; }
+  }
+  @media (max-width: 360px) {
+    .mlm-research-proof__inner { padding: 24px 16px; }
+    .mlm-research-proof__title { font-size: 20px; }
+  }
+</style>
+<div class="mlm-research-proof" id="research-basis">
+  <div class="mlm-research-proof__inner">
+    <div>
+      <p class="mlm-research-proof__label">Исследовательская основа</p>
+      <h2 class="mlm-research-proof__title">Как маркетинг-план превращается в систему ежедневных действий</h2>
+      <p class="mlm-research-proof__text">Мы изучили международные MLM-платформы и выделили общий исполнительный контур: стадия партнёра, следующая задача, инструмент, событие, прогресс и вмешательство наставника.</p>
+    </div>
+    <a class="mlm-research-proof__button" href="/research/marketing-plan" data-mlr-funnel="research_open_from_b2b" data-source-page="/" data-cta-position="b2b_home_after_tech" data-article-slug="marketing-plan">Читать исследование</a>
+  </div>
+</div>
+<script>
+(function () {
+  var nodes = document.querySelectorAll('#research-basis [data-mlr-funnel]');
+  for (var i = 0; i < nodes.length; i += 1) {
+    nodes[i].addEventListener('click', function () {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: this.getAttribute('data-mlr-funnel'),
+        source_page: this.getAttribute('data-source-page') || '/',
+        target_page: this.getAttribute('href') || '/research/marketing-plan',
+        cta_position: this.getAttribute('data-cta-position') || 'b2b_home_after_tech',
+        article_slug: this.getAttribute('data-article-slug') || 'marketing-plan',
+        timestamp: new Date().toISOString()
+      });
+    });
+  }
+})();
+</script>
+<!-- nominify end -->

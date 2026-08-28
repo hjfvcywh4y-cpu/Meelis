@@ -1,0 +1,144 @@
+[
+  {
+    "id": "home",
+    "file": "academy.html",
+    "url": "/academy",
+    "page": "home",
+    "title": "MLM Academy — библиотека действий",
+    "members": "public"
+  },
+  {
+    "id": "start",
+    "file": "start.html",
+    "url": "/start",
+    "page": "start",
+    "title": "С чего начать · MLM Academy",
+    "members": "public"
+  },
+  {
+    "id": "library",
+    "file": "library.html",
+    "url": "/library",
+    "page": "library",
+    "title": "Библиотека · MLM Academy",
+    "members": "public"
+  },
+  {
+    "id": "a1",
+    "file": "library-a1.html",
+    "url": "/library/a1",
+    "page": "section",
+    "section": "A1",
+    "title": "A1 · Старт и система · MLM Academy",
+    "members": "public"
+  },
+  {
+    "id": "a2",
+    "file": "library-a2.html",
+    "url": "/library/a2",
+    "page": "section",
+    "section": "A2",
+    "title": "A2 · Люди и база · MLM Academy",
+    "members": "public"
+  },
+  {
+    "id": "a3",
+    "file": "library-a3.html",
+    "url": "/library/a3",
+    "page": "section",
+    "section": "A3",
+    "title": "A3 · Первый контакт · MLM Academy",
+    "members": "public"
+  },
+  {
+    "id": "a4",
+    "file": "library-a4.html",
+    "url": "/library/a4",
+    "page": "section",
+    "section": "A4",
+    "title": "A4 · Потребность и решение · MLM Academy",
+    "members": "public"
+  },
+  {
+    "id": "a5",
+    "file": "library-a5.html",
+    "url": "/library/a5",
+    "page": "section",
+    "section": "A5",
+    "title": "A5 · Сомнения и отказ · MLM Academy",
+    "members": "public"
+  },
+  {
+    "id": "a6",
+    "file": "library-a6.html",
+    "url": "/library/a6",
+    "page": "section",
+    "section": "A6",
+    "title": "A6 · Повтор и рост · MLM Academy",
+    "members": "public"
+  },
+  {
+    "id": "track",
+    "file": "track.html",
+    "url": "/track",
+    "page": "track",
+    "title": "Трек · MLM Academy",
+    "members": "public"
+  },
+  {
+    "id": "about",
+    "file": "about.html",
+    "url": "/about",
+    "page": "about",
+    "title": "Как создаётся библиотека · MLM Academy",
+    "members": "public"
+  },
+  {
+    "id": "my",
+    "file": "my.html",
+    "url": "/my",
+    "page": "my",
+    "title": "Личная главная · MLM Academy",
+    "members": "member"
+  },
+  {
+    "id": "route",
+    "file": "my-route.html",
+    "url": "/my/route",
+    "page": "route",
+    "title": "Мой маршрут · MLM Academy",
+    "members": "member"
+  },
+  {
+    "id": "results",
+    "file": "my-results.html",
+    "url": "/my/results",
+    "page": "results",
+    "title": "Мои результаты · MLM Academy",
+    "members": "member"
+  },
+  {
+    "id": "profile",
+    "file": "profile.html",
+    "url": "/profile",
+    "page": "profile",
+    "title": "Профиль · MLM Academy",
+    "members": "member"
+  },
+  {
+    "id": "access",
+    "file": "access.html",
+    "url": "/access",
+    "page": "access",
+    "title": "Доступ · MLM Academy",
+    "members": "public"
+  },
+  {
+    "id": "preview",
+    "file": "preview-catalog.html",
+    "url": "/preview/catalog",
+    "page": "preview",
+    "title": "Предпросмотр каталога · MLM Academy",
+    "members": "editor"
+  }
+]

@@ -1,0 +1,415 @@
+@import "tailwindcss";
+
+/*
+  Дизайн-система MLM Academy.
+  Образ: рабочая карта действий — редакционная сетка, тёплая бумага,
+  чёрные линии, крупная типографика, шесть функциональных акцентов.
+  Никаких градиентов, стекла, теней и декоративного шума.
+*/
+
+@theme {
+  --color-paper: #f3efe6;
+  --color-surface: #fffdf8;
+  --color-ink: #111111;
+  --color-muted: #6d6961;
+  --color-line: #111111;
+  --color-line-soft: rgba(17, 17, 17, 0.16);
+  --color-grid-line: rgba(17, 17, 17, 0.08);
+
+  /* Вторичный текст и линии на чёрном фоне. Сплошные цвета вместо прозрачности,
+     чтобы контраст был предсказуемым и проверяемым. */
+  --color-on-ink: #f3efe6;
+  --color-on-ink-muted: #b9b5ad;
+  --color-on-ink-line: #3a3a3a;
+
+  --color-a1: #3157ff;
+  --color-a2: #d5ff43;
+  --color-a3: #ff6b35;
+  --color-a4: #64d8ff;
+  --color-a5: #ff5364;
+  --color-a6: #b892ff;
+
+  --color-success: #0b7a53;
+  --color-warning: #d39a00;
+  --color-danger: #c93843;
+
+  --radius-small: 4px;
+  --radius-control: 8px;
+
+  --font-sans: var(--font-onest), "Onest", Arial, Helvetica, sans-serif;
+  --font-mono: var(--font-mono-code), "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+    monospace;
+
+  --breakpoint-xs: 22.5rem;
+}
+
+:root {
+  --section-a1: #3157ff;
+  --section-a2: #d5ff43;
+  --section-a3: #ff6b35;
+  --section-a4: #64d8ff;
+  --section-a5: #ff5364;
+  --section-a6: #b892ff;
+
+  /* Акцент без раздела — лаймовый: единственный цвет, который читается
+     чёрным текстом в любом контексте. Раздел подставляет свой через
+     sectionAccentStyle() вместе с корректным цветом текста. */
+  --accent: var(--section-a2);
+  --accent-ink: var(--color-ink);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+
+  --border: 2px;
+  --shadow: none;
+  --header-height: 72px;
+  --content-max: 1440px;
+}
+
+/* Базовые стили обязаны лежать в слое base: неслоёные правила выигрывают
+   у любых слоёв, и `a { color: inherit }` тихо перебивал бы кнопки-ссылки. */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  p,
+  figure,
+  ul,
+  ol {
+    margin: 0;
+  }
+
+  ul,
+  ol {
+    padding: 0;
+    list-style: none;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-a1);
+    outline-offset: 3px;
+  }
+}
+
+/* ---------------------------------------------------------------- сетка */
+
+@utility container-grid {
+  width: min(var(--content-max), 100%);
+  margin-inline: auto;
+  padding-inline: 16px;
+
+  @media (min-width: 768px) {
+    padding-inline: 24px;
+  }
+
+  @media (min-width: 1200px) {
+    padding-inline: 32px;
+  }
+}
+
+/* Тонкие вертикальные линии редакционной сетки на крупных публичных экранах. */
+@utility grid-lines {
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc((100% - 32px) / 4 - 1px),
+    var(--color-grid-line) calc((100% - 32px) / 4 - 1px),
+    var(--color-grid-line) calc((100% - 32px) / 4)
+  );
+
+  @media (min-width: 768px) {
+    background-image: repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc((100% - 48px) / 8 - 1px),
+      var(--color-grid-line) calc((100% - 48px) / 8 - 1px),
+      var(--color-grid-line) calc((100% - 48px) / 8)
+    );
+  }
+
+  @media (min-width: 1200px) {
+    background-image: repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc((100% - 64px) / 12 - 1px),
+      var(--color-grid-line) calc((100% - 64px) / 12 - 1px),
+      var(--color-grid-line) calc((100% - 64px) / 12)
+    );
+  }
+}
+
+/* --------------------------------------------------------- типографика */
+
+@utility display-1 {
+  font-size: clamp(42px, 7.6vw, 96px);
+  line-height: 0.92;
+  letter-spacing: -0.055em;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+@utility heading-1 {
+  font-size: clamp(36px, 5.2vw, 64px);
+  line-height: 1;
+  letter-spacing: -0.045em;
+  font-weight: 800;
+}
+
+@utility heading-2 {
+  font-size: clamp(28px, 3.4vw, 40px);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  font-weight: 800;
+}
+
+@utility heading-3 {
+  font-size: clamp(20px, 2vw, 26px);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+@utility body-l {
+  font-size: clamp(18px, 1.4vw, 20px);
+  line-height: 1.45;
+}
+
+@utility meta-text {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------- компоненты
+   Компонентные классы живут в слое components, а варианты записаны
+   составными селекторами (`.btn.btn-primary`). Так порядок генерации
+   утилит не может «перебить» вариант базовым классом, а Tailwind-утилиты
+   из слоя utilities по-прежнему остаются сверху.
+--------------------------------------------------------------------- */
+
+@layer components {
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding-inline: 10px;
+    border: 1px solid var(--color-ink);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .eyebrow.eyebrow-dark {
+    background: var(--color-ink);
+    color: #fff;
+  }
+
+  .eyebrow.eyebrow-accent {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding-inline: 18px;
+    border: 2px solid var(--color-ink);
+    border-radius: 0;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+    transition:
+      transform 160ms ease,
+      background-color 160ms ease,
+      color 160ms ease;
+  }
+
+  .btn:hover:not(:disabled) {
+    transform: translate(-2px, -2px);
+  }
+
+  .btn:active:not(:disabled) {
+    transform: translate(0, 0);
+  }
+
+  .btn:disabled,
+  .btn[aria-disabled='true'] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn.btn-primary {
+    background: var(--color-ink);
+    color: #fff;
+  }
+
+  /* Акцентная кнопка всегда лаймовая: цвет раздела на большой заливке
+     не гарантировал бы контраст AA. Раздел живёт в полосах и метках. */
+  .btn.btn-accent {
+    background: var(--color-a2);
+    color: var(--color-ink);
+  }
+
+  .btn.btn-small {
+    min-height: 44px;
+    padding-inline: 14px;
+    font-size: 14px;
+  }
+
+  .card {
+    position: relative;
+    border: 2px solid var(--color-ink);
+    background: var(--color-surface);
+  }
+
+  .card-soft {
+    position: relative;
+    border: 1px solid var(--color-line-soft);
+    background: var(--color-surface);
+  }
+
+  .card-interactive {
+    transition:
+      transform 160ms ease,
+      background-color 160ms ease;
+  }
+
+  .card-interactive:hover {
+    transform: translate(-3px, -3px);
+  }
+
+  .accent-strip {
+    background: var(--accent);
+    border-bottom: 2px solid var(--color-ink);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 14px;
+    border: 1px solid var(--color-ink);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .chip.chip-active {
+    background: var(--color-ink);
+    color: #fff;
+  }
+
+  .field {
+    width: 100%;
+    min-height: 52px;
+    padding-inline: 16px;
+    border: 2px solid var(--color-ink);
+    border-radius: 0;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-size: 17px;
+  }
+}
+
+/* Пустая область будущих шагов трека: честный blueprint, а не фейковый контент. */
+@utility blueprint {
+  border: 2px dashed var(--color-ink);
+  background-color: var(--color-surface);
+  background-image:
+    linear-gradient(var(--color-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-grid-line) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+@utility skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  padding: 12px 16px;
+  background: var(--color-ink);
+  color: #fff;
+  font-weight: 700;
+  transform: translateY(-200%);
+
+  &:focus {
+    transform: translateY(0);
+  }
+}
+
+/* Один срезанный угол — подпись языка, а не украшение каждого элемента. */
+@utility corner-cut {
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none;
+  }
+}

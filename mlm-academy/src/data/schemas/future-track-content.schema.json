@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlmacademy.ru/schemas/future-track-content.schema.json",
+  "title": "MLM Academy Future Track Content",
+  "description": "Контракт на будущее. В текущей итерации не создавать ни одного наполненного объекта этого типа.",
+  "type": "object",
+  "required": ["trackId", "version", "status", "steps", "completionRule"],
+  "properties": {
+    "trackId": {"type": "string", "pattern": "^A[1-6]-[0-9]{3}$"},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "status": {"enum": ["draft", "review", "published", "archived"]},
+    "estimatedMinutes": {"type": ["integer", "null"], "minimum": 1},
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["stepId", "type", "title"],
+        "properties": {
+          "stepId": {"type": "string"},
+          "type": {"enum": ["read", "watch", "listen", "answer", "write", "upload", "do", "wait", "check"]},
+          "title": {"type": "string"},
+          "body": {"type": ["string", "null"]}
+        },
+        "additionalProperties": true
+      }
+    },
+    "completionRule": {
+      "type": "object",
+      "required": ["requiresAction", "requiresEvidence", "requiresNextStep"],
+      "properties": {
+        "requiresAction": {"type": "boolean"},
+        "requiresEvidence": {"type": "boolean"},
+        "requiresNextStep": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

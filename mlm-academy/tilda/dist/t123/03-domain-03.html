@@ -1,0 +1,295 @@
+<!-- Блок T123: доменная логика 3/10 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<script>
+/**
+ * Репозитории кабинета. localStorage — только запасной контур, не сервер.
+ * Секреты сюда не класть. MLMA_API_URL задаётся в HEAD после подключения Supabase.
+ */
+(function (root) {
+  'use strict';
+  var api = root.MLMA;
+  if (!api) return;
+
+  var STORE_KEY = 'mlma.account.v1';
+  var OUTBOX_KEY = 'mlma.outbox.v1';
+  var MODE_LOCAL = 'local_fallback';
+  var MODE_SERVER = 'server';
+
+  function nowIso() {
+    return new Date().toISOString();
+  }
+
+  function emptyAccountRecord(session) {
+    session = session || {};
+    return {
+      user: {
+        maId: session.maId || '',
+        email: session.email || '',
+        name: session.name || '',
+        phone: session.phone || '',
+        groups: session.groups && session.groups.length ? session.groups.slice() : session.loggedIn ? ['FREE'] : [],
+      },
+      profile: api.getProfile ? api.getProfile() : api.sanitizeProfile(null),
+      entitlements: [],
+      orders: [],
+      payments: [],
+      savedTrackIds: [],
+      route: { trackIds: [] },
+      runs: {},
+      artifacts: [],
+      updatedAt: '',
+    };
+  }
+
+  function readStore() {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return {};
+      var raw = window.localStorage.getItem(STORE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (err) {
+      return {};
+    }
+  }
+
+  function writeStore(all) {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return;
+      window.localStorage.setItem(STORE_KEY, JSON.stringify(all));
+    } catch (err) {
+      /* private mode */
+    }
+  }
+
+  function readOutbox() {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return [];
+      var raw = window.localStorage.getItem(OUTBOX_KEY);
+      var list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch (err) {
+      return [];
+    }
+  }
+
+  function writeOutbox(list) {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return;
+      window.localStorage.setItem(OUTBOX_KEY, JSON.stringify(list.slice(-200)));
+    } catch (err) {
+      /* ignore */
+    }
+  }
+
+  function apiBase() {
+    try {
+      if (typeof window !== 'undefined' && window.MLMA_API_URL) return String(window.MLMA_API_URL).replace(/\/$/, '');
+    } catch (err) {
+      /* ignore */
+    }
+    return '';
+  }
+
+  function storageMode() {
+    return apiBase() ? MODE_SERVER : MODE_LOCAL;
+  }
+
+  function recordKey(session) {
+    return (session && (session.maId || session.email)) || 'local';
+  }
+
+  function loadRecord(session) {
+    var all = readStore();
+    var key = recordKey(session);
+    var row = all[key] || emptyAccountRecord(session);
+    if (session && session.loggedIn) {
+      row.user.email = session.email || row.user.email;
+      row.user.name = session.name || row.user.name;
+      row.user.maId = session.maId || row.user.maId;
+      row.user.phone = session.phone || row.user.phone;
+      if (!row.user.groups || !row.user.groups.length) row.user.groups = ['FREE'];
+    }
+    if ((!row.savedTrackIds || !row.savedTrackIds.length) && row.profile && row.profile.savedTrackIds) {
+      row.savedTrackIds = row.profile.savedTrackIds.slice();
+    }
+    return row;
+  }
+
+  function saveRecord(session, row) {
+    row.updatedAt = nowIso();
+    var all = readStore();
+    all[recordKey(session)] = row;
+    writeStore(all);
+    enqueue('upsert_account', { key: recordKey(session) });
+    return row;
+  }
+
+  function enqueue(type, payload) {
+    var box = readOutbox();
+    box.push({ id: 'ob_' + Date.now() + '_' + box.length, type: type, payload: payload || {}, createdAt: nowIso() });
+    writeOutbox(box);
+  }
+
+  var LocalRepo = {
+    mode: MODE_LOCAL,
+    loadAccount: function (session) {
+      return loadRecord(session);
+    },
+    saveProfile: function (session, profile) {
+      var row = loadRecord(session);
+      row.profile = profile;
+      row.savedTrackIds = (profile && profile.savedTrackIds) || [];
+      saveRecord(session, row);
+      return row;
+    },
+    saveSavedTracks: function (session, ids) {
+      var row = loadRecord(session);
+      row.savedTrackIds = ids.slice();
+      if (row.profile) row.profile.savedTrackIds = ids.slice();
+      saveRecord(session, row);
+      return row;
+    },
+    saveEntitlements: function (session, list) {
+      var row = loadRecord(session);
+      row.entitlements = list.slice();
+      saveRecord(session, row);
+      return row;
+    },
+    saveOrder: function (session, order) {
+      var row = loadRecord(session);
+      var found = false;
+      for (var i = 0; i < row.orders.length; i += 1) {
+        if (row.orders[i].orderId === order.orderId) {
+          row.orders[i] = order;
+          found = true;
+        }
+      }
+      if (!found) row.orders.push(order);
+      saveRecord(session, row);
+      return row;
+    },
+    savePayment: function (session, payment) {
+      var row = loadRecord(session);
+      var found = false;
+      for (var i = 0; i < row.payments.length; i += 1) {
+        if (row.payments[i].paymentId === payment.paymentId || row.payments[i].idempotencyKey === payment.idempotencyKey) {
+          row.payments[i] = payment;
+          found = true;
+        }
+      }
+      if (!found) row.payments.push(payment);
+      saveRecord(session, row);
+      return row;
+    },
+    saveArtifact: function (session, artifact) {
+      var row = loadRecord(session);
+      row.artifacts = row.artifacts || [];
+      row.artifacts.unshift(artifact);
+      row.artifacts = row.artifacts.slice(0, 50);
+      saveRecord(session, row);
+      return row;
+    },
+    saveRun: function (session, trackId, runtime) {
+      var row = loadRecord(session);
+      row.runs = row.runs || {};
+      row.runs[trackId] = runtime;
+      saveRecord(session, row);
+      return row;
+    },
+  };
+
+  function HttpRepo(base) {
+    this.mode = MODE_SERVER;
+    this.base = base;
+  }
+  HttpRepo.prototype.request = function (path, body) {
+    return fetch(this.base + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body || {}),
+    }).then(function (res) {
+      if (!res.ok) throw new Error('api_' + res.status);
+      return res.json();
+    });
+  };
+  HttpRepo.prototype.loadAccount = function (session) {
+    var local = LocalRepo.loadAccount(session);
+    var self = this;
+    this.request('/account/get', { maId: session.maId || '', email: session.email || '' })
+      .then(function (data) {
+        if (!data || !data.account) return;
+        saveRecord(session, data.account);
+      })
+      .catch(function () {
+        /* keep local fallback */
+      });
+    return local;
+  };
+  HttpRepo.prototype.saveProfile = function (session, profile) {
+    LocalRepo.saveProfile(session, profile);
+    this.request('/account/profile', { maId: session.maId || '', email: session.email || '', profile: profile }).catch(function () {});
+    return LocalRepo.loadAccount(session);
+  };
+  HttpRepo.prototype.saveSavedTracks = LocalRepo.saveSavedTracks;
+  HttpRepo.prototype.saveEntitlements = LocalRepo.saveEntitlements;
+  HttpRepo.prototype.saveOrder = LocalRepo.saveOrder;
+  HttpRepo.prototype.savePayment = LocalRepo.savePayment;
+  HttpRepo.prototype.saveArtifact = LocalRepo.saveArtifact;
+  HttpRepo.prototype.saveRun = LocalRepo.saveRun;
+
+  function getRepo() {
+    var base = apiBase();
+    return base ? new HttpRepo(base) : LocalRepo;
+  }
+
+  function hydrateAccount(session) {
+    session = session || api.readMembersSession();
+    var row = getRepo().loadAccount(session);
+    var profile = api.sanitizeProfile(Object.assign({}, row.profile || {}, {
+      savedTrackIds: row.savedTrackIds && row.savedTrackIds.length ? row.savedTrackIds : (row.profile && row.profile.savedTrackIds) || [],
+      displayName: (row.profile && row.profile.displayName) || session.name || '',
+    }));
+    if (session.loggedIn) {
+      try {
+        api.saveProfile(profile);
+      } catch (err) {
+        /* ignore */
+      }
+    }
+    return {
+      loggedIn: !!session.loggedIn,
+      maId: session.maId || row.user.maId || '',
+      email: session.email || row.user.email || '',
+      name: session.name || row.user.name || profile.displayName || '',
+      phone: session.phone || row.user.phone || '',
+      groups: (row.user.groups && row.user.groups.length ? row.user.groups : session.groups) || [],
+      entitlements: row.entitlements || [],
+      orders: row.orders || [],
+      payments: row.payments || [],
+      artifacts: row.artifacts || [],
+      runs: row.runs || {},
+      profile: profile,
+      storageMode: storageMode(),
+      source: session.source,
+    };
+  }
+
+  var prevToggle = api.toggleSavedTrack;
+  api.toggleSavedTrack = function (trackId) {
+    var next = prevToggle ? prevToggle(trackId) : api.getProfile();
+    var session = api.readMembersSession ? api.readMembersSession() : { loggedIn: false };
+    if (session.loggedIn) getRepo().saveSavedTracks(session, next.savedTrackIds || []);
+    return next;
+  };
+
+  api.STORE_KEY = STORE_KEY;
+  api.OUTBOX_KEY = OUTBOX_KEY;
+  api.storageMode = storageMode;
+  api.getRepo = getRepo;
+  api.hydrateAccount = hydrateAccount;
+  api.enqueueOutbox = enqueue;
+  api.LocalRepo = LocalRepo;
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+

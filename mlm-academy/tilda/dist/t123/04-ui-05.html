@@ -1,0 +1,754 @@
+<!-- Блок T123: рендер оболочки 5/5 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<script>
+(function (root) {
+  'use strict';
+  var D = root.MLMA;
+  if (!D || !D._ui || !D._ui.pageBody) return;
+  var header = D._ui.header;
+  var footer = D._ui.footer;
+  var mobileNav = D._ui.mobileNav;
+  var catalogBrowserHtml = D._ui.catalogBrowserHtml;
+  var readCatalog = D._ui.readCatalog;
+  var currentPage = D._ui.currentPage;
+  var queryParam = D._ui.queryParam;
+  var pageBody = D._ui.pageBody;
+
+  function bindLibrary(state, rootEl) {
+    var target = rootEl.querySelector('#mlma-catalog');
+    if (!target) return;
+    var extra = {};
+    if (state.page === 'section') extra.stage = state.root.getAttribute('data-mlma-section') || '';
+    var filters = D.parseLibraryState(window.location.search, extra);
+    var timer = null;
+    var drawerOpen = false;
+    var shown = D.PAGE_SIZE || 15;
+    var host = null;
+    var rerankSeq = 0;
+    var lastResult = null;
+
+    function syncUrl(mode) {
+      var qs = D.serializeLibraryState(filters);
+      var url = window.location.pathname + (qs ? '?' + qs : '');
+      if (mode === 'push') history.pushState({ mlmaLib: 1 }, '', url);
+      else history.replaceState({ mlmaLib: 1 }, '', url);
+    }
+
+    function persist() {
+      if (D.saveLibraryRestore) {
+        D.saveLibraryRestore({
+          href: window.location.pathname + window.location.search,
+          q: filters.q || '',
+          filters: D.serializeLibraryState(filters),
+          scroll: window.scrollY || 0,
+        });
+      }
+    }
+
+    function setDrawer(open) {
+      drawerOpen = open;
+      var drawer = document.getElementById('mlma-drawer');
+      var back = document.getElementById('mlma-drawer-backdrop');
+      var btn = target.querySelector('#mlma-open-filters');
+      if (drawer) drawer.hidden = !open;
+      if (back) back.hidden = !open;
+      if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      document.documentElement.classList.toggle('mlma-lock', !!open);
+    }
+
+    function toggleList(list, value) {
+      var next = (list || []).slice();
+      var idx = next.indexOf(value);
+      if (idx === -1) next.push(value);
+      else next.splice(idx, 1);
+      return next;
+    }
+
+    function emitSearch() {
+      var result = D.searchCatalog(state.tracks, filters);
+      if (result.kind === 'zero' || result.kind === 'need_more') {
+        D.trackEvent('library_zero_results', { query: filters.q || '', filters: D.serializeLibraryState(filters), source: 'library' });
+      } else if (filters.q) {
+        D.trackEvent('search_submitted', { query: filters.q, source: 'library' });
+        D.trackEvent('search_query', { query: filters.q, filters: D.serializeLibraryState(filters), source: 'library' });
+        D.trackEvent('library_search', { query: filters.q, filters: D.serializeLibraryState(filters), source: 'library' });
+        D.trackEvent('search_results_shown', { query: filters.q, source: 'library' });
+      } else {
+        D.trackEvent('filter_change', { filters: D.serializeLibraryState(filters), source: 'library' });
+        D.trackEvent('library_filter_change', { filters: D.serializeLibraryState(filters), source: 'library' });
+      }
+    }
+
+    function placeDrawer() {
+      host = document.getElementById('mlma-drawer-host-live');
+      var source = target.querySelector('.mlma-drawer-host');
+      if (!source) return;
+      if (!host) {
+        host = document.createElement('div');
+        host.id = 'mlma-drawer-host-live';
+        host.className = 'mlma';
+        document.body.appendChild(host);
+      }
+      host.innerHTML = source.innerHTML;
+      source.parentNode.removeChild(source);
+    }
+
+    function bindChrome() {
+      var search = target.querySelector('#mlma-search');
+      if (search) {
+        search.addEventListener('input', function () {
+          var value = search.value;
+          window.clearTimeout(timer);
+          timer = window.setTimeout(function () {
+            filters.q = value;
+            filters.preset = null;
+            shown = D.PAGE_SIZE || 15;
+            paint({ keepFocus: true, url: 'replace' });
+          }, 200);
+        });
+      }
+      var form = target.querySelector('#mlma-lib-form');
+      if (form) {
+        form.addEventListener('submit', function (event) {
+          event.preventDefault();
+          var field = target.querySelector('#mlma-search');
+          filters.q = field ? field.value : '';
+          shown = D.PAGE_SIZE || 15;
+          paint({ url: 'push' });
+        });
+      }
+      function onToggle(attr, key, single) {
+        var nodes = document.querySelectorAll('[' + attr + ']');
+        for (var i = 0; i < nodes.length; i += 1) {
+          nodes[i].addEventListener('click', function (event) {
+            var el = event.currentTarget;
+            var value = el.getAttribute(attr) || '';
+            if (key === 'stage') {
+              value = D.normalizeSectionId(value);
+              filters.stages = toggleList(filters.stages || (filters.stage ? [filters.stage] : []), value);
+              filters.stage = filters.stages.length === 1 ? filters.stages[0] : null;
+            } else if (key === 'avail') {
+              filters.avail = filters.avail === value ? null : value;
+            } else if (key === 'experience') {
+              filters.experience = filters.experience === value ? null : value;
+              var exp = D.getExperience ? D.getExperience(filters.experience) : null;
+              filters.lvl = exp && exp.level ? [exp.level] : [];
+            } else if (single) {
+              filters[key] = filters[key] === value ? null : value;
+            } else {
+              filters[key] = toggleList(filters[key] || [], value);
+            }
+            filters.preset = null;
+            shown = D.PAGE_SIZE || 15;
+            paint({ url: 'push' });
+          });
+        }
+      }
+      onToggle('data-mlma-stage', 'stage');
+      onToggle('data-mlma-sit', 'sit');
+      onToggle('data-mlma-fmt', 'fmt');
+      onToggle('data-mlma-goal', 'goal', true);
+      onToggle('data-mlma-experience', 'experience', true);
+      onToggle('data-mlma-time', 'time', true);
+      onToggle('data-mlma-type', 'type', true);
+      var clearNodes = document.querySelectorAll('[data-mlma-clear]');
+      for (var c = 0; c < clearNodes.length; c += 1) {
+        clearNodes[c].addEventListener('click', function (event) {
+          var el = event.currentTarget;
+          var key = el.getAttribute('data-mlma-clear');
+          var value = el.getAttribute('data-mlma-clear-value');
+          if (key === 'q') filters.q = '';
+          else if (key === 'stage') {
+            filters.stages = (filters.stages || []).filter(function (item) { return item !== value; });
+            filters.stage = filters.stages.length === 1 ? filters.stages[0] : null;
+          } else if (key === 'sit') {
+            filters.sit = (filters.sit || []).filter(function (item) { return item !== value; });
+            filters.situation = null;
+          } else if (Array.isArray(filters[key])) {
+            filters[key] = filters[key].filter(function (item) { return item !== value; });
+          } else filters[key] = null;
+          filters.preset = key === 'preset' ? null : filters.preset;
+          shown = D.PAGE_SIZE || 15;
+          paint({ url: 'push' });
+        });
+      }
+      var resetNodes = document.querySelectorAll('[data-mlma-reset]');
+      for (var r = 0; r < resetNodes.length; r += 1) {
+        resetNodes[r].addEventListener('click', function () {
+          filters = D.emptyLibraryState();
+          shown = D.PAGE_SIZE || 15;
+          paint({ url: 'push' });
+        });
+      }
+      var openBtn = target.querySelector('#mlma-open-filters');
+      if (openBtn) openBtn.addEventListener('click', function () { setDrawer(true); });
+      var closeNodes = document.querySelectorAll('[data-mlma-drawer-close]');
+      for (var x = 0; x < closeNodes.length; x += 1) {
+        closeNodes[x].addEventListener('click', function () { setDrawer(false); });
+      }
+      var back = document.getElementById('mlma-drawer-backdrop');
+      if (back) back.addEventListener('click', function () { setDrawer(false); });
+      var more = target.querySelector('[data-mlma-more]');
+      if (more) {
+        more.addEventListener('click', function () {
+          shown += D.PAGE_SIZE || 15;
+          paint({ url: 'replace' });
+        });
+      }
+      var share = target.querySelector('#mlma-share');
+      if (share) {
+        share.addEventListener('click', function () {
+          var href = window.location.origin + (share.getAttribute('data-mlma-share') || '/library');
+          var msg = target.querySelector('#mlma-share-msg');
+          function done() {
+            if (msg) msg.textContent = 'Ссылка на подборку скопирована';
+          }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(href).then(done).catch(function () {
+              window.prompt('Скопируйте ссылку', href);
+              done();
+            });
+          } else {
+            window.prompt('Скопируйте ссылку', href);
+            done();
+          }
+        });
+      }
+      var links = target.querySelectorAll('.mlma-track-link');
+      for (var l = 0; l < links.length; l += 1) {
+        links[l].addEventListener('click', persist);
+      }
+    }
+
+    function paint(opts) {
+      opts = opts || {};
+      var keep = opts.keepFocus;
+      var selection = null;
+      var searchBefore = target.querySelector('#mlma-search');
+      if (keep && searchBefore) selection = searchBefore.selectionStart;
+      var wasOpen = drawerOpen;
+      lastResult = opts.result || D.searchCatalog(state.tracks, filters);
+      target.innerHTML = catalogBrowserHtml(state, filters, { shown: shown, result: lastResult });
+      placeDrawer();
+      bindChrome();
+      if (wasOpen) setDrawer(true);
+      var search = target.querySelector('#mlma-search');
+      if (keep && search) {
+        search.focus();
+        try {
+          var pos = selection == null ? search.value.length : selection;
+          search.setSelectionRange(pos, pos);
+        } catch (err) {
+          /* ignore */
+        }
+      }
+      if (opts.url === 'push') syncUrl('push');
+      else if (opts.url === 'replace') syncUrl('replace');
+      persist();
+      emitSearch();
+      if (!opts.skipRerank) requestRerank();
+    }
+
+    function requestRerank() {
+      var url = typeof window !== 'undefined' ? window.MLMA_RERANK_URL : '';
+      if (!url || !filters.q || !D.rerankPayload || !D.applyRerankResponse) return;
+      var local = lastResult || D.searchCatalog(state.tracks, filters);
+      if (local.kind === 'need_more' || (local.analysis && local.analysis.outOfScope)) return;
+      var payload = D.rerankPayload(local, filters.q);
+      if (!payload.candidates.length) return;
+      var seq = (rerankSeq += 1);
+      var qNow = filters.q;
+      var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      var timerId = setTimeout(function () {
+        if (ctrl) ctrl.abort();
+      }, 2500);
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload),
+        signal: ctrl ? ctrl.signal : undefined,
+      })
+        .then(function (res) {
+          if (!res.ok) throw new Error('local_fallback');
+          return res.json();
+        })
+        .then(function (data) {
+          if (seq !== rerankSeq || filters.q !== qNow) return;
+          var next = D.applyRerankResponse(local, data);
+          if (next && (next.source === 'ai' || next.source === 'local')) {
+            paint({ keepFocus: true, skipRerank: true, result: next });
+          }
+        })
+        .catch(function () {})
+        .then(function () {
+          clearTimeout(timerId);
+        });
+    }
+
+    window.addEventListener('popstate', function () {
+      filters = D.parseLibraryState(window.location.search, extra);
+      shown = D.PAGE_SIZE || 15;
+      paint();
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && drawerOpen) setDrawer(false);
+    });
+    paint();
+    var restore = D.readLibraryRestore ? D.readLibraryRestore() : null;
+    if (restore && restore.scroll && window.location.search) {
+      window.setTimeout(function () {
+        window.scrollTo(0, restore.scroll);
+      }, 0);
+    }
+  }
+
+  function bind(state, rootEl) {
+    rootEl.querySelectorAll('[data-mlma-choose]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = D.normalizeSectionId(el.getAttribute('data-mlma-choose') || '');
+        if (!id) return;
+        state.profile = D.saveProfile({ selectedSectionId: id });
+        mount(rootEl);
+      });
+    });
+    rootEl.querySelectorAll('[data-mlma-level]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = el.getAttribute('data-mlma-level') || '';
+        var current = state.profile.currentGoal === id ? '' : id;
+        state.profile = D.saveProfile({ currentGoal: current });
+        mount(rootEl);
+      });
+    });
+    var menuBtn = rootEl.querySelector('#mlma-open-menu');
+    var menu = rootEl.querySelector('#mlma-menu');
+    if (menuBtn && menu) {
+      menuBtn.addEventListener('click', function () {
+        var open = menu.hidden;
+        menu.hidden = !open;
+        menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+    }
+    rootEl.querySelectorAll('[data-mlma-run-start]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = D.normalizeTrackId(el.getAttribute('data-mlma-run-start'));
+        var track = id ? D.getById(state.allTracks, id, true) : null;
+        if (track && D.startRuntime) D.startRuntime(track);
+        D.trackEvent('track_start', { itemId: id || '', source_page: '/track', article_slug: id || '' });
+      });
+    });
+    var runForm = rootEl.querySelector('#mlma-runtime-form');
+    if (runForm) {
+      runForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var id = D.normalizeTrackId(queryParam('id'));
+        var track = id ? D.getById(state.allTracks, id, true) : null;
+        if (!track || !D.submitRuntime) return;
+        var artifact = (runForm.querySelector('#mlma-artifact') || {}).value || '';
+        var evidenceNote = (runForm.querySelector('#mlma-evidence') || {}).value || '';
+        D.trackEvent('track_action_submitted', { itemId: id, source_page: '/track' });
+        D.trackEvent('track_evidence_submitted', { itemId: id, source_page: '/track' });
+        var result = D.submitRuntime(track, { artifact: artifact, evidenceNote: evidenceNote });
+        var branch = result && result.check ? result.check.branch : '';
+        D.trackEvent(branch === 'success' || branch === 'highResult' ? 'track_evidence_verified' : 'track_evidence_rejected', {
+          itemId: id,
+          cta_position: branch,
+        });
+        D.trackEvent('track_branch_selected', { itemId: id, cta_position: branch });
+        D.trackEvent('track_feedback_shown', { itemId: id, cta_position: branch });
+        if (branch === 'success' || branch === 'highResult') D.trackEvent('track_complete', { itemId: id });
+        if (branch === 'error' || branch === 'risk') D.trackEvent('track_retry', { itemId: id });
+        if (branch === 'risk') D.trackEvent('leader_escalation', { itemId: id, cta_position: 'risk' });
+        if (result && result.state && result.state.attempts >= 2 && (branch === 'error' || branch === 'risk')) {
+          D.trackEvent('corrective_track_assigned', { itemId: id, cta_position: branch });
+        }
+        mount(rootEl);
+      });
+    }
+    rootEl.querySelectorAll('[data-mlma-run-retry]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = D.normalizeTrackId(el.getAttribute('data-mlma-run-retry'));
+        var track = id ? D.getById(state.allTracks, id, true) : null;
+        if (track && D.retryRuntime) D.retryRuntime(track);
+        D.trackEvent('track_retry', { itemId: id || '' });
+        mount(rootEl);
+      });
+    });
+    rootEl.querySelectorAll('[data-mlma-nba]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        D.trackEvent('track_next_open', { itemId: el.getAttribute('data-mlma-nba') || '', source_page: '/track' });
+        D.trackEvent('track_next_recommended', { itemId: el.getAttribute('data-mlma-nba') || '', source_page: '/track' });
+      });
+    });
+    rootEl.querySelectorAll('[data-mlma-save]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = el.getAttribute('data-mlma-save');
+        if (!id) return;
+        state.profile = D.toggleSavedTrack(id);
+        D.trackEvent('track_saved', { itemId: id, source: state.page });
+        mount(rootEl);
+      });
+    });
+    var form = rootEl.querySelector('#mlma-profile-form');
+    if (form) {
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var name = ((form.querySelector('#mlma-name') || {}).value || '').trim();
+        var roleEl = form.querySelector('input[name="partnerRole"]:checked');
+        var consent = form.querySelector('#mlma-consent');
+        var msg = form.querySelector('#mlma-profile-msg');
+        if (!name) {
+          if (msg) msg.textContent = 'Укажите имя — это займёт несколько секунд.';
+          return;
+        }
+        if (!roleEl) {
+          if (msg) msg.textContent = 'Выберите роль: новичок, партнёр или лидер.';
+          return;
+        }
+        if (!consent || !consent.checked) {
+          if (msg) msg.textContent = 'Нужно согласие на обработку персональных данных.';
+          return;
+        }
+        var task = ((form.querySelector('#mlma-task') || {}).value || '').trim();
+        var patch = {
+          displayName: name,
+          partnerRole: roleEl.value,
+          experience: (form.querySelector('#mlma-experience') || {}).value || '',
+          currentTask: task,
+          currentGoal: task,
+          difficulty: ((form.querySelector('#mlma-difficulty') || {}).value || '').trim(),
+          desiredResult: ((form.querySelector('#mlma-result') || {}).value || '').trim(),
+          availableTime: (form.querySelector('#mlma-time') || {}).value || '',
+          selectedSectionId: (form.querySelector('#mlma-section') || {}).value || null,
+          consentAt: state.profile.consentAt || new Date().toISOString(),
+          notifyEmail: !!(form.querySelector('#mlma-notify') && form.querySelector('#mlma-notify').checked),
+          onboardingComplete: true,
+        };
+        state.profile = D.saveProfile(patch);
+        if (state.account && D.getRepo) D.getRepo().saveProfile(state.account, state.profile);
+        D.trackEvent('profile_completed', { source_page: '/profile' });
+        if (msg) msg.textContent = 'Профиль сохранён. Дальше — одно следующее действие.';
+      });
+    }
+    rootEl.querySelectorAll('[data-mlma-skip-onboarding]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        state.profile = D.saveProfile({ onboardingSkipped: true, onboardingComplete: !!(state.profile.displayName && state.profile.partnerRole && state.profile.consentAt) });
+        if (state.account && D.getRepo) D.getRepo().saveProfile(state.account, state.profile);
+        mount(rootEl);
+      });
+    });
+    rootEl.querySelectorAll('[data-mlma-checkout]').forEach(function (el) {
+      el.addEventListener('click', function (event) {
+        event.preventDefault();
+        if (!state.account || !state.account.loggedIn) {
+          window.location.href = D.membersLoginUrl('/access');
+          return;
+        }
+        var productId = el.getAttribute('data-mlma-checkout') || 'start';
+        var order = D.createOrder({
+          productId: productId,
+          email: state.account.email,
+          maId: state.account.maId,
+          trackId: queryParam('track'),
+        });
+        var gateway = D.createPaymentGateway();
+        var payment = gateway.createPayment(order);
+        order.status = 'pending';
+        D.getRepo().saveOrder(state.account, order);
+        D.trackEvent('checkout_started', { itemId: productId, orderId: order.orderId });
+        var simulated = queryParam('fail') === '1' ? 'failed' : queryParam('cancel') === '1' ? 'cancelled' : 'paid';
+        var result = D.applyWebhook(state.account, {
+          paymentId: payment.paymentId,
+          orderId: order.orderId,
+          status: simulated,
+          idempotencyKey: payment.paymentId,
+          email: state.account.email,
+          signatureValid: true,
+        }, order);
+        if (result.ok && result.account) {
+          D.getRepo().savePayment(state.account, result.payment);
+          D.getRepo().saveEntitlements(state.account, result.account.entitlements || []);
+          D.getRepo().saveOrder(state.account, order);
+          if (simulated === 'paid') {
+            D.trackEvent('payment_succeeded', { orderId: order.orderId, itemId: productId });
+            D.trackEvent('entitlement_granted', { itemId: productId, orderId: order.orderId });
+          } else {
+            D.trackEvent('payment_failed', { orderId: order.orderId, itemId: productId });
+          }
+        }
+        window.location.href = '/my';
+      });
+    });
+    rootEl.querySelectorAll('[data-mlma-reset-profile]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        state.profile = D.resetProfile();
+        mount(rootEl);
+      });
+    });
+    rootEl.querySelectorAll('[data-mlma-funnel]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var send = D.funnelEvent || D.trackEvent;
+        send(el.getAttribute('data-mlma-funnel'), {
+          source_page: el.getAttribute('data-source-page') || (window.location.pathname || ''),
+          target_page: el.getAttribute('href') || '',
+          cta_position: el.getAttribute('data-cta-position') || '',
+          article_slug: el.getAttribute('data-article-slug') || 'marketing-plan',
+          timestamp: new Date().toISOString(),
+        });
+      });
+    });
+    rootEl.querySelectorAll('[data-mlma-preset]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        D.trackEvent('preset_open', { itemId: el.getAttribute('data-mlma-preset') || '', source: 'home' });
+        D.trackEvent('academy_preset_click', { itemId: el.getAttribute('data-mlma-preset') || '', source: 'home' });
+      });
+    });
+    var homeForm = rootEl.querySelector('form[action="/library"]');
+    if (homeForm && state.page === 'home') {
+      homeForm.addEventListener('submit', function () {
+        var field = homeForm.querySelector('#mlma-home-q');
+        D.trackEvent('search_query', { query: field ? field.value : '', source: 'home' });
+        D.trackEvent('academy_search', { query: field ? field.value : '', source: 'home' });
+      });
+    }
+    rootEl.querySelectorAll('[data-mlma-result-open]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        D.trackEvent('search_result_open', { itemId: el.getAttribute('data-mlma-result-open') || '', source: state.page });
+      });
+    });
+    bindLibrary(state, rootEl);
+    applySeo(state);
+  }
+
+  function publicAbsUrl(pathAndQuery) {
+    var path = String(pathAndQuery || '/');
+    if (path.charAt(0) !== '/') path = '/' + path;
+    var host = '';
+    var protocol = 'https:';
+    try {
+      host = String(window.location.host || 'mlmacademy.ru');
+      protocol = window.location.protocol || 'https:';
+    } catch (err) {
+      host = 'mlmacademy.ru';
+    }
+    if (host === 'localhost' || host.indexOf('127.0.0.1') === 0) {
+      return protocol + '//' + host + path;
+    }
+    host = host.replace(/:\d+$/, '');
+    return 'https://' + host + path;
+  }
+
+  function ensureMeta(attr, key, value) {
+    var sel = 'meta[' + attr + '="' + key + '"]';
+    var el = document.querySelector(sel);
+    if (!el) {
+      el = document.createElement('meta');
+      el.setAttribute(attr, key);
+      document.head.appendChild(el);
+    }
+    el.setAttribute('content', value);
+  }
+
+  function ensureLink(rel, href, extra) {
+    var el = document.querySelector('link[rel="' + rel + '"]');
+    if (!el) {
+      el = document.createElement('link');
+      el.setAttribute('rel', rel);
+      document.head.appendChild(el);
+    }
+    el.setAttribute('href', href);
+    if (extra) {
+      var keys = Object.keys(extra);
+      for (var i = 0; i < keys.length; i += 1) el.setAttribute(keys[i], extra[keys[i]]);
+    }
+  }
+
+  var MLMA_FAVICON =
+    'data:image/svg+xml;charset=utf-8,' +
+    encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#C45F42"/><rect x="7" y="7" width="18" height="18" rx="3" fill="none" stroke="#1c1914" stroke-width="2"/></svg>',
+    );
+
+  function robotsContent(state, path) {
+    if (state.page === 'my' || state.page === 'route' || state.page === 'results' || state.page === 'profile' || state.page === 'preview') {
+      return 'noindex, nofollow';
+    }
+    if (state.page === 'track') {
+      var opened = D.normalizeTrackId(queryParam('id') || (path.indexOf('/track/') === 0 ? path.slice(7) : ''));
+      var openedTrack = opened ? D.getById(state.allTracks, opened, true) : null;
+      var pretty = path.indexOf('/track/') === 0;
+      if (pretty && openedTrack && D.deriveSeoStatus(openedTrack) === 'index' && D.hasIndexablePromo && D.hasIndexablePromo(openedTrack)) {
+        return 'index, follow';
+      }
+      return 'noindex, nofollow';
+    }
+    return 'index, follow';
+  }
+
+  function applySeo(state) {
+    try {
+      document.documentElement.setAttribute('lang', 'ru');
+      var path = (window.location.pathname || '').replace(/\/+$/, '') || '/';
+      var robots = document.querySelector('meta[name="robots"]');
+      if (!robots) {
+        robots = document.createElement('meta');
+        robots.setAttribute('name', 'robots');
+        document.head.appendChild(robots);
+      }
+      robots.setAttribute('content', robotsContent(state, path));
+      if (path.indexOf('/track/') === 0) {
+        var slug = path.slice('/track/'.length);
+        var prettyId = D.normalizeTrackId(slug);
+        if (prettyId && !queryParam('id')) {
+          /* pretty URL stays; no client redirect to ?id= */
+        }
+      }
+      var seo = {
+        home: {
+          title: 'MLM Academy — библиотека действий',
+          desc: 'Рабочий навигатор партнёра: ситуация, действие, результат и следующий шаг. Шесть направлений от старта до роста команды.',
+        },
+        start: {
+          title: 'С чего начать · MLM Academy',
+          desc: 'Выберите ситуацию, в которой сейчас застряли. Академия подберёт первый трек без кабинета и без оплаты.',
+        },
+        library: {
+          title: 'Библиотека · MLM Academy',
+          desc: 'Каталог треков и материалов: этап, ситуация, цель, опыт, тип и время. Поиск понимает живой запрос, а не только название.',
+        },
+        about: {
+          title: 'Как создаётся библиотека · MLM Academy',
+          desc: 'Как устроена MLM Academy: трек как маршрут изменения состояния, а не страница с видео. Честные статусы и рабочие следы.',
+        },
+        access: {
+          title: 'Доступ · MLM Academy',
+          desc: 'Сначала бесплатный кабинет, затем пакет. Реальные списания пока выключены.',
+        },
+        my: { title: 'Кабинет · MLM Academy', desc: 'Личная главная. Страница не индексируется.' },
+        route: { title: 'Мой маршрут · MLM Academy', desc: 'Маршрут кабинета. Страница не индексируется.' },
+        results: { title: 'Результаты · MLM Academy', desc: 'Результаты кабинета. Страница не индексируется.' },
+        profile: { title: 'Профиль · MLM Academy', desc: 'Профиль кабинета. Страница не индексируется.' },
+      };
+      var sectionSeo = {
+        A1: { title: 'A1 · Старт и система · MLM Academy', desc: 'Понять роль, причину, продукт и рабочий план. Треки старта без выдуманных уроков.' },
+        A2: { title: 'A2 · Люди и база · MLM Academy', desc: 'Найти, с кем начать, собрать базу и сегменты. Треки про людей, а не про «набор контактов ради списка».' },
+        A3: { title: 'A3 · Первый контакт · MLM Academy', desc: 'Выбрать канал, написать, позвонить и договориться о разговоре без давления.' },
+        A4: { title: 'A4 · Потребность и решение · MLM Academy', desc: 'Услышать человека и собрать рекомендацию на его языке, а не прочитать презентацию.' },
+        A5: { title: 'A5 · Сомнения и отказ · MLM Academy', desc: 'Разобрать паузу, возражение или отказ и зафиксировать следующий шаг.' },
+        A6: { title: 'A6 · Повтор и рост · MLM Academy', desc: 'Вернуть клиента, выстроить ритм и работу с командой без ложных обещаний роста продаж.' },
+      };
+      var title = 'MLM Academy';
+      var desc = 'MLM Academy — рабочий навигатор партнёра: ситуация, действие, результат и следующий шаг.';
+      var canonPath = path;
+      if (state.page === 'section') {
+        var sid = D.normalizeSectionId(state.root.getAttribute('data-mlma-section') || '');
+        if (sid && sectionSeo[sid]) {
+          title = sectionSeo[sid].title;
+          desc = sectionSeo[sid].desc;
+        }
+      } else if (state.page === 'track') {
+        var opened = D.normalizeTrackId(queryParam('id'));
+        var openedTrack = opened ? D.getById(state.allTracks, opened, true) : null;
+        if (openedTrack) {
+          title = openedTrack.title + ' · MLM Academy';
+          desc = openedTrack.situation + ' Результат: ' + openedTrack.outcome;
+        } else {
+          title = 'Трек · MLM Academy';
+          desc = 'Карточка трека MLM Academy. Откройте трек по идентификатору, чтобы увидеть ситуацию, действие и рабочий след.';
+        }
+        if (opened) {
+          if (path.indexOf('/track/') === 0 && openedTrack && D.deriveSeoStatus(openedTrack) === 'index') {
+            canonPath = '/track/' + String(opened).toLowerCase();
+          } else {
+            canonPath = '/track?id=' + encodeURIComponent(String(opened).toLowerCase());
+          }
+        }
+      } else if (seo[state.page]) {
+        title = seo[state.page].title;
+        desc = seo[state.page].desc;
+      }
+      document.title = title;
+      var meta = document.querySelector('meta[name="description"]');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', 'description');
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', desc);
+      var abs = publicAbsUrl(canonPath);
+      ensureLink('canonical', abs);
+      ensureMeta('property', 'og:title', title);
+      ensureMeta('property', 'og:description', desc);
+      ensureMeta('property', 'og:url', abs);
+      ensureMeta('property', 'og:locale', 'ru_RU');
+      ensureMeta('property', 'og:type', 'website');
+      ensureLink('icon', MLMA_FAVICON, { type: 'image/svg+xml' });
+    } catch (err) {
+      /* ignore */
+    }
+  }
+
+  function mount(existingRoot) {
+    if (typeof document === 'undefined') return;
+    var rootEl = existingRoot || document.querySelector('.mlma[data-mlma-page]');
+    if (!rootEl) return;
+    if (!existingRoot && rootEl.dataset.initialized === 'true') return;
+    rootEl.dataset.initialized = 'true';
+    var catalog = readCatalog();
+    var preview = currentPage(rootEl) === 'preview' || D.isPreviewHost(window.location.hostname);
+    var R = D.routes(catalog.config);
+    var sectionById = {};
+    for (var i = 0; i < catalog.sections.length; i += 1) {
+      sectionById[catalog.sections[i].sectionId] = catalog.sections[i];
+    }
+    var state = {
+      root: rootEl,
+      page: currentPage(rootEl),
+      preview: preview,
+      allTracks: catalog.tracks,
+      tracks: D.listVisible(catalog.tracks, preview),
+      sections: catalog.sections,
+      sectionById: sectionById,
+      index: D.indexById(catalog.tracks, true),
+      rules: catalog.rules,
+      pilot: catalog.pilot,
+      config: catalog.config,
+      profile: D.getProfile(),
+      account: D.hydrateAccount ? D.hydrateAccount(D.readMembersSession ? D.readMembersSession() : { loggedIn: false }) : { loggedIn: false },
+      R: R,
+    };
+    if (state.account && state.account.profile) state.profile = state.account.profile;
+    rootEl.innerHTML =
+      header(state) +
+      '<main id="mlma-main">' +
+      pageBody(state) +
+      '</main>' +
+      footer(state) +
+      mobileNav(state);
+    bind(state, rootEl);
+    if (state.page === 'home') {
+      D.trackEvent('academy_open', { source: 'home' });
+      D.trackEvent('academy_home_open', { source: 'home' });
+    }
+    if (state.page === 'library' || state.page === 'preview') D.trackEvent('library_open', { source: state.page });
+    if (state.page === 'track') {
+      var opened = D.normalizeTrackId(queryParam('id'));
+      var openedTrack = opened ? D.getById(state.allTracks, opened, true) : null;
+      var canStart = openedTrack ? D.getTrackStatusView(openedTrack).canStart : false;
+      var openedRuntime = opened && D.getRuntime ? D.getRuntime(opened) : null;
+      D.trackEvent('track_card_opened', { itemId: opened || '', source: 'track' });
+      if (openedTrack && D.normalizeAccess && D.normalizeAccess(openedTrack.access) === 'paid' && D.isEntitledToTrack && !D.isEntitledToTrack(openedTrack, state.account)) {
+        D.trackEvent('locked_track_opened', { itemId: opened || '' });
+      }
+      if (queryParam('run') === '1') D.trackEvent('track_step_open', { itemId: opened || '', cta_position: openedRuntime ? openedRuntime.step : 'action' });
+      if (D.isInactive && D.isInactive(openedRuntime)) D.trackEvent('track_inactive', { itemId: opened || '' });
+    }
+  }
+
+  D.mount = mount;
+  D.readCatalog = readCatalog;
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { mount(); });
+    else mount();
+  }
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+

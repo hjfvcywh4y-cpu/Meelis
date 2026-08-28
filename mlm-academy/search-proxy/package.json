@@ -1,0 +1,6 @@
+{
+  "name": "mlma-search-proxy",
+  "private": true,
+  "type": "module",
+  "description": "Серверный rerank MLM Academy. Ключ модели только в env площадки."
+}
