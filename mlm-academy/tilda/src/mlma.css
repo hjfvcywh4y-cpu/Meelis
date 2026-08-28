@@ -68,8 +68,12 @@
 .mlma button.mlma-btn-primary,
 .mlma button.mlma-btn-accent,
 .mlma a.mlma-btn-primary,
-.mlma a.mlma-btn-accent {
-  color: #fffdf8;
+.mlma a.mlma-btn-accent,
+button.mlma-btn-primary,
+a.mlma-btn-primary,
+button.mlma-btn-accent,
+a.mlma-btn-accent {
+  color: #fffdf8 !important;
 }
 .mlma a {
   color: var(--academy-accent);
@@ -210,27 +214,27 @@ a.mlma-btn-primary,
 .mlma a.mlma-btn-primary {
   background: var(--academy-text);
   border-color: var(--academy-text);
-  color: var(--academy-bg);
+  color: var(--academy-bg) !important;
 }
 .mlma-btn-primary:hover:not(:disabled),
 a.mlma-btn-primary:hover:not([aria-disabled="true"]),
 .mlma a.mlma-btn-primary:hover:not([aria-disabled="true"]) {
   background: var(--academy-accent);
   border-color: var(--academy-accent);
-  color: #fff;
+  color: #fff !important;
 }
 .mlma-btn-accent,
 a.mlma-btn-accent,
 .mlma a.mlma-btn-accent {
   background: var(--academy-accent);
   border-color: var(--academy-accent);
-  color: #fff;
+  color: #fff !important;
 }
 .mlma-btn-accent:hover:not(:disabled),
 a.mlma-btn-accent:hover {
   background: var(--academy-accent-hover);
   border-color: var(--academy-accent-hover);
-  color: #fff;
+  color: #fff !important;
 }
 .mlma-btn-ghost,
 a.mlma-btn-ghost {
@@ -823,5 +827,5 @@ a.mlma-btn-on-ink {
 .mlma a.mlma-btn-on-ink:hover { background: #fff; color: var(--academy-text); }
 #mlma-drawer-host-live .mlma-drawer,
 #mlma-drawer-host-live .mlma-drawer-backdrop { font-family: var(--mlma-sans); }
-.mlma-search .mlma-btn-primary { color: var(--academy-bg); min-width: 140px; }
+.mlma-search .mlma-btn-primary { color: var(--academy-bg) !important; min-width: 140px; }
 .mlma-ink-card .mlma-h2 { color: inherit; }
