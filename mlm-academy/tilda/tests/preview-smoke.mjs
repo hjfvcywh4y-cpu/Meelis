@@ -66,9 +66,10 @@ async function main() {
   await page.waitForSelector('.mlma-blueprint, .mlma-runtime, .mlma-track-card, #mlma-main');
   const startBtns = await page.getByRole('link', { name: 'Начать трек' }).count();
   if (startBtns) throw new Error('unfilled track must not show Начать трек');
-  const openDesc = await page.getByRole('link', { name: 'Открыть описание' }).count();
-  if (openDesc < 1 && !(await page.locator('#mlma-main').innerText()).includes('Контур')) {
-    throw new Error('expected description CTA for unfilled track');
+  const contour = await page.locator('.mlma-blueprint').count();
+  const contourText = await page.locator('body').innerText();
+  if (!contour && !/Контур прохождения/.test(contourText)) {
+    throw new Error('expected contour copy for unfilled track');
   }
   await page.getByRole('button', { name: /Сохранить описание/ }).click();
   await page.waitForSelector('text=Убрать описание');
