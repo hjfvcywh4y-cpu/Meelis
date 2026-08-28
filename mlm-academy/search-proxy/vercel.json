@@ -1,0 +1,14 @@
+{
+  "rewrites": [
+    { "source": "/api/search/rerank", "destination": "/api/rerank" }
+  ],
+  "headers": [
+    {
+      "source": "/v1/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "https://mlmacademy.ru" },
+        { "key": "Cache-Control", "value": "public, max-age=300" }
+      ]
+    }
+  ]
+}

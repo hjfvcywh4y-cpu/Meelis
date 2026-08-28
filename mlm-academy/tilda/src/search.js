@@ -16,7 +16,7 @@
     уже: 1, ещё: 1, еще: 1, же: 1, бы: 1, ли: 1, ведь: 1, там: 1, тут: 1, здесь: 1,
     очень: 1, просто: 1, также: 1, если: 1, только: 1, себе: 1, себя: 1, свой: 1,
     все: 1, всё: 1, всего: 1, ну: 1, под: 1, над: 1, без: 1, тебя: 1, происходит: 1,
-    сейчас: 1,
+    сейчас: 1, хочу: 1, хотел: 1, хотела: 1, новый: 1, новая: 1, новое: 1,
   };
 
   var TYPOS = {
@@ -146,6 +146,7 @@
       phrases: ['боюсь написать', 'написать знакомому', 'первое сообщение', 'что написать', 'написать человеку', 'не знаю что написать', 'первым написать', 'страшно написать', 'страшно написать человеку', 'первый диалог'],
       boostIds: ['A3-002', 'A3-016'],
       writeBias: true,
+      reason: 'Подходит, потому что вы хотите написать человеку, но боитесь показаться навязчивым.',
     },
     {
       id: 'no-people',
@@ -153,6 +154,7 @@
       why: ['нет людей', 'база', 'пять контактов'],
       phrases: ['некому писать', 'некому', 'с кем начать', 'нет людей', 'не знаю с кем', 'нет контактов', 'не понимаю с кем', 'кому написать', 'не знаю кому написать'],
       boostIds: ['A2-008', 'A2-010', 'A2-006', 'A2-011', 'A2-001'],
+      reason: 'Подходит, потому что вам нужно понять, с кем начать, а не сразу писать первое сообщение.',
     },
     {
       id: 'ethics',
@@ -160,6 +162,7 @@
       why: ['этика', 'без впаривания', 'стыд продавать'],
       phrases: ['стыдно продавать', 'навязываться', 'впариван', 'стыдно предлагать', 'боюсь навязываться'],
       boostIds: ['A1-001'],
+      reason: 'Подходит, потому что вам важно предложить продукт без давления и впаривания.',
     },
     {
       id: 'first-result',
@@ -167,6 +170,7 @@
       why: ['первый результат', 'план действий', 'первые контакты'],
       phrases: ['первый результат', 'получить первый результат', 'хочу первый результат', 'хочу первого клиента', 'первый клиент'],
       boostIds: ['A1-010', 'A2-008', 'A3-002', 'A3-016'],
+      reason: 'Подходит, потому что вы хотите получить первый рабочий результат, а не просто посмотреть урок.',
     },
     {
       id: 'just-started',
@@ -174,6 +178,7 @@
       why: ['старт', 'роль', 'план'],
       phrases: ['только начал', 'я новичок', 'только начинаю', 'я только начал', 'как начать', 'что делать новичку', 'новичку'],
       boostIds: ['A1-004', 'A1-006', 'A1-010'],
+      reason: 'Подходит, потому что вы только начинаете и сначала нужно понять роль и ближайшие шаги.',
     },
     {
       id: 'claim',
@@ -181,6 +186,7 @@
       why: ['претензия', 'клиентский опыт', 'границы ответственности'],
       phrases: ['претензия', 'претензией', 'работа с претензией', 'жалоба'],
       boostIds: ['A6-001', 'A6-002', 'A6-003'],
+      reason: 'Подходит, потому что нужно разобрать претензию клиента и границы своей ответственности.',
     },
     {
       id: 'earn-goal',
@@ -188,6 +194,7 @@
       why: ['желание в цель', 'что делать дальше', 'наблюдаемый результат'],
       phrases: ['больше зарабатывать', 'хочу больше зарабатывать', 'не понимаю что делать', 'не знаю что делать', 'хочу зарабатывать', 'не знаю что должно'],
       boostIds: ['A1-007', 'A1-010', 'A1-006', 'A1-015'],
+      reason: 'Подходит, потому что желание больше зарабатывать нужно перевести в понятные действия.',
     },
     {
       id: 'crm-head',
@@ -195,6 +202,7 @@
       why: ['аудит базы', 'crm', 'статусы и next action'],
       phrases: ['держу в голове', 'в голове', 'контактов много', 'нет системы в базе', 'crm', 'аудит базы', 'все в голове', 'всё держу в голове', 'таблицу контактов', 'вести таблицу'],
       boostIds: ['A2-006', 'A2-007', 'A6-010'],
+      reason: 'Подходит, потому что контактов уже много, и их нельзя держать только в голове.',
     },
     {
       id: 'postpone',
@@ -202,6 +210,7 @@
       why: ['ритм', 'план на 30 дней', 'страх действия'],
       phrases: ['все откладываю', 'всё откладываю', 'устал', 'нет сил', 'нет ритма', 'прокрастин', 'страшно начать'],
       boostIds: ['A1-010', 'A6-011', 'A6-020', 'A3-014'],
+      reason: 'Подходит, потому что вам нужно вернуть ритм и перестать откладывать конкретное действие.',
     },
     {
       id: 'cold-call',
@@ -209,6 +218,7 @@
       why: ['канал контакта', 'первый звонок', 'холодный вход'],
       phrases: ['как позвонить', 'позвонить незнакомому', 'позвонить незнакомым', 'холодный звонок', 'первый звонок', 'звонить незнакомым', 'звонить холодн', 'страшно звонить'],
       boostIds: ['A3-001', 'A3-004', 'A3-007', 'A2-012', 'A3-003'],
+      reason: 'Подходит, потому что вам нужно выбрать канал и спокойно сделать первый звонок.',
     },
     {
       id: 'who-offer',
@@ -216,6 +226,7 @@
       why: ['профиль клиента', 'карта людей', 'продуктовый фокус'],
       phrases: ['кому предложить', 'не понимаю кому', 'целевая аудитория', 'кому подходит продукт', 'кому предлагать'],
       boostIds: ['A2-001', 'A2-010', 'A1-011', 'A2-008'],
+      reason: 'Подходит, потому что сначала нужно понять, кому продукт действительно подходит.',
     },
     {
       id: 'unhappy-client',
@@ -223,6 +234,7 @@
       why: ['клиентский опыт', 'обслуживание', 'границы ответственности'],
       phrases: ['недоволен продуктом', 'недоволен', 'претензия', 'жалоба клиента', 'плохое обслуживание', 'клиент ругается', 'жалуется', 'клиент жалуется'],
       boostIds: ['A6-001', 'A6-002', 'A6-003'],
+      reason: 'Подходит, потому что клиент недоволен, и нужно разобрать опыт, а не давить на повторную продажу.',
     },
     {
       id: 'team',
@@ -231,6 +243,7 @@
       phrases: ['партнеры ничего не делают', 'партнёры ничего не делают', 'команда не работает', 'развивать команду', 'наставлять', 'партнеры не делают', 'стать лидером', 'собрать команду', 'хочу стать лидером', 'как развивать команду'],
       boostIds: ['A6-013', 'A6-012', 'A6-011', 'A1-016', 'A6-010', 'A1-010', 'A1-004'],
       teamOnly: true,
+      reason: 'Подходит, потому что это задача про команду и наставничество, а не личный первый диалог.',
     },
     {
       id: 'price',
@@ -238,6 +251,7 @@
       why: ['ценовое возражение', 'что стоит за «дорого»'],
       phrases: ['сказал что дорого', 'что дорого', 'это дорого', 'слишком дорого', 'дорого для него', 'не по карману', 'цена смущает'],
       boostIds: ['A5-005', 'A4-013', 'A5-001', 'A5-007'],
+      reason: 'Подходит, потому что человек упёрся в цену, и нужно понять, что стоит за этой репликой.',
     },
     {
       id: 'pause',
@@ -245,6 +259,7 @@
       why: ['пауза', 'сомнение', 'подумает'],
       phrases: ['подумает', 'не сейчас', 'сомневается', 'надо подумать', 'сказал что подумает', 'взял паузу', 'человек думает'],
       boostIds: ['A5-001', 'A5-008', 'A5-009', 'A5-010', 'A5-011', 'A5-003'],
+      reason: 'Подходит, потому что человек взял паузу, и следующий шаг — продолжить без давления.',
     },
     {
       id: 'lost-client',
@@ -252,6 +267,7 @@
       why: ['follow-up', 'клиентский опыт', 'повторный контакт'],
       phrases: ['купил и пропал', 'больше не отвечает', 'вернуть клиента', 'не отвечает', 'клиент купил', 'пропал', 'молчит после сообщения'],
       boostIds: ['A6-001', 'A6-006', 'A5-010', 'A6-003', 'A6-010'],
+      reason: 'Подходит, потому что клиент уже купил и пропал — нужен аккуратный повторный контакт.',
     },
     {
       id: 'product-talk',
@@ -259,6 +275,7 @@
       why: ['карточка продукта', 'продуктовый фокус', 'ограничения'],
       phrases: ['рассказать о продукте', 'не знаю продукт', 'как рассказать', 'не знаю как рассказать', 'что можно обещать', 'презентация продукта', 'как рассказать о продукте'],
       boostIds: ['A1-012', 'A1-011', 'A1-013', 'A4-001', 'A1-014'],
+      reason: 'Подходит, потому что нужно честно рассказать о продукте на языке человека, а не прочитать презентацию.',
     },
     {
       id: 'silent-message',
@@ -266,6 +283,7 @@
       why: ['follow-up после сообщения', 'человек молчит'],
       phrases: ['молчит после', 'не отвечает на сообщение', 'прочитал и молчит', 'тишина после сообщения'],
       boostIds: ['A5-010', 'A3-008', 'A5-011'],
+      reason: 'Подходит, потому что человек молчит после сообщения, и нужен следующий контакт без преследования.',
     },
     {
       id: 'invite-meeting',
@@ -273,6 +291,7 @@
       why: ['назначить встречу', 'конкретное время'],
       phrases: ['пригласить на встречу', 'как пригласить', 'назначить встречу', 'назначить разговор'],
       boostIds: ['A3-005', 'A3-013', 'A3-016'],
+      reason: 'Подходит, потому что вам нужно назначить конкретное время разговора или встречи.',
     },
     {
       id: 'refused',
@@ -280,6 +299,7 @@
       why: ['отказ', 'завершить корректно'],
       phrases: ['мне отказали', 'отказали', 'человек отказал', 'после отказа'],
       boostIds: ['A5-014', 'A5-001', 'A5-011'],
+      reason: 'Подходит, потому что после отказа важно корректно завершить и сохранить движение.',
     },
     {
       id: 'repeat-sales',
@@ -287,10 +307,32 @@
       why: ['повтор', 'следующий контакт после покупки'],
       phrases: ['повторные продажи', 'повторную продажу', 'хочу повторные продажи', 'повторная продажа'],
       boostIds: ['A6-006', 'A6-003', 'A6-001'],
+      reason: 'Подходит, потому что речь о повторном контакте после покупки, а не о первом сообщении.',
     },
   ];
 
   var CLARIFY_QUESTION = 'Вам нужно найти людей, начать разговор, продолжить после паузы или организовать команду?';
+  var CLARIFY_OPTIONS = [
+    { id: 'people', label: 'Найти, с кем начать', q: 'мне некому писать' },
+    { id: 'write', label: 'Начать разговор', q: 'боюсь написать знакомому' },
+    { id: 'team', label: 'Разобрать работу команды', q: 'партнёры ничего не делают' },
+  ];
+  var OUT_OF_SCOPE = [
+    {
+      test: /(нов(ый|ого|ом)\s+город|открыть\s+(новый\s+)?город|новый\s+(филиал|регион|рынок)|географи|запуск\s+города)/,
+      question: 'В библиотеке пока нет трека про запуск нового города. Что вам нужно сделать сейчас?',
+      options: [
+        { id: 'people', label: 'Найти людей в текущем круге', q: 'мне некому писать' },
+        { id: 'write', label: 'Начать разговор с человеком', q: 'боюсь написать знакомому' },
+        { id: 'team', label: 'Выстроить работу команды', q: 'партнёры ничего не делают' },
+      ],
+    },
+    {
+      test: /(снять\s+видео|монтаж|риелс|reels|тикток)/,
+      question: 'Трека про съёмку видео пока нет. Какая рабочая задача ближе?',
+      options: CLARIFY_OPTIONS.slice(),
+    },
+  ];
 
   var PRESETS = [
     { id: 'just-started', title: 'Я только начал', hint: 'Роль, причина, план и первые пять контактов', trackIds: ['A1-004', 'A1-006', 'A1-010', 'A1-011', 'A2-008'] },
@@ -416,6 +458,8 @@
   api.SYNONYMS = SYNONYMS;
   api.INTENTS = INTENTS;
   api.CLARIFY_QUESTION = CLARIFY_QUESTION;
+  api.CLARIFY_OPTIONS = CLARIFY_OPTIONS;
+  api.OUT_OF_SCOPE = OUT_OF_SCOPE;
   api.TRACK_ALIASES = TRACK_ALIASES;
   api.SECTION_ALIASES = SECTION_ALIASES;
   api.GOALS = GOALS;
@@ -446,10 +490,11 @@
   var SYNONYMS = api.SYNONYMS;
   var INTENTS = api.INTENTS;
   var CLARIFY_QUESTION = api.CLARIFY_QUESTION || 'Вам нужно найти людей, начать разговор, продолжить после паузы или организовать команду?';
+  var CLARIFY_OPTIONS = api.CLARIFY_OPTIONS || [];
+  var OUT_OF_SCOPE = api.OUT_OF_SCOPE || [];
   var TRACK_ALIASES = api.TRACK_ALIASES;
   var SECTION_ALIASES = api.SECTION_ALIASES;
   var GOALS = api.GOALS;
-  var SITUATIONS = api.SITUATIONS;
   var SIT_FILTERS = api.SIT_FILTERS;
   var FMT_FILTERS = api.FMT_FILTERS;
   var CH_FILTERS = api.CH_FILTERS;
@@ -460,13 +505,10 @@
   var TIME_FILTERS = api.TIME_FILTERS || [];
   var GOAL_SECTIONS = api.GOAL_SECTIONS || {};
   var FIELD_WEIGHTS = api.FIELD_WEIGHTS;
-  var PAGE_SIZE = api.PAGE_SIZE || 15;
-  var LIBRARY_STATE_KEY = api.LIBRARY_STATE_KEY || 'mlma.library.v1';
 
   var metaCache = {};
   var MIN_HIT = 36;
   var MIN_CLOSE = 70;
-  var CANDIDATE_LIMIT = 15;
 
   function correctTypos(tokens) {
     var out = [];
@@ -564,8 +606,9 @@
     }
     var norm = tokens.join(' ') || api.normalizeSearchText(original);
     var intents = matchIntents(norm);
+    var scoped = detectOutOfScope(norm);
     return {
-      kind: 'ok',
+      kind: scoped ? 'out_of_scope' : 'ok',
       original: original,
       tokens: tokens,
       useful: useful,
@@ -573,6 +616,7 @@
       norm: norm,
       intents: intents,
       negated: collectNegated(norm),
+      outOfScope: scoped,
     };
   }
 
@@ -634,7 +678,49 @@
       if (!matched || intentBlocked(intent, negated)) continue;
       hits.push(intent);
     }
+    var ids = {};
+    for (var h = 0; h < hits.length; h += 1) ids[hits[h].id] = true;
+    if (ids['silent-message'] || ids['lost-client'] || ids['price'] || ids['team'] || ids['no-people']) {
+      hits = hits.filter(function (item) { return item.id !== 'first-write'; });
+    }
+    if (ids.team) {
+      hits = hits.filter(function (item) { return item.id !== 'first-result' && item.id !== 'just-started'; });
+    }
     return hits;
+  }
+
+  function detectOutOfScope(norm) {
+    for (var i = 0; i < OUT_OF_SCOPE.length; i += 1) {
+      if (OUT_OF_SCOPE[i].test && OUT_OF_SCOPE[i].test.test(norm)) return OUT_OF_SCOPE[i];
+    }
+    return null;
+  }
+
+  function defaultClarify() {
+    return { question: CLARIFY_QUESTION, options: CLARIFY_OPTIONS.slice() };
+  }
+
+  function humanWhy(track, analysis, why, aiReason) {
+    var text = String(aiReason || '').replace(/\s+/g, ' ').trim();
+    if (text.length >= 12) {
+      if (!/^подходит/i.test(text)) text = 'Подходит, потому что ' + text.charAt(0).toLowerCase() + text.slice(1);
+      return text;
+    }
+    var intents = (analysis && analysis.intents) || [];
+    for (var i = 0; i < intents.length; i += 1) {
+      if (intents[i].boostIds && intents[i].boostIds.indexOf(track.trackId) !== -1 && intents[i].reason) {
+        return intents[i].reason;
+      }
+    }
+    if (why && why.intent && why.intent.length) {
+      return 'Подходит, потому что ' + String(why.intent[0]).replace(/\s+/g, ' ').trim() + '.';
+    }
+    if (track && track.situation) {
+      var sit = String(track.situation).replace(/\s+/g, ' ').trim();
+      if (sit.length > 110) sit = sit.slice(0, 107) + '…';
+      return 'Подходит, потому что это про вашу ситуацию: ' + sit;
+    }
+    return '';
   }
 
   function fieldHas(haystack, variants) {
@@ -913,6 +999,11 @@
     if (/боюсь|страш|стыд|неловк/.test(queryNorm) && /боюсь|страш|стыд|неловк|навяз/.test(fields.situation + ' ' + fields.aliases)) {
       score += FIELD_WEIGHTS.emotion;
     }
+    for (var si = 0; si < intents.length; si += 1) {
+      if (intents[si].id === 'silent-message' && intents[si].boostIds.indexOf(track.trackId) === -1) {
+        score -= 200;
+      }
+    }
 
     var negated = analysis.negated || [];
     if (negated.length) {
@@ -928,6 +1019,9 @@
       score = Math.floor(score * (0.55 + 0.45 * (matchedUseful / analysis.useful.length)));
     }
     if (!intentHit && matchedUseful === 0) return { score: 0, why: emptyWhy() };
+    if (!intentHit && matchedUseful === 1 && analysis.useful.length >= 2 && score < 140) {
+      return { score: 0, why: emptyWhy() };
+    }
     if (!intentHit && matchedUseful === 1 && analysis.useful.length >= 4 && score < MIN_HIT * 2) {
       score = Math.floor(score * 0.5);
     }
@@ -1294,48 +1388,183 @@
     return { key: 'all', items: close.map(function (row) { return row.track; }), close: close };
   }
 
+  api.analyzeQuery = analyzeQuery;
+  api.parseLibraryState = parseLibraryState;
+  api.serializeLibraryState = serializeLibraryState;
+  api.libraryHref = libraryHref;
+  api.emptyLibraryState = emptyLibraryState;
+  api.getPreset = getPreset;
+  api.getGoal = getGoal;
+  api.getSituation = getSituation;
+  api.getExperience = getExperience;
+  api.buildChips = buildChips;
+  api.hasActiveFilters = hasActiveFilters;
+  api.deriveMeta = deriveMeta;
+  api.foundLabel = foundLabel;
+  api.clearFilterKey = clearKey;
+  api.rankTracks = rankTracks;
+  api.whyList = whyList;
+  api.humanWhy = humanWhy;
+  api.emptyWhy = emptyWhy;
+  api.defaultClarify = defaultClarify;
+  api.applyFacets = applyFacets;
+  api.relaxSearch = relaxSearch;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
+
+/* __MLMA_UI_SPLIT__ */
+(function (root) {
+  'use strict';
+  var api = root.MLMA;
+  if (!api) return;
+  var TRACK_ALIASES = api.TRACK_ALIASES;
+  var CANDIDATE_LIMIT = 15;
+  var deriveMeta = api.deriveMeta;
+  var rankTracks = api.rankTracks;
+  var analyzeQuery = api.analyzeQuery;
+  var applyFacets = api.applyFacets;
+  var emptyLibraryState = api.emptyLibraryState;
+  var buildChips = api.buildChips;
+  var foundLabel = api.foundLabel;
+  var hasActiveFilters = api.hasActiveFilters;
+  var parseLibraryState = api.parseLibraryState;
+  var emptyWhy = api.emptyWhy;
+  var humanWhy = api.humanWhy;
+  var defaultClarify = api.defaultClarify;
+
+  function attachWhyText(why, track, analysis, aiReason) {
+    var next = why && !Array.isArray(why) ? why : emptyWhy();
+    next.text = humanWhy(track, analysis, next, aiReason);
+    return next;
+  }
+
+  function splitDisplay(ranked, analysis, state) {
+    var featured = [];
+    var other = [];
+    var whyMap = {};
+    var scores = {};
+    var items = [];
+    if (!state.q) {
+      for (var b = 0; b < ranked.length; b += 1) {
+        items.push(ranked[b].track);
+        scores[ranked[b].track.trackId] = ranked[b].score;
+      }
+      return { items: items, featured: [], other: items, whyMap: whyMap, scores: scores };
+    }
+    var intents = (analysis && analysis.intents) || [];
+    var boost = {};
+    var teamOnly = false;
+    for (var n = 0; n < intents.length; n += 1) {
+      if (intents[n].teamOnly) teamOnly = true;
+      var ids = intents[n].boostIds || [];
+      for (var k = 0; k < ids.length; k += 1) boost[ids[k]] = true;
+    }
+    var strong = [];
+    for (var i = 0; i < ranked.length; i += 1) {
+      var row = ranked[i];
+      var id = row.track.trackId;
+      var meta = deriveMeta(row.track);
+      if (teamOnly && !boost[id] && meta.sit !== 'team') continue;
+      if (intents.length && !boost[id] && row.score < 220) continue;
+      if (!intents.length && row.score < 70) continue;
+      strong.push(row);
+    }
+    for (var f = 0; f < strong.length && featured.length < 3; f += 1) {
+      var minFeat = boost[strong[f].track.trackId] ? 80 : 100;
+      if (strong[f].score < minFeat) continue;
+      featured.push(strong[f].track);
+      scores[strong[f].track.trackId] = strong[f].score;
+      whyMap[strong[f].track.trackId] = attachWhyText(strong[f].why, strong[f].track, analysis);
+    }
+    for (var r = 0; r < strong.length && other.length < 5; r += 1) {
+      var rel = strong[r];
+      if (featured.indexOf(rel.track) !== -1) continue;
+      var minRel = boost[rel.track.trackId] ? 60 : 80;
+      if (rel.score < minRel) continue;
+      other.push(rel.track);
+      scores[rel.track.trackId] = rel.score;
+      whyMap[rel.track.trackId] = attachWhyText(rel.why, rel.track, analysis);
+    }
+    items = featured.concat(other);
+    return { items: items, featured: featured, other: other, whyMap: whyMap, scores: scores };
+  }
+
   function searchCatalog(tracks, state) {
     state = state || emptyLibraryState();
     var analysis = analyzeQuery(state.q || '');
     var chips = buildChips(state);
     if (state.q && analysis.kind === 'need_more') {
-      return { kind: 'need_more', items: [], featured: [], other: [], whyMap: {}, analysis: analysis, chips: chips, relaxedKey: null, close: [], total: tracks.length, label: 'Нужна более конкретная формулировка' };
+      var more = defaultClarify();
+      return { kind: 'need_more', items: [], featured: [], other: [], whyMap: {}, analysis: analysis, chips: chips, relaxedKey: null, close: [], total: tracks.length, label: 'Нужна более конкретная формулировка', clarifyingQuestion: more.question, clarifyingOptions: more.options, source: 'local' };
     }
-    var faceted = applyFacets(tracks, state);
-    var ranked = rankTracks(faceted, analysis, state.sort);
-    var items = [];
-    var whyMap = {};
-    var scores = {};
-    for (var i = 0; i < ranked.length; i += 1) {
-      items.push(ranked[i].track);
-      scores[ranked[i].track.trackId] = ranked[i].score;
-      if (ranked[i].why && whyList(ranked[i].why).length) whyMap[ranked[i].track.trackId] = ranked[i].why;
-    }
-    if (items.length) {
-      var featured = state.q && items.length ? items.slice(0, Math.min(3, items.length)) : [];
-      var other = featured.length ? items.slice(featured.length) : items;
+    if (state.q && analysis.outOfScope) {
       return {
-        kind: 'ok',
-        items: items,
-        featured: featured,
-        other: other,
-        whyMap: whyMap,
-        scores: scores,
+        kind: 'zero',
+        items: [],
+        featured: [],
+        other: [],
+        whyMap: {},
+        scores: {},
         analysis: analysis,
         chips: chips,
         relaxedKey: null,
         close: [],
-        candidates: ranked.slice(0, CANDIDATE_LIMIT),
-        clarifyingQuestion: null,
+        candidates: [],
+        clarifyingQuestion: analysis.outOfScope.question,
+        clarifyingOptions: analysis.outOfScope.options || defaultClarify().options,
         source: 'local',
         total: tracks.length,
-        label: foundLabel(items.length, tracks.length, state),
+        label: 'Точного трека пока нет',
+      };
+    }
+    var faceted = applyFacets(tracks, state);
+    var ranked = rankTracks(faceted, analysis, state.sort);
+    var candidates = ranked.slice(0, CANDIDATE_LIMIT);
+    var split = splitDisplay(ranked, analysis, state);
+    if (!state.q) {
+      return {
+        kind: 'ok',
+        items: split.items,
+        featured: [],
+        other: split.other,
+        whyMap: {},
+        scores: split.scores,
+        analysis: analysis,
+        chips: chips,
+        relaxedKey: null,
+        close: [],
+        candidates: [],
+        clarifyingQuestion: null,
+        clarifyingOptions: [],
+        source: 'local',
+        total: tracks.length,
+        label: foundLabel(split.items.length, tracks.length, state),
+      };
+    }
+    if (split.featured.length || split.other.length) {
+      return {
+        kind: 'ok',
+        items: split.items,
+        featured: split.featured,
+        other: split.other,
+        whyMap: split.whyMap,
+        scores: split.scores,
+        analysis: analysis,
+        chips: chips,
+        relaxedKey: null,
+        close: [],
+        candidates: candidates,
+        clarifyingQuestion: null,
+        clarifyingOptions: [],
+        source: 'local',
+        total: tracks.length,
+        label: split.featured.length ? 'Подходит лучше всего' : 'Также может помочь',
       };
     }
     if (!hasActiveFilters(state) && !state.q) {
-      return { kind: 'ok', items: [], featured: [], other: [], whyMap: {}, scores: {}, analysis: analysis, chips: chips, relaxedKey: null, close: [], candidates: [], clarifyingQuestion: null, source: 'local', total: tracks.length, label: foundLabel(0, tracks.length, state) };
+      return { kind: 'ok', items: [], featured: [], other: [], whyMap: {}, scores: {}, analysis: analysis, chips: chips, relaxedKey: null, close: [], candidates: [], clarifyingQuestion: null, clarifyingOptions: [], source: 'local', total: tracks.length, label: foundLabel(0, tracks.length, state) };
     }
-    var relaxed = relaxSearch(tracks, state, analysis);
+    var clarify = defaultClarify();
     return {
       kind: 'zero',
       items: [],
@@ -1345,13 +1574,14 @@
       scores: {},
       analysis: analysis,
       chips: chips,
-      relaxedKey: relaxed.key,
-      close: relaxed.close || [],
-      candidates: ranked.slice(0, CANDIDATE_LIMIT),
-      clarifyingQuestion: state.q ? CLARIFY_QUESTION : null,
+      relaxedKey: null,
+      close: [],
+      candidates: candidates,
+      clarifyingQuestion: clarify.question,
+      clarifyingOptions: clarify.options,
       source: 'local',
       total: tracks.length,
-      label: 'Точного совпадения пока нет',
+      label: 'Точного трека пока нет',
     };
   }
 
@@ -1398,12 +1628,14 @@
     var candidates = [];
     for (var i = 0; i < rows.length && candidates.length < CANDIDATE_LIMIT; i += 1) {
       var track = rows[i].track || rows[i];
+      var aliases = TRACK_ALIASES[track.trackId] || [];
       candidates.push({
         trackId: track.trackId,
         title: track.title,
         situation: track.situation,
         result: track.outcome,
         sectionId: track.sectionId,
+        tags: aliases.slice(0, 8),
         score: rows[i].score || 0,
       });
     }
@@ -1415,7 +1647,7 @@
 
   function applyRerankResponse(local, data) {
     if (!local || !data || typeof data !== 'object') return local;
-    var allowed = {};
+    var catalog = {};
     var source = (local.candidates && local.candidates.length ? local.candidates : []).concat(
       (local.items || []).map(function (track) { return { track: track }; }),
     );
@@ -1423,67 +1655,85 @@
     for (var i = 0; i < source.length; i += 1) {
       var track = source[i].track || source[i];
       if (track && track.trackId) {
-        allowed[track.trackId] = true;
+        catalog[track.trackId] = true;
         byId[track.trackId] = track;
       }
     }
     for (var t = 0; t < (local.items || []).length; t += 1) byId[local.items[t].trackId] = local.items[t];
-    var incoming = Array.isArray(data.results) ? data.results : [];
-    var ordered = [];
-    var whyMap = Object.assign({}, local.whyMap || {});
-    for (var r = 0; r < incoming.length; r += 1) {
-      var row = incoming[r] || {};
-      var id = String(row.trackId || '');
-      if (!allowed[id] || !byId[id]) continue;
-      if (typeof row.confidence === 'number' && row.confidence < 0.35) continue;
-      ordered.push(byId[id]);
-      var why = whyMap[id] && !Array.isArray(whyMap[id]) ? whyMap[id] : emptyWhy();
-      if (data.recognizedSituation) pushWhy(why, 'situation', data.recognizedSituation);
-      if (row.reason) pushWhy(why, 'intent', row.reason);
-      whyMap[id] = why;
+    var topIn = Array.isArray(data.topMatches) ? data.topMatches : [];
+    var relIn = Array.isArray(data.relatedMatches) ? data.relatedMatches : [];
+    if (!topIn.length && !relIn.length && Array.isArray(data.results)) {
+      topIn = data.results.slice(0, 3);
+      relIn = data.results.slice(3, 8);
     }
-    if (!ordered.length) {
-      var nextZero = Object.assign({}, local);
-      nextZero.clarifyingQuestion = data.clarifyingQuestion || local.clarifyingQuestion || CLARIFY_QUESTION;
-      nextZero.source = 'ai-low';
-      return nextZero;
+    var confidence = Number(data.confidence);
+    if (!isFinite(confidence)) confidence = topIn[0] && typeof topIn[0].confidence === 'number' ? topIn[0].confidence : 0;
+    var clarify = data.clarification || data.clarifyingQuestion || null;
+    function take(rows, limit, minConf) {
+      var out = [];
+      var whyMap = {};
+      for (var r = 0; r < rows.length && out.length < limit; r += 1) {
+        var row = rows[r] || {};
+        var id = String(row.trackId || '');
+        if (!catalog[id] || !byId[id]) continue;
+        if (typeof row.confidence === 'number' && row.confidence < minConf) continue;
+        out.push(byId[id]);
+        whyMap[id] = attachWhyText(emptyWhy(), byId[id], local.analysis, row.reason || data.reason);
+      }
+      return { items: out, whyMap: whyMap };
     }
-    var featured = ordered.slice(0, Math.min(3, ordered.length));
-    var other = ordered.slice(featured.length);
+    if (confidence < 0.45 || (!topIn.length && !relIn.length)) {
+      var low = Object.assign({}, local);
+      low.kind = 'zero';
+      low.items = [];
+      low.featured = [];
+      low.other = [];
+      low.close = [];
+      low.whyMap = {};
+      low.clarifyingQuestion = clarify || (defaultClarify().question);
+      low.clarifyingOptions = local.clarifyingOptions && local.clarifyingOptions.length ? local.clarifyingOptions : defaultClarify().options;
+      low.source = 'ai';
+      low.label = 'Точного трека пока нет';
+      return low;
+    }
+    var top = take(topIn, 3, 0.6);
+    var related = take(relIn, 5, 0.45);
+    var featured = top.items;
+    var other = related.items.filter(function (item) {
+      return featured.indexOf(item) === -1;
+    });
+    if (!featured.length && !other.length) {
+      var empty = Object.assign({}, local);
+      empty.kind = 'zero';
+      empty.items = [];
+      empty.featured = [];
+      empty.other = [];
+      empty.close = [];
+      empty.source = 'ai';
+      empty.clarifyingQuestion = clarify || defaultClarify().question;
+      empty.clarifyingOptions = defaultClarify().options;
+      empty.label = 'Точного трека пока нет';
+      return empty;
+    }
+    var whyMap = Object.assign({}, top.whyMap, related.whyMap);
     return Object.assign({}, local, {
       kind: 'ok',
-      items: ordered,
+      items: featured.concat(other),
       featured: featured,
       other: other,
       whyMap: whyMap,
-      clarifyingQuestion: data.clarifyingQuestion || null,
-      recognizedSituation: data.recognizedSituation || '',
+      clarifyingQuestion: clarify,
+      recognizedSituation: data.reason || data.recognizedSituation || '',
       source: 'ai',
-      label: foundLabel(ordered.length, local.total, { q: '1' }),
+      label: featured.length ? 'Подходит лучше всего' : 'Также может помочь',
     });
   }
 
-  api.analyzeQuery = analyzeQuery;
   api.searchCatalog = searchCatalog;
   api.rerankPayload = rerankPayload;
   api.applyRerankResponse = applyRerankResponse;
-  api.whyList = whyList;
-  api.parseLibraryState = parseLibraryState;
-  api.serializeLibraryState = serializeLibraryState;
-  api.libraryHref = libraryHref;
-  api.emptyLibraryState = emptyLibraryState;
-  api.getPreset = getPreset;
-  api.getGoal = getGoal;
-  api.getSituation = getSituation;
-  api.getExperience = getExperience;
-  api.buildChips = buildChips;
-  api.hasActiveFilters = hasActiveFilters;
-  api.deriveMeta = deriveMeta;
-  api.foundLabel = foundLabel;
   api.matchesQuery = matchesQuery;
   api.filterTracks = filterTracks;
-  api.clearFilterKey = clearKey;
-  api.rankTracks = rankTracks;
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);

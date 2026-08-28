@@ -39,6 +39,8 @@ jobs:
 
       - run: pnpm test
 
+      - run: pnpm tilda:test
+
       - run: pnpm build
 
       - run: pnpm exec playwright install --with-deps chromium

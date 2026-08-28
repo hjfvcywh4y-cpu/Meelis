@@ -1,4 +1,4 @@
-<!-- Блок T123: доменная логика 3/5 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: доменная логика 3/6 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
 (function (root) {
   'use strict';
@@ -9,10 +9,11 @@
   var SYNONYMS = api.SYNONYMS;
   var INTENTS = api.INTENTS;
   var CLARIFY_QUESTION = api.CLARIFY_QUESTION || 'Вам нужно найти людей, начать разговор, продолжить после паузы или организовать команду?';
+  var CLARIFY_OPTIONS = api.CLARIFY_OPTIONS || [];
+  var OUT_OF_SCOPE = api.OUT_OF_SCOPE || [];
   var TRACK_ALIASES = api.TRACK_ALIASES;
   var SECTION_ALIASES = api.SECTION_ALIASES;
   var GOALS = api.GOALS;
-  var SITUATIONS = api.SITUATIONS;
   var SIT_FILTERS = api.SIT_FILTERS;
   var FMT_FILTERS = api.FMT_FILTERS;
   var CH_FILTERS = api.CH_FILTERS;
@@ -23,13 +24,10 @@
   var TIME_FILTERS = api.TIME_FILTERS || [];
   var GOAL_SECTIONS = api.GOAL_SECTIONS || {};
   var FIELD_WEIGHTS = api.FIELD_WEIGHTS;
-  var PAGE_SIZE = api.PAGE_SIZE || 15;
-  var LIBRARY_STATE_KEY = api.LIBRARY_STATE_KEY || 'mlma.library.v1';
 
   var metaCache = {};
   var MIN_HIT = 36;
   var MIN_CLOSE = 70;
-  var CANDIDATE_LIMIT = 15;
 
   function correctTypos(tokens) {
     var out = [];
@@ -127,8 +125,9 @@
     }
     var norm = tokens.join(' ') || api.normalizeSearchText(original);
     var intents = matchIntents(norm);
+    var scoped = detectOutOfScope(norm);
     return {
-      kind: 'ok',
+      kind: scoped ? 'out_of_scope' : 'ok',
       original: original,
       tokens: tokens,
       useful: useful,
@@ -136,6 +135,7 @@
       norm: norm,
       intents: intents,
       negated: collectNegated(norm),
+      outOfScope: scoped,
     };
   }
 
@@ -197,7 +197,49 @@
       if (!matched || intentBlocked(intent, negated)) continue;
       hits.push(intent);
     }
+    var ids = {};
+    for (var h = 0; h < hits.length; h += 1) ids[hits[h].id] = true;
+    if (ids['silent-message'] || ids['lost-client'] || ids['price'] || ids['team'] || ids['no-people']) {
+      hits = hits.filter(function (item) { return item.id !== 'first-write'; });
+    }
+    if (ids.team) {
+      hits = hits.filter(function (item) { return item.id !== 'first-result' && item.id !== 'just-started'; });
+    }
     return hits;
+  }
+
+  function detectOutOfScope(norm) {
+    for (var i = 0; i < OUT_OF_SCOPE.length; i += 1) {
+      if (OUT_OF_SCOPE[i].test && OUT_OF_SCOPE[i].test.test(norm)) return OUT_OF_SCOPE[i];
+    }
+    return null;
+  }
+
+  function defaultClarify() {
+    return { question: CLARIFY_QUESTION, options: CLARIFY_OPTIONS.slice() };
+  }
+
+  function humanWhy(track, analysis, why, aiReason) {
+    var text = String(aiReason || '').replace(/\s+/g, ' ').trim();
+    if (text.length >= 12) {
+      if (!/^подходит/i.test(text)) text = 'Подходит, потому что ' + text.charAt(0).toLowerCase() + text.slice(1);
+      return text;
+    }
+    var intents = (analysis && analysis.intents) || [];
+    for (var i = 0; i < intents.length; i += 1) {
+      if (intents[i].boostIds && intents[i].boostIds.indexOf(track.trackId) !== -1 && intents[i].reason) {
+        return intents[i].reason;
+      }
+    }
+    if (why && why.intent && why.intent.length) {
+      return 'Подходит, потому что ' + String(why.intent[0]).replace(/\s+/g, ' ').trim() + '.';
+    }
+    if (track && track.situation) {
+      var sit = String(track.situation).replace(/\s+/g, ' ').trim();
+      if (sit.length > 110) sit = sit.slice(0, 107) + '…';
+      return 'Подходит, потому что это про вашу ситуацию: ' + sit;
+    }
+    return '';
   }
 
   function fieldHas(haystack, variants) {
@@ -476,6 +518,11 @@
     if (/боюсь|страш|стыд|неловк/.test(queryNorm) && /боюсь|страш|стыд|неловк|навяз/.test(fields.situation + ' ' + fields.aliases)) {
       score += FIELD_WEIGHTS.emotion;
     }
+    for (var si = 0; si < intents.length; si += 1) {
+      if (intents[si].id === 'silent-message' && intents[si].boostIds.indexOf(track.trackId) === -1) {
+        score -= 200;
+      }
+    }
 
     var negated = analysis.negated || [];
     if (negated.length) {
@@ -491,6 +538,9 @@
       score = Math.floor(score * (0.55 + 0.45 * (matchedUseful / analysis.useful.length)));
     }
     if (!intentHit && matchedUseful === 0) return { score: 0, why: emptyWhy() };
+    if (!intentHit && matchedUseful === 1 && analysis.useful.length >= 2 && score < 140) {
+      return { score: 0, why: emptyWhy() };
+    }
     if (!intentHit && matchedUseful === 1 && analysis.useful.length >= 4 && score < MIN_HIT * 2) {
       score = Math.floor(score * 0.5);
     }
@@ -857,180 +907,7 @@
     return { key: 'all', items: close.map(function (row) { return row.track; }), close: close };
   }
 
-  function searchCatalog(tracks, state) {
-    state = state || emptyLibraryState();
-    var analysis = analyzeQuery(state.q || '');
-    var chips = buildChips(state);
-    if (state.q && analysis.kind === 'need_more') {
-      return { kind: 'need_more', items: [], featured: [], other: [], whyMap: {}, analysis: analysis, chips: chips, relaxedKey: null, close: [], total: tracks.length, label: 'Нужна более конкретная формулировка' };
-    }
-    var faceted = applyFacets(tracks, state);
-    var ranked = rankTracks(faceted, analysis, state.sort);
-    var items = [];
-    var whyMap = {};
-    var scores = {};
-    for (var i = 0; i < ranked.length; i += 1) {
-      items.push(ranked[i].track);
-      scores[ranked[i].track.trackId] = ranked[i].score;
-      if (ranked[i].why && whyList(ranked[i].why).length) whyMap[ranked[i].track.trackId] = ranked[i].why;
-    }
-    if (items.length) {
-      var featured = state.q && items.length ? items.slice(0, Math.min(3, items.length)) : [];
-      var other = featured.length ? items.slice(featured.length) : items;
-      return {
-        kind: 'ok',
-        items: items,
-        featured: featured,
-        other: other,
-        whyMap: whyMap,
-        scores: scores,
-        analysis: analysis,
-        chips: chips,
-        relaxedKey: null,
-        close: [],
-        candidates: ranked.slice(0, CANDIDATE_LIMIT),
-        clarifyingQuestion: null,
-        source: 'local',
-        total: tracks.length,
-        label: foundLabel(items.length, tracks.length, state),
-      };
-    }
-    if (!hasActiveFilters(state) && !state.q) {
-      return { kind: 'ok', items: [], featured: [], other: [], whyMap: {}, scores: {}, analysis: analysis, chips: chips, relaxedKey: null, close: [], candidates: [], clarifyingQuestion: null, source: 'local', total: tracks.length, label: foundLabel(0, tracks.length, state) };
-    }
-    var relaxed = relaxSearch(tracks, state, analysis);
-    return {
-      kind: 'zero',
-      items: [],
-      featured: [],
-      other: [],
-      whyMap: {},
-      scores: {},
-      analysis: analysis,
-      chips: chips,
-      relaxedKey: relaxed.key,
-      close: relaxed.close || [],
-      candidates: ranked.slice(0, CANDIDATE_LIMIT),
-      clarifyingQuestion: state.q ? CLARIFY_QUESTION : null,
-      source: 'local',
-      total: tracks.length,
-      label: 'Точного совпадения пока нет',
-    };
-  }
-
-  function matchesQuery(track, query) {
-    query = query || {};
-    var state = parseLibraryState('', {
-      q: query.query || query.q || '',
-      stage: query.sectionId || query.stage || null,
-      format: query.format || null,
-      goal: query.goal || null,
-      situation: query.situation || null,
-    });
-    if (query.availability === 'available' && track.publicationStatus !== 'published') return false;
-    if (query.availability === 'preparing' && track.publicationStatus === 'published') return false;
-    var result = searchCatalog([track], state);
-    return result.kind === 'ok' && result.items.length > 0;
-  }
-
-  function filterTracks(tracks, query) {
-    query = query || {};
-    var state = parseLibraryState('', {
-      q: query.query || query.q || '',
-      stage: query.sectionId || query.stage || null,
-      format: query.format || null,
-      goal: query.goal || null,
-      situation: query.situation || null,
-      type: query.type || null,
-      experience: query.experience || null,
-    });
-    var filtered = [];
-    for (var i = 0; i < tracks.length; i += 1) {
-      var track = tracks[i];
-      if (query.availability === 'available' && track.publicationStatus !== 'published') continue;
-      if (query.availability === 'preparing' && track.publicationStatus === 'published') continue;
-      filtered.push(track);
-    }
-    var result = searchCatalog(filtered, state);
-    if (result.kind === 'need_more') return [];
-    return result.items;
-  }
-
-  function rerankPayload(result, query) {
-    var rows = (result && result.candidates) || [];
-    var candidates = [];
-    for (var i = 0; i < rows.length && candidates.length < CANDIDATE_LIMIT; i += 1) {
-      var track = rows[i].track || rows[i];
-      candidates.push({
-        trackId: track.trackId,
-        title: track.title,
-        situation: track.situation,
-        result: track.outcome,
-        sectionId: track.sectionId,
-        score: rows[i].score || 0,
-      });
-    }
-    return {
-      query: String(query || ''),
-      candidates: candidates,
-    };
-  }
-
-  function applyRerankResponse(local, data) {
-    if (!local || !data || typeof data !== 'object') return local;
-    var allowed = {};
-    var source = (local.candidates && local.candidates.length ? local.candidates : []).concat(
-      (local.items || []).map(function (track) { return { track: track }; }),
-    );
-    var byId = {};
-    for (var i = 0; i < source.length; i += 1) {
-      var track = source[i].track || source[i];
-      if (track && track.trackId) {
-        allowed[track.trackId] = true;
-        byId[track.trackId] = track;
-      }
-    }
-    for (var t = 0; t < (local.items || []).length; t += 1) byId[local.items[t].trackId] = local.items[t];
-    var incoming = Array.isArray(data.results) ? data.results : [];
-    var ordered = [];
-    var whyMap = Object.assign({}, local.whyMap || {});
-    for (var r = 0; r < incoming.length; r += 1) {
-      var row = incoming[r] || {};
-      var id = String(row.trackId || '');
-      if (!allowed[id] || !byId[id]) continue;
-      if (typeof row.confidence === 'number' && row.confidence < 0.35) continue;
-      ordered.push(byId[id]);
-      var why = whyMap[id] && !Array.isArray(whyMap[id]) ? whyMap[id] : emptyWhy();
-      if (data.recognizedSituation) pushWhy(why, 'situation', data.recognizedSituation);
-      if (row.reason) pushWhy(why, 'intent', row.reason);
-      whyMap[id] = why;
-    }
-    if (!ordered.length) {
-      var nextZero = Object.assign({}, local);
-      nextZero.clarifyingQuestion = data.clarifyingQuestion || local.clarifyingQuestion || CLARIFY_QUESTION;
-      nextZero.source = 'ai-low';
-      return nextZero;
-    }
-    var featured = ordered.slice(0, Math.min(3, ordered.length));
-    var other = ordered.slice(featured.length);
-    return Object.assign({}, local, {
-      kind: 'ok',
-      items: ordered,
-      featured: featured,
-      other: other,
-      whyMap: whyMap,
-      clarifyingQuestion: data.clarifyingQuestion || null,
-      recognizedSituation: data.recognizedSituation || '',
-      source: 'ai',
-      label: foundLabel(ordered.length, local.total, { q: '1' }),
-    });
-  }
-
   api.analyzeQuery = analyzeQuery;
-  api.searchCatalog = searchCatalog;
-  api.rerankPayload = rerankPayload;
-  api.applyRerankResponse = applyRerankResponse;
-  api.whyList = whyList;
   api.parseLibraryState = parseLibraryState;
   api.serializeLibraryState = serializeLibraryState;
   api.libraryHref = libraryHref;
@@ -1043,11 +920,14 @@
   api.hasActiveFilters = hasActiveFilters;
   api.deriveMeta = deriveMeta;
   api.foundLabel = foundLabel;
-  api.matchesQuery = matchesQuery;
-  api.filterTracks = filterTracks;
   api.clearFilterKey = clearKey;
   api.rankTracks = rankTracks;
-
+  api.whyList = whyList;
+  api.humanWhy = humanWhy;
+  api.emptyWhy = emptyWhy;
+  api.defaultClarify = defaultClarify;
+  api.applyFacets = applyFacets;
+  api.relaxSearch = relaxSearch;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
 </script>

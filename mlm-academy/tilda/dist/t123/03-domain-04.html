@@ -1,241 +1,326 @@
-<!-- Блок T123: доменная логика 4/5 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: доменная логика 4/6 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
 (function (root) {
   'use strict';
   var api = root.MLMA;
   if (!api) return;
-  var SIT_FILTERS = api.SIT_FILTERS;
-  var FMT_FILTERS = api.FMT_FILTERS;
-  var CH_FILTERS = api.CH_FILTERS;
-  var LVL_FILTERS = api.LVL_FILTERS;
-  var AVAIL_FILTERS = api.AVAIL_FILTERS;
-  var LIBRARY_STATE_KEY = api.LIBRARY_STATE_KEY || 'mlma.library.v1';
+  var TRACK_ALIASES = api.TRACK_ALIASES;
+  var CANDIDATE_LIMIT = 15;
   var deriveMeta = api.deriveMeta;
-  var analyzeQuery = api.analyzeQuery;
   var rankTracks = api.rankTracks;
+  var analyzeQuery = api.analyzeQuery;
+  var applyFacets = api.applyFacets;
+  var emptyLibraryState = api.emptyLibraryState;
+  var buildChips = api.buildChips;
+  var foundLabel = api.foundLabel;
+  var hasActiveFilters = api.hasActiveFilters;
+  var parseLibraryState = api.parseLibraryState;
+  var emptyWhy = api.emptyWhy;
+  var humanWhy = api.humanWhy;
+  var defaultClarify = api.defaultClarify;
 
-  function uniqueFormats(tracks) {
-    var seen = {};
-    var out = [];
-    for (var i = 0; i < tracks.length; i += 1) {
-      var format = tracks[i].format;
-      if (format && !seen[format]) {
-        seen[format] = true;
-        out.push(format);
+  function attachWhyText(why, track, analysis, aiReason) {
+    var next = why && !Array.isArray(why) ? why : emptyWhy();
+    next.text = humanWhy(track, analysis, next, aiReason);
+    return next;
+  }
+
+  function splitDisplay(ranked, analysis, state) {
+    var featured = [];
+    var other = [];
+    var whyMap = {};
+    var scores = {};
+    var items = [];
+    if (!state.q) {
+      for (var b = 0; b < ranked.length; b += 1) {
+        items.push(ranked[b].track);
+        scores[ranked[b].track.trackId] = ranked[b].score;
       }
+      return { items: items, featured: [], other: items, whyMap: whyMap, scores: scores };
     }
-    out.sort(function (a, b) {
-      return a.localeCompare(b, 'ru');
+    var intents = (analysis && analysis.intents) || [];
+    var boost = {};
+    var teamOnly = false;
+    for (var n = 0; n < intents.length; n += 1) {
+      if (intents[n].teamOnly) teamOnly = true;
+      var ids = intents[n].boostIds || [];
+      for (var k = 0; k < ids.length; k += 1) boost[ids[k]] = true;
+    }
+    var strong = [];
+    for (var i = 0; i < ranked.length; i += 1) {
+      var row = ranked[i];
+      var id = row.track.trackId;
+      var meta = deriveMeta(row.track);
+      if (teamOnly && !boost[id] && meta.sit !== 'team') continue;
+      if (intents.length && !boost[id] && row.score < 220) continue;
+      if (!intents.length && row.score < 70) continue;
+      strong.push(row);
+    }
+    for (var f = 0; f < strong.length && featured.length < 3; f += 1) {
+      var minFeat = boost[strong[f].track.trackId] ? 80 : 100;
+      if (strong[f].score < minFeat) continue;
+      featured.push(strong[f].track);
+      scores[strong[f].track.trackId] = strong[f].score;
+      whyMap[strong[f].track.trackId] = attachWhyText(strong[f].why, strong[f].track, analysis);
+    }
+    for (var r = 0; r < strong.length && other.length < 5; r += 1) {
+      var rel = strong[r];
+      if (featured.indexOf(rel.track) !== -1) continue;
+      var minRel = boost[rel.track.trackId] ? 60 : 80;
+      if (rel.score < minRel) continue;
+      other.push(rel.track);
+      scores[rel.track.trackId] = rel.score;
+      whyMap[rel.track.trackId] = attachWhyText(rel.why, rel.track, analysis);
+    }
+    items = featured.concat(other);
+    return { items: items, featured: featured, other: other, whyMap: whyMap, scores: scores };
+  }
+
+  function searchCatalog(tracks, state) {
+    state = state || emptyLibraryState();
+    var analysis = analyzeQuery(state.q || '');
+    var chips = buildChips(state);
+    if (state.q && analysis.kind === 'need_more') {
+      var more = defaultClarify();
+      return { kind: 'need_more', items: [], featured: [], other: [], whyMap: {}, analysis: analysis, chips: chips, relaxedKey: null, close: [], total: tracks.length, label: 'Нужна более конкретная формулировка', clarifyingQuestion: more.question, clarifyingOptions: more.options, source: 'local' };
+    }
+    if (state.q && analysis.outOfScope) {
+      return {
+        kind: 'zero',
+        items: [],
+        featured: [],
+        other: [],
+        whyMap: {},
+        scores: {},
+        analysis: analysis,
+        chips: chips,
+        relaxedKey: null,
+        close: [],
+        candidates: [],
+        clarifyingQuestion: analysis.outOfScope.question,
+        clarifyingOptions: analysis.outOfScope.options || defaultClarify().options,
+        source: 'local',
+        total: tracks.length,
+        label: 'Точного трека пока нет',
+      };
+    }
+    var faceted = applyFacets(tracks, state);
+    var ranked = rankTracks(faceted, analysis, state.sort);
+    var candidates = ranked.slice(0, CANDIDATE_LIMIT);
+    var split = splitDisplay(ranked, analysis, state);
+    if (!state.q) {
+      return {
+        kind: 'ok',
+        items: split.items,
+        featured: [],
+        other: split.other,
+        whyMap: {},
+        scores: split.scores,
+        analysis: analysis,
+        chips: chips,
+        relaxedKey: null,
+        close: [],
+        candidates: [],
+        clarifyingQuestion: null,
+        clarifyingOptions: [],
+        source: 'local',
+        total: tracks.length,
+        label: foundLabel(split.items.length, tracks.length, state),
+      };
+    }
+    if (split.featured.length || split.other.length) {
+      return {
+        kind: 'ok',
+        items: split.items,
+        featured: split.featured,
+        other: split.other,
+        whyMap: split.whyMap,
+        scores: split.scores,
+        analysis: analysis,
+        chips: chips,
+        relaxedKey: null,
+        close: [],
+        candidates: candidates,
+        clarifyingQuestion: null,
+        clarifyingOptions: [],
+        source: 'local',
+        total: tracks.length,
+        label: split.featured.length ? 'Подходит лучше всего' : 'Также может помочь',
+      };
+    }
+    if (!hasActiveFilters(state) && !state.q) {
+      return { kind: 'ok', items: [], featured: [], other: [], whyMap: {}, scores: {}, analysis: analysis, chips: chips, relaxedKey: null, close: [], candidates: [], clarifyingQuestion: null, clarifyingOptions: [], source: 'local', total: tracks.length, label: foundLabel(0, tracks.length, state) };
+    }
+    var clarify = defaultClarify();
+    return {
+      kind: 'zero',
+      items: [],
+      featured: [],
+      other: [],
+      whyMap: {},
+      scores: {},
+      analysis: analysis,
+      chips: chips,
+      relaxedKey: null,
+      close: [],
+      candidates: candidates,
+      clarifyingQuestion: clarify.question,
+      clarifyingOptions: clarify.options,
+      source: 'local',
+      total: tracks.length,
+      label: 'Точного трека пока нет',
+    };
+  }
+
+  function matchesQuery(track, query) {
+    query = query || {};
+    var state = parseLibraryState('', {
+      q: query.query || query.q || '',
+      stage: query.sectionId || query.stage || null,
+      format: query.format || null,
+      goal: query.goal || null,
+      situation: query.situation || null,
     });
-    return out;
+    if (query.availability === 'available' && track.publicationStatus !== 'published') return false;
+    if (query.availability === 'preparing' && track.publicationStatus === 'published') return false;
+    var result = searchCatalog([track], state);
+    return result.kind === 'ok' && result.items.length > 0;
   }
 
-  function facetOptions(tracks) {
-    var counts = { sit: {}, fmt: {}, ch: {}, lvl: {}, avail: { description: 0, playable: 0 } };
+  function filterTracks(tracks, query) {
+    query = query || {};
+    var state = parseLibraryState('', {
+      q: query.query || query.q || '',
+      stage: query.sectionId || query.stage || null,
+      format: query.format || null,
+      goal: query.goal || null,
+      situation: query.situation || null,
+      type: query.type || null,
+      experience: query.experience || null,
+    });
+    var filtered = [];
     for (var i = 0; i < tracks.length; i += 1) {
-      var meta = deriveMeta(tracks[i]);
-      counts.sit[meta.sit] = (counts.sit[meta.sit] || 0) + 1;
-      counts.fmt[meta.fmt] = (counts.fmt[meta.fmt] || 0) + 1;
-      counts.ch[meta.ch] = (counts.ch[meta.ch] || 0) + 1;
-      counts.lvl[meta.lvl] = (counts.lvl[meta.lvl] || 0) + 1;
-      counts.avail.description += 1;
-      if (meta.playable) counts.avail.playable += 1;
+      var track = tracks[i];
+      if (query.availability === 'available' && track.publicationStatus !== 'published') continue;
+      if (query.availability === 'preparing' && track.publicationStatus === 'published') continue;
+      filtered.push(track);
     }
-    function present(list, bag) {
+    var result = searchCatalog(filtered, state);
+    if (result.kind === 'need_more') return [];
+    return result.items;
+  }
+
+  function rerankPayload(result, query) {
+    var rows = (result && result.candidates) || [];
+    var candidates = [];
+    for (var i = 0; i < rows.length && candidates.length < CANDIDATE_LIMIT; i += 1) {
+      var track = rows[i].track || rows[i];
+      var aliases = TRACK_ALIASES[track.trackId] || [];
+      candidates.push({
+        trackId: track.trackId,
+        title: track.title,
+        situation: track.situation,
+        result: track.outcome,
+        sectionId: track.sectionId,
+        tags: aliases.slice(0, 8),
+        score: rows[i].score || 0,
+      });
+    }
+    return {
+      query: String(query || ''),
+      candidates: candidates,
+    };
+  }
+
+  function applyRerankResponse(local, data) {
+    if (!local || !data || typeof data !== 'object') return local;
+    var catalog = {};
+    var source = (local.candidates && local.candidates.length ? local.candidates : []).concat(
+      (local.items || []).map(function (track) { return { track: track }; }),
+    );
+    var byId = {};
+    for (var i = 0; i < source.length; i += 1) {
+      var track = source[i].track || source[i];
+      if (track && track.trackId) {
+        catalog[track.trackId] = true;
+        byId[track.trackId] = track;
+      }
+    }
+    for (var t = 0; t < (local.items || []).length; t += 1) byId[local.items[t].trackId] = local.items[t];
+    var topIn = Array.isArray(data.topMatches) ? data.topMatches : [];
+    var relIn = Array.isArray(data.relatedMatches) ? data.relatedMatches : [];
+    if (!topIn.length && !relIn.length && Array.isArray(data.results)) {
+      topIn = data.results.slice(0, 3);
+      relIn = data.results.slice(3, 8);
+    }
+    var confidence = Number(data.confidence);
+    if (!isFinite(confidence)) confidence = topIn[0] && typeof topIn[0].confidence === 'number' ? topIn[0].confidence : 0;
+    var clarify = data.clarification || data.clarifyingQuestion || null;
+    function take(rows, limit, minConf) {
       var out = [];
-      for (var i = 0; i < list.length; i += 1) {
-        if (bag[list[i].id]) out.push({ id: list[i].id, title: list[i].title, count: bag[list[i].id] });
+      var whyMap = {};
+      for (var r = 0; r < rows.length && out.length < limit; r += 1) {
+        var row = rows[r] || {};
+        var id = String(row.trackId || '');
+        if (!catalog[id] || !byId[id]) continue;
+        if (typeof row.confidence === 'number' && row.confidence < minConf) continue;
+        out.push(byId[id]);
+        whyMap[id] = attachWhyText(emptyWhy(), byId[id], local.analysis, row.reason || data.reason);
       }
-      return out;
+      return { items: out, whyMap: whyMap };
     }
-    return {
-      sit: present(SIT_FILTERS, counts.sit),
-      fmt: present(FMT_FILTERS, counts.fmt),
-      ch: present(CH_FILTERS, counts.ch),
-      lvl: present(LVL_FILTERS, counts.lvl),
-      avail: AVAIL_FILTERS.filter(function (item) { return counts.avail[item.id] > 0; }).map(function (item) {
-        return { id: item.id, title: item.title, count: counts.avail[item.id] };
-      }),
-    };
+    if (confidence < 0.45 || (!topIn.length && !relIn.length)) {
+      var low = Object.assign({}, local);
+      low.kind = 'zero';
+      low.items = [];
+      low.featured = [];
+      low.other = [];
+      low.close = [];
+      low.whyMap = {};
+      low.clarifyingQuestion = clarify || (defaultClarify().question);
+      low.clarifyingOptions = local.clarifyingOptions && local.clarifyingOptions.length ? local.clarifyingOptions : defaultClarify().options;
+      low.source = 'ai';
+      low.label = 'Точного трека пока нет';
+      return low;
+    }
+    var top = take(topIn, 3, 0.6);
+    var related = take(relIn, 5, 0.45);
+    var featured = top.items;
+    var other = related.items.filter(function (item) {
+      return featured.indexOf(item) === -1;
+    });
+    if (!featured.length && !other.length) {
+      var empty = Object.assign({}, local);
+      empty.kind = 'zero';
+      empty.items = [];
+      empty.featured = [];
+      empty.other = [];
+      empty.close = [];
+      empty.source = 'ai';
+      empty.clarifyingQuestion = clarify || defaultClarify().question;
+      empty.clarifyingOptions = defaultClarify().options;
+      empty.label = 'Точного трека пока нет';
+      return empty;
+    }
+    var whyMap = Object.assign({}, top.whyMap, related.whyMap);
+    return Object.assign({}, local, {
+      kind: 'ok',
+      items: featured.concat(other),
+      featured: featured,
+      other: other,
+      whyMap: whyMap,
+      clarifyingQuestion: clarify,
+      recognizedSituation: data.reason || data.recognizedSituation || '',
+      source: 'ai',
+      label: featured.length ? 'Подходит лучше всего' : 'Также может помочь',
+    });
   }
 
-  function relatedTracks(track, catalog, limit, context) {
-    limit = limit || 3;
-    context = context || {};
-    if (!track) return [];
-    var byId = {};
-    for (var i = 0; i < catalog.length; i += 1) byId[catalog[i].trackId] = catalog[i];
-    var out = [];
-    var seen = {};
-    seen[track.trackId] = true;
-    var ids = (track.nextTrackIds || []).concat(track.relatedTrackIds || []);
-    for (var n = 0; n < ids.length && out.length < limit; n += 1) {
-      if (byId[ids[n]] && !seen[ids[n]]) {
-        seen[ids[n]] = true;
-        out.push(byId[ids[n]]);
-      }
-    }
-    if (context.query) {
-      var ranked = rankTracks(catalog, analyzeQuery(context.query), null, 'soft');
-      for (var r = 0; r < ranked.length && out.length < limit; r += 1) {
-        if (seen[ranked[r].track.trackId]) continue;
-        seen[ranked[r].track.trackId] = true;
-        out.push(ranked[r].track);
-      }
-    }
-    for (var t = 0; t < catalog.length && out.length < limit; t += 1) {
-      var other = catalog[t];
-      if (seen[other.trackId]) continue;
-      if (other.module === track.module || other.sectionId === track.sectionId) {
-        seen[other.trackId] = true;
-        out.push(other);
-      }
-    }
-    return out;
-  }
-
-  function nextTrackBundle(track, catalog, context) {
-    context = context || {};
-    var runtime = context.runtime || (api.getRuntime ? api.getRuntime(track.trackId) : null);
-    var nba = api.nextBestAction ? api.nextBestAction(track, catalog, runtime, context.profile) : null;
-    var primary = nba && nba.track ? nba.track : null;
-    if (!primary && track.nextTrackIds && track.nextTrackIds[0]) {
-      for (var i = 0; i < catalog.length; i += 1) {
-        if (catalog[i].trackId === track.nextTrackIds[0]) {
-          primary = catalog[i];
-          break;
-        }
-      }
-    }
-    var variants = (api.relatedContent ? api.relatedContent(track, catalog, 3) : relatedTracks(track, catalog, 4, context)).filter(function (item) {
-      return !primary || item.trackId !== primary.trackId;
-    }).slice(0, 3);
-    return { primary: primary, variants: variants, nba: nba };
-  }
-
-  function startPicks(sectionId, level, catalog) {
-    var map = {
-      A1: { start: ['A1-001', 'A1-004', 'A1-010'], later: ['A1-011', 'A1-012'], other: ['A2-008'] },
-      A2: { start: ['A2-008', 'A2-006', 'A2-010'], later: ['A2-001', 'A2-011'], other: ['A3-002'] },
-      A3: { start: ['A3-002', 'A3-001', 'A3-016'], later: ['A3-008', 'A3-005'], other: ['A2-008'] },
-      A4: { start: ['A4-001', 'A1-012', 'A1-011'], later: ['A1-013', 'A1-014'], other: ['A5-001'] },
-      A5: { start: ['A5-001', 'A5-010', 'A5-009'], later: ['A5-011', 'A5-014'], other: ['A3-008'] },
-      A6: { start: ['A6-001', 'A6-010', 'A6-006'], later: ['A6-011', 'A6-013'], other: ['A1-016'] },
-    };
-    if (level === 'mentor') {
-      map.A6 = { start: ['A6-013', 'A6-011', 'A1-016'], later: ['A6-012', 'A6-010'], other: ['A1-010'] };
-    }
-    if (level === 'beginner' && sectionId === 'A1') {
-      map.A1 = { start: ['A1-004', 'A1-006', 'A1-010'], later: ['A1-011', 'A2-008'], other: ['A1-001'] };
-    }
-    var spec = map[sectionId] || map.A1;
-    var byId = {};
-    for (var i = 0; i < catalog.length; i += 1) byId[catalog[i].trackId] = catalog[i];
-    function pick(ids) {
-      for (var k = 0; k < ids.length; k += 1) if (byId[ids[k]]) return byId[ids[k]];
-      return null;
-    }
-    return {
-      start: pick(spec.start),
-      later: pick(spec.later),
-      other: pick(spec.other),
-    };
-  }
-
-  function sectionEntryTracks(sectionId, catalog) {
-    var preferred = {
-      A1: ['A1-001', 'A1-004', 'A1-010'],
-      A2: ['A2-008', 'A2-006', 'A2-010'],
-      A3: ['A3-002', 'A3-001', 'A3-016'],
-      A4: ['A4-001', 'A1-012', 'A1-011'],
-      A5: ['A5-001', 'A5-010', 'A5-009'],
-      A6: ['A6-001', 'A6-010', 'A6-013'],
-    };
-    var ids = preferred[sectionId] || [];
-    var byId = {};
-    for (var i = 0; i < catalog.length; i += 1) byId[catalog[i].trackId] = catalog[i];
-    var out = [];
-    for (var n = 0; n < ids.length; n += 1) {
-      if (byId[ids[n]] && (byId[ids[n]].sectionId === sectionId || sectionId === 'A4')) out.push(byId[ids[n]]);
-    }
-    if (out.length < 3) {
-      for (var t = 0; t < catalog.length && out.length < 3; t += 1) {
-        if (catalog[t].sectionId === sectionId && ids.indexOf(catalog[t].trackId) === -1) out.push(catalog[t]);
-      }
-    }
-    return out.slice(0, 3);
-  }
-
-  function exampleQueries() {
-    return [
-      'Боюсь первым написать знакомому',
-      'Не понимаю, с кем начать',
-      'Человек сказал, что подумает',
-      'Клиент купил и пропал',
-      'Хочу получить первый результат',
-    ];
-  }
-
-  function saveLibraryRestore(payload) {
-    try {
-      if (typeof window === 'undefined' || !window.sessionStorage) return;
-      window.sessionStorage.setItem(LIBRARY_STATE_KEY, JSON.stringify(payload));
-    } catch (err) {
-      /* ignore */
-    }
-  }
-
-  function readLibraryRestore() {
-    try {
-      if (typeof window === 'undefined' || !window.sessionStorage) return null;
-      var raw = window.sessionStorage.getItem(LIBRARY_STATE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch (err) {
-      return null;
-    }
-  }
-
-  function trackEvent(name, payload) {
-    var data = { event: name };
-    if (payload) {
-      var keys = Object.keys(payload);
-      for (var i = 0; i < keys.length; i += 1) {
-        if (payload[keys[i]] != null && payload[keys[i]] !== '') data[keys[i]] = payload[keys[i]];
-      }
-    }
-    try {
-      if (typeof window !== 'undefined') {
-        window.dataLayer = window.dataLayer || [];
-        window.dataLayer.push(data);
-      }
-    } catch (err) {
-      /* ignore */
-    }
-    return data;
-  }
-
-  function itemType(track) {
-    return api.itemKind ? api.itemKind(track) : 'track';
-  }
-
-  function stagesForState(state) {
-    if (state.stages && state.stages.length) return state.stages.slice();
-    if (state.stage) return [state.stage];
-    return [];
-  }
-
-  api.uniqueFormats = uniqueFormats;
-  api.facetOptions = facetOptions;
-  api.relatedTracks = relatedTracks;
-  api.nextTrackBundle = nextTrackBundle;
-  api.startPicks = startPicks;
-  api.sectionEntryTracks = sectionEntryTracks;
-  api.exampleQueries = exampleQueries;
-  api.trackEvent = trackEvent;
-  api.itemType = itemType;
-  api.stagesForState = stagesForState;
-  api.saveLibraryRestore = saveLibraryRestore;
-  api.readLibraryRestore = readLibraryRestore;
+  api.searchCatalog = searchCatalog;
+  api.rerankPayload = rerankPayload;
+  api.applyRerankResponse = applyRerankResponse;
+  api.matchesQuery = matchesQuery;
+  api.filterTracks = filterTracks;
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);

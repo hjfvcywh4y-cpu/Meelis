@@ -89,6 +89,8 @@ const CASES = [
   { q: 'что делать новичку', expect: ['A1-004', 'A1-006', 'A1-010'], group: 'start' },
   { q: 'как рассказать о продукте', expect: ['A1-012', 'A1-011', 'A4-001'], group: 'product' },
   { q: 'как снять видео', expect: [], group: 'none', empty: true },
+  { q: 'Хочу открыть новый город', expect: [], group: 'none', empty: true },
+  { q: 'Клиент купил и пропал', expect: ['A6-001', 'A6-006', 'A5-010'], group: 'followup' },
   { q: 'как пригласить на встречу', expect: ['A3-005', 'A3-013', 'A3-016'], group: 'call' },
   { q: 'мне отказали', expect: ['A5-014', 'A5-001', 'A5-011'], group: 'pause' },
   { q: 'человек думает', expect: ['A5-001', 'A5-009', 'A5-011'], group: 'pause' },
@@ -111,11 +113,19 @@ describe('50 пользовательских запросов', () => {
         return;
       }
       const found = result.items.map((row) => row.trackId);
-      const hit = item.expect.some((id) => found.slice(0, 3).includes(id));
+      const hit = item.expect.some((id) => found.slice(0, 3).includes(id) || (result.featured || []).map((row) => row.trackId).includes(id));
       assert.ok(hit, `${item.q} top3=${found.slice(0, 3).join(',')} expected one of ${item.expect.join(',')}`);
       assert.equal(found.some((id) => !/^A[1-6]-\d{3}$/.test(id)), false);
+      assert.ok(found.length <= 8, item.q + ' dump ' + found.length);
+      assert.ok((result.featured || []).length <= 3);
+      assert.ok((result.other || []).length <= 5);
+      if (result.whyMap && result.whyMap[found[0]] && result.whyMap[found[0]].text) {
+        assert.match(result.whyMap[found[0]].text, /Подходит/);
+        assert.equal(/Буквальное совпадение|алиас|score|trackId/i.test(result.whyMap[found[0]].text), false);
+      }
       if (item.group === 'team') {
         assert.ok(found.length < 20, 'team dump ' + found.length);
+        assert.ok(!found.includes('A3-002'), 'team leaked personal write ' + found.join(','));
       }
       if (item.group === 'price') {
         assert.ok(found.slice(0, 3).some((id) => ['A5-005', 'A4-013', 'A5-001'].includes(id)));
@@ -136,17 +146,29 @@ describe('50 пользовательских запросов', () => {
     assert.match(href, /sit=doubt/);
   });
 
-  it('rerank не принимает неизвестные ID', () => {
+  it('rerank не принимает неизвестные ID и низкую уверенность не подменяет локальной кучей', () => {
     const local = search('боюсь написать знакомому');
     const next = MLMA.applyRerankResponse(local, {
-      recognizedSituation: 'первое сообщение',
-      results: [
+      confidence: 0.9,
+      reason: 'Первое сообщение теплому контакту',
+      topMatches: [
         { trackId: 'A9-999', confidence: 0.99, reason: 'fake' },
-        { trackId: 'A3-002', confidence: 0.9, reason: 'первое сообщение' },
+        { trackId: 'A3-002', confidence: 0.9, reason: 'Подходит, потому что вы хотите написать знакомому без давления.' },
       ],
+      relatedMatches: [],
     });
     assert.ok(next.items.every((item) => item.trackId !== 'A9-999'));
     assert.equal(next.items[0].trackId, 'A3-002');
+    assert.equal(next.source, 'ai');
+    const low = MLMA.applyRerankResponse(local, {
+      confidence: 0.2,
+      topMatches: [],
+      relatedMatches: [],
+      clarification: 'Уточните, что происходит',
+    });
+    assert.equal(low.kind, 'zero');
+    assert.equal(low.items.length, 0);
+    assert.match(low.clarifyingQuestion, /Уточните/);
   });
 
   it('почему разделено на literal / situation / intent', () => {

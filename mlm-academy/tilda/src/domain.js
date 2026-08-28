@@ -18,6 +18,7 @@
     'contentStatus',
     'visibility',
     'access',
+    'imageUrl',
   ];
 
   var COMPACT_TO_PUBLIC = {
@@ -46,6 +47,60 @@
     A5: '#6B4C8A',
     A6: '#2A7A72',
   };
+
+  function svgCover(bg, ink, motif) {
+    var svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-hidden="true">' +
+      '<rect width="640" height="360" fill="' + bg + '"/>' +
+      '<rect x="28" y="28" width="584" height="304" fill="none" stroke="' + ink + '" stroke-width="3"/>' +
+      motif +
+      '</svg>';
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+
+  var SECTION_COVERS = {
+    A1: svgCover(
+      '#E8D5C8',
+      '#C45F42',
+      '<path d="M150 250 L320 110 L490 250" fill="none" stroke="#C45F42" stroke-width="14" stroke-linejoin="round"/>' +
+        '<circle cx="320" cy="110" r="16" fill="#1c1914"/>',
+    ),
+    A2: svgCover(
+      '#D7E4DA',
+      '#3D6B4F',
+      '<circle cx="230" cy="180" r="54" fill="none" stroke="#3D6B4F" stroke-width="10"/>' +
+        '<circle cx="320" cy="150" r="54" fill="none" stroke="#1c1914" stroke-width="10"/>' +
+        '<circle cx="410" cy="180" r="54" fill="none" stroke="#3D6B4F" stroke-width="10"/>',
+    ),
+    A3: svgCover(
+      '#D5DDEA',
+      '#2F4F8A',
+      '<rect x="170" y="110" width="300" height="160" rx="28" fill="#fffdf8" stroke="#2F4F8A" stroke-width="8"/>' +
+        '<path d="M220 170 H420 M220 210 H360" stroke="#2F4F8A" stroke-width="10" stroke-linecap="round"/>',
+    ),
+    A4: svgCover(
+      '#F0E4C4',
+      '#C4922A',
+      '<rect x="180" y="100" width="180" height="200" rx="8" fill="#fffdf8" stroke="#C4922A" stroke-width="8"/>' +
+        '<rect x="280" y="80" width="180" height="200" rx="8" fill="#fffdf8" stroke="#1c1914" stroke-width="8"/>',
+    ),
+    A5: svgCover(
+      '#E3D8EC',
+      '#6B4C8A',
+      '<rect x="250" y="90" width="44" height="180" rx="6" fill="#6B4C8A"/>' +
+        '<rect x="346" y="90" width="44" height="180" rx="6" fill="#1c1914"/>',
+    ),
+    A6: svgCover(
+      '#D4E8E5',
+      '#2A7A72',
+      '<path d="M210 180 a110 110 0 1 0 110 -110" fill="none" stroke="#2A7A72" stroke-width="14" stroke-linecap="round"/>' +
+        '<path d="M300 54 l36 46 -54 6" fill="#1c1914"/>',
+    ),
+  };
+
+  function sectionCoverUrl(sectionId) {
+    return SECTION_COVERS[sectionId] || SECTION_COVERS.A1;
+  }
 
   var PROFILE_KEY = 'mlma.profile.v1';
   var PROGRESS_KEY = 'mlma.progress.v1';
@@ -88,9 +143,11 @@
       contentStatus: typeof src.contentStatus === 'string' ? src.contentStatus : 'metadata_only',
       visibility: typeof src.visibility === 'string' ? src.visibility : 'catalog',
       access: typeof src.access === 'string' ? src.access : 'undecided',
+      imageUrl: sectionCoverUrl(typeof src.sectionId === 'string' ? src.sectionId : ''),
     };
     if (!TRACK_ID_RE.test(track.trackId)) return null;
     if (SECTION_IDS.indexOf(track.sectionId) === -1) return null;
+    track.imageUrl = sectionCoverUrl(track.sectionId);
     return track;
   }
 
@@ -232,12 +289,14 @@
         itemKind: 'track',
         label: ready ? 'Доступен' : '',
         pageStatus: ready ? '' : 'Контур прохождения',
-        cta: 'Начать трек',
-        tone: 'positive',
-        canStart: true,
-        showProgress: true,
+        cta: ready ? 'Начать трек' : 'Открыть описание',
+        tone: ready ? 'positive' : 'waiting',
+        canStart: ready,
+        showProgress: ready,
         showCatalogBadge: ready,
-        explanation: 'Трек — исполняемый маршрут: исходное состояние, действие, рабочий след и следующее лучшее действие. Отдельные уроки появятся, когда содержание будет готово.',
+        explanation: ready
+          ? 'Трек — исполняемый маршрут: исходное состояние, действие, рабочий след и следующее лучшее действие.'
+          : 'Описание уже можно открыть. Кнопки «Начать» нет, пока содержание трека не наполнено. Просмотр страницы не завершает трек.',
       };
     }
     if (availability === 'published_empty') {
@@ -652,6 +711,8 @@
     PROFILE_KEY: PROFILE_KEY,
     RECOMMENDATION_REASON_LABELS: RECOMMENDATION_REASON_LABELS,
     SECTION_COLORS: SECTION_COLORS,
+    SECTION_COVERS: SECTION_COVERS,
+    sectionCoverUrl: sectionCoverUrl,
     toPublicTrack: toPublicTrack,
     toPublicList: toPublicList,
     compactTrack: compactTrack,

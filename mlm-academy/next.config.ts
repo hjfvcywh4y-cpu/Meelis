@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   reactStrictMode: true,
   poweredByHeader: false,
+  outputFileTracingIncludes: {
+    '/api/search/rerank': ['./search-proxy/**/*'],
+  },
   async redirects() {
     return [
       // Старые публичные адреса каталога ведут в оболочку без потери Track ID.

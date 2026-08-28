@@ -37,6 +37,25 @@ async function main() {
   await page.waitForTimeout(350);
   const firstTitle = await page.locator('.mlma-track-card h3').first().innerText();
   if (!/первое сообщение/i.test(firstTitle)) throw new Error('search ranking: ' + firstTitle);
+  const covers = await page.locator('.mlma-track-cover').count();
+  if (covers < 1) throw new Error('search cards missing covers');
+  const whyText = await page.locator('.mlma-why').first().innerText();
+  if (/Буквальное совпадение|алиас|score=/i.test(whyText)) throw new Error('leaked ranking: ' + whyText);
+  if (!/Подходит/i.test(whyText)) throw new Error('missing human why');
+  const searchCards = await page.locator('.mlma-track-card').count();
+  if (searchCards > 8) throw new Error('too many weak matches: ' + searchCards);
+
+  await page.fill('#mlma-search', 'Хочу открыть новый город');
+  await page.waitForTimeout(400);
+  const cityTitle = await page.locator('#mlma-results').innerText();
+  if (!/Точного трека пока нет/i.test(cityTitle)) throw new Error('city false positive: ' + cityTitle.slice(0, 200));
+
+  const html = await page.content();
+  if (/OPENAI_API_KEY|sk-[A-Za-z0-9]{10,}/.test(html)) throw new Error('api key leaked into page');
+  const lang = await page.evaluate(() => document.documentElement.lang);
+  if (lang !== 'ru') throw new Error('html lang: ' + lang);
+  const canon = await page.evaluate(() => document.querySelector('link[rel="canonical"]')?.getAttribute('href') || '');
+  if (!canon.startsWith('http://127.0.0.1') && !canon.startsWith('https://')) throw new Error('canonical: ' + canon);
 
   await page.goto(BASE + '/library?stage=a3&q=кому+написать', { waitUntil: 'networkidle' });
   await page.waitForSelector('.mlma-track-card');
@@ -44,22 +63,13 @@ async function main() {
   if (combo < 1 || combo >= 112) throw new Error('combo count: ' + combo);
 
   await page.goto(BASE + '/track?id=a3-002', { waitUntil: 'networkidle' });
-  await page.waitForSelector('.mlma-blueprint, .mlma-runtime');
+  await page.waitForSelector('.mlma-blueprint, .mlma-runtime, .mlma-track-card, #mlma-main');
   const startBtns = await page.getByRole('link', { name: 'Начать трек' }).count();
-  if (startBtns < 1) throw new Error('missing start button');
-  await page.getByRole('link', { name: 'Начать трек' }).first().click();
-  await page.waitForSelector('#mlma-runtime-form');
-  await page.fill('#mlma-artifact', 'готово');
-  await page.fill('#mlma-evidence', 'я сделал');
-  await page.getByRole('button', { name: 'Сдать результат' }).click();
-  await page.waitForSelector('text=Пока нельзя принять');
-  await page.getByRole('button', { name: 'Повторить попытку' }).click();
-  await page.waitForSelector('#mlma-artifact');
-  await page.fill('#mlma-artifact', 'Короткое сообщение знакомой Марине: спросить, удобно ли созвониться в субботу, без обещания дохода.');
-  await page.fill('#mlma-evidence', 'Черновик сохранён в заметках и готов к отправке.');
-  await page.getByRole('button', { name: 'Сдать результат' }).click();
-  await page.waitForSelector('text=Следующее действие');
-
+  if (startBtns) throw new Error('unfilled track must not show Начать трек');
+  const openDesc = await page.getByRole('link', { name: 'Открыть описание' }).count();
+  if (openDesc < 1 && !(await page.locator('#mlma-main').innerText()).includes('Контур')) {
+    throw new Error('expected description CTA for unfilled track');
+  }
   await page.getByRole('button', { name: /Сохранить описание/ }).click();
   await page.waitForSelector('text=Убрать описание');
 

@@ -263,7 +263,14 @@ function noscriptFor(page) {
 </noscript>`;
 }
 
-function seoHead(page) {
+const FAVICON_SVG =
+  'data:image/svg+xml;charset=utf-8,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#C45F42"/><rect x="7" y="7" width="18" height="18" rx="3" fill="none" stroke="#1c1914" stroke-width="2"/></svg>',
+  );
+const RERANK_PUBLIC_URL = process.env.MLMA_RERANK_PUBLIC_URL || '';
+
+function seoHead(page, opts = {}) {
   const map = {
     home: 'Рабочий навигатор партнёра: ситуация, действие, результат и следующий шаг. Шесть направлений от старта до роста команды.',
     start: 'Выберите ситуацию, в которой сейчас застряли. Академия подберёт первый трек без кабинета.',
@@ -281,11 +288,25 @@ function seoHead(page) {
     A6: 'A6 Повтор и рост: клиент, ритм и команда без ложных обещаний.',
   };
   const desc = page.section ? sectionMap[page.section] : map[page.page] || map.home;
+  const abs = 'https://mlmacademy.ru' + page.url;
+  const rerankUrl = opts.preview ? '/api/search/rerank' : RERANK_PUBLIC_URL;
+  const rerankScript = rerankUrl
+    ? `<script>window.MLMA_RERANK_URL = ${JSON.stringify(rerankUrl)};</script>`
+    : '<!-- window.MLMA_RERANK_URL задаётся после деплоя search-proxy. Ключ модели в Tilda не класть. -->';
   return `<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Onest:wght@400;700;800&display=swap" rel="stylesheet">
 <meta name="robots" content="noindex, nofollow">
 <meta name="description" content="${escapeHtml(desc)}">
+<link rel="canonical" href="${escapeHtml(abs)}">
+<meta property="og:title" content="${escapeHtml(page.title)}">
+<meta property="og:description" content="${escapeHtml(desc)}">
+<meta property="og:url" content="${escapeHtml(abs)}">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/svg+xml" href="${FAVICON_SVG}">
+<script>document.documentElement.lang = 'ru';</script>
+${rerankScript}
 <style>
   html, body, #allrecords, .t-records, .t-body { background: #f4f0e8 !important; }
   body { margin: 0 !important; }
@@ -332,8 +353,8 @@ function writeScriptChunks(source, basename, label) {
   return files;
 }
 
-writeScriptChunks(domainJs, '03-domain', 'доменная логика');
-writeScriptChunks(uiJs, '04-ui', 'рендер оболочки');
+const domainFiles = writeScriptChunks(domainJs, '03-domain', 'доменная логика');
+const uiFiles = writeScriptChunks(uiJs, '04-ui', 'рендер оболочки');
 
 for (const page of pages) {
   const attrs = [
@@ -351,6 +372,13 @@ write(path.join(DIST, 'shared/catalog-data.js'), 'window.MLMA_PAYLOAD = ' + json
 write(path.join(DIST, 'shared/mlma.css'), css);
 write(path.join(DIST, 'shared/domain.js'), domainJs);
 write(path.join(DIST, 'shared/ui.js'), uiJs);
+const v1 = path.join(DIST, 'shared/v1');
+ensureDir(v1);
+write(path.join(v1, 'catalog.json'), JSON.stringify(payload));
+write(path.join(v1, 'catalog-data.js'), 'window.MLMA_PAYLOAD = ' + json + ';\n');
+write(path.join(v1, 'mlma.css'), css);
+write(path.join(v1, 'domain.js'), domainJs);
+write(path.join(v1, 'ui.js'), uiJs);
 
 function previewHtml(page) {
   const attrs = [`class="mlma"`, `data-mlma-page="${page.page}"`];
@@ -361,7 +389,7 @@ function previewHtml(page) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>${page.title}</title>
-  ${seoHead(page)}
+  ${seoHead(page, { preview: true })}
   <link rel="stylesheet" href="/shared/mlma.css">
 </head>
 <body>
@@ -388,14 +416,18 @@ const checklist = `# Сборка страниц Tilda · MLM Academy
 
 ## Общий порядок блоков на каждой странице
 
-1. Настройки страницы → HTML в HEAD: \`t123/heads/<id>.html\` (уникальные title/description). Запасной общий файл: \`t123/00-head.html\`
+1. Настройки страницы → HTML в HEAD: \`t123/heads/<id>.html\` (уникальные title/description, \`https://\` canonical и og:url, favicon, \`lang=ru\`). Запасной общий файл: \`t123/00-head.html\`
 2. Скрыть стандартные header/footer Tilda на этой странице
 3. T123: \`01-css.html\`
 4. T123: все \`02-data-*.html\` по порядку
-5. T123: все \`03-domain-*.html\` по порядку (сейчас 01–05)
-6. T123: все \`04-ui-*.html\` по порядку
+5. T123: все \`03-domain-*.html\` по порядку (сейчас ${domainFiles.length})
+6. T123: все \`04-ui-*.html\` по порядку (сейчас ${uiFiles.length})
 7. T123: \`mounts/<id>.html\` этой страницы
 8. Отступы блока = 0
+
+После деплоя search-proxy задайте в HEAD \`window.MLMA_RERANK_URL\` на \`https://<домен>/api/rerank\`. API-ключ в Tilda не класть.
+
+Версионируемые файлы лежат в \`shared/v1/\`. Живые страницы Tilda пока грузят каталог из T123 — так публикация уже проверена. Переход на внешние файлы делать только после отдельной проверки Tilda.
 
 Можно собрать одну страницу-мастер, затем дублировать и менять URL, title и mount.
 

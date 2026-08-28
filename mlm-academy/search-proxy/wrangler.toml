@@ -1,0 +1,6 @@
+name = "mlma-search"
+main = "worker.js"
+compatibility_date = "2026-08-01"
+
+[vars]
+SEARCH_RERANK_MODEL = "gpt-4o-mini"

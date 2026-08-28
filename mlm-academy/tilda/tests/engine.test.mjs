@@ -59,6 +59,7 @@ describe('санитайзер Tilda', () => {
   it('оставляет только белый список полей', () => {
     const publicTrack = MLMA.toPublicTrack(sampleTrack());
     assert.deepEqual(Object.keys(publicTrack).sort(), PUBLIC_FIELDS);
+    assert.match(publicTrack.imageUrl, /^data:image\/svg\+xml/);
   });
 
   it('не пропускает внутренние поля', () => {
@@ -81,11 +82,11 @@ describe('санитайзер Tilda', () => {
 describe('честные статусы', () => {
   it('даёт контур прохождения, а не фальшивый урок', () => {
     const status = MLMA.getTrackStatusView(MLMA.toPublicTrack(sampleTrack()));
-    assert.equal(status.canStart, true);
-    assert.equal(status.cta, 'Начать трек');
+    assert.equal(status.canStart, false);
+    assert.equal(status.cta, 'Открыть описание');
     assert.equal(status.availability, 'shell');
     assert.notEqual(status.label, 'Скоро');
-    assert.match(status.explanation, /след/);
+    assert.match(status.explanation, /Начать/);
   });
 });
 
@@ -286,6 +287,9 @@ describe('собранный каталог', () => {
       assert.equal(raw.includes(needle), false, needle);
     }
     assert.equal(/"P[012]"/.test(raw), false);
+    const t123 = fs.readFileSync(path.join(__dirname, '../dist/t123/04-ui-01.html'), 'utf8') +
+      fs.readFileSync(path.join(__dirname, '../dist/t123/00-head.html'), 'utf8');
+    assert.equal(/OPENAI_API_KEY|sk-[A-Za-z0-9]{16,}/.test(t123), false);
     const expanded = MLMA.toPublicList(payload.tracks);
     assert.equal(expanded.length, 112);
     assert.deepEqual(Object.keys(expanded[0]).sort(), PUBLIC_FIELDS);
@@ -313,7 +317,8 @@ describe('онтология и runtime', () => {
     assert.equal(MLMA.itemKind(track), 'track');
     assert.equal(MLMA.itemKind(material), 'material');
     assert.equal(MLMA.getTrackStatusView(material).cta, 'Открыть материал');
-    assert.equal(MLMA.getTrackStatusView(track).cta, 'Начать трек');
+    assert.equal(MLMA.getTrackStatusView(track).cta, 'Открыть описание');
+    assert.equal(MLMA.getTrackStatusView(track).canStart, false);
   });
 
   it('validateTrack ловит дыры паспорта и битые связи', () => {
@@ -418,7 +423,10 @@ describe('статья-мост research/marketing-plan', () => {
     const head = fs.readFileSync(path.join(__dirname, '../research/head.html'), 'utf8');
     assert.match(head, /content="index, follow"/);
     assert.equal(/noindex/.test(head), false);
-    assert.equal(/rel="canonical"/.test(head), false);
+    assert.equal((head.match(/rel="canonical"/g) || []).length, 1);
+    assert.match(head, /href="https:\/\/mlmacademy\.ru\/research\/marketing-plan"/);
+    assert.match(head, /property="og:url" content="https:\/\/mlmacademy\.ru\/research\/marketing-plan"/);
+    assert.match(head, /property="og:description"/);
   });
 
   it('на B2B даёт вход в статью без новой формы', () => {

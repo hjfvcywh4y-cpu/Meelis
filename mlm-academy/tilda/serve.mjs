@@ -19,9 +19,28 @@ const TYPES = {
   '.json': 'application/json; charset=utf-8',
 };
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || '/', 'http://127.0.0.1');
   let pathname = url.pathname.replace(/\/+$/, '') || '/';
+  if (pathname === '/api/search/rerank' || pathname === '/api/rerank') {
+    const { handleRerankRequest } = await import(path.join(__dirname, '../search-proxy/rerank-core.js'));
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    const body = Buffer.concat(chunks);
+    const headers = new Headers();
+    for (const [key, value] of Object.entries(req.headers)) {
+      if (value) headers.set(key, Array.isArray(value) ? value.join(',') : String(value));
+    }
+    const request = new Request('http://127.0.0.1' + pathname, {
+      method: req.method || 'GET',
+      headers,
+      body: req.method === 'POST' || req.method === 'PUT' ? body : undefined,
+    });
+    const out = await handleRerankRequest(request, process.env);
+    res.writeHead(out.status, Object.fromEntries(out.headers.entries()));
+    res.end(Buffer.from(await out.arrayBuffer()));
+    return;
+  }
   if (pathname === '/') {
     res.writeHead(302, { Location: '/academy' });
     res.end();

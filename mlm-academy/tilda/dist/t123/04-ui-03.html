@@ -250,6 +250,7 @@
       var url = typeof window !== 'undefined' ? window.MLMA_RERANK_URL : '';
       if (!url || !filters.q || !D.rerankPayload || !D.applyRerankResponse) return;
       var local = lastResult || D.searchCatalog(state.tracks, filters);
+      if (local.kind === 'need_more' || (local.analysis && local.analysis.outOfScope)) return;
       var payload = D.rerankPayload(local, filters.q);
       if (!payload.candidates.length) return;
       var seq = (rerankSeq += 1);
@@ -265,13 +266,15 @@
         signal: ctrl ? ctrl.signal : undefined,
       })
         .then(function (res) {
-          if (!res.ok) throw new Error('rerank ' + res.status);
+          if (!res.ok) throw new Error('local_fallback');
           return res.json();
         })
         .then(function (data) {
           if (seq !== rerankSeq || filters.q !== qNow) return;
           var next = D.applyRerankResponse(local, data);
-          if (next && next.source === 'ai') paint({ keepFocus: true, skipRerank: true, result: next });
+          if (next && (next.source === 'ai' || next.source === 'local')) {
+            paint({ keepFocus: true, skipRerank: true, result: next });
+          }
         })
         .catch(function () {})
         .then(function () {
@@ -440,8 +443,58 @@
     applySeo(state);
   }
 
+  function publicAbsUrl(pathAndQuery) {
+    var path = String(pathAndQuery || '/');
+    if (path.charAt(0) !== '/') path = '/' + path;
+    var host = '';
+    var protocol = 'https:';
+    try {
+      host = String(window.location.host || 'mlmacademy.ru');
+      protocol = window.location.protocol || 'https:';
+    } catch (err) {
+      host = 'mlmacademy.ru';
+    }
+    if (host === 'localhost' || host.indexOf('127.0.0.1') === 0) {
+      return protocol + '//' + host + path;
+    }
+    host = host.replace(/:\d+$/, '');
+    return 'https://' + host + path;
+  }
+
+  function ensureMeta(attr, key, value) {
+    var sel = 'meta[' + attr + '="' + key + '"]';
+    var el = document.querySelector(sel);
+    if (!el) {
+      el = document.createElement('meta');
+      el.setAttribute(attr, key);
+      document.head.appendChild(el);
+    }
+    el.setAttribute('content', value);
+  }
+
+  function ensureLink(rel, href, extra) {
+    var el = document.querySelector('link[rel="' + rel + '"]');
+    if (!el) {
+      el = document.createElement('link');
+      el.setAttribute('rel', rel);
+      document.head.appendChild(el);
+    }
+    el.setAttribute('href', href);
+    if (extra) {
+      var keys = Object.keys(extra);
+      for (var i = 0; i < keys.length; i += 1) el.setAttribute(keys[i], extra[keys[i]]);
+    }
+  }
+
+  var MLMA_FAVICON =
+    'data:image/svg+xml;charset=utf-8,' +
+    encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#C45F42"/><rect x="7" y="7" width="18" height="18" rx="3" fill="none" stroke="#1c1914" stroke-width="2"/></svg>',
+    );
+
   function applySeo(state) {
     try {
+      document.documentElement.setAttribute('lang', 'ru');
       var robots = document.querySelector('meta[name="robots"]');
       if (!robots) {
         robots = document.createElement('meta');
@@ -490,6 +543,7 @@
       };
       var title = 'MLM Academy';
       var desc = 'MLM Academy — рабочий навигатор партнёра: ситуация, действие, результат и следующий шаг.';
+      var canonPath = path;
       if (state.page === 'section') {
         var sid = D.normalizeSectionId(state.root.getAttribute('data-mlma-section') || '');
         if (sid && sectionSeo[sid]) {
@@ -506,15 +560,7 @@
           title = 'Трек · MLM Academy';
           desc = 'Карточка трека MLM Academy. Откройте трек по идентификатору, чтобы увидеть ситуацию, действие и рабочий след.';
         }
-        if (opened) {
-          var canon = document.querySelector('link[rel="canonical"]');
-          if (!canon) {
-            canon = document.createElement('link');
-            canon.setAttribute('rel', 'canonical');
-            document.head.appendChild(canon);
-          }
-          canon.setAttribute('href', window.location.origin + '/track?id=' + encodeURIComponent(String(opened).toLowerCase()));
-        }
+        if (opened) canonPath = '/track?id=' + encodeURIComponent(String(opened).toLowerCase());
       } else if (seo[state.page]) {
         title = seo[state.page].title;
         desc = seo[state.page].desc;
@@ -527,6 +573,14 @@
         document.head.appendChild(meta);
       }
       meta.setAttribute('content', desc);
+      var abs = publicAbsUrl(canonPath);
+      ensureLink('canonical', abs);
+      ensureMeta('property', 'og:title', title);
+      ensureMeta('property', 'og:description', desc);
+      ensureMeta('property', 'og:url', abs);
+      ensureMeta('property', 'og:locale', 'ru_RU');
+      ensureMeta('property', 'og:type', 'website');
+      ensureLink('icon', MLMA_FAVICON, { type: 'image/svg+xml' });
     } catch (err) {
       /* ignore */
     }

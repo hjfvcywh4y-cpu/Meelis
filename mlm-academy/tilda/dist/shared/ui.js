@@ -271,22 +271,22 @@
   }
 
   function whyHtml(why) {
-    if (!why) return '';
-    if (Array.isArray(why) && why.length) {
-      return '<div class="mlma-why"><p class="mlma-meta">Почему предложено</p><span><b>Буквальное совпадение.</b> ' + esc(why.slice(0, 4).join(', ')) + '</span></div>';
-    }
-    var parts = '';
-    if (why.literal && why.literal.length) {
-      parts += '<span><b>Буквальное совпадение.</b> ' + esc(why.literal.slice(0, 3).join(', ')) + '</span>';
-    }
-    if (why.situation && why.situation.length) {
-      parts += '<span><b>Распознанная ситуация.</b> ' + esc(why.situation.slice(0, 3).join(', ')) + '</span>';
-    }
-    if (why.intent && why.intent.length) {
-      parts += '<span><b>Предполагаемое намерение.</b> ' + esc(why.intent.slice(0, 2).join('. ')) + '</span>';
-    }
-    if (!parts) return '';
-    return '<div class="mlma-why"><p class="mlma-meta">Почему предложено</p>' + parts + '</div>';
+    var text = '';
+    if (why && why.text) text = why.text;
+    else if (typeof why === 'string') text = why;
+    if (!text) return '';
+    return '<div class="mlma-why"><p>' + esc(text) + '</p></div>';
+  }
+
+  function trackCover(track) {
+    var url = (track && track.imageUrl) || (D.sectionCoverUrl ? D.sectionCoverUrl(track && track.sectionId) : '');
+    return (
+      '<div class="mlma-track-cover-wrap mlma-cover-' +
+      esc((track && track.sectionId) || 'A1') +
+      '"><img class="mlma-track-cover" src="' +
+      esc(url) +
+      '" alt="" width="640" height="360" loading="lazy" decoding="async"></div>'
+    );
   }
 
   function trackCard(track, section, R, opts) {
@@ -296,12 +296,17 @@
     var minutes = D.deriveMeta ? D.deriveMeta(track).time : 20;
     var href = esc(R.track(track.trackId));
     var badgeHtml = status.showCatalogBadge && status.label ? badge(status.label, status.tone) : (status.pageStatus ? badge(status.pageStatus, status.tone) : '');
+    var best = !!opts.best;
     return (
       '<article class="mlma-card mlma-card-hover mlma-track-card' +
       (opts.featured ? ' mlma-track-featured' : '') +
+      (best ? ' mlma-track-best' : '') +
       (opts.compact ? ' mlma-track-compact' : '') +
       '" style="' + D.styleAttr(track.sectionId) +
-      '"><div class="mlma-strip" aria-hidden="true"></div><div style="display:flex;flex-direction:column;flex:1;padding:18px">' +
+      '">' +
+      trackCover(track) +
+      (best ? '<span class="mlma-best-flag">Лучшее совпадение</span>' : '') +
+      '<div class="mlma-strip" aria-hidden="true"></div><div style="display:flex;flex-direction:column;flex:1;padding:18px">' +
       '<div class="mlma-chip-row" style="flex-wrap:wrap"><span class="mlma-meta">' +
       esc(track.trackId) + ' · ' + esc(section ? section.shortTitle : track.sectionId) +
       '</span><span class="mlma-meta mlma-muted">' + esc(kind === 'material' ? 'Материал' : 'Трек') + '</span>' +
@@ -332,6 +337,7 @@
           why: opts.whyMap ? opts.whyMap[tracks[i].trackId] : null,
           featured: !!opts.featured,
           compact: !!opts.compact,
+          best: !!(opts.bestFirst && i === 0 && opts.featured),
         }) +
         '</li>';
     }
@@ -675,76 +681,47 @@
     var sitChips = chipGroup('data-mlma-sit', facets.sit, filters.sit || []);
     var fmtChips = chipGroup('data-mlma-fmt', facets.fmt, filters.fmt || []);
     var body;
-    if (result.kind === 'need_more') {
-      var sitPresets = '';
-      var sits = D.SITUATIONS || [];
-      for (var sp = 0; sp < sits.length; sp += 1) {
-        sitPresets +=
-          '<a class="mlma-chip" href="' +
-          esc(D.libraryHref({ sit: [sits[sp].id] })) +
+    if (result.kind === 'need_more' || result.kind === 'zero') {
+      var options = result.clarifyingOptions && result.clarifyingOptions.length
+        ? result.clarifyingOptions
+        : (D.CLARIFY_OPTIONS || []);
+      var optionHtml = '';
+      for (var o = 0; o < options.length && o < 3; o += 1) {
+        optionHtml +=
+          '<a class="mlma-chip mlma-chip-on" href="' +
+          esc(D.libraryHref({ q: options[o].q })) +
           '">' +
-          esc(sits[sp].title) +
+          esc(options[o].label) +
           '</a>';
       }
       body = emptyState({
-        eyebrow: 'Уточните запрос',
-        title: 'Опишите ситуацию чуть конкретнее',
-        description: 'Слишком общий запрос. Напишите, что происходит, или выберите направление.',
-        actions: sitPresets,
+        eyebrow: result.kind === 'need_more' ? 'Уточните запрос' : 'Точного трека пока нет',
+        title: result.clarifyingQuestion || (result.kind === 'need_more' ? 'Опишите ситуацию чуть конкретнее' : 'Точного трека пока нет'),
+        description: result.kind === 'need_more'
+          ? 'Слишком общий запрос. Напишите, что происходит, или выберите один из вариантов.'
+          : 'Уточните ситуацию — так проще найти рабочий трек, а не случайное совпадение по словам.',
+        actions: optionHtml,
       });
-    } else if (result.kind === 'zero') {
-      var closeItems = [];
-      if (result.close && result.close.length) {
-        for (var z = 0; z < result.close.length; z += 1) closeItems.push(result.close[z].track || result.close[z]);
-      }
-      var hint = '';
-      var examples = D.exampleQueries ? D.exampleQueries() : [];
-      for (var h = 0; h < examples.length; h += 1) {
-        hint += '<a class="mlma-example" href="' + esc(D.libraryHref({ q: examples[h] })) + '">' + esc(examples[h]) + '</a>';
-      }
-      var dir = '';
-      for (var ds = 0; ds < state.sections.length; ds += 1) {
-        dir += '<li style="display:flex">' + sectionCard(state.sections[ds], D.sectionStats(state.allTracks, state.sections[ds].sectionId), R) + '</li>';
-      }
-      body =
-        emptyState({
-          eyebrow: 'Точного совпадения нет',
-          title: result.clarifyingQuestion || 'Точного совпадения пока нет. Попробуйте описать ситуацию проще или выберите ближайшее направление.',
-          description: result.clarifyingQuestion
-            ? 'Точного совпадения пока нет. Можно выбрать направление ниже или уточнить запрос.'
-            : 'Ниже — уточняющие формулировки и шесть направлений.',
-          actions:
-            '<button type="button" class="mlma-btn mlma-btn-primary" data-mlma-reset="1">Сбросить запрос</button>' +
-            btn(R.start(), 'Описать ситуацию'),
-        }) +
-        (hint ? '<div class="mlma-examples" style="margin-top:20px">' + hint + '</div>' : '') +
-        '<section style="margin-top:32px"><h2 class="mlma-h3">Шесть направлений</h2><ul class="mlma-grid-3" style="margin-top:16px">' +
-        dir +
-        '</ul></section>' +
-        (closeItems.length
-          ? '<section style="margin-top:32px"><h2 class="mlma-h3">Ближайшие результаты</h2><div style="margin-top:16px">' +
-            trackGrid(closeItems, state.sectionById, R, { whyMap: result.whyMap }) +
-            '</div></section>'
-          : '');
     } else {
       var featured = result.featured || [];
-      var rest = (featured.length ? result.other : result.items) || [];
-      var visible = rest.slice(0, shown);
-      var more = rest.length > shown;
+      var rest = (filters.q ? result.other : (featured.length ? result.other : result.items)) || [];
+      var searching = !!filters.q;
+      var visible = searching ? rest.slice(0, 5) : rest.slice(0, shown);
+      var more = !searching && rest.length > shown;
       body = '';
       if (featured.length) {
         body +=
-          '<section class="mlma-featured"><div class="mlma-section-head"><h2 class="mlma-h3">Лучше всего подходят</h2><span class="mlma-meta">' +
-          featured.length +
-          '</span></div>' +
-          trackGrid(featured, state.sectionById, R, { whyMap: result.whyMap, featured: true }) +
+          '<section class="mlma-featured"><div class="mlma-section-head"><h2 class="mlma-h3">Подходит лучше всего</h2></div>' +
+          trackGrid(featured, state.sectionById, R, { whyMap: result.whyMap, featured: true, bestFirst: true }) +
           '</section>';
       }
       if (visible.length) {
         body +=
-          (featured.length ? '<section style="margin-top:36px"><div class="mlma-section-head"><h2 class="mlma-h3">Другие подходящие треки</h2></div>' : '') +
-          trackGrid(visible, state.sectionById, R, { whyMap: result.whyMap }) +
-          (featured.length ? '</section>' : '');
+          (searching
+            ? '<section style="margin-top:36px"><div class="mlma-section-head"><h2 class="mlma-h3">Также может помочь</h2></div>'
+            : '') +
+          trackGrid(visible, state.sectionById, R, { whyMap: searching ? result.whyMap : null }) +
+          (searching ? '</section>' : '');
       }
       if (more) {
         body +=
@@ -2082,6 +2059,7 @@
       var url = typeof window !== 'undefined' ? window.MLMA_RERANK_URL : '';
       if (!url || !filters.q || !D.rerankPayload || !D.applyRerankResponse) return;
       var local = lastResult || D.searchCatalog(state.tracks, filters);
+      if (local.kind === 'need_more' || (local.analysis && local.analysis.outOfScope)) return;
       var payload = D.rerankPayload(local, filters.q);
       if (!payload.candidates.length) return;
       var seq = (rerankSeq += 1);
@@ -2097,13 +2075,15 @@
         signal: ctrl ? ctrl.signal : undefined,
       })
         .then(function (res) {
-          if (!res.ok) throw new Error('rerank ' + res.status);
+          if (!res.ok) throw new Error('local_fallback');
           return res.json();
         })
         .then(function (data) {
           if (seq !== rerankSeq || filters.q !== qNow) return;
           var next = D.applyRerankResponse(local, data);
-          if (next && next.source === 'ai') paint({ keepFocus: true, skipRerank: true, result: next });
+          if (next && (next.source === 'ai' || next.source === 'local')) {
+            paint({ keepFocus: true, skipRerank: true, result: next });
+          }
         })
         .catch(function () {})
         .then(function () {
@@ -2272,8 +2252,58 @@
     applySeo(state);
   }
 
+  function publicAbsUrl(pathAndQuery) {
+    var path = String(pathAndQuery || '/');
+    if (path.charAt(0) !== '/') path = '/' + path;
+    var host = '';
+    var protocol = 'https:';
+    try {
+      host = String(window.location.host || 'mlmacademy.ru');
+      protocol = window.location.protocol || 'https:';
+    } catch (err) {
+      host = 'mlmacademy.ru';
+    }
+    if (host === 'localhost' || host.indexOf('127.0.0.1') === 0) {
+      return protocol + '//' + host + path;
+    }
+    host = host.replace(/:\d+$/, '');
+    return 'https://' + host + path;
+  }
+
+  function ensureMeta(attr, key, value) {
+    var sel = 'meta[' + attr + '="' + key + '"]';
+    var el = document.querySelector(sel);
+    if (!el) {
+      el = document.createElement('meta');
+      el.setAttribute(attr, key);
+      document.head.appendChild(el);
+    }
+    el.setAttribute('content', value);
+  }
+
+  function ensureLink(rel, href, extra) {
+    var el = document.querySelector('link[rel="' + rel + '"]');
+    if (!el) {
+      el = document.createElement('link');
+      el.setAttribute('rel', rel);
+      document.head.appendChild(el);
+    }
+    el.setAttribute('href', href);
+    if (extra) {
+      var keys = Object.keys(extra);
+      for (var i = 0; i < keys.length; i += 1) el.setAttribute(keys[i], extra[keys[i]]);
+    }
+  }
+
+  var MLMA_FAVICON =
+    'data:image/svg+xml;charset=utf-8,' +
+    encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#C45F42"/><rect x="7" y="7" width="18" height="18" rx="3" fill="none" stroke="#1c1914" stroke-width="2"/></svg>',
+    );
+
   function applySeo(state) {
     try {
+      document.documentElement.setAttribute('lang', 'ru');
       var robots = document.querySelector('meta[name="robots"]');
       if (!robots) {
         robots = document.createElement('meta');
@@ -2322,6 +2352,7 @@
       };
       var title = 'MLM Academy';
       var desc = 'MLM Academy — рабочий навигатор партнёра: ситуация, действие, результат и следующий шаг.';
+      var canonPath = path;
       if (state.page === 'section') {
         var sid = D.normalizeSectionId(state.root.getAttribute('data-mlma-section') || '');
         if (sid && sectionSeo[sid]) {
@@ -2338,15 +2369,7 @@
           title = 'Трек · MLM Academy';
           desc = 'Карточка трека MLM Academy. Откройте трек по идентификатору, чтобы увидеть ситуацию, действие и рабочий след.';
         }
-        if (opened) {
-          var canon = document.querySelector('link[rel="canonical"]');
-          if (!canon) {
-            canon = document.createElement('link');
-            canon.setAttribute('rel', 'canonical');
-            document.head.appendChild(canon);
-          }
-          canon.setAttribute('href', window.location.origin + '/track?id=' + encodeURIComponent(String(opened).toLowerCase()));
-        }
+        if (opened) canonPath = '/track?id=' + encodeURIComponent(String(opened).toLowerCase());
       } else if (seo[state.page]) {
         title = seo[state.page].title;
         desc = seo[state.page].desc;
@@ -2359,6 +2382,14 @@
         document.head.appendChild(meta);
       }
       meta.setAttribute('content', desc);
+      var abs = publicAbsUrl(canonPath);
+      ensureLink('canonical', abs);
+      ensureMeta('property', 'og:title', title);
+      ensureMeta('property', 'og:description', desc);
+      ensureMeta('property', 'og:url', abs);
+      ensureMeta('property', 'og:locale', 'ru_RU');
+      ensureMeta('property', 'og:type', 'website');
+      ensureLink('icon', MLMA_FAVICON, { type: 'image/svg+xml' });
     } catch (err) {
       /* ignore */
     }
