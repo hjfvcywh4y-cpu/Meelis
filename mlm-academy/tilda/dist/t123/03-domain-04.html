@@ -1,330 +1,176 @@
-<!-- Блок T123: доменная логика 4/6 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: доменная логика 4/10 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
+/**
+ * Абстракция оплаты. Реальные списания выключены.
+ * Секрет вебхука живёт только на сервере, не в Tilda и не в этом файле.
+ */
 (function (root) {
   'use strict';
   var api = root.MLMA;
   if (!api) return;
-  var TRACK_ALIASES = api.TRACK_ALIASES;
-  var CANDIDATE_LIMIT = 15;
-  var deriveMeta = api.deriveMeta;
-  var rankTracks = api.rankTracks;
-  var analyzeQuery = api.analyzeQuery;
-  var applyFacets = api.applyFacets;
-  var emptyLibraryState = api.emptyLibraryState;
-  var buildChips = api.buildChips;
-  var foundLabel = api.foundLabel;
-  var hasActiveFilters = api.hasActiveFilters;
-  var parseLibraryState = api.parseLibraryState;
-  var emptyWhy = api.emptyWhy;
-  var humanWhy = api.humanWhy;
-  var defaultClarify = api.defaultClarify;
 
-  function attachWhyText(why, track, analysis, aiReason) {
-    var next = why && !Array.isArray(why) ? why : emptyWhy();
-    next.text = humanWhy(track, analysis, next, aiReason);
-    return next;
+  var PAYMENT_STATUSES = ['created', 'pending', 'paid', 'failed', 'cancelled', 'refunded', 'expired'];
+  var TEST_MODE = true;
+
+  var TILDA_PAYMENT_OPTIONS = [
+    { id: 'tilda', name: 'Tilda Payments / ЮKassa через Tilda', members: 'Да, встроенная выдача группы', recurrences: 'Подписка Tilda — отдельно согласовывать', note: 'Проще всего для Members. Вебхук и идемпотентность ограничены кабинетом Tilda.' },
+    { id: 'yookassa', name: 'ЮKassa напрямую', members: 'Нужен свой вебхук → группа Members', recurrences: 'Рекуррент не включать без согласования', note: 'Гибкий вебхук, подпись, однократная запись платежа.' },
+    { id: 'cloudpayments', name: 'CloudPayments', members: 'Свой вебхук', recurrences: 'Не включать без согласования', note: 'Карты РФ/СНГ, виджет, подпись уведомлений.' },
+    { id: 'stripe', name: 'Stripe', members: 'Свой вебхук', recurrences: 'Не включать без согласования', note: 'Удобен для международной карты. Для РФ ограничен.' },
+    { id: 'paypal', name: 'PayPal', members: 'Свой вебхук', recurrences: 'Не включать без согласования', note: 'Международные платежи, слабее для РФ.' },
+  ];
+
+  function newId(prefix) {
+    return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
 
-  function splitDisplay(ranked, analysis, state) {
-    var featured = [];
-    var other = [];
-    var whyMap = {};
-    var scores = {};
-    var items = [];
-    if (!state.q) {
-      for (var b = 0; b < ranked.length; b += 1) {
-        items.push(ranked[b].track);
-        scores[ranked[b].track.trackId] = ranked[b].score;
-      }
-      return { items: items, featured: [], other: items, whyMap: whyMap, scores: scores };
+  function productById(id) {
+    var list = api.PRODUCTS || [];
+    for (var i = 0; i < list.length; i += 1) {
+      if (list[i].id === id) return list[i];
     }
-    var intents = (analysis && analysis.intents) || [];
-    var boost = {};
-    var teamOnly = false;
-    for (var n = 0; n < intents.length; n += 1) {
-      if (intents[n].teamOnly) teamOnly = true;
-      var ids = intents[n].boostIds || [];
-      for (var k = 0; k < ids.length; k += 1) boost[ids[k]] = true;
-    }
-    var strong = [];
-    var relax = !!(state && state._relaxInFilter);
-    for (var i = 0; i < ranked.length; i += 1) {
-      var row = ranked[i];
-      var id = row.track.trackId;
-      var meta = deriveMeta(row.track);
-      if (teamOnly && !boost[id] && meta.sit !== 'team' && !relax) continue;
-      if (intents.length && !boost[id] && row.score < (relax ? 70 : 220)) continue;
-      if (!intents.length && row.score < 70) continue;
-      strong.push(row);
-    }
-    for (var f = 0; f < strong.length && featured.length < 3; f += 1) {
-      var minFeat = boost[strong[f].track.trackId] ? 80 : 100;
-      if (strong[f].score < minFeat) continue;
-      featured.push(strong[f].track);
-      scores[strong[f].track.trackId] = strong[f].score;
-      whyMap[strong[f].track.trackId] = attachWhyText(strong[f].why, strong[f].track, analysis);
-    }
-    for (var r = 0; r < strong.length && other.length < 5; r += 1) {
-      var rel = strong[r];
-      if (featured.indexOf(rel.track) !== -1) continue;
-      var minRel = boost[rel.track.trackId] ? 60 : 80;
-      if (rel.score < minRel) continue;
-      other.push(rel.track);
-      scores[rel.track.trackId] = rel.score;
-      whyMap[rel.track.trackId] = attachWhyText(rel.why, rel.track, analysis);
-    }
-    items = featured.concat(other);
-    return { items: items, featured: featured, other: other, whyMap: whyMap, scores: scores };
+    return list[0] || { id: 'start', group: 'START', title: 'Стартовый пакет', kind: 'pack' };
   }
 
-  function searchCatalog(tracks, state) {
-    state = state || emptyLibraryState();
-    var analysis = analyzeQuery(state.q || '');
-    var chips = buildChips(state);
-    if (state.q && analysis.kind === 'need_more') {
-      var more = defaultClarify();
-      return { kind: 'need_more', items: [], featured: [], other: [], whyMap: {}, analysis: analysis, chips: chips, relaxedKey: null, close: [], total: tracks.length, label: 'Нужна более конкретная формулировка', clarifyingQuestion: more.question, clarifyingOptions: more.options, source: 'local' };
-    }
-    if (state.q && analysis.outOfScope) {
-      return {
-        kind: 'zero',
-        items: [],
-        featured: [],
-        other: [],
-        whyMap: {},
-        scores: {},
-        analysis: analysis,
-        chips: chips,
-        relaxedKey: null,
-        close: [],
-        candidates: [],
-        clarifyingQuestion: analysis.outOfScope.question,
-        clarifyingOptions: analysis.outOfScope.options || defaultClarify().options,
-        source: 'local',
-        total: tracks.length,
-        label: 'Точного трека пока нет',
-      };
-    }
-    var faceted = applyFacets(tracks, state);
-    var ranked = rankTracks(faceted, analysis, state.sort);
-    var candidates = ranked.slice(0, CANDIDATE_LIMIT);
-    var split = splitDisplay(ranked, analysis, state);
-    if (!state.q) {
-      return {
-        kind: 'ok',
-        items: split.items,
-        featured: [],
-        other: split.other,
-        whyMap: {},
-        scores: split.scores,
-        analysis: analysis,
-        chips: chips,
-        relaxedKey: null,
-        close: [],
-        candidates: [],
-        clarifyingQuestion: null,
-        clarifyingOptions: [],
-        source: 'local',
-        total: tracks.length,
-        label: foundLabel(split.items.length, tracks.length, state),
-      };
-    }
-    if (!(split.featured.length || split.other.length) && hasActiveFilters(Object.assign({}, state, { q: '' })) && ranked.length) {
-      split = splitDisplay(ranked, analysis, Object.assign({}, state, { _relaxInFilter: true }));
-    }
-    if (split.featured.length || split.other.length) {
-      return {
-        kind: 'ok',
-        items: split.items,
-        featured: split.featured,
-        other: split.other,
-        whyMap: split.whyMap,
-        scores: split.scores,
-        analysis: analysis,
-        chips: chips,
-        relaxedKey: null,
-        close: [],
-        candidates: candidates,
-        clarifyingQuestion: null,
-        clarifyingOptions: [],
-        source: 'local',
-        total: tracks.length,
-        label: split.featured.length ? 'Подходит лучше всего' : 'Также может помочь',
-      };
-    }
-    if (!hasActiveFilters(state) && !state.q) {
-      return { kind: 'ok', items: [], featured: [], other: [], whyMap: {}, scores: {}, analysis: analysis, chips: chips, relaxedKey: null, close: [], candidates: [], clarifyingQuestion: null, clarifyingOptions: [], source: 'local', total: tracks.length, label: foundLabel(0, tracks.length, state) };
-    }
-    var clarify = defaultClarify();
+  function createOrder(input) {
+    input = input || {};
+    var product = productById(input.productId || 'start');
     return {
-      kind: 'zero',
-      items: [],
-      featured: [],
-      other: [],
-      whyMap: {},
-      scores: {},
-      analysis: analysis,
-      chips: chips,
-      relaxedKey: null,
-      close: [],
-      candidates: candidates,
-      clarifyingQuestion: clarify.question,
-      clarifyingOptions: clarify.options,
-      source: 'local',
-      total: tracks.length,
-      label: 'Точного трека пока нет',
+      orderId: input.orderId || newId('ord'),
+      productId: product.id,
+      group: product.group,
+      trackId: input.trackId || '',
+      email: input.email || '',
+      maId: input.maId || '',
+      amount: 0,
+      currency: 'RUB',
+      status: 'created',
+      test: true,
+      createdAt: new Date().toISOString(),
     };
   }
 
-  function matchesQuery(track, query) {
-    query = query || {};
-    var state = parseLibraryState('', {
-      q: query.query || query.q || '',
-      stage: query.sectionId || query.stage || null,
-      format: query.format || null,
-      goal: query.goal || null,
-      situation: query.situation || null,
-    });
-    if (query.availability === 'available' && track.publicationStatus !== 'published') return false;
-    if (query.availability === 'preparing' && track.publicationStatus === 'published') return false;
-    var result = searchCatalog([track], state);
-    return result.kind === 'ok' && result.items.length > 0;
-  }
-
-  function filterTracks(tracks, query) {
-    query = query || {};
-    var state = parseLibraryState('', {
-      q: query.query || query.q || '',
-      stage: query.sectionId || query.stage || null,
-      format: query.format || null,
-      goal: query.goal || null,
-      situation: query.situation || null,
-      type: query.type || null,
-      experience: query.experience || null,
-    });
-    var filtered = [];
-    for (var i = 0; i < tracks.length; i += 1) {
-      var track = tracks[i];
-      if (query.availability === 'available' && track.publicationStatus !== 'published') continue;
-      if (query.availability === 'preparing' && track.publicationStatus === 'published') continue;
-      filtered.push(track);
-    }
-    var result = searchCatalog(filtered, state);
-    if (result.kind === 'need_more') return [];
-    return result.items;
-  }
-
-  function rerankPayload(result, query) {
-    var rows = (result && result.candidates) || [];
-    var candidates = [];
-    for (var i = 0; i < rows.length && candidates.length < CANDIDATE_LIMIT; i += 1) {
-      var track = rows[i].track || rows[i];
-      var aliases = TRACK_ALIASES[track.trackId] || [];
-      candidates.push({
-        trackId: track.trackId,
-        title: track.title,
-        situation: track.situation,
-        result: track.outcome,
-        sectionId: track.sectionId,
-        tags: aliases.slice(0, 8),
-        score: rows[i].score || 0,
-      });
-    }
+  function TestGateway() {}
+  TestGateway.prototype.createPayment = function (order) {
     return {
-      query: String(query || ''),
-      candidates: candidates,
+      paymentId: newId('pay'),
+      orderId: order.orderId,
+      status: 'pending',
+      checkoutUrl: '/access?checkout=' + encodeURIComponent(order.orderId),
+      test: true,
     };
+  };
+  TestGateway.prototype.parseWebhook = function (payload) {
+    payload = payload || {};
+    return {
+      paymentId: payload.paymentId || payload.id || '',
+      orderId: payload.orderId || '',
+      status: payload.status || 'failed',
+      idempotencyKey: payload.idempotencyKey || payload.paymentId || payload.id || '',
+      email: payload.email || '',
+      signatureValid: payload.signatureValid !== false,
+    };
+  };
+
+  function findById(list, key, value) {
+    for (var i = 0; i < list.length; i += 1) {
+      if (list[i][key] === value) return list[i];
+    }
+    return null;
   }
 
-  function applyRerankResponse(local, data) {
-    if (!local || !data || typeof data !== 'object') return local;
-    var catalog = {};
-    var source = (local.candidates && local.candidates.length ? local.candidates : []).concat(
-      (local.items || []).map(function (track) { return { track: track }; }),
-    );
-    var byId = {};
-    for (var i = 0; i < source.length; i += 1) {
-      var track = source[i].track || source[i];
-      if (track && track.trackId) {
-        catalog[track.trackId] = true;
-        byId[track.trackId] = track;
+  function applyWebhook(account, event, order) {
+    account = account || { entitlements: [], payments: [], orders: [], groups: [] };
+    event = event || {};
+    if (!event.signatureValid) {
+      return { ok: false, reason: 'invalid_signature', account: account };
+    }
+    var payments = (account.payments || []).slice();
+    var existing = findById(payments, 'idempotencyKey', event.idempotencyKey) || findById(payments, 'paymentId', event.paymentId);
+    if (existing && (existing.status === 'paid' || existing.status === event.status)) {
+      return { ok: true, duplicate: true, account: account, payment: existing };
+    }
+    var payment = {
+      paymentId: event.paymentId || newId('pay'),
+      orderId: event.orderId || (order && order.orderId) || '',
+      status: event.status,
+      idempotencyKey: event.idempotencyKey || event.paymentId,
+      email: event.email || (order && order.email) || '',
+      test: true,
+      updatedAt: new Date().toISOString(),
+    };
+    if (existing) {
+      existing.status = payment.status;
+      existing.updatedAt = payment.updatedAt;
+      payment = existing;
+    } else {
+      payments.push(payment);
+    }
+    account.payments = payments;
+    var orders = (account.orders || []).slice();
+    if (order) {
+      order.status = event.status === 'paid' ? 'paid' : event.status;
+      var found = false;
+      for (var o = 0; o < orders.length; o += 1) {
+        if (orders[o].orderId === order.orderId) {
+          orders[o] = order;
+          found = true;
+        }
+      }
+      if (!found) orders.push(order);
+    }
+    account.orders = orders;
+    if (event.status === 'paid' && order) {
+      var entitlements = (account.entitlements || []).slice();
+      var same = null;
+      for (var e = 0; e < entitlements.length; e += 1) {
+        if (entitlements[e].orderId === order.orderId && entitlements[e].status === 'active') same = entitlements[e];
+      }
+      if (!same) {
+        entitlements.push({
+          id: newId('ent'),
+          productId: order.productId,
+          group: order.group,
+          trackId: order.trackId || '',
+          status: 'active',
+          orderId: order.orderId,
+          startsAt: new Date().toISOString(),
+          expiresAt: '',
+        });
+        account.entitlements = entitlements;
+        account.groups = account.groups || [];
+        if (order.group && account.groups.indexOf(order.group) === -1) account.groups.push(order.group);
+        if (account.groups.indexOf('FREE') === -1) account.groups.push('FREE');
       }
     }
-    for (var t = 0; t < (local.items || []).length; t += 1) byId[local.items[t].trackId] = local.items[t];
-    var topIn = Array.isArray(data.topMatches) ? data.topMatches : [];
-    var relIn = Array.isArray(data.relatedMatches) ? data.relatedMatches : [];
-    if (!topIn.length && !relIn.length && Array.isArray(data.results)) {
-      topIn = data.results.slice(0, 3);
-      relIn = data.results.slice(3, 8);
-    }
-    var confidence = Number(data.confidence);
-    if (!isFinite(confidence)) confidence = topIn[0] && typeof topIn[0].confidence === 'number' ? topIn[0].confidence : 0;
-    var clarify = data.clarification || data.clarifyingQuestion || null;
-    function take(rows, limit, minConf) {
-      var out = [];
-      var whyMap = {};
-      for (var r = 0; r < rows.length && out.length < limit; r += 1) {
-        var row = rows[r] || {};
-        var id = String(row.trackId || '');
-        if (!catalog[id] || !byId[id]) continue;
-        if (typeof row.confidence === 'number' && row.confidence < minConf) continue;
-        out.push(byId[id]);
-        whyMap[id] = attachWhyText(emptyWhy(), byId[id], local.analysis, row.reason || data.reason);
+    if (event.status === 'refunded' || event.status === 'expired') {
+      var list = account.entitlements || [];
+      for (var r = 0; r < list.length; r += 1) {
+        if (order && list[r].orderId === order.orderId) {
+          list[r].status = event.status === 'refunded' ? 'revoked' : 'expired';
+        }
       }
-      return { items: out, whyMap: whyMap };
     }
-    if (confidence < 0.45 || (!topIn.length && !relIn.length)) {
-      var low = Object.assign({}, local);
-      low.kind = 'zero';
-      low.items = [];
-      low.featured = [];
-      low.other = [];
-      low.close = [];
-      low.whyMap = {};
-      low.clarifyingQuestion = clarify || (defaultClarify().question);
-      low.clarifyingOptions = local.clarifyingOptions && local.clarifyingOptions.length ? local.clarifyingOptions : defaultClarify().options;
-      low.source = 'ai';
-      low.label = 'Точного трека пока нет';
-      return low;
-    }
-    var top = take(topIn, 3, 0.6);
-    var related = take(relIn, 5, 0.45);
-    var featured = top.items;
-    var other = related.items.filter(function (item) {
-      return featured.indexOf(item) === -1;
-    });
-    if (!featured.length && !other.length) {
-      var empty = Object.assign({}, local);
-      empty.kind = 'zero';
-      empty.items = [];
-      empty.featured = [];
-      empty.other = [];
-      empty.close = [];
-      empty.source = 'ai';
-      empty.clarifyingQuestion = clarify || defaultClarify().question;
-      empty.clarifyingOptions = defaultClarify().options;
-      empty.label = 'Точного трека пока нет';
-      return empty;
-    }
-    var whyMap = Object.assign({}, top.whyMap, related.whyMap);
-    return Object.assign({}, local, {
-      kind: 'ok',
-      items: featured.concat(other),
-      featured: featured,
-      other: other,
-      whyMap: whyMap,
-      clarifyingQuestion: clarify,
-      recognizedSituation: data.reason || data.recognizedSituation || '',
-      source: 'ai',
-      label: featured.length ? 'Подходит лучше всего' : 'Также может помочь',
-    });
+    return { ok: true, duplicate: false, account: account, payment: payment };
   }
 
-  api.searchCatalog = searchCatalog;
-  api.rerankPayload = rerankPayload;
-  api.applyRerankResponse = applyRerankResponse;
-  api.matchesQuery = matchesQuery;
-  api.filterTracks = filterTracks;
+  function checkoutHref(productId, trackId) {
+    var q = '/access?checkout=1&product=' + encodeURIComponent(productId || 'start');
+    if (trackId) q += '&track=' + encodeURIComponent(trackId);
+    return q;
+  }
+
+  api.PAYMENT_STATUSES = PAYMENT_STATUSES;
+  api.TILDA_PAYMENT_OPTIONS = TILDA_PAYMENT_OPTIONS;
+  api.PAYMENT_TEST_MODE = TEST_MODE;
+  api.createOrder = createOrder;
+  api.TestGateway = TestGateway;
+  api.createPaymentGateway = function () {
+    return new TestGateway();
+  };
+  api.applyWebhook = applyWebhook;
+  api.checkoutHref = checkoutHref;
+  api.productById = productById;
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);

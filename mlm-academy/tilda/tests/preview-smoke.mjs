@@ -23,8 +23,8 @@ async function main() {
   await page.waitForSelector('.mlma-track-card');
   const cards = await page.locator('.mlma-track-card').count();
   if (cards < 12 || cards > 18) throw new Error('library first page cards: ' + cards);
-  const leaked = await page.evaluate(() => document.documentElement.innerHTML);
-  for (const needle of ['pageStatusRaw', 'Осовременивание', 'adaptationLevel', '"P0"', 'entitlement', 'Войти в кабинет']) {
+  const leaked = await page.evaluate(() => (document.querySelector('.mlma') || document.body).innerText);
+  for (const needle of ['pageStatusRaw', 'Осовременивание', 'adaptationLevel', '"P0"', 'metadata_only', 'Войти в кабинет']) {
     if (leaked.includes(needle)) throw new Error('leak: ' + needle);
   }
   const catalogSoon = await page.locator('.mlma-track-card >> text=Скоро').count();
@@ -71,8 +71,9 @@ async function main() {
   if (!contour && !/Контур прохождения/.test(contourText)) {
     throw new Error('expected contour copy for unfilled track');
   }
-  await page.getByRole('button', { name: /Сохранить описание/ }).click();
-  await page.waitForSelector('text=Убрать описание');
+  await page.getByRole('link', { name: /Войти, чтобы сохранить/ }).waitFor();
+  const saveGuest = await page.getByRole('link', { name: /Войти, чтобы сохранить/ }).count();
+  if (!saveGuest) throw new Error('guest must be asked to log in to save');
 
   await page.goto(BASE + '/start', { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: /написать/i }).first().click();

@@ -18,6 +18,7 @@
     'contentStatus',
     'visibility',
     'access',
+    'seoStatus',
     'imageUrl',
   ];
 
@@ -34,6 +35,7 @@
     cs: 'contentStatus',
     v: 'visibility',
     a: 'access',
+    seo: 'seoStatus',
   };
 
   var SECTION_IDS = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6'];
@@ -112,8 +114,37 @@
     currentGoal: '',
     savedTrackIds: [],
     role: 'member',
+    displayName: '',
+    partnerRole: '',
+    experience: '',
+    currentTask: '',
+    difficulty: '',
+    desiredResult: '',
+    availableTime: '',
+    consentAt: '',
+    onboardingComplete: false,
+    onboardingSkipped: false,
+    notifyEmail: true,
     updatedAt: '',
   };
+
+  function normalizeAccess(value) {
+    if (value === 'public' || value === 'free') return 'public';
+    if (value === 'promo') return 'promo';
+    return 'paid';
+  }
+
+  function deriveSeoStatus(track) {
+    if (!track) return 'noindex';
+    if (track.seoStatus === 'index' || track.seoStatus === 'noindex') return track.seoStatus;
+    var pub = track.publicationStatus;
+    if (pub === 'promo' || pub === 'published') {
+      if (track.forWhom && track.composition && (track.seoTitle || track.title) && track.situation && track.outcome) {
+        return 'index';
+      }
+    }
+    return 'noindex';
+  }
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -142,7 +173,8 @@
       publicationStatus: typeof src.publicationStatus === 'string' ? src.publicationStatus : 'unknown',
       contentStatus: typeof src.contentStatus === 'string' ? src.contentStatus : 'metadata_only',
       visibility: typeof src.visibility === 'string' ? src.visibility : 'catalog',
-      access: typeof src.access === 'string' ? src.access : 'undecided',
+      access: normalizeAccess(src.access),
+      seoStatus: deriveSeoStatus(src),
       imageUrl: sectionCoverUrl(typeof src.sectionId === 'string' ? src.sectionId : ''),
     };
     if (!TRACK_ID_RE.test(track.trackId)) return null;
@@ -179,6 +211,7 @@
       cs: publicTrack.contentStatus,
       v: publicTrack.visibility,
       a: publicTrack.access,
+      seo: publicTrack.seoStatus,
     };
   }
 
@@ -525,11 +558,27 @@
       myResults: function () {
         return '/my/results';
       },
+      myTracks: function () {
+        return '/my/route?tab=tracks';
+      },
+      mySaved: function () {
+        return '/my/route?tab=saved';
+      },
       profile: function () {
         return '/profile';
       },
       access: function () {
         return '/access';
+      },
+      login: function (returnPath) {
+        return membersLoginUrl(returnPath || '/my');
+      },
+      signup: function (returnPath) {
+        var path = String(returnPath || '/my').replace(/^\//, '');
+        return '/members/signup?redirecturl=' + encodeURIComponent(path);
+      },
+      logout: function () {
+        return '/members/logout';
       },
       previewCatalog: function () {
         return '/preview/catalog';
@@ -662,6 +711,17 @@
       currentGoal: typeof raw.currentGoal === 'string' ? raw.currentGoal.slice(0, GOAL_MAX) : '',
       savedTrackIds: saved,
       role: raw.role || 'member',
+      displayName: typeof raw.displayName === 'string' ? raw.displayName.slice(0, 80) : '',
+      partnerRole: raw.partnerRole === 'novice' || raw.partnerRole === 'partner' || raw.partnerRole === 'leader' ? raw.partnerRole : '',
+      experience: typeof raw.experience === 'string' ? raw.experience.slice(0, 40) : '',
+      currentTask: typeof raw.currentTask === 'string' ? raw.currentTask.slice(0, GOAL_MAX) : '',
+      difficulty: typeof raw.difficulty === 'string' ? raw.difficulty.slice(0, GOAL_MAX) : '',
+      desiredResult: typeof raw.desiredResult === 'string' ? raw.desiredResult.slice(0, GOAL_MAX) : '',
+      availableTime: typeof raw.availableTime === 'string' ? raw.availableTime.slice(0, 20) : '',
+      consentAt: typeof raw.consentAt === 'string' ? raw.consentAt : '',
+      onboardingComplete: !!raw.onboardingComplete,
+      onboardingSkipped: !!raw.onboardingSkipped,
+      notifyEmail: raw.notifyEmail !== false,
       updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : '',
     };
   }
@@ -744,6 +804,8 @@
     sanitizeProfile: sanitizeProfile,
     isPreviewHost: isPreviewHost,
     clone: clone,
+    normalizeAccess: normalizeAccess,
+    deriveSeoStatus: deriveSeoStatus,
     membersLoginUrl: membersLoginUrl,
     siteHomeUrl: siteHomeUrl,
     b2bFromResearchUrl: b2bFromResearchUrl,
@@ -785,6 +847,772 @@
   }
 
   root.MLMA = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
+
+/* __MLMA_UI_SPLIT__ */
+
+/**
+ * Состояния пользователя, права и CTA. Не содержит секретов и полного текста треков.
+ */
+(function (root) {
+  'use strict';
+  var api = root.MLMA;
+  if (!api) return;
+
+  var GROUPS = ['FREE', 'START', 'FULL', 'PILOT', 'ADMIN'];
+  var MEMBER_ALIAS = { Member: 'FREE', Guest: 'guest', Editor: 'ADMIN' };
+  var PARTNER_ROLES = ['novice', 'partner', 'leader'];
+  var PARTNER_ROLE_LABELS = { novice: 'Новичок', partner: 'Партнёр', leader: 'Лидер' };
+  var EXPERIENCE = ['none', 'under_year', 'one_three', 'three_plus'];
+  var TIME_BUDGET = ['15', '30', '60', 'more'];
+  var PRODUCTS = [
+    { id: 'start', group: 'START', title: 'Стартовый пакет', kind: 'pack', priceLabel: 'Тестовый режим', summary: 'Маршрут первых действий и доступ к стартовым трекам, когда они будут наполнены.' },
+    { id: 'full', group: 'FULL', title: 'Полная библиотека', kind: 'pack', priceLabel: 'Тестовый режим', summary: 'Доступ ко всей библиотеке в рамках оплаченного периода.' },
+  ];
+
+  function readCookie(name) {
+    try {
+      var parts = String(document.cookie || '').split(';');
+      for (var i = 0; i < parts.length; i += 1) {
+        var row = parts[i].replace(/^\s+/, '');
+        if (row.indexOf(name + '=') === 0) return decodeURIComponent(row.slice(name.length + 1));
+      }
+    } catch (err) {
+      /* ignore */
+    }
+    return '';
+  }
+
+  function membersProfileKey() {
+    var pid = '23906986';
+    try {
+      var rec = typeof document !== 'undefined' ? document.getElementById('allrecords') : null;
+      if (rec && rec.getAttribute('data-tilda-project-id')) pid = rec.getAttribute('data-tilda-project-id');
+    } catch (err) {
+      /* ignore */
+    }
+    return 'tilda_members_profile' + pid;
+  }
+
+  function readMembersSession() {
+    var out = {
+      loggedIn: false,
+      maId: '',
+      email: '',
+      name: '',
+      phone: '',
+      groups: [],
+      source: 'none',
+    };
+    try {
+      if (typeof window !== 'undefined' && window.mauser && (window.mauser.email || window.mauser.name)) {
+        out.email = String(window.mauser.email || window.mauser.login || '').trim();
+        out.name = String(window.mauser.name || '').trim();
+        out.phone = String(window.mauser.phone || '').trim();
+        out.maId = String(window.mauser.uid || window.mauser.id || window.mauser.userid || '').trim();
+        out.source = 'mauser';
+      }
+    } catch (err) {
+      /* ignore */
+    }
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        var raw = window.localStorage.getItem(membersProfileKey());
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          out.email = out.email || String(parsed.login || parsed.email || '').trim();
+          out.name = out.name || String(parsed.name || '').trim();
+          out.phone = out.phone || String(parsed.phone || '').trim();
+          out.maId = out.maId || String(parsed.id || parsed.uid || parsed.userid || '').trim();
+          out.source = out.source === 'none' ? 'tilda_profile' : out.source;
+        }
+      }
+    } catch (err) {
+      /* ignore */
+    }
+    out.email = out.email || readCookie('ma_email') || '';
+    out.name = out.name || readCookie('ma_name') || '';
+    out.maId = out.maId || readCookie('ma_id') || '';
+    out.loggedIn = !!(out.email || out.maId);
+    if (out.loggedIn && !out.groups.length) out.groups = ['FREE'];
+    return out;
+  }
+
+  function membersLogoutUrl() {
+    return '/members/logout';
+  }
+
+  function membersSignupUrl(returnPath) {
+    var path = String(returnPath || '/my').replace(/^\//, '');
+    return '/members/signup?redirecturl=' + encodeURIComponent(path);
+  }
+
+  function normalizeAccess(value) {
+    if (value === 'public' || value === 'free') return 'public';
+    if (value === 'promo') return 'promo';
+    if (value === 'paid' || value === 'organization' || value === 'undecided' || !value) return 'paid';
+    return 'paid';
+  }
+
+  function hasIndexablePromo(track) {
+    if (!track) return false;
+    var forWhom = track.forWhom || track.audience || '';
+    var composition = track.composition || track.outline || '';
+    var seoTitle = track.seoTitle || '';
+    return !!(
+      track.title &&
+      track.situation &&
+      track.outcome &&
+      forWhom &&
+      composition &&
+      seoTitle
+    );
+  }
+
+  function deriveSeoStatus(track) {
+    if (!track) return 'noindex';
+    if (track.seoStatus === 'index' || track.seoStatus === 'noindex') return track.seoStatus;
+    var pub = track.publicationStatus;
+    if (pub === 'planned' || pub === 'draft' || pub === 'review' || !pub) return 'noindex';
+    if ((pub === 'promo' || pub === 'published') && hasIndexablePromo(track)) return 'index';
+    return 'noindex';
+  }
+
+  function accountId(account) {
+    if (!account) return '';
+    return account.maId || account.email || '';
+  }
+
+  function activeEntitlements(account, now) {
+    now = now || Date.now();
+    var list = (account && account.entitlements) || [];
+    var out = [];
+    for (var i = 0; i < list.length; i += 1) {
+      var item = list[i];
+      if (!item || item.status === 'revoked' || item.status === 'expired') continue;
+      if (item.expiresAt && Date.parse(item.expiresAt) <= now) continue;
+      out.push(item);
+    }
+    return out;
+  }
+
+  function resolveUserState(account, now) {
+    if (!account || !account.loggedIn) return 'guest';
+    var active = activeEntitlements(account, now);
+    if (active.length) return 'paid';
+    var all = (account.entitlements || []).slice();
+    for (var i = 0; i < all.length; i += 1) {
+      if (all[i] && (all[i].status === 'expired' || all[i].status === 'revoked' || (all[i].expiresAt && Date.parse(all[i].expiresAt) <= (now || Date.now())))) {
+        return 'expired';
+      }
+    }
+    return 'registered';
+  }
+
+  function hasGroup(account, group) {
+    var groups = (account && account.groups) || [];
+    var alias = MEMBER_ALIAS[group] || group;
+    for (var i = 0; i < groups.length; i += 1) {
+      var name = groups[i];
+      if (name === group || name === alias || MEMBER_ALIAS[name] === group) return true;
+    }
+    if (group === 'FREE' && account && account.loggedIn) return true;
+    return false;
+  }
+
+  function isEntitledToTrack(track, account, now) {
+    if (!track) return false;
+    var access = normalizeAccess(track.access);
+    if (access === 'public' || access === 'promo') return true;
+    if (track.publicationStatus !== 'published' && track.publicationStatus !== 'promo') {
+      return hasGroup(account, 'ADMIN') || hasGroup(account, 'PILOT');
+    }
+    if (!account || !account.loggedIn) return false;
+    if (hasGroup(account, 'ADMIN') || hasGroup(account, 'FULL') || hasGroup(account, 'PILOT')) return true;
+    var active = activeEntitlements(account, now);
+    for (var i = 0; i < active.length; i += 1) {
+      var item = active[i];
+      if (item.productId === 'full' || item.group === 'FULL') return true;
+      if (item.productId === 'start' || item.group === 'START') {
+        if (track.sectionId === 'A1' || track.sectionId === 'A2' || track.sectionId === 'A3') return true;
+      }
+      if (item.trackId && item.trackId === track.trackId) return true;
+    }
+    return false;
+  }
+
+  function canOpenTrackBody(track, account) {
+    if (!track) return false;
+    var view = api.getTrackStatusView(track, { entitled: isEntitledToTrack(track, account) });
+    return !!view.canStart && isEntitledToTrack(track, account);
+  }
+
+  function cardAction(track, account, runtime) {
+    var state = resolveUserState(account);
+    var entitled = isEntitledToTrack(track, account);
+    var view = api.getTrackStatusView(track, { entitled: entitled });
+    var access = normalizeAccess(track.access);
+    if (state === 'expired' && access === 'paid') {
+      return { key: 'renew', label: 'Продлить доступ', href: '/access' };
+    }
+    if (!account || !account.loggedIn) {
+      return {
+        key: 'login_save',
+        label: view.canStart ? 'Войти, чтобы сохранить' : 'Открыть описание',
+        href: view.canStart ? api.membersLoginUrl('/track?id=' + String(track.trackId).toLowerCase()) : api.routes().track(track.trackId),
+      };
+    }
+    if (runtime && runtime.status && runtime.status !== 'preview' && entitled) {
+      return { key: 'continue', label: 'Продолжить', href: api.routes().track(track.trackId) };
+    }
+    if (entitled && (access === 'paid' || hasGroup(account, 'START') || hasGroup(account, 'FULL'))) {
+      return { key: 'in_pack', label: view.canStart ? 'Входит в ваш пакет' : 'Открыть описание', href: api.routes().track(track.trackId) };
+    }
+    if (access === 'public' || access === 'promo' || track.publicationStatus === 'promo') {
+      return { key: 'open_free', label: 'Открыть бесплатно', href: api.routes().track(track.trackId) };
+    }
+    if (!entitled && access === 'paid') {
+      var ready = api.getTrackStatusView(track, { entitled: true }).canStart;
+      if (ready) {
+        return { key: 'buy', label: 'Купить доступ', href: '/access?product=start&track=' + encodeURIComponent(track.trackId) };
+      }
+      return { key: 'open', label: view.cta || 'Открыть описание', href: api.routes().track(track.trackId) };
+    }
+    return { key: 'open', label: view.cta || 'Открыть описание', href: api.routes().track(track.trackId) };
+  }
+
+  function onboardingComplete(profile) {
+    if (!profile) return false;
+    if (profile.onboardingComplete) return true;
+    return !!(profile.displayName && profile.partnerRole && profile.consentAt);
+  }
+
+  function recommendedAction(input) {
+    var account = input.account;
+    var profile = input.profile || api.getProfile();
+    var tracks = input.tracks || [];
+    var state = resolveUserState(account);
+    if (state === 'guest') {
+      return { kind: 'signup', title: 'Создайте бесплатный кабинет', why: 'Так можно сохранить маршрут и вернуться к нему с другого устройства.', href: membersSignupUrl('/my'), cta: 'Зарегистрироваться' };
+    }
+    if (!onboardingComplete(profile)) {
+      return { kind: 'onboarding', title: 'Короткая настройка — две минуты', why: 'Имя, роль и текущая задача нужны, чтобы показать первый шаг. Необязательные вопросы можно пропустить.', href: '/profile?setup=1', cta: 'Заполнить профиль' };
+    }
+    if (state === 'expired') {
+      return { kind: 'renew', title: 'Доступ закончился', why: 'Профиль, история и результаты на месте. Чтобы снова открыть платные треки, продлите доступ.', href: '/access', cta: 'Продлить доступ' };
+    }
+    var next = api.resolveNextAction({ profile: profile, tracks: tracks });
+    if (next.kind === 'open_track' && next.track) {
+      var action = cardAction(next.track, account);
+      return {
+        kind: 'open_track',
+        track: next.track,
+        title: next.track.title,
+        why: 'Это следующее действие по вашей задаче.',
+        href: action.href,
+        cta: action.label,
+      };
+    }
+    if (state === 'registered') {
+      return { kind: 'choose', title: 'Выберите ситуацию или откройте доступ', why: 'Бесплатный кабинет уже есть. Можно пройти промотрек или посмотреть пакеты.', href: '/start', cta: 'Выбрать ситуацию', secondary: { href: '/access', label: 'Смотреть доступ' } };
+    }
+    return { kind: 'choose', title: 'Выберите ситуацию, в которой сейчас застряли', why: 'Один ответ определит раздел и первый шаг.', href: '/start', cta: 'Выбрать ситуацию' };
+  }
+
+  api.GROUPS = GROUPS;
+  api.PRODUCTS = PRODUCTS;
+  api.PARTNER_ROLES = PARTNER_ROLES;
+  api.PARTNER_ROLE_LABELS = PARTNER_ROLE_LABELS;
+  api.EXPERIENCE = EXPERIENCE;
+  api.TIME_BUDGET = TIME_BUDGET;
+  api.readMembersSession = readMembersSession;
+  api.membersLogoutUrl = membersLogoutUrl;
+  api.membersSignupUrl = membersSignupUrl;
+  api.normalizeAccess = normalizeAccess;
+  api.deriveSeoStatus = deriveSeoStatus;
+  api.hasIndexablePromo = hasIndexablePromo;
+  api.accountId = accountId;
+  api.activeEntitlements = activeEntitlements;
+  api.resolveUserState = resolveUserState;
+  api.hasGroup = hasGroup;
+  api.isEntitledToTrack = isEntitledToTrack;
+  api.canOpenTrackBody = canOpenTrackBody;
+  api.cardAction = cardAction;
+  api.onboardingComplete = onboardingComplete;
+  api.recommendedAction = recommendedAction;
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
+
+/* __MLMA_UI_SPLIT__ */
+
+/**
+ * Репозитории кабинета. localStorage — только запасной контур, не сервер.
+ * Секреты сюда не класть. MLMA_API_URL задаётся в HEAD после подключения Supabase.
+ */
+(function (root) {
+  'use strict';
+  var api = root.MLMA;
+  if (!api) return;
+
+  var STORE_KEY = 'mlma.account.v1';
+  var OUTBOX_KEY = 'mlma.outbox.v1';
+  var MODE_LOCAL = 'local_fallback';
+  var MODE_SERVER = 'server';
+
+  function nowIso() {
+    return new Date().toISOString();
+  }
+
+  function emptyAccountRecord(session) {
+    session = session || {};
+    return {
+      user: {
+        maId: session.maId || '',
+        email: session.email || '',
+        name: session.name || '',
+        phone: session.phone || '',
+        groups: session.groups && session.groups.length ? session.groups.slice() : session.loggedIn ? ['FREE'] : [],
+      },
+      profile: api.getProfile ? api.getProfile() : api.sanitizeProfile(null),
+      entitlements: [],
+      orders: [],
+      payments: [],
+      savedTrackIds: [],
+      route: { trackIds: [] },
+      runs: {},
+      artifacts: [],
+      updatedAt: '',
+    };
+  }
+
+  function readStore() {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return {};
+      var raw = window.localStorage.getItem(STORE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (err) {
+      return {};
+    }
+  }
+
+  function writeStore(all) {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return;
+      window.localStorage.setItem(STORE_KEY, JSON.stringify(all));
+    } catch (err) {
+      /* private mode */
+    }
+  }
+
+  function readOutbox() {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return [];
+      var raw = window.localStorage.getItem(OUTBOX_KEY);
+      var list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch (err) {
+      return [];
+    }
+  }
+
+  function writeOutbox(list) {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return;
+      window.localStorage.setItem(OUTBOX_KEY, JSON.stringify(list.slice(-200)));
+    } catch (err) {
+      /* ignore */
+    }
+  }
+
+  function apiBase() {
+    try {
+      if (typeof window !== 'undefined' && window.MLMA_API_URL) return String(window.MLMA_API_URL).replace(/\/$/, '');
+    } catch (err) {
+      /* ignore */
+    }
+    return '';
+  }
+
+  function storageMode() {
+    return apiBase() ? MODE_SERVER : MODE_LOCAL;
+  }
+
+  function recordKey(session) {
+    return (session && (session.maId || session.email)) || 'local';
+  }
+
+  function loadRecord(session) {
+    var all = readStore();
+    var key = recordKey(session);
+    var row = all[key] || emptyAccountRecord(session);
+    if (session && session.loggedIn) {
+      row.user.email = session.email || row.user.email;
+      row.user.name = session.name || row.user.name;
+      row.user.maId = session.maId || row.user.maId;
+      row.user.phone = session.phone || row.user.phone;
+      if (!row.user.groups || !row.user.groups.length) row.user.groups = ['FREE'];
+    }
+    if ((!row.savedTrackIds || !row.savedTrackIds.length) && row.profile && row.profile.savedTrackIds) {
+      row.savedTrackIds = row.profile.savedTrackIds.slice();
+    }
+    return row;
+  }
+
+  function saveRecord(session, row) {
+    row.updatedAt = nowIso();
+    var all = readStore();
+    all[recordKey(session)] = row;
+    writeStore(all);
+    enqueue('upsert_account', { key: recordKey(session) });
+    return row;
+  }
+
+  function enqueue(type, payload) {
+    var box = readOutbox();
+    box.push({ id: 'ob_' + Date.now() + '_' + box.length, type: type, payload: payload || {}, createdAt: nowIso() });
+    writeOutbox(box);
+  }
+
+  var LocalRepo = {
+    mode: MODE_LOCAL,
+    loadAccount: function (session) {
+      return loadRecord(session);
+    },
+    saveProfile: function (session, profile) {
+      var row = loadRecord(session);
+      row.profile = profile;
+      row.savedTrackIds = (profile && profile.savedTrackIds) || [];
+      saveRecord(session, row);
+      return row;
+    },
+    saveSavedTracks: function (session, ids) {
+      var row = loadRecord(session);
+      row.savedTrackIds = ids.slice();
+      if (row.profile) row.profile.savedTrackIds = ids.slice();
+      saveRecord(session, row);
+      return row;
+    },
+    saveEntitlements: function (session, list) {
+      var row = loadRecord(session);
+      row.entitlements = list.slice();
+      saveRecord(session, row);
+      return row;
+    },
+    saveOrder: function (session, order) {
+      var row = loadRecord(session);
+      var found = false;
+      for (var i = 0; i < row.orders.length; i += 1) {
+        if (row.orders[i].orderId === order.orderId) {
+          row.orders[i] = order;
+          found = true;
+        }
+      }
+      if (!found) row.orders.push(order);
+      saveRecord(session, row);
+      return row;
+    },
+    savePayment: function (session, payment) {
+      var row = loadRecord(session);
+      var found = false;
+      for (var i = 0; i < row.payments.length; i += 1) {
+        if (row.payments[i].paymentId === payment.paymentId || row.payments[i].idempotencyKey === payment.idempotencyKey) {
+          row.payments[i] = payment;
+          found = true;
+        }
+      }
+      if (!found) row.payments.push(payment);
+      saveRecord(session, row);
+      return row;
+    },
+    saveArtifact: function (session, artifact) {
+      var row = loadRecord(session);
+      row.artifacts = row.artifacts || [];
+      row.artifacts.unshift(artifact);
+      row.artifacts = row.artifacts.slice(0, 50);
+      saveRecord(session, row);
+      return row;
+    },
+    saveRun: function (session, trackId, runtime) {
+      var row = loadRecord(session);
+      row.runs = row.runs || {};
+      row.runs[trackId] = runtime;
+      saveRecord(session, row);
+      return row;
+    },
+  };
+
+  function HttpRepo(base) {
+    this.mode = MODE_SERVER;
+    this.base = base;
+  }
+  HttpRepo.prototype.request = function (path, body) {
+    return fetch(this.base + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body || {}),
+    }).then(function (res) {
+      if (!res.ok) throw new Error('api_' + res.status);
+      return res.json();
+    });
+  };
+  HttpRepo.prototype.loadAccount = function (session) {
+    var local = LocalRepo.loadAccount(session);
+    var self = this;
+    this.request('/account/get', { maId: session.maId || '', email: session.email || '' })
+      .then(function (data) {
+        if (!data || !data.account) return;
+        saveRecord(session, data.account);
+      })
+      .catch(function () {
+        /* keep local fallback */
+      });
+    return local;
+  };
+  HttpRepo.prototype.saveProfile = function (session, profile) {
+    LocalRepo.saveProfile(session, profile);
+    this.request('/account/profile', { maId: session.maId || '', email: session.email || '', profile: profile }).catch(function () {});
+    return LocalRepo.loadAccount(session);
+  };
+  HttpRepo.prototype.saveSavedTracks = LocalRepo.saveSavedTracks;
+  HttpRepo.prototype.saveEntitlements = LocalRepo.saveEntitlements;
+  HttpRepo.prototype.saveOrder = LocalRepo.saveOrder;
+  HttpRepo.prototype.savePayment = LocalRepo.savePayment;
+  HttpRepo.prototype.saveArtifact = LocalRepo.saveArtifact;
+  HttpRepo.prototype.saveRun = LocalRepo.saveRun;
+
+  function getRepo() {
+    var base = apiBase();
+    return base ? new HttpRepo(base) : LocalRepo;
+  }
+
+  function hydrateAccount(session) {
+    session = session || api.readMembersSession();
+    var row = getRepo().loadAccount(session);
+    var profile = api.sanitizeProfile(Object.assign({}, row.profile || {}, {
+      savedTrackIds: row.savedTrackIds && row.savedTrackIds.length ? row.savedTrackIds : (row.profile && row.profile.savedTrackIds) || [],
+      displayName: (row.profile && row.profile.displayName) || session.name || '',
+    }));
+    if (session.loggedIn) {
+      try {
+        api.saveProfile(profile);
+      } catch (err) {
+        /* ignore */
+      }
+    }
+    return {
+      loggedIn: !!session.loggedIn,
+      maId: session.maId || row.user.maId || '',
+      email: session.email || row.user.email || '',
+      name: session.name || row.user.name || profile.displayName || '',
+      phone: session.phone || row.user.phone || '',
+      groups: (row.user.groups && row.user.groups.length ? row.user.groups : session.groups) || [],
+      entitlements: row.entitlements || [],
+      orders: row.orders || [],
+      payments: row.payments || [],
+      artifacts: row.artifacts || [],
+      runs: row.runs || {},
+      profile: profile,
+      storageMode: storageMode(),
+      source: session.source,
+    };
+  }
+
+  var prevToggle = api.toggleSavedTrack;
+  api.toggleSavedTrack = function (trackId) {
+    var next = prevToggle ? prevToggle(trackId) : api.getProfile();
+    var session = api.readMembersSession ? api.readMembersSession() : { loggedIn: false };
+    if (session.loggedIn) getRepo().saveSavedTracks(session, next.savedTrackIds || []);
+    return next;
+  };
+
+  api.STORE_KEY = STORE_KEY;
+  api.OUTBOX_KEY = OUTBOX_KEY;
+  api.storageMode = storageMode;
+  api.getRepo = getRepo;
+  api.hydrateAccount = hydrateAccount;
+  api.enqueueOutbox = enqueue;
+  api.LocalRepo = LocalRepo;
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
+
+/* __MLMA_UI_SPLIT__ */
+
+/**
+ * Абстракция оплаты. Реальные списания выключены.
+ * Секрет вебхука живёт только на сервере, не в Tilda и не в этом файле.
+ */
+(function (root) {
+  'use strict';
+  var api = root.MLMA;
+  if (!api) return;
+
+  var PAYMENT_STATUSES = ['created', 'pending', 'paid', 'failed', 'cancelled', 'refunded', 'expired'];
+  var TEST_MODE = true;
+
+  var TILDA_PAYMENT_OPTIONS = [
+    { id: 'tilda', name: 'Tilda Payments / ЮKassa через Tilda', members: 'Да, встроенная выдача группы', recurrences: 'Подписка Tilda — отдельно согласовывать', note: 'Проще всего для Members. Вебхук и идемпотентность ограничены кабинетом Tilda.' },
+    { id: 'yookassa', name: 'ЮKassa напрямую', members: 'Нужен свой вебхук → группа Members', recurrences: 'Рекуррент не включать без согласования', note: 'Гибкий вебхук, подпись, однократная запись платежа.' },
+    { id: 'cloudpayments', name: 'CloudPayments', members: 'Свой вебхук', recurrences: 'Не включать без согласования', note: 'Карты РФ/СНГ, виджет, подпись уведомлений.' },
+    { id: 'stripe', name: 'Stripe', members: 'Свой вебхук', recurrences: 'Не включать без согласования', note: 'Удобен для международной карты. Для РФ ограничен.' },
+    { id: 'paypal', name: 'PayPal', members: 'Свой вебхук', recurrences: 'Не включать без согласования', note: 'Международные платежи, слабее для РФ.' },
+  ];
+
+  function newId(prefix) {
+    return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  function productById(id) {
+    var list = api.PRODUCTS || [];
+    for (var i = 0; i < list.length; i += 1) {
+      if (list[i].id === id) return list[i];
+    }
+    return list[0] || { id: 'start', group: 'START', title: 'Стартовый пакет', kind: 'pack' };
+  }
+
+  function createOrder(input) {
+    input = input || {};
+    var product = productById(input.productId || 'start');
+    return {
+      orderId: input.orderId || newId('ord'),
+      productId: product.id,
+      group: product.group,
+      trackId: input.trackId || '',
+      email: input.email || '',
+      maId: input.maId || '',
+      amount: 0,
+      currency: 'RUB',
+      status: 'created',
+      test: true,
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  function TestGateway() {}
+  TestGateway.prototype.createPayment = function (order) {
+    return {
+      paymentId: newId('pay'),
+      orderId: order.orderId,
+      status: 'pending',
+      checkoutUrl: '/access?checkout=' + encodeURIComponent(order.orderId),
+      test: true,
+    };
+  };
+  TestGateway.prototype.parseWebhook = function (payload) {
+    payload = payload || {};
+    return {
+      paymentId: payload.paymentId || payload.id || '',
+      orderId: payload.orderId || '',
+      status: payload.status || 'failed',
+      idempotencyKey: payload.idempotencyKey || payload.paymentId || payload.id || '',
+      email: payload.email || '',
+      signatureValid: payload.signatureValid !== false,
+    };
+  };
+
+  function findById(list, key, value) {
+    for (var i = 0; i < list.length; i += 1) {
+      if (list[i][key] === value) return list[i];
+    }
+    return null;
+  }
+
+  function applyWebhook(account, event, order) {
+    account = account || { entitlements: [], payments: [], orders: [], groups: [] };
+    event = event || {};
+    if (!event.signatureValid) {
+      return { ok: false, reason: 'invalid_signature', account: account };
+    }
+    var payments = (account.payments || []).slice();
+    var existing = findById(payments, 'idempotencyKey', event.idempotencyKey) || findById(payments, 'paymentId', event.paymentId);
+    if (existing && (existing.status === 'paid' || existing.status === event.status)) {
+      return { ok: true, duplicate: true, account: account, payment: existing };
+    }
+    var payment = {
+      paymentId: event.paymentId || newId('pay'),
+      orderId: event.orderId || (order && order.orderId) || '',
+      status: event.status,
+      idempotencyKey: event.idempotencyKey || event.paymentId,
+      email: event.email || (order && order.email) || '',
+      test: true,
+      updatedAt: new Date().toISOString(),
+    };
+    if (existing) {
+      existing.status = payment.status;
+      existing.updatedAt = payment.updatedAt;
+      payment = existing;
+    } else {
+      payments.push(payment);
+    }
+    account.payments = payments;
+    var orders = (account.orders || []).slice();
+    if (order) {
+      order.status = event.status === 'paid' ? 'paid' : event.status;
+      var found = false;
+      for (var o = 0; o < orders.length; o += 1) {
+        if (orders[o].orderId === order.orderId) {
+          orders[o] = order;
+          found = true;
+        }
+      }
+      if (!found) orders.push(order);
+    }
+    account.orders = orders;
+    if (event.status === 'paid' && order) {
+      var entitlements = (account.entitlements || []).slice();
+      var same = null;
+      for (var e = 0; e < entitlements.length; e += 1) {
+        if (entitlements[e].orderId === order.orderId && entitlements[e].status === 'active') same = entitlements[e];
+      }
+      if (!same) {
+        entitlements.push({
+          id: newId('ent'),
+          productId: order.productId,
+          group: order.group,
+          trackId: order.trackId || '',
+          status: 'active',
+          orderId: order.orderId,
+          startsAt: new Date().toISOString(),
+          expiresAt: '',
+        });
+        account.entitlements = entitlements;
+        account.groups = account.groups || [];
+        if (order.group && account.groups.indexOf(order.group) === -1) account.groups.push(order.group);
+        if (account.groups.indexOf('FREE') === -1) account.groups.push('FREE');
+      }
+    }
+    if (event.status === 'refunded' || event.status === 'expired') {
+      var list = account.entitlements || [];
+      for (var r = 0; r < list.length; r += 1) {
+        if (order && list[r].orderId === order.orderId) {
+          list[r].status = event.status === 'refunded' ? 'revoked' : 'expired';
+        }
+      }
+    }
+    return { ok: true, duplicate: false, account: account, payment: payment };
+  }
+
+  function checkoutHref(productId, trackId) {
+    var q = '/access?checkout=1&product=' + encodeURIComponent(productId || 'start');
+    if (trackId) q += '&track=' + encodeURIComponent(trackId);
+    return q;
+  }
+
+  api.PAYMENT_STATUSES = PAYMENT_STATUSES;
+  api.TILDA_PAYMENT_OPTIONS = TILDA_PAYMENT_OPTIONS;
+  api.PAYMENT_TEST_MODE = TEST_MODE;
+  api.createOrder = createOrder;
+  api.TestGateway = TestGateway;
+  api.createPaymentGateway = function () {
+    return new TestGateway();
+  };
+  api.applyWebhook = applyWebhook;
+  api.checkoutHref = checkoutHref;
+  api.productById = productById;
+
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
 
@@ -2771,6 +3599,110 @@
   api.stagesForState = stagesForState;
   api.saveLibraryRestore = saveLibraryRestore;
   api.readLibraryRestore = readLibraryRestore;
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
+
+/* __MLMA_UI_SPLIT__ */
+
+/**
+ * Аналитика кабинета. Не отправляет пароли, карты и полные ответы.
+ */
+(function (root) {
+  'use strict';
+  var api = root.MLMA;
+  if (!api) return;
+
+  var EVENTS = [
+    'signup_started',
+    'signup_completed',
+    'profile_completed',
+    'search_submitted',
+    'search_results_shown',
+    'track_card_opened',
+    'track_saved',
+    'locked_track_opened',
+    'checkout_started',
+    'payment_succeeded',
+    'payment_failed',
+    'entitlement_granted',
+    'track_started',
+    'step_completed',
+    'artifact_created',
+    'track_paused',
+    'track_completed',
+    'next_track_opened',
+    'access_expired',
+    'subscription_renewed',
+  ];
+
+  var BLOCKED = /password|passwd|secret|token|card|pan|cvv|cvc|iban|artifact|answer|message_body|full_text/i;
+  var CHAIN_KEY = 'mlma.search.chain.v1';
+
+  function allowed(name) {
+    return EVENTS.indexOf(name) !== -1;
+  }
+
+  function sanitize(payload) {
+    var out = {};
+    if (!payload || typeof payload !== 'object') return out;
+    var keys = Object.keys(payload);
+    for (var i = 0; i < keys.length; i += 1) {
+      var key = keys[i];
+      if (BLOCKED.test(key)) continue;
+      var value = payload[key];
+      if (typeof value === 'string' && value.length > 180) value = value.slice(0, 180);
+      if (key === 'email' && typeof value === 'string') {
+        var at = value.indexOf('@');
+        value = at > 1 ? value.slice(0, 1) + '***' + value.slice(at) : '***';
+      }
+      out[key] = value;
+    }
+    return out;
+  }
+
+  function chainId() {
+    try {
+      if (typeof window === 'undefined' || !window.sessionStorage) return '';
+      var current = window.sessionStorage.getItem(CHAIN_KEY);
+      if (current) return current;
+      var id = 'ch_' + Date.now().toString(36);
+      window.sessionStorage.setItem(CHAIN_KEY, id);
+      return id;
+    } catch (err) {
+      return '';
+    }
+  }
+
+  var previous = api.trackEvent;
+  function trackEvent(name, payload) {
+    var data = sanitize(payload || {});
+    if (name === 'search_submitted' || name === 'search_query' || name === 'library_search') {
+      data.chainId = chainId();
+    } else if (data && (name === 'search_results_shown' || name === 'track_card_opened' || name === 'track_saved' || name === 'checkout_started' || name === 'track_started' || name === 'track_completed')) {
+      data.chainId = data.chainId || chainId();
+    }
+    if (typeof previous === 'function') previous(name, data);
+    else {
+      try {
+        if (typeof window !== 'undefined') {
+          window.dataLayer = window.dataLayer || [];
+          window.dataLayer.push(Object.assign({ event: name }, data));
+        }
+      } catch (err) {
+        /* ignore */
+      }
+    }
+    if (api.enqueueOutbox && allowed(name)) {
+      api.enqueueOutbox('analytics_event', { name: name, data: data });
+    }
+    return data;
+  }
+
+  api.ANALYTICS_EVENTS = EVENTS;
+  api.sanitizeAnalytics = sanitize;
+  api.trackEvent = trackEvent;
+  api.searchChainId = chainId;
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);

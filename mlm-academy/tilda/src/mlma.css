@@ -859,7 +859,8 @@ a.mlma-example {
   .mlma-menu { display: none !important; }
 }
 @media (max-width: 1023px) {
-  .mlma-header-actions #mlma-search-btn { display: none; }
+  .mlma-header-actions #mlma-search-btn,
+  .mlma-header-actions #mlma-login-btn { display: none; }
   .mlma-header-inner { padding-inline: 12px; gap: 8px; }
   .mlma-logo span:last-child { font-size: 14px; }
 }
@@ -937,6 +938,35 @@ a.mlma-btn-on-ink {
   border-left: 4px solid var(--mlma-accent);
 }
 .mlma-card-soon .mlma-btn-primary { background: transparent; color: inherit; }
+.mlma-cabinet-nav {
+  border-bottom: 1px solid var(--mlma-line-soft);
+  background: var(--mlma-surface);
+}
+.mlma-cabinet-nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  max-width: var(--mlma-max);
+  margin: 0 auto;
+  padding: 8px 16px 12px;
+}
+.mlma-cabinet-nav a {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: var(--mlma-ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+.mlma-cabinet-nav a[aria-current="page"] {
+  background: var(--mlma-ink);
+  color: var(--mlma-on-ink);
+}
+.mlma-chip input {
+  margin-right: 6px;
+}
 @media (max-width: 430px) {
   .mlma-runtime { padding: 18px; }
   .mlma-h1 { font-size: 28px; }

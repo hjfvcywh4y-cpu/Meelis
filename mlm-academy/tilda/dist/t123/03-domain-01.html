@@ -1,4 +1,4 @@
-<!-- Блок T123: доменная логика 1/6 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: доменная логика 1/10 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
 /**
  * Доменная логика MLM Academy для Tilda.
@@ -20,6 +20,7 @@
     'contentStatus',
     'visibility',
     'access',
+    'seoStatus',
     'imageUrl',
   ];
 
@@ -36,6 +37,7 @@
     cs: 'contentStatus',
     v: 'visibility',
     a: 'access',
+    seo: 'seoStatus',
   };
 
   var SECTION_IDS = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6'];
@@ -114,8 +116,37 @@
     currentGoal: '',
     savedTrackIds: [],
     role: 'member',
+    displayName: '',
+    partnerRole: '',
+    experience: '',
+    currentTask: '',
+    difficulty: '',
+    desiredResult: '',
+    availableTime: '',
+    consentAt: '',
+    onboardingComplete: false,
+    onboardingSkipped: false,
+    notifyEmail: true,
     updatedAt: '',
   };
+
+  function normalizeAccess(value) {
+    if (value === 'public' || value === 'free') return 'public';
+    if (value === 'promo') return 'promo';
+    return 'paid';
+  }
+
+  function deriveSeoStatus(track) {
+    if (!track) return 'noindex';
+    if (track.seoStatus === 'index' || track.seoStatus === 'noindex') return track.seoStatus;
+    var pub = track.publicationStatus;
+    if (pub === 'promo' || pub === 'published') {
+      if (track.forWhom && track.composition && (track.seoTitle || track.title) && track.situation && track.outcome) {
+        return 'index';
+      }
+    }
+    return 'noindex';
+  }
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -144,7 +175,8 @@
       publicationStatus: typeof src.publicationStatus === 'string' ? src.publicationStatus : 'unknown',
       contentStatus: typeof src.contentStatus === 'string' ? src.contentStatus : 'metadata_only',
       visibility: typeof src.visibility === 'string' ? src.visibility : 'catalog',
-      access: typeof src.access === 'string' ? src.access : 'undecided',
+      access: normalizeAccess(src.access),
+      seoStatus: deriveSeoStatus(src),
       imageUrl: sectionCoverUrl(typeof src.sectionId === 'string' ? src.sectionId : ''),
     };
     if (!TRACK_ID_RE.test(track.trackId)) return null;
@@ -181,6 +213,7 @@
       cs: publicTrack.contentStatus,
       v: publicTrack.visibility,
       a: publicTrack.access,
+      seo: publicTrack.seoStatus,
     };
   }
 
@@ -527,11 +560,27 @@
       myResults: function () {
         return '/my/results';
       },
+      myTracks: function () {
+        return '/my/route?tab=tracks';
+      },
+      mySaved: function () {
+        return '/my/route?tab=saved';
+      },
       profile: function () {
         return '/profile';
       },
       access: function () {
         return '/access';
+      },
+      login: function (returnPath) {
+        return membersLoginUrl(returnPath || '/my');
+      },
+      signup: function (returnPath) {
+        var path = String(returnPath || '/my').replace(/^\//, '');
+        return '/members/signup?redirecturl=' + encodeURIComponent(path);
+      },
+      logout: function () {
+        return '/members/logout';
       },
       previewCatalog: function () {
         return '/preview/catalog';
@@ -664,6 +713,17 @@
       currentGoal: typeof raw.currentGoal === 'string' ? raw.currentGoal.slice(0, GOAL_MAX) : '',
       savedTrackIds: saved,
       role: raw.role || 'member',
+      displayName: typeof raw.displayName === 'string' ? raw.displayName.slice(0, 80) : '',
+      partnerRole: raw.partnerRole === 'novice' || raw.partnerRole === 'partner' || raw.partnerRole === 'leader' ? raw.partnerRole : '',
+      experience: typeof raw.experience === 'string' ? raw.experience.slice(0, 40) : '',
+      currentTask: typeof raw.currentTask === 'string' ? raw.currentTask.slice(0, GOAL_MAX) : '',
+      difficulty: typeof raw.difficulty === 'string' ? raw.difficulty.slice(0, GOAL_MAX) : '',
+      desiredResult: typeof raw.desiredResult === 'string' ? raw.desiredResult.slice(0, GOAL_MAX) : '',
+      availableTime: typeof raw.availableTime === 'string' ? raw.availableTime.slice(0, 20) : '',
+      consentAt: typeof raw.consentAt === 'string' ? raw.consentAt : '',
+      onboardingComplete: !!raw.onboardingComplete,
+      onboardingSkipped: !!raw.onboardingSkipped,
+      notifyEmail: raw.notifyEmail !== false,
       updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : '',
     };
   }
@@ -746,6 +806,8 @@
     sanitizeProfile: sanitizeProfile,
     isPreviewHost: isPreviewHost,
     clone: clone,
+    normalizeAccess: normalizeAccess,
+    deriveSeoStatus: deriveSeoStatus,
     membersLoginUrl: membersLoginUrl,
     siteHomeUrl: siteHomeUrl,
     b2bFromResearchUrl: b2bFromResearchUrl,

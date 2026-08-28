@@ -93,9 +93,14 @@ if (/"P[012]"/.test(json)) {
 
 const css = fs.readFileSync(path.join(SRC, 'mlma.css'), 'utf8');
 const domainCore = fs.readFileSync(path.join(SRC, 'domain.js'), 'utf8');
+const accessJs = fs.readFileSync(path.join(SRC, 'access.js'), 'utf8');
+const storageJs = fs.readFileSync(path.join(SRC, 'storage.js'), 'utf8');
+const paymentsJs = fs.readFileSync(path.join(SRC, 'payments.js'), 'utf8');
 const searchJs = fs.readFileSync(path.join(SRC, 'search.js'), 'utf8');
+const analyticsJs = fs.readFileSync(path.join(SRC, 'analytics.js'), 'utf8');
 const ontologyJs = fs.readFileSync(path.join(SRC, 'ontology.js'), 'utf8');
-const domainJs = domainCore.trim() + '\n\n/* __MLMA_UI_SPLIT__ */\n\n' + searchJs.trim() + '\n\n' + ontologyJs.trim();
+const SPLIT = '\n\n/* __MLMA_UI_SPLIT__ */\n\n';
+const domainJs = [domainCore.trim(), accessJs.trim(), storageJs.trim(), paymentsJs.trim(), searchJs.trim(), analyticsJs.trim()].join(SPLIT) + '\n\n' + ontologyJs.trim();
 const uiJs = fs.readFileSync(path.join(SRC, 'ui.js'), 'utf8');
 
 const pages = [
@@ -270,6 +275,65 @@ const FAVICON_SVG =
   );
 const RERANK_PUBLIC_URL = process.env.MLMA_RERANK_PUBLIC_URL || '';
 
+function robotsForPage(page) {
+  if (page.members === 'member' || page.members === 'editor') return 'noindex, nofollow';
+  if (page.page === 'track') return 'noindex, nofollow';
+  return 'index, follow';
+}
+
+function jsonLdForPage(page) {
+  const abs = 'https://mlmacademy.ru' + page.url;
+  const crumbs = [{ '@type': 'ListItem', position: 1, name: 'Academy', item: 'https://mlmacademy.ru/academy' }];
+  if (page.page === 'library' || page.page === 'section' || page.page === 'track') {
+    crumbs.push({ '@type': 'ListItem', position: 2, name: 'Библиотека', item: 'https://mlmacademy.ru/library' });
+  }
+  if (page.page === 'section') {
+    crumbs.push({ '@type': 'ListItem', position: 3, name: page.section, item: abs });
+  } else if (page.url !== '/academy') {
+    crumbs.push({ '@type': 'ListItem', position: crumbs.length + 1, name: page.title.split(' · ')[0], item: abs });
+  }
+  const graph = [
+    { '@type': 'BreadcrumbList', itemListElement: crumbs },
+  ];
+  if (page.page === 'home' || page.page === 'library') {
+    graph.push({
+      '@type': 'CollectionPage',
+      name: page.title,
+      url: abs,
+      inLanguage: 'ru',
+      hasPart: {
+        '@type': 'ItemList',
+        itemListElement: payload.sections.map((section, index) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          name: section.sectionId + ' · ' + section.shortTitle,
+          url: 'https://mlmacademy.ru/library/' + section.sectionId.toLowerCase(),
+        })),
+      },
+    });
+  } else if (page.page === 'section') {
+    const rows = tracks.filter((row) => row.s === page.section).slice(0, 12);
+    graph.push({
+      '@type': 'CollectionPage',
+      name: page.title,
+      url: abs,
+      inLanguage: 'ru',
+      hasPart: {
+        '@type': 'ItemList',
+        itemListElement: rows.map((row, index) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          name: row.t,
+          url: 'https://mlmacademy.ru/track?id=' + String(row.id).toLowerCase(),
+        })),
+      },
+    });
+  } else if (page.page === 'about') {
+    graph.push({ '@type': 'Article', headline: page.title, url: abs, inLanguage: 'ru' });
+  }
+  return `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@graph': graph }).replace(/</g, '\\u003c')}</script>`;
+}
+
 function seoHead(page, opts = {}) {
   const map = {
     home: 'Рабочий навигатор партнёра: ситуация, действие, результат и следующий шаг. Шесть направлений от старта до роста команды.',
@@ -277,7 +341,12 @@ function seoHead(page, opts = {}) {
     library: 'Каталог треков и материалов по этапам A1–A6. Поиск понимает живой запрос, а не только название.',
     about: 'Как устроена MLM Academy: трек как маршрут изменения состояния, а не страница с видео.',
     track: 'Карточка трека: ситуация, действие, рабочий след и следующее лучшее действие.',
-    access: 'Каталог открыт без входа. Кабинет нужен только для личной истории.',
+    access: 'Сначала бесплатный кабинет, затем пакет START или FULL. Реальные списания пока выключены.',
+    my: 'Личный кабинет MLM Academy. Страница не индексируется.',
+    route: 'Маршрут и сохранённые треки. Страница не индексируется.',
+    results: 'Результаты прохождения. Страница не индексируется.',
+    profile: 'Профиль и настройки. Страница не индексируется.',
+    preview: 'Служебный предпросмотр каталога. Страница не индексируется.',
   };
   const sectionMap = {
     A1: 'A1 Старт и система: роль, причина, продукт и рабочий план.',
@@ -296,7 +365,7 @@ function seoHead(page, opts = {}) {
   return `<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Onest:wght@400;700;800&display=swap" rel="stylesheet">
-<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="${robotsForPage(page)}">
 <meta name="description" content="${escapeHtml(desc)}">
 <link rel="canonical" href="${escapeHtml(abs)}">
 <meta property="og:title" content="${escapeHtml(page.title)}">
@@ -306,6 +375,7 @@ function seoHead(page, opts = {}) {
 <meta property="og:type" content="website">
 <link rel="icon" type="image/svg+xml" href="${FAVICON_SVG}">
 <script>document.documentElement.lang = 'ru';</script>
+${jsonLdForPage(page)}
 ${rerankScript}
 <style>
   html, body, #allrecords, .t-records, .t-body { background: #f4f0e8 !important; }
@@ -464,17 +534,32 @@ ${pages.map((page) => `| ${page.title} | \`${page.url}\` | \`mounts/${page.id}.h
 |---|---|
 | Guest | ничего из академии |
 | Member | \`/my\`, \`/my/route\`, \`/my/results\`, \`/profile\` |
-| Editor | те же четыре + \`/preview/catalog\` |
+| FREE / START / FULL / PILOT | те же четыре; после входа главная группы — \`/my\` |
+| Editor / ADMIN | те же четыре + \`/preview/catalog\` |
 
 Публичные (не добавлять ни в одну группу): \`/academy\`, \`/start\`, \`/library\`,
 \`/library/a1\`…\`/library/a6\`, \`/track\`, \`/about\`, \`/access\`. Живую главную \`/\` и прочие
 маркетинговые страницы в группы не добавлять.
 
-После включения модуля проверить \`mlmacademy.ru\`: если на живой главной появилась
-иконка профиля, не править общесайтовый HEAD и не публиковать \`/\`. Сообщить
-и искать настройку видимости иконки в Личном кабинете.
+Группы доступа: **Guest**, **Member**, **FREE**, **START**, **FULL**, **PILOT**, **ADMIN**, **Editor**.
+Не создавать группу на каждый трек. Member и FREE — кабинет после регистрации.
+START/FULL выдаются после оплаты (пока тестовый режим). Editor/ADMIN — служебные.
+После самостоятельной регистрации пользователь должен попадать в Member или FREE,
+не в Editor и не в ADMIN. В интерфейсе Tilda снимите «добавлять после подтверждения»
+с Editor, ADMIN, START, FULL, PILOT и Guest.
 
-Профиль оболочки (\`localStorage\` \`mlma.profile.v1\`) — это не логин Tilda.
+Профиль оболочки (\`localStorage\` \`mlma.profile.v1\` / \`mlma.account.v1\`) — запасной
+контур. Это не серверное сохранение и не логин Tilda.
+
+## SEO
+
+Публичные страницы Академии: \`index, follow\` в HEAD. Кабинет, вход, preview и
+\`/track?id=\` — \`noindex, nofollow\`. Индексировать отдельный трек можно только
+после отдельной страницы \`/track/<id>\` с полным промоописанием. 112 пустых
+страниц в индекс не добавлять.
+
+В настройках сайта Tilda: язык HTML = ru; robots.txt из \`dist/seo/robots.txt\`;
+sitemap — HTTPS, без кабинета. Автокарта Tilda сейчас отдаёт \`http://\` — заменить.
 
 ## После появления настоящего трека
 
@@ -496,6 +581,43 @@ const sizes = {
 
 write(path.join(DIST, 'sizes.json'), JSON.stringify(sizes, null, 2) + '\n');
 write(path.join(__dirname, 'pages.json'), JSON.stringify(pages, null, 2) + '\n');
+
+const publicUrls = pages
+  .filter((page) => page.members === 'public' && page.page !== 'track')
+  .map((page) => `https://mlmacademy.ru${page.url}`);
+publicUrls.push('https://mlmacademy.ru/research/marketing-plan');
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${publicUrls.map((url) => `  <url><loc>${url}</loc></url>`).join('\n')}
+</urlset>
+`;
+const robotsTxt = `User-Agent: *
+Allow: /academy
+Allow: /library
+Allow: /start
+Allow: /about
+Allow: /access
+Allow: /research
+Disallow: /my
+Disallow: /my/
+Disallow: /profile
+Disallow: /preview
+Disallow: /members/
+Disallow: /admin
+Disallow: /tilda/
+Disallow: /tilda/form*
+Disallow: /tilda/rec*
+Disallow: /tilda/click*
+Disallow: /tilda/scroll*
+Disallow: /tilda/popup*
+Disallow: /tilda/cart*
+Disallow: /tilda/product*
+Disallow: /tilda/event*
+
+Sitemap: https://mlmacademy.ru/sitemap.xml
+`;
+write(path.join(DIST, 'seo/sitemap-academy.xml'), sitemap);
+write(path.join(DIST, 'seo/robots.txt'), robotsTxt);
 
 console.log('Tilda dist assembled');
 console.log(JSON.stringify(sizes, null, 2));

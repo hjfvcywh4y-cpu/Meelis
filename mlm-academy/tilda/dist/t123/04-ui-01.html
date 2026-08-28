@@ -1,4 +1,4 @@
-<!-- Блок T123: рендер оболочки 1/3 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: рендер оболочки 1/5 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
 /**
  * Оболочка MLM Academy: рендер страниц Tilda из очищенного каталога.
@@ -135,6 +135,10 @@
     return page === 'my' || page === 'route' || page === 'results' || page === 'profile';
   }
 
+  function accountOf(state) {
+    return state.account || { loggedIn: false };
+  }
+
   function btn(href, label, variant, extraClass) {
     var cls = 'mlma-btn' + (variant ? ' mlma-btn-' + variant : '') + (extraClass ? ' ' + extraClass : '');
     return '<a class="' + cls + '" href="' + esc(href) + '">' + esc(label) + '</a>';
@@ -149,13 +153,12 @@
       { href: R.about(), label: 'Как создаётся' },
       { href: D.siteHomeUrl(), label: 'Решения для компаний' },
     ];
-    if (isCabinetPage(state.page)) {
+    if (isCabinetPage(state.page) || (state.page === 'access' && accountOf(state).loggedIn)) {
       items = [
         { href: R.home(), label: 'Academy' },
         { href: R.library(), label: 'Библиотека' },
         { href: R.my(), label: 'Кабинет' },
-        { href: R.myRoute(), label: 'Мой маршрут' },
-        { href: R.profile(), label: 'Профиль' },
+        { href: R.access(), label: 'Доступ' },
       ];
     }
     return items;
@@ -193,6 +196,9 @@
       '<a class="mlma-btn mlma-btn-small mlma-btn-ghost" href="' +
       esc(R.library()) +
       '" id="mlma-search-btn">Поиск</a>' +
+      (accountOf(state).loggedIn
+        ? '<a class="mlma-btn mlma-btn-small mlma-btn-ghost" href="' + esc(R.my()) + '" id="mlma-login-btn">Кабинет</a>'
+        : '<a class="mlma-btn mlma-btn-small mlma-btn-ghost" href="' + esc(D.membersLoginUrl(pathName())) + '" id="mlma-login-btn">Войти</a>') +
       '<a class="mlma-btn mlma-btn-small mlma-btn-primary" href="' +
       esc(R.start()) +
       '">Найти свой шаг</a></div></div>' +
@@ -208,6 +214,8 @@
       { href: R.start(), label: 'С чего начать' },
       { href: R.library(), label: 'Библиотека' },
       { href: R.about(), label: 'Как создаётся библиотека' },
+      { href: R.access(), label: 'Доступ' },
+      { href: R.research ? R.research() : '/research/marketing-plan', label: 'Исследование' },
       { href: D.siteHomeUrl(), label: 'Решения для компаний' },
     ];
     var nav = '';
@@ -231,7 +239,7 @@
       { href: R.home(), label: 'Academy' },
       { href: R.library(), label: 'Библиотека' },
       { href: R.start(), label: 'Старт' },
-      { href: R.about(), label: 'О библиотеке' },
+      { href: accountOf(state).loggedIn ? R.my() : D.membersLoginUrl(path), label: accountOf(state).loggedIn ? 'Кабинет' : 'Войти' },
     ];
     var html = '<nav class="mlma-mobile" aria-label="Мобильная навигация">';
     for (var i = 0; i < items.length; i += 1) {
@@ -297,6 +305,9 @@
     var kind = status.itemKind || 'track';
     var minutes = D.deriveMeta ? D.deriveMeta(track).time : 20;
     var href = esc(R.track(track.trackId));
+    var action = D.cardAction && opts.account ? D.cardAction(track, opts.account) : null;
+    var ctaLabel = (action && action.label) || status.cta || (status.canStart ? 'Начать трек' : 'Открыть описание');
+    var ctaHref = action && action.href ? esc(action.href) : href;
     var badgeHtml = status.showCatalogBadge && status.label ? badge(status.label, status.tone) : (status.pageStatus ? badge(status.pageStatus, status.tone) : '');
     var best = !!opts.best;
     return (
@@ -322,8 +333,8 @@
       '<div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--mlma-line-soft);display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:center">' +
       '<span class="mlma-meta mlma-muted">' + esc(track.format) + ' · ≈ ' + minutes + ' мин</span>' +
       '<a class="mlma-btn mlma-btn-small' + (status.canStart ? ' mlma-btn-primary' : '') +
-      ' mlma-track-link" href="' + href + '" data-mlma-result-open="' + esc(track.trackId) + '">' +
-      esc(status.cta || (status.canStart ? 'Начать трек' : 'Открыть описание')) +
+      ' mlma-track-link" href="' + ctaHref + '" data-mlma-result-open="' + esc(track.trackId) + '">' +
+      esc(ctaLabel) +
       '</a></div></div></article>'
     );
   }
@@ -340,6 +351,7 @@
           featured: !!opts.featured,
           compact: !!opts.compact,
           best: !!(opts.bestFirst && i === 0 && opts.featured),
+          account: opts.account,
         }) +
         '</li>';
     }
@@ -714,7 +726,7 @@
       if (featured.length) {
         body +=
           '<section class="mlma-featured"><div class="mlma-section-head"><h2 class="mlma-h3">Подходит лучше всего</h2></div>' +
-          trackGrid(featured, state.sectionById, R, { whyMap: result.whyMap, featured: true, bestFirst: true }) +
+          trackGrid(featured, state.sectionById, R, { whyMap: result.whyMap, featured: true, bestFirst: true, account: state.account }) +
           '</section>';
       }
       if (visible.length) {
@@ -722,7 +734,7 @@
           (searching
             ? '<section style="margin-top:36px"><div class="mlma-section-head"><h2 class="mlma-h3">Также может помочь</h2></div>'
             : '') +
-          trackGrid(visible, state.sectionById, R, { whyMap: searching ? result.whyMap : null }) +
+          trackGrid(visible, state.sectionById, R, { whyMap: searching ? result.whyMap : null, account: state.account }) +
           (searching ? '</section>' : '');
       }
       if (more) {
@@ -894,6 +906,7 @@
     header: header,
     footer: footer,
     mobileNav: mobileNav,
+    isCabinetPage: isCabinetPage,
     catalogBrowserHtml: catalogBrowserHtml,
     readCatalog: readCatalog,
     currentPage: currentPage,
