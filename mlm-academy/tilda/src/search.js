@@ -1460,12 +1460,13 @@
       for (var k = 0; k < ids.length; k += 1) boost[ids[k]] = true;
     }
     var strong = [];
+    var relax = !!(state && state._relaxInFilter);
     for (var i = 0; i < ranked.length; i += 1) {
       var row = ranked[i];
       var id = row.track.trackId;
       var meta = deriveMeta(row.track);
-      if (teamOnly && !boost[id] && meta.sit !== 'team') continue;
-      if (intents.length && !boost[id] && row.score < 220) continue;
+      if (teamOnly && !boost[id] && meta.sit !== 'team' && !relax) continue;
+      if (intents.length && !boost[id] && row.score < (relax ? 70 : 220)) continue;
       if (!intents.length && row.score < 70) continue;
       strong.push(row);
     }
@@ -1540,6 +1541,9 @@
         total: tracks.length,
         label: foundLabel(split.items.length, tracks.length, state),
       };
+    }
+    if (!(split.featured.length || split.other.length) && hasActiveFilters(Object.assign({}, state, { q: '' })) && ranked.length) {
+      split = splitDisplay(ranked, analysis, Object.assign({}, state, { _relaxInFilter: true }));
     }
     if (split.featured.length || split.other.length) {
       return {

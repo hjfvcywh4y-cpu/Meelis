@@ -144,6 +144,10 @@ describe('50 пользовательских запросов', () => {
     assert.match(href, /q=/);
     assert.match(href, /stage=a5/);
     assert.match(href, /sit=doubt/);
+    const combo = MLMA.searchCatalog(tracks, MLMA.parseLibraryState('?stage=a3&q=' + encodeURIComponent('кому написать')));
+    assert.ok(combo.items.length >= 1);
+    assert.ok(combo.items.every((item) => item.sectionId === 'A3'));
+    assert.ok(combo.items.some((item) => item.trackId === 'A3-002'));
   });
 
   it('rerank не принимает неизвестные ID и низкую уверенность не подменяет локальной кучей', () => {
