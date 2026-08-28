@@ -737,9 +737,7 @@
     var exactish = matchType === 'exact' || matchType === 'strong';
     var adjacentish = matchType === 'adjacent';
     var body;
-    var pendingBanner = pending
-      ? '<p class="mlma-muted" id="mlma-rerank-status" style="margin:0 0 20px;font-size:15px">Подбираем наиболее подходящий маршрут…</p>'
-      : '';
+    var pendingBanner = '';
     if ((result.kind === 'need_more' || result.kind === 'zero') && !pending && !(result.featured && result.featured.length) && !(result.items && result.items.length)) {
       var options = result.clarifyingOptions && result.clarifyingOptions.length
         ? result.clarifyingOptions
@@ -854,7 +852,7 @@
       esc(share) +
       '">Ссылка на подборку</button><span id="mlma-share-msg" class="mlma-muted" style="font-size:13px" aria-live="polite"></span></div></div>' +
       '<div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;padding:12px 0 20px"><p style="font-size:16px;font-weight:700" id="mlma-count">' +
-      esc(pending ? 'Подбираем наиболее подходящий маршрут…' : (result.label || '')) +
+      esc(pending ? 'Подбираем наиболее подходящий маршрут…' : (filters.q ? '' : (result.label || ''))) +
       '</p></div><div id="mlma-results" style="padding-bottom:64px">' +
       body +
       '</div>' +

@@ -190,6 +190,34 @@ describe('50 пользовательских запросов', () => {
     assert.equal(oos.items.length, 0);
   });
 
+  it('для широкого и adjacent-запроса ИИ не сужает выдачу до одной карточки', () => {
+    const novice = search('новичок теряется');
+    assert.ok(novice.featured.length >= 3);
+    const narrowed = MLMA.applyRerankResponse(novice, {
+      confidence: 0.92,
+      matchType: 'exact',
+      topMatches: [{ trackId: 'A1-010', confidence: 0.92, reason: 'План первых действий' }],
+      relatedMatches: [],
+      clarification: 'Какую роль вы бы хотели?',
+    }, tracks);
+    assert.equal(narrowed.matchType, 'adjacent');
+    assert.ok(narrowed.featured.length >= 3, 'novice featured ' + narrowed.featured.map((row) => row.trackId).join(','));
+    assert.ok(narrowed.featured.some((row) => row.trackId === 'A1-004'));
+    assert.match(String(narrowed.clarifyingQuestion || ''), /роль|написать|продукт/i);
+
+    const city = search('хочу открыть новый город');
+    const hijack = MLMA.applyRerankResponse(city, {
+      confidence: 0.9,
+      matchType: 'exact',
+      topMatches: [{ trackId: 'A3-016', confidence: 0.9, reason: 'Открыть разговор' }],
+      relatedMatches: [],
+    }, tracks);
+    assert.equal(hijack.matchType, 'adjacent');
+    assert.ok(hijack.featured.some((row) => row.trackId === 'A2-008'));
+    assert.ok(!hijack.featured.some((row) => row.trackId === 'A3-016'));
+    assert.match(String(hijack.clarifyingQuestion || ''), /город|регион/);
+  });
+
   it('почему разделено на literal / situation / intent', () => {
     const result = search('Контактов много, всё держу в голове');
     const topId = result.items[0].trackId;

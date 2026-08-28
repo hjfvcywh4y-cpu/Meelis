@@ -3620,23 +3620,40 @@
       low.label = 'Точного трека пока нет';
       return low;
     }
+    var wide = false;
+    var intents = (local.analysis && local.analysis.intents) || [];
+    for (var wi = 0; wi < intents.length; wi += 1) if (intents[wi].wide) wide = true;
+    var scopedAdj = !!(local.analysis && local.analysis.adjacentScope);
+    if (scopedAdj || wide) {
+      matchType = 'adjacent';
+      if (local.clarifyingQuestion) clarify = local.clarifyingQuestion;
+    }
+    function hasTrack(list, id) {
+      for (var h = 0; h < list.length; h += 1) if (list[h] && list[h].trackId === id) return true;
+      return false;
+    }
     var minTop = confidence >= 0.7 ? 0.45 : 0.2;
     var top = take(topIn, 3, minTop);
     var related = take(relIn, 5, 0.2);
-    var featured = top.items;
-    var other = related.items.filter(function (item) {
-      return featured.indexOf(item) === -1;
-    });
+    var featured = top.items.slice();
+    var other = [];
+    for (var ri = 0; ri < related.items.length; ri += 1) {
+      if (!hasTrack(featured, related.items[ri].trackId)) other.push(related.items[ri]);
+    }
     if (!featured.length && other.length) {
       featured = other.slice(0, 3);
       other = other.slice(3);
     }
-    if (featured.length < 3 && local.featured && local.featured.length) {
+    if (scopedAdj && local.featured && local.featured.length) {
+      featured = local.featured.slice(0, 3);
+      other = [];
+    } else if (featured.length < 3 && local.featured && local.featured.length) {
       for (var lf = 0; lf < local.featured.length && featured.length < 3; lf += 1) {
-        if (featured.indexOf(local.featured[lf]) === -1) featured.push(local.featured[lf]);
+        if (hasTrack(featured, local.featured[lf].trackId)) continue;
+        featured.push(local.featured[lf]);
       }
     }
-    other = other.filter(function (item) { return featured.indexOf(item) === -1; });
+    other = other.filter(function (item) { return !hasTrack(featured, item.trackId); });
     if (!featured.length && !other.length) {
       var keep = Object.assign({}, local, { pendingAi: false, source: local.source || 'local' });
       if (clarify) keep.clarifyingQuestion = clarify;
