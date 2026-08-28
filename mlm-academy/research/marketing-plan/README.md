@@ -14,6 +14,8 @@
 
 Адрес страницы: `research/marketing-plan`
 
+Живой URL: https://mlmacademy.ru/research/marketing-plan
+
 Canonical: `http://savvycapital.ru/trek`
 
 Robots: `noindex, nofollow`
