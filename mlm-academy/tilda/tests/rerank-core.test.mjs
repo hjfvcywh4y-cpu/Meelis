@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { shapeRerankResponse, compactCandidates } from '../../search-proxy/rerank-core.js';
+import {
+  shapeRerankResponse,
+  compactCandidates,
+  resolveModelConfig,
+  ENDPOINT_DEFAULT,
+  GROQ_ENDPOINT,
+  GROQ_MODEL_DEFAULT,
+  MODEL_DEFAULT,
+} from '../../search-proxy/rerank-core.js';
 
 describe('rerank-core', () => {
   it('отбрасывает неизвестные ID и слабую уверенность', () => {
@@ -49,5 +57,29 @@ describe('rerank-core', () => {
     const compact = compactCandidates(rows);
     assert.equal(compact.length, 15);
     assert.equal(compact.some((row) => row.trackId === 'ZZ-001'), false);
+  });
+
+  it('без ключа не выбирает площадку', () => {
+    const cfg = resolveModelConfig({});
+    assert.equal(cfg.key, '');
+    assert.equal(cfg.provider, null);
+  });
+
+  it('Groq-ключ сам ставит Groq endpoint и быструю модель', () => {
+    const cfg = resolveModelConfig({ GROQ_API_KEY: 'gsk_test' });
+    assert.equal(cfg.provider, 'groq');
+    assert.equal(cfg.endpoint, GROQ_ENDPOINT);
+    assert.equal(cfg.model, GROQ_MODEL_DEFAULT);
+    assert.equal(cfg.key, 'gsk_test');
+  });
+
+  it('OpenAI важнее Groq, дефолт gpt-4o-mini', () => {
+    const cfg = resolveModelConfig({
+      OPENAI_API_KEY: 'sk_test',
+      GROQ_API_KEY: 'gsk_test',
+    });
+    assert.equal(cfg.provider, 'openai');
+    assert.equal(cfg.endpoint, ENDPOINT_DEFAULT);
+    assert.equal(cfg.model, MODEL_DEFAULT);
   });
 });

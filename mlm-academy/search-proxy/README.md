@@ -3,24 +3,26 @@
 Tilda вызывает этот endpoint с запросом и максимум 15 кандидатами локального поиска.
 Ключ модели живёт только здесь и никогда не попадает в Tilda, HTML или клиентский JS.
 
-## Основная площадка: Vercel Edge Function
+## Основная площадка: Vercel Node Function
 
 Файлы:
 
-- `api/rerank.js` — Edge Function
+- `api/rerank.js` — Node.js Function (Web `fetch` handler, не Edge)
 - `rerank-core.js` — общая логика
 - `vercel.json` — алиас `/api/search/rerank` → `/api/rerank`
 
 Переменные площадки:
 
-- `OPENAI_API_KEY` или `GROQ_API_KEY` **обязательно**
-- `SEARCH_RERANK_MODEL` (по умолчанию `gpt-4o-mini`)
-- `SEARCH_RERANK_ENDPOINT` (по умолчанию `https://api.openai.com/v1/chat/completions`)
+- `OPENAI_API_KEY` или `GROQ_API_KEY` **обязательно** (достаточно одного)
+- `SEARCH_RERANK_MODEL` — `gpt-4o-mini` для OpenAI, `llama-3.1-8b-instant` для Groq
+- `SEARCH_RERANK_ENDPOINT` — сам выбирается по ключу; для Groq это `https://api.groq.com/openai/v1/chat/completions`
 
 Деплой из каталога `mlm-academy/search-proxy`:
 
 ```bash
 npx vercel --prod
+# без аккаунта:
+npx vercel deploy --temporary --yes
 ```
 
 После деплоя в HEAD страниц Academy:

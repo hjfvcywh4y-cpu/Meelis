@@ -5,6 +5,32 @@
 export const TIMEOUT_MS = 2500;
 export const MODEL_DEFAULT = 'gpt-4o-mini';
 export const ENDPOINT_DEFAULT = 'https://api.openai.com/v1/chat/completions';
+export const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
+export const GROQ_MODEL_DEFAULT = 'llama-3.1-8b-instant';
+
+export function resolveModelConfig(env = {}) {
+  const openaiKey = String((env && env.OPENAI_API_KEY) || '');
+  const groqKey = String((env && env.GROQ_API_KEY) || '');
+  const overrideModel = (env && env.SEARCH_RERANK_MODEL) || '';
+  const overrideEndpoint = (env && env.SEARCH_RERANK_ENDPOINT) || '';
+  if (openaiKey) {
+    return {
+      key: openaiKey,
+      provider: 'openai',
+      model: overrideModel || MODEL_DEFAULT,
+      endpoint: overrideEndpoint || ENDPOINT_DEFAULT,
+    };
+  }
+  if (groqKey) {
+    return {
+      key: groqKey,
+      provider: 'groq',
+      model: overrideModel || GROQ_MODEL_DEFAULT,
+      endpoint: overrideEndpoint || GROQ_ENDPOINT,
+    };
+  }
+  return { key: '', provider: null, model: MODEL_DEFAULT, endpoint: ENDPOINT_DEFAULT };
+}
 
 export const ALLOWED_ORIGINS = [
   'https://mlmacademy.ru',
@@ -111,14 +137,12 @@ export function shapeRerankResponse(parsed, allowedIds) {
 }
 
 export async function callModel({ query, candidates, env, fetchImpl }) {
-  const key = (env && (env.OPENAI_API_KEY || env.GROQ_API_KEY)) || '';
+  const { key, model, endpoint } = resolveModelConfig(env);
   if (!key) {
     const error = new Error('rerank_unconfigured');
     error.status = 503;
     throw error;
   }
-  const model = (env && env.SEARCH_RERANK_MODEL) || MODEL_DEFAULT;
-  const endpoint = (env && env.SEARCH_RERANK_ENDPOINT) || ENDPOINT_DEFAULT;
   const fetchFn = fetchImpl || fetch;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);

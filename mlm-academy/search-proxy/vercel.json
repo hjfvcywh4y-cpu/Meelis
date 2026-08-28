@@ -10,5 +10,6 @@
         { "key": "Cache-Control", "value": "public, max-age=300" }
       ]
     }
-  ]
+  ],
+  "installCommand": "echo skip-install"
 }

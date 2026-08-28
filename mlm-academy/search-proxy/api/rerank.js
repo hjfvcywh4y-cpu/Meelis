@@ -1,11 +1,12 @@
 /**
- * Vercel Edge Function: POST /api/rerank
+ * Vercel Node Function: POST /api/rerank
+ * Node.js, не Edge: анонимный vercel --temporary Edge больше не принимает.
  * Ключ только в переменных площадки. Клиентский JS его не видит.
  */
 import { handleRerankRequest } from '../rerank-core.js';
 
-export const config = { runtime: 'edge' };
-
-export default async function handler(request) {
-  return handleRerankRequest(request, typeof process !== 'undefined' ? process.env : {});
-}
+export default {
+  fetch(request) {
+    return handleRerankRequest(request, typeof process !== 'undefined' ? process.env : {});
+  },
+};
