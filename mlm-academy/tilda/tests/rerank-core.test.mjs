@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import {
   shapeRerankResponse,
   compactCandidates,
+  compactCatalogIndex,
   resolveModelConfig,
   ENDPOINT_DEFAULT,
   GROQ_ENDPOINT,
@@ -33,29 +34,44 @@ describe('rerank-core', () => {
     );
   });
 
-  it('при низкой уверенности не оставляет случайные треки', () => {
+  it('при низкой уверенности оставляет ближайшие треки, пусто только вне области', () => {
+    const kept = shapeRerankResponse(
+      {
+        confidence: 0.32,
+        matchType: 'adjacent',
+        topMatches: [{ trackId: 'A1-010', confidence: 0.32, reason: 'Ближайший план действий' }],
+        relatedMatches: [],
+        clarification: 'Уточните, нужен личный план или план на месяц',
+      },
+      new Set(['A1-010']),
+    );
+    assert.equal(kept.topMatches.length, 1);
+    assert.equal(kept.topMatches[0].trackId, 'A1-010');
+    assert.equal(kept.matchType, 'adjacent');
     const shaped = shapeRerankResponse(
       {
-        confidence: 0.2,
-        topMatches: [{ trackId: 'A1-001', confidence: 0.2, reason: 'нет' }],
+        confidence: 0.12,
+        matchType: 'out_of_scope',
+        topMatches: [],
         relatedMatches: [],
-        clarification: 'Уточните ситуацию',
+        clarification: 'Этот запрос не относится к библиотеке',
       },
       new Set(['A1-001']),
     );
     assert.equal(shaped.topMatches.length, 0);
     assert.equal(shaped.relatedMatches.length, 0);
-    assert.match(shaped.clarification, /Уточните/);
+    assert.equal(shaped.matchType, 'out_of_scope');
+    assert.match(shaped.clarification, /не относится/);
   });
 
-  it('режет кандидатов до 15 и только с валидным ID', () => {
+  it('режет кандидатов до 20 и только с валидным ID', () => {
     const rows = [];
-    for (let i = 1; i <= 20; i += 1) {
+    for (let i = 1; i <= 25; i += 1) {
       rows.push({ trackId: 'A1-' + String(i).padStart(3, '0'), title: 't' });
     }
     rows.push({ trackId: 'ZZ-001', title: 'bad' });
     const compact = compactCandidates(rows);
-    assert.equal(compact.length, 15);
+    assert.equal(compact.length, 20);
     assert.equal(compact.some((row) => row.trackId === 'ZZ-001'), false);
   });
 
@@ -81,5 +97,19 @@ describe('rerank-core', () => {
     assert.equal(cfg.provider, 'openai');
     assert.equal(cfg.endpoint, ENDPOINT_DEFAULT);
     assert.equal(cfg.model, MODEL_DEFAULT);
+  });
+
+  it('сжимает расширенный индекс каталога до 112 валидных ID', () => {
+    const rows = [];
+    for (let s = 1; s <= 6; s += 1) {
+      for (let i = 1; i <= 20; i += 1) {
+        rows.push({ trackId: 'A' + s + '-' + String(i).padStart(3, '0'), title: 't', situation: 'sit', result: 'out', aliases: ['план'] });
+      }
+    }
+    rows.push({ trackId: 'ZZ-001', title: 'bad' });
+    const compact = compactCatalogIndex(rows);
+    assert.equal(compact.length, 112);
+    assert.equal(compact.some((row) => row.trackId === 'ZZ-001'), false);
+    assert.equal(GROQ_MODEL_DEFAULT, 'openai/gpt-oss-20b');
   });
 });

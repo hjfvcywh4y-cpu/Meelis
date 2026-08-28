@@ -88,8 +88,8 @@ const CASES = [
   { q: 'как начать', expect: ['A1-004', 'A1-006', 'A1-010'], group: 'start' },
   { q: 'что делать новичку', expect: ['A1-004', 'A1-006', 'A1-010'], group: 'start' },
   { q: 'как рассказать о продукте', expect: ['A1-012', 'A1-011', 'A4-001'], group: 'product' },
-  { q: 'как снять видео', expect: [], group: 'none', empty: true },
-  { q: 'Хочу открыть новый город', expect: [], group: 'none', empty: true },
+  { q: 'как снять видео', expect: ['A3-002', 'A3-016', 'A1-012'], group: 'adjacent', adjacent: true },
+  { q: 'Хочу открыть новый город', expect: ['A2-008', 'A2-011', 'A1-010'], group: 'adjacent', adjacent: true },
   { q: 'Клиент купил и пропал', expect: ['A6-001', 'A6-006', 'A5-010'], group: 'followup' },
   { q: 'как пригласить на встречу', expect: ['A3-005', 'A3-013', 'A3-016'], group: 'call' },
   { q: 'мне отказали', expect: ['A5-014', 'A5-001', 'A5-011'], group: 'pause' },
@@ -111,6 +111,11 @@ describe('50 пользовательских запросов', () => {
         assert.equal(result.close.length, 0);
         assert.ok(result.clarifyingQuestion);
         return;
+      }
+      if (item.adjacent) {
+        assert.equal(result.kind, 'ok');
+        assert.ok(result.items.length >= 1, item.q + ' adjacent empty');
+        assert.equal(result.matchType, 'adjacent');
       }
       const found = result.items.map((row) => row.trackId);
       const hit = item.expect.some((id) => found.slice(0, 3).includes(id) || (result.featured || []).map((row) => row.trackId).includes(id));
@@ -166,13 +171,51 @@ describe('50 пользовательских запросов', () => {
     assert.equal(next.source, 'ai');
     const low = MLMA.applyRerankResponse(local, {
       confidence: 0.2,
+      matchType: 'adjacent',
       topMatches: [],
       relatedMatches: [],
       clarification: 'Уточните, что происходит',
     });
-    assert.equal(low.kind, 'zero');
-    assert.equal(low.items.length, 0);
+    assert.equal(low.kind, 'ok');
+    assert.ok(low.items.length >= 1);
     assert.match(low.clarifyingQuestion, /Уточните/);
+    const oos = MLMA.applyRerankResponse(local, {
+      confidence: 0.1,
+      matchType: 'out_of_scope',
+      topMatches: [],
+      relatedMatches: [],
+      clarification: 'Этот запрос не относится к библиотеке',
+    });
+    assert.equal(oos.kind, 'zero');
+    assert.equal(oos.items.length, 0);
+  });
+
+  it('для широкого и adjacent-запроса ИИ не сужает выдачу до одной карточки', () => {
+    const novice = search('новичок теряется');
+    assert.ok(novice.featured.length >= 3);
+    const narrowed = MLMA.applyRerankResponse(novice, {
+      confidence: 0.92,
+      matchType: 'exact',
+      topMatches: [{ trackId: 'A1-010', confidence: 0.92, reason: 'План первых действий' }],
+      relatedMatches: [],
+      clarification: 'Какую роль вы бы хотели?',
+    }, tracks);
+    assert.equal(narrowed.matchType, 'adjacent');
+    assert.ok(narrowed.featured.length >= 3, 'novice featured ' + narrowed.featured.map((row) => row.trackId).join(','));
+    assert.ok(narrowed.featured.some((row) => row.trackId === 'A1-004'));
+    assert.match(String(narrowed.clarifyingQuestion || ''), /роль|написать|продукт/i);
+
+    const city = search('хочу открыть новый город');
+    const hijack = MLMA.applyRerankResponse(city, {
+      confidence: 0.9,
+      matchType: 'exact',
+      topMatches: [{ trackId: 'A3-016', confidence: 0.9, reason: 'Открыть разговор' }],
+      relatedMatches: [],
+    }, tracks);
+    assert.equal(hijack.matchType, 'adjacent');
+    assert.ok(hijack.featured.some((row) => row.trackId === 'A2-008'));
+    assert.ok(!hijack.featured.some((row) => row.trackId === 'A3-016'));
+    assert.match(String(hijack.clarifyingQuestion || ''), /город|регион/);
   });
 
   it('почему разделено на literal / situation / intent', () => {
@@ -199,5 +242,66 @@ describe('50 пользовательских запросов', () => {
     assert.equal(result.close.length, 0);
     assert.ok(result.clarifyingQuestion);
     assert.ok(!result.items.some((item) => item.trackId === 'A1-001'));
+  });
+});
+
+const ROUTING = [
+  { q: 'планирование', expect: ['A1-010', 'A1-008', 'A1-004'], match: ['strong', 'exact'], clarify: false },
+  { q: 'нужен план', expect: ['A1-010', 'A1-008', 'A1-007'], match: ['strong', 'exact', 'adjacent'] },
+  { q: 'всё хаотично', expect: ['A1-010', 'A6-011'], match: ['strong', 'adjacent'] },
+  { q: 'не успеваю работать с контактами', expect: ['A1-010', 'A2-006', 'A6-010', 'A6-011'], match: ['strong', 'adjacent'] },
+  { q: 'хочу составить план на месяц', expect: ['A1-010'], match: ['strong', 'exact', 'adjacent'] },
+  { q: 'новичок теряется', expect: ['A1-004', 'A1-010', 'A1-011', 'A1-006'], match: ['adjacent', 'strong'], clarifyNeed: true },
+  { q: 'я только зарегистрировался и не понимаю, что делать', expect: ['A1-004', 'A1-010', 'A1-006'], match: ['adjacent', 'strong'] },
+  { q: 'слишком много информации', expect: ['A1-011', 'A1-004', 'A1-006', 'A1-010'], match: ['adjacent', 'strong'] },
+  { q: 'с чего начать новичку', expect: ['A1-004', 'A1-010', 'A1-006'], match: ['adjacent', 'strong'] },
+  { q: 'не понимаю, кому писать', expect: ['A2-008', 'A2-010'], match: ['strong', 'adjacent', 'exact'] },
+  { q: 'хочу найти первых клиентов', expect: ['A1-010', 'A2-008', 'A3-002'], match: ['strong', 'adjacent', 'exact'] },
+  { q: 'человек молчит', expect: ['A5-010', 'A3-008', 'A5-011'], match: ['strong', 'adjacent', 'exact'] },
+  { q: 'мне сказали, что дорого', expect: ['A5-005', 'A4-013'], match: ['strong', 'adjacent', 'exact'] },
+  { q: 'боюсь навязываться', expect: ['A1-001'], match: ['strong', 'exact', 'adjacent'] },
+  { q: 'хочу выстроить команду', expect: ['A6-013', 'A6-012', 'A1-016', 'A1-004'], match: ['strong', 'adjacent'] },
+  { q: 'партнёры стоят на месте', expect: ['A6-013', 'A6-012', 'A6-011', 'A1-016'], match: ['strong', 'adjacent'] },
+  { q: 'хочу открыть новый город', expect: ['A2-008', 'A2-011', 'A1-010'], match: ['adjacent'], honesty: /город|регион/ },
+  { q: 'как отремонтировать автомобиль', expect: [], empty: true },
+];
+
+describe('маршрутизация обязательных запросов', () => {
+  for (const item of ROUTING) {
+    it(item.q, () => {
+      const result = search(item.q);
+      if (item.empty) {
+        assert.equal(result.kind, 'zero');
+        assert.equal(result.matchType, 'out_of_scope');
+        assert.equal(result.items.length, 0);
+        return;
+      }
+      const found = result.items.map((row) => row.trackId);
+      const featured = (result.featured || []).map((row) => row.trackId);
+      assert.equal(result.kind, 'ok', item.q + ' kind=' + result.kind);
+      assert.ok(found.length >= 1, item.q + ' empty local');
+      assert.ok(
+        item.expect.some((id) => found.includes(id) || featured.includes(id)),
+        item.q + ' got ' + found.join(',') + ' expected ' + item.expect.join(','),
+      );
+      if (item.match) assert.ok(item.match.includes(result.matchType), item.q + ' matchType=' + result.matchType);
+      if (item.clarifyNeed) assert.match(String(result.clarifyingQuestion || ''), /роль|написать|продукт/i);
+      if (item.honesty) assert.match(String(result.clarifyingQuestion || ''), item.honesty);
+      const payload = MLMA.rerankPayload(result, item.q, tracks);
+      assert.ok(payload.candidates.length >= 12 && payload.candidates.length <= 20, item.q + ' candidates ' + payload.candidates.length);
+      assert.equal(payload.candidates.some((row) => !/^A[1-6]-\d{3}$/.test(row.trackId)), false);
+    });
+  }
+
+  it('searchDocument есть у каждого трека и не пустой для осмысленного запроса', () => {
+    const doc = MLMA.searchDocument(tracks.find((row) => row.trackId === 'A1-010'));
+    assert.equal(doc.trackId, 'A1-010');
+    assert.ok(doc.title);
+    assert.ok(Array.isArray(doc.aliases));
+    assert.ok(doc.aliases.some((item) => /план/i.test(item)));
+    const local = search('планирование');
+    const payload = MLMA.rerankPayload(local, 'планирование', tracks);
+    assert.ok(payload.candidates.some((row) => row.trackId === 'A1-010'));
+    assert.ok(payload.candidates.length >= 12);
   });
 });

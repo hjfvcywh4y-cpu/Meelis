@@ -11,6 +11,7 @@
   var CLARIFY_QUESTION = api.CLARIFY_QUESTION || 'Вам нужно найти людей, начать разговор, продолжить после паузы или организовать команду?';
   var CLARIFY_OPTIONS = api.CLARIFY_OPTIONS || [];
   var OUT_OF_SCOPE = api.OUT_OF_SCOPE || [];
+  var ADJACENT_SCOPE = api.ADJACENT_SCOPE || [];
   var TRACK_ALIASES = api.TRACK_ALIASES;
   var SECTION_ALIASES = api.SECTION_ALIASES;
   var GOALS = api.GOALS;
@@ -126,6 +127,7 @@
     var norm = tokens.join(' ') || api.normalizeSearchText(original);
     var intents = matchIntents(norm);
     var scoped = detectOutOfScope(norm);
+    var adjacent = detectAdjacentScope(norm);
     return {
       kind: scoped ? 'out_of_scope' : 'ok',
       original: original,
@@ -136,6 +138,7 @@
       intents: intents,
       negated: collectNegated(norm),
       outOfScope: scoped,
+      adjacentScope: adjacent,
     };
   }
 
@@ -205,12 +208,22 @@
     if (ids.team) {
       hits = hits.filter(function (item) { return item.id !== 'first-result' && item.id !== 'just-started'; });
     }
+    if (ids['crm-head'] || ids.price || ids['cold-call'] || ids['silent-message'] || ids['lost-client'] || ids['first-write'] || ids['no-people'] || ids.team) {
+      hits = hits.filter(function (item) { return item.id !== 'planning'; });
+    }
     return hits;
   }
 
   function detectOutOfScope(norm) {
     for (var i = 0; i < OUT_OF_SCOPE.length; i += 1) {
       if (OUT_OF_SCOPE[i].test && OUT_OF_SCOPE[i].test.test(norm)) return OUT_OF_SCOPE[i];
+    }
+    return null;
+  }
+
+  function detectAdjacentScope(norm) {
+    for (var i = 0; i < ADJACENT_SCOPE.length; i += 1) {
+      if (ADJACENT_SCOPE[i].test && ADJACENT_SCOPE[i].test.test(norm)) return ADJACENT_SCOPE[i];
     }
     return null;
   }

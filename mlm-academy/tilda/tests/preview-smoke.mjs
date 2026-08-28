@@ -48,7 +48,10 @@ async function main() {
   await page.fill('#mlma-search', 'Хочу открыть новый город');
   await page.waitForTimeout(400);
   const cityTitle = await page.locator('#mlma-results').innerText();
-  if (!/Точного трека пока нет/i.test(cityTitle)) throw new Error('city false positive: ' + cityTitle.slice(0, 200));
+  if (/Точного трека пока нет/i.test(cityTitle)) throw new Error('city should show adjacent tracks: ' + cityTitle.slice(0, 240));
+  if (!/города пока нет|регион пока нет/i.test(cityTitle)) throw new Error('city missing honesty: ' + cityTitle.slice(0, 240));
+  const cityCards = await page.locator('#mlma-results .mlma-track-card').count();
+  if (cityCards < 1) throw new Error('city adjacent without cards');
 
   const html = await page.content();
   if (/OPENAI_API_KEY|sk-[A-Za-z0-9]{10,}/.test(html)) throw new Error('api key leaked into page');
