@@ -483,6 +483,17 @@
       esc(R.track('A3-016')) +
       '">Открыть разговор через настоящий повод</a></p></li>' +
       '</ol></div></section>' +
+      '<section class="mlma-band" id="mlma-research-entry"><div class="mlma-wrap">' +
+      '<div class="mlma-research-cta">' +
+      '<span class="mlma-eyebrow">Для компаний и лидеров</span>' +
+      '<h2 class="mlma-h2" style="margin-top:16px;max-width:22ch;color:inherit">Почему маркетинг-плана недостаточно</h2>' +
+      '<p class="mlma-lead" style="margin-top:16px;max-width:70ch">Маркетинг-план показывает партнёру цель, условия и вознаграждение. Но между целью и результатом остаётся разрыв: что конкретно человек должен сделать сегодня.</p>' +
+      '<p style="margin-top:14px;max-width:70ch;font-size:16px;line-height:1.5;color:var(--mlma-on-ink-muted)">Мы изучили, как крупные MLM-компании соединяют маркетинг-план, ежедневные действия партнёра, follow-up, прогресс и работу наставника.</p>' +
+      '<div class="mlma-actions" style="margin-top:24px">' +
+      '<a class="mlma-btn mlma-btn-accent" href="' +
+      esc(R.research ? R.research() : '/research/marketing-plan') +
+      '" data-mlma-funnel="research_open_from_b2c" data-source-page="/academy" data-cta-position="academy_home_after_route" data-article-slug="marketing-plan">Читать исследование</a>' +
+      '</div></div></div></section>' +
       '<section class="mlma-band"><div class="mlma-wrap"><div class="mlma-card mlma-pad-lg" style="padding:32px">' +
       '<span class="mlma-eyebrow mlma-eyebrow-accent">Как создаётся библиотека</span>' +
       '<h2 class="mlma-h2" style="margin-top:16px;max-width:22ch">Не пересказ учебников, а переработанная рабочая система</h2>' +
@@ -2091,6 +2102,18 @@
       el.addEventListener('click', function () {
         state.profile = D.resetProfile();
         mount(rootEl);
+      });
+    });
+    rootEl.querySelectorAll('[data-mlma-funnel]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var send = D.funnelEvent || D.trackEvent;
+        send(el.getAttribute('data-mlma-funnel'), {
+          source_page: el.getAttribute('data-source-page') || (window.location.pathname || ''),
+          target_page: el.getAttribute('href') || '',
+          cta_position: el.getAttribute('data-cta-position') || '',
+          article_slug: el.getAttribute('data-article-slug') || 'marketing-plan',
+          timestamp: new Date().toISOString(),
+        });
       });
     });
     rootEl.querySelectorAll('[data-mlma-preset]').forEach(function (el) {

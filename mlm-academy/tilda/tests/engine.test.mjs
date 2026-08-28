@@ -213,6 +213,7 @@ describe('маршруты Tilda', () => {
     assert.equal(R.track('A3-002'), '/track?id=a3-002');
     assert.equal(R.section('A1'), '/library/a1');
     assert.equal(R.about(), '/about');
+    assert.equal(R.research(), '/research/marketing-plan');
   });
 
   it('переключается на красивый URL, когда страница заведена', () => {
@@ -299,3 +300,54 @@ describe('собранный каталог', () => {
     }
   });
 });
+
+describe('статья-мост research/marketing-plan', () => {
+  it('ведёт в исследование и в B2B с UTM', () => {
+    const R = MLMA.routes();
+    assert.equal(R.research(), '/research/marketing-plan');
+    assert.equal(MLMA.siteHomeUrl(), '/');
+    assert.match(MLMA.b2bFromResearchUrl(), /utm_source=mlm_academy/);
+    assert.match(MLMA.b2bFromResearchUrl(), /utm_campaign=marketing_plan/);
+  });
+
+  it('не содержит B2C-навигации и запрещённых ссылок', () => {
+    const body = fs.readFileSync(path.join(__dirname, '../research/article.body.html'), 'utf8');
+    assert.match(body, /Посмотреть решение для компании/);
+    assert.match(body, /b2b_open_from_research/);
+    assert.equal(/href="\/library/.test(body), false);
+    assert.equal(/href="\/start/.test(body), false);
+    assert.equal(/href="\/my/.test(body), false);
+    assert.equal(/href="\/profile/.test(body), false);
+    assert.equal(/href="\/track/.test(body), false);
+    assert.match(body, /utm_source=mlm_academy/);
+  });
+
+  it('передаёт поля воронки в событие', () => {
+    const sent = MLMA.funnelEvent('research_open_from_b2c', {
+      source_page: '/academy',
+      target_page: '/research/marketing-plan',
+      cta_position: 'academy_home_after_route',
+    });
+    assert.equal(sent.event, 'research_open_from_b2c');
+    assert.equal(sent.source_page, '/academy');
+    assert.equal(sent.target_page, '/research/marketing-plan');
+    assert.equal(sent.cta_position, 'academy_home_after_route');
+    assert.equal(sent.article_slug, 'marketing-plan');
+    assert.ok(sent.timestamp);
+  });
+
+  it('индексируется и сохраняет один canonical на оригинал', () => {
+    const head = fs.readFileSync(path.join(__dirname, '../research/head.html'), 'utf8');
+    assert.match(head, /content="index, follow"/);
+    assert.equal(/noindex/.test(head), false);
+    assert.equal(/rel="canonical"/.test(head), false);
+  });
+
+  it('на B2B даёт вход в статью без новой формы', () => {
+    const proof = fs.readFileSync(path.join(__dirname, '../research/b2b-proof.html'), 'utf8');
+    assert.match(proof, /research_open_from_b2b/);
+    assert.match(proof, /href="\/research\/marketing-plan"/);
+    assert.equal(/t-input|t-form/.test(proof), false);
+  });
+});
+

@@ -347,6 +347,18 @@
         mount(rootEl);
       });
     });
+    rootEl.querySelectorAll('[data-mlma-funnel]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var send = D.funnelEvent || D.trackEvent;
+        send(el.getAttribute('data-mlma-funnel'), {
+          source_page: el.getAttribute('data-source-page') || (window.location.pathname || ''),
+          target_page: el.getAttribute('href') || '',
+          cta_position: el.getAttribute('data-cta-position') || '',
+          article_slug: el.getAttribute('data-article-slug') || 'marketing-plan',
+          timestamp: new Date().toISOString(),
+        });
+      });
+    });
     rootEl.querySelectorAll('[data-mlma-preset]').forEach(function (el) {
       el.addEventListener('click', function () {
         D.trackEvent('academy_preset_click', { itemId: el.getAttribute('data-mlma-preset') || '', source: 'home' });

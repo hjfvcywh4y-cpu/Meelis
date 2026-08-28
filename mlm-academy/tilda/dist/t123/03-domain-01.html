@@ -427,6 +427,9 @@
       about: function () {
         return '/about';
       },
+      research: function () {
+        return '/research/marketing-plan';
+      },
       section: function (sectionId) {
         return '/library/' + String(sectionId).toLowerCase();
       },
@@ -663,6 +666,8 @@
     clone: clone,
     membersLoginUrl: membersLoginUrl,
     siteHomeUrl: siteHomeUrl,
+    b2bFromResearchUrl: b2bFromResearchUrl,
+    funnelEvent: funnelEvent,
   };
 
   function membersLoginUrl(returnPath) {
@@ -672,6 +677,31 @@
 
   function siteHomeUrl() {
     return '/';
+  }
+
+  function b2bFromResearchUrl() {
+    return '/?utm_source=mlm_academy&utm_medium=research&utm_campaign=marketing_plan';
+  }
+
+  function funnelEvent(name, extra) {
+    extra = extra || {};
+    var payload = {
+      source_page: extra.source_page || '',
+      target_page: extra.target_page || '',
+      cta_position: extra.cta_position || '',
+      article_slug: extra.article_slug || 'marketing-plan',
+      timestamp: extra.timestamp || new Date().toISOString(),
+    };
+    if (typeof api.trackEvent === 'function') return api.trackEvent(name, payload);
+    try {
+      if (typeof window !== 'undefined') {
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push(Object.assign({ event: name }, payload));
+      }
+    } catch (err) {
+      /* ignore */
+    }
+    return payload;
   }
 
   root.MLMA = api;
