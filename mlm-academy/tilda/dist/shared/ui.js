@@ -758,7 +758,7 @@
     var drawer =
       '<div class="mlma-drawer-host">' +
       '<div class="mlma-drawer-backdrop" id="mlma-drawer-backdrop" hidden></div>' +
-      '<div class="mlma-drawer" id="mlma-drawer" role="dialog" aria-modal="true" aria-labelledby="mlma-drawer-title" hidden>' +
+      '<div class="mlma-drawer mlma-drawer-bottom" id="mlma-drawer" role="dialog" aria-modal="true" aria-labelledby="mlma-drawer-title" hidden>' +
       '<div class="mlma-drawer-head"><h2 class="mlma-h3" id="mlma-drawer-title">Фильтры</h2>' +
       '<button type="button" class="mlma-btn mlma-btn-small" data-mlma-drawer-close="1">Закрыть</button></div>' +
       drawerFacets +

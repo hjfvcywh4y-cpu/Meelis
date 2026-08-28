@@ -67,6 +67,12 @@
   font: inherit;
   color: inherit;
 }
+.mlma button.mlma-btn-primary,
+.mlma button.mlma-btn-accent,
+.mlma a.mlma-btn-primary,
+.mlma a.mlma-btn-accent {
+  color: #fffdf8;
+}
 .mlma a {
   color: var(--academy-accent);
   text-decoration: none;
@@ -589,19 +595,19 @@ a.mlma-card:hover, a.mlma-card-soft:hover { text-decoration: none; color: inheri
 .mlma-drawer {
   position: fixed;
   z-index: 90;
-  background: var(--academy-surface);
-  color: var(--academy-text);
-  box-shadow: 0 -12px 40px rgba(28, 25, 20, 0.18);
-}
-.mlma-drawer-bottom {
   left: 0;
   right: 0;
   bottom: 0;
+  top: auto;
   max-height: min(86vh, 720px);
   overflow: auto;
   border-radius: 16px 16px 0 0;
   padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  background: var(--academy-surface);
+  color: var(--academy-text);
+  box-shadow: 0 -12px 40px rgba(28, 25, 20, 0.18);
 }
+.mlma-drawer-bottom { /* alias for mobile sheet */ }
 @media (min-width: 768px) {
   .mlma-drawer {
     top: 0;
