@@ -154,8 +154,9 @@ for (const name of fs.readdirSync(path.join(DIST, 't123'))) {
 const head = `<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Onest:wght@400;700;800&display=swap" rel="stylesheet">
+<meta name="description" content="MLM Academy — рабочий навигатор партнёра: ситуация, действие, результат и следующий шаг. Библиотека треков по старту, клиентам, коммуникации, продукту и команде.">
 <style>
-  html, body, #allrecords, .t-records, .t-body { background: #f3efe6 !important; }
+  html, body, #allrecords, .t-records, .t-body { background: #f4f0e8 !important; }
   body { margin: 0 !important; }
   .t-rec { padding-top: 0 !important; padding-bottom: 0 !important; background: transparent !important; }
   .t-text { font-family: Onest, Arial, Helvetica, sans-serif !important; }
@@ -200,7 +201,24 @@ for (const page of pages) {
     `data-mlma-page="${page.page}"`,
   ];
   if (page.section) attrs.push(`data-mlma-section="${page.section}"`);
-  const mount = `<div ${attrs.join(' ')}>\n  <noscript><p>Для работы библиотеки нужен JavaScript.</p></noscript>\n</div>\n`;
+  const noscript = `<noscript>
+  <div class="mlma-noscript">
+    <h1>MLM Academy</h1>
+    <p>Рабочий навигатор партнёра: ситуация → действие → результат → следующий шаг. Для поиска и фильтров включите JavaScript.</p>
+    <nav>
+      <a href="/academy">Academy</a>
+      <a href="/library">Библиотека</a>
+      <a href="/start">С чего начать</a>
+      <a href="/library/a1">Старт и система</a>
+      <a href="/library/a2">Люди и база</a>
+      <a href="/library/a3">Первый контакт</a>
+      <a href="/library/a4">Потребность и решение</a>
+      <a href="/library/a5">Сомнения и отказ</a>
+      <a href="/library/a6">Повтор и рост</a>
+    </nav>
+  </div>
+</noscript>`;
+  const mount = `<div ${attrs.join(' ')}>\n  ${noscript}\n</div>\n`;
   write(path.join(DIST, 't123/mounts', `${page.id}.html`), t123Wrap(mount, `Блок T123: монтирование «${page.title}». Members: ${page.members}. URL: ${page.url}`));
 }
 
@@ -224,7 +242,13 @@ function previewHtml(page) {
 </head>
 <body>
   <div ${attrs.join(' ')}>
-    <noscript><p>Для работы библиотеки нужен JavaScript.</p></noscript>
+    <noscript>
+      <div class="mlma-noscript">
+        <h1>MLM Academy</h1>
+        <p>Рабочий навигатор партнёра: ситуация → действие → результат → следующий шаг.</p>
+        <p><a href="/library">Библиотека</a> · <a href="/start">С чего начать</a></p>
+      </div>
+    </noscript>
   </div>
   <script src="/shared/catalog-data.js"></script>
   <script src="/shared/domain.js"></script>
@@ -250,8 +274,8 @@ const checklist = `# Сборка страниц Tilda · MLM Academy
 2. Скрыть стандартные header/footer Tilda на этой странице
 3. T123: \`01-css.html\`
 4. T123: все \`02-data-*.html\` по порядку
-5. T123: \`03-domain.html\` (и части, если есть)
-6. T123: \`04-ui.html\` (и части, если есть)
+5. T123: все \`03-domain-*.html\` по порядку
+6. T123: все \`04-ui-*.html\` по порядку
 7. T123: \`mounts/<id>.html\` этой страницы
 8. Отступы блока = 0
 

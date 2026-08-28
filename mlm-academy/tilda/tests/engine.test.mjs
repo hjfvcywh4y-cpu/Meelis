@@ -91,6 +91,66 @@ describe('поиск', () => {
     const found = MLMA.filterTracks(tracks, { query: 'ПАУЗУ' });
     assert.equal(found.length, 1);
   });
+
+  it('поднимает title выше описания', () => {
+    const tracks = [
+      MLMA.toPublicTrack(sampleTrack({ trackId: 'A3-008', title: 'Другое', situation: 'первый диалог уже был', outcome: 'заметка' })),
+      MLMA.toPublicTrack(sampleTrack({ trackId: 'A3-002', title: 'Первый диалог', situation: 'Нужно начать разговор', outcome: 'Сообщение' })),
+    ];
+    const found = MLMA.filterTracks(tracks, { query: 'первый диалог' });
+    assert.equal(found[0].trackId, 'A3-002');
+  });
+
+  it('понимает синонимы «боюсь навязываться»', () => {
+    const tracks = [MLMA.toPublicTrack(sampleTrack({ sectionId: 'A1', trackId: 'A1-001', title: 'Этика', situation: 'Мне неловко предлагать продукт: кажется, что я навязываюсь', outcome: 'Позиция' }))];
+    const found = MLMA.filterTracks(tracks, { query: 'боюсь навязываться' });
+    assert.equal(found.length, 1);
+  });
+
+  it('не выдаёт случайные карточки на стоп-словах', () => {
+    const tracks = [MLMA.toPublicTrack(sampleTrack())];
+    const found = MLMA.filterTracks(tracks, { query: 'а что мне' });
+    assert.equal(found.length, 0);
+    assert.equal(MLMA.analyzeQuery('а что мне').kind, 'need_more');
+  });
+
+  it('фильтрует этап и ищет одновременно', () => {
+    const tracks = [
+      MLMA.toPublicTrack(sampleTrack({ sectionId: 'A3', trackId: 'A3-002', title: 'Написать сообщение', situation: 'Знаю, кому написать' })),
+      MLMA.toPublicTrack(sampleTrack({ sectionId: 'A1', trackId: 'A1-001', title: 'Написать план', situation: 'Хочу начать' })),
+    ];
+    const found = MLMA.filterTracks(tracks, { query: 'написать', sectionId: 'A3' });
+    assert.equal(found.length, 1);
+    assert.equal(found[0].trackId, 'A3-002');
+  });
+});
+
+describe('URL state', () => {
+  it('сериализует только активные параметры', () => {
+    const qs = MLMA.serializeLibraryState({ q: 'кому написать', stage: 'A3', type: 'track', goal: 'first-dialogue' });
+    assert.equal(qs.includes('q='), true);
+    assert.equal(qs.includes('stage=a3'), true);
+    assert.equal(qs.includes('goal=first-dialogue'), true);
+    const parsed = MLMA.parseLibraryState('?' + qs);
+    assert.equal(parsed.stage, 'A3');
+    assert.equal(parsed.goal, 'first-dialogue');
+    assert.equal(parsed.q, 'кому написать');
+  });
+
+  it('раскрывает preset в фильтры', () => {
+    const parsed = MLMA.parseLibraryState('?preset=new-partner');
+    assert.equal(parsed.stage, 'A1');
+    assert.equal(parsed.preset, 'new-partner');
+  });
+});
+
+describe('видимость каталога', () => {
+  it('показывает planned-треки в библиотеке и открывает карточку', () => {
+    const track = MLMA.toPublicTrack(sampleTrack());
+    assert.equal(MLMA.isListed(track, false), true);
+    assert.equal(MLMA.isReachable(track, false), true);
+    assert.equal(MLMA.getById([track], 'A3-002', false).title, track.title);
+  });
 });
 
 describe('следующий шаг', () => {

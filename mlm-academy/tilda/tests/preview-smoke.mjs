@@ -24,19 +24,24 @@ async function main() {
   }
 
   await page.fill('#mlma-search', 'первое сообщение');
-  await page.waitForTimeout(50);
+  await page.waitForTimeout(280);
   const filtered = await page.locator('.mlma-track-card').count();
   if (filtered < 1 || filtered >= 112) throw new Error('search count: ' + filtered);
+
+  await page.goto(BASE + '/library?stage=a3&q=кому+написать', { waitUntil: 'networkidle' });
+  await page.waitForSelector('.mlma-track-card');
+  const combo = await page.locator('.mlma-track-card').count();
+  if (combo < 1 || combo >= 112) throw new Error('combo count: ' + combo);
 
   await page.goto(BASE + '/track?id=a3-002', { waitUntil: 'networkidle' });
   await page.waitForSelector('.mlma-blueprint');
   const startBtns = await page.getByRole('link', { name: 'Начать трек' }).count();
   if (startBtns !== 0) throw new Error('unexpected start button');
   const blueprint = await page.locator('.mlma-blueprint').innerText();
-  if (!blueprint.includes('Содержание трека ещё не добавлено')) throw new Error('missing blueprint');
+  if (!blueprint.includes('Материал в разработке')) throw new Error('missing blueprint');
 
-  await page.getByRole('button', { name: 'Сохранить в мой маршрут' }).click();
-  await page.waitForSelector('text=Убрать из моего маршрута');
+  await page.getByRole('button', { name: /Сохранить в этом браузере/ }).click();
+  await page.waitForSelector('text=Убрать из маршрута');
 
   await page.goto(BASE + '/start', { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: /Я знаю, кому написать/ }).click();

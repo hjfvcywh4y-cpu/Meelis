@@ -1,4 +1,4 @@
-<!-- Блок T123: доменная логика Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: доменная логика 1/2 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
 /**
  * Доменная логика MLM Academy для Tilda.
@@ -39,14 +39,14 @@
 
   var SECTION_IDS = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6'];
   var TRACK_ID_RE = /^A[1-6]-\d{3}$/;
-  var ACCENT_INK = { A1: '#ffffff', A2: '#111111', A3: '#111111', A4: '#111111', A5: '#111111', A6: '#111111' };
+  var ACCENT_INK = { A1: '#f4f0e8', A2: '#f4f0e8', A3: '#f4f0e8', A4: '#1c1914', A5: '#f4f0e8', A6: '#f4f0e8' };
   var SECTION_COLORS = {
-    A1: '#3157ff',
-    A2: '#d5ff43',
-    A3: '#ff6b35',
-    A4: '#64d8ff',
-    A5: '#ff5364',
-    A6: '#b892ff',
+    A1: '#8b5342',
+    A2: '#4d5c4a',
+    A3: '#2c2a26',
+    A4: '#c4a574',
+    A5: '#6d4248',
+    A6: '#3e4a56',
   };
 
   var PROFILE_KEY = 'mlma.profile.v1';
@@ -189,7 +189,9 @@
     if (availability === 'available') {
       return {
         availability: availability,
+        contentStatus: 'available',
         label: 'Доступен',
+        cta: 'Начать трек',
         tone: 'positive',
         canStart: true,
         showProgress: true,
@@ -199,17 +201,21 @@
     if (availability === 'published_empty') {
       return {
         availability: availability,
-        label: 'Открыт, содержание готовится',
+        contentStatus: 'in-progress',
+        label: 'Готовим',
+        cta: 'Открыть описание',
         tone: 'waiting',
         canStart: false,
         showProgress: false,
-        explanation: 'Карточка опубликована, но шаги ещё не добавлены. Кнопка действия появится вместе с ними.',
+        explanation: 'Описание уже можно открыть. Шаги и практика появятся здесь, как только материал будет готов.',
       };
     }
     if (availability === 'archived') {
       return {
         availability: availability,
+        contentStatus: 'archived',
         label: 'Снят с публикации',
+        cta: 'Открыть описание',
         tone: 'muted',
         canStart: false,
         showProgress: false,
@@ -219,7 +225,9 @@
     if (availability === 'locked') {
       return {
         availability: availability,
-        label: 'Нет доступа',
+        contentStatus: 'locked',
+        label: 'Нужен доступ',
+        cta: 'Как получить доступ',
         tone: 'muted',
         canStart: false,
         showProgress: false,
@@ -228,11 +236,13 @@
     }
     return {
       availability: 'preparing',
-      label: 'Готовится',
+      contentStatus: 'coming-soon',
+      label: 'Скоро',
+      cta: 'Открыть описание',
       tone: 'waiting',
       canStart: false,
       showProgress: false,
-      explanation: 'Структура трека готова. Содержание находится в производстве.',
+      explanation: 'Материал в разработке. Описание, для кого он и какой результат даёт — уже можно посмотреть.',
     };
   }
 
@@ -442,15 +452,18 @@
   }
 
   function isListed(track, preview) {
-    if (track.visibility !== 'catalog') return false;
-    if (preview) return track.publicationStatus !== 'archived';
-    return track.publicationStatus === 'published';
+    if (!track) return false;
+    if (track.visibility === 'hidden') return false;
+    if (track.publicationStatus === 'archived') return !!preview;
+    if (track.publicationStatus === 'unpublished') return !!preview;
+    return track.visibility === 'catalog' || !!preview;
   }
 
   function isReachable(track, preview) {
+    if (!track) return false;
     if (track.visibility === 'hidden') return false;
-    if (preview) return true;
-    return track.publicationStatus === 'published';
+    if (track.publicationStatus === 'archived') return !!preview;
+    return true;
   }
 
   function listVisible(tracks, preview) {
@@ -506,8 +519,8 @@
 
   function accentStyle(sectionId) {
     return {
-      '--mlma-accent': SECTION_COLORS[sectionId] || '#d5ff43',
-      '--mlma-accent-ink': ACCENT_INK[sectionId] || '#111111',
+      '--mlma-accent': SECTION_COLORS[sectionId] || '#8b5342',
+      '--mlma-accent-ink': ACCENT_INK[sectionId] || '#f4f0e8',
     };
   }
 
@@ -643,7 +656,18 @@
     sanitizeProfile: sanitizeProfile,
     isPreviewHost: isPreviewHost,
     clone: clone,
+    membersLoginUrl: membersLoginUrl,
+    siteHomeUrl: siteHomeUrl,
   };
+
+  function membersLoginUrl(returnPath) {
+    var path = String(returnPath || '/my').replace(/^\//, '');
+    return '/members/login?redirecturl=' + encodeURIComponent(path);
+  }
+
+  function siteHomeUrl() {
+    return '/';
+  }
 
   root.MLMA = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

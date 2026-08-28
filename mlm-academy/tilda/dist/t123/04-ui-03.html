@@ -1,0 +1,295 @@
+<!-- Блок T123: рендер оболочки 3/3 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<script>
+(function (root) {
+  'use strict';
+  var D = root.MLMA;
+  if (!D || !D._ui || !D._ui.pageBody) return;
+  var header = D._ui.header;
+  var footer = D._ui.footer;
+  var mobileNav = D._ui.mobileNav;
+  var catalogBrowserHtml = D._ui.catalogBrowserHtml;
+  var readCatalog = D._ui.readCatalog;
+  var currentPage = D._ui.currentPage;
+  var queryParam = D._ui.queryParam;
+  var pageBody = D._ui.pageBody;
+
+  function bindLibrary(state, rootEl) {
+    var target = rootEl.querySelector('#mlma-catalog');
+    if (!target) return;
+    var extra = {};
+    if (state.page === 'section') extra.stage = state.root.getAttribute('data-mlma-section') || '';
+    var filters = D.parseLibraryState(window.location.search, extra);
+    var timer = null;
+    var drawerOpen = false;
+    var lastKind = '';
+
+    function syncUrl(mode) {
+      var qs = D.serializeLibraryState(filters);
+      var url = window.location.pathname + (qs ? '?' + qs : '');
+      if (mode === 'push') history.pushState({ mlmaLib: 1 }, '', url);
+      else history.replaceState({ mlmaLib: 1 }, '', url);
+    }
+
+    function setDrawer(open) {
+      drawerOpen = open;
+      var drawer = target.querySelector('#mlma-drawer');
+      var back = target.querySelector('#mlma-drawer-backdrop');
+      if (drawer) drawer.hidden = !open;
+      if (back) back.hidden = !open;
+      document.documentElement.classList.toggle('mlma-lock', !!open);
+    }
+
+    function emitSearch() {
+      var result = D.searchCatalog(state.tracks, filters);
+      lastKind = result.kind;
+      if (result.kind === 'zero' || result.kind === 'need_more') {
+        D.trackEvent('library_zero_results', {
+          query: filters.q || '',
+          filters: D.serializeLibraryState(filters),
+          source: 'library',
+        });
+      } else if (filters.q) {
+        D.trackEvent('library_search', { query: filters.q, filters: D.serializeLibraryState(filters), source: 'library' });
+      } else {
+        D.trackEvent('library_filter_change', { filters: D.serializeLibraryState(filters), source: 'library' });
+      }
+    }
+
+    function bindChrome() {
+      var search = target.querySelector('#mlma-search');
+      if (search) {
+        search.addEventListener('input', function () {
+          var value = search.value;
+          window.clearTimeout(timer);
+          timer = window.setTimeout(function () {
+            filters.q = value;
+            filters.preset = null;
+            paint({ keepFocus: true, url: 'replace' });
+          }, 200);
+        });
+      }
+      var form = target.querySelector('#mlma-lib-form');
+      if (form) {
+        form.addEventListener('submit', function (event) {
+          event.preventDefault();
+          var field = target.querySelector('#mlma-search');
+          filters.q = field ? field.value : '';
+          paint({ url: 'push' });
+        });
+      }
+      var format = target.querySelector('#mlma-format');
+      if (format) {
+        format.addEventListener('change', function () {
+          filters.format = format.value || null;
+          filters.preset = null;
+          paint({ url: 'push' });
+        });
+      }
+      var exp = target.querySelector('#mlma-exp');
+      if (exp) {
+        exp.addEventListener('change', function () {
+          filters.experience = exp.value || null;
+          filters.preset = null;
+          paint({ url: 'push' });
+        });
+      }
+      target.querySelectorAll('[data-mlma-stage]').forEach(function (el) {
+        el.addEventListener('click', function () {
+          filters.stage = D.normalizeSectionId(el.getAttribute('data-mlma-stage') || '') || null;
+          filters.preset = null;
+          paint({ url: 'push' });
+        });
+      });
+      target.querySelectorAll('[data-mlma-goal]').forEach(function (el) {
+        el.addEventListener('click', function () {
+          var id = el.getAttribute('data-mlma-goal') || '';
+          filters.goal = filters.goal === id ? null : id;
+          filters.preset = null;
+          paint({ url: 'push' });
+        });
+      });
+      target.querySelectorAll('[data-mlma-clear]').forEach(function (el) {
+        el.addEventListener('click', function () {
+          var key = el.getAttribute('data-mlma-clear');
+          if (key === 'q') filters.q = '';
+          else filters[key] = null;
+          filters.preset = null;
+          paint({ url: 'push' });
+        });
+      });
+      target.querySelectorAll('[data-mlma-reset]').forEach(function (el) {
+        el.addEventListener('click', function () {
+          filters = D.emptyLibraryState();
+          paint({ url: 'push' });
+        });
+      });
+      var openBtn = target.querySelector('#mlma-open-filters');
+      if (openBtn) {
+        openBtn.addEventListener('click', function () {
+          setDrawer(true);
+        });
+      }
+      target.querySelectorAll('[data-mlma-drawer-close]').forEach(function (el) {
+        el.addEventListener('click', function () {
+          setDrawer(false);
+        });
+      });
+      var back = target.querySelector('#mlma-drawer-backdrop');
+      if (back) {
+        back.addEventListener('click', function () {
+          setDrawer(false);
+        });
+      }
+    }
+
+    function paint(opts) {
+      opts = opts || {};
+      var keep = opts.keepFocus;
+      var selection = null;
+      var searchBefore = target.querySelector('#mlma-search');
+      if (keep && searchBefore) selection = searchBefore.selectionStart;
+      target.innerHTML = catalogBrowserHtml(state, filters);
+      bindChrome();
+      if (drawerOpen) setDrawer(true);
+      var search = target.querySelector('#mlma-search');
+      if (keep && search) {
+        search.focus();
+        try {
+          var pos = selection == null ? search.value.length : selection;
+          search.setSelectionRange(pos, pos);
+        } catch (err) {
+          /* ignore */
+        }
+      }
+      if (opts.url === 'push') syncUrl('push');
+      else if (opts.url === 'replace') syncUrl('replace');
+      emitSearch();
+    }
+
+    window.addEventListener('popstate', function () {
+      filters = D.parseLibraryState(window.location.search, extra);
+      paint();
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && drawerOpen) setDrawer(false);
+    });
+    paint();
+  }
+
+  function bind(state, rootEl) {
+    rootEl.querySelectorAll('[data-mlma-choose]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = D.normalizeSectionId(el.getAttribute('data-mlma-choose') || '');
+        if (!id) return;
+        state.profile = D.saveProfile({ selectedSectionId: id });
+        mount(rootEl);
+      });
+    });
+    rootEl.querySelectorAll('[data-mlma-save]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = el.getAttribute('data-mlma-save');
+        if (!id) return;
+        state.profile = D.toggleSavedTrack(id);
+        mount(rootEl);
+      });
+    });
+    var form = rootEl.querySelector('#mlma-profile-form');
+    if (form) {
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var goal = (form.querySelector('#mlma-goal') || {}).value || '';
+        var section = (form.querySelector('#mlma-section') || {}).value || '';
+        var msg = form.querySelector('#mlma-profile-msg');
+        if (goal.length > D.GOAL_MAX) {
+          if (msg) msg.textContent = 'Задача длиннее ' + D.GOAL_MAX + ' символов. Сократите её.';
+          return;
+        }
+        var patch = { currentGoal: goal.trim() };
+        if (section) patch.selectedSectionId = section;
+        else patch.selectedSectionId = null;
+        state.profile = D.saveProfile(patch);
+        if (msg) msg.textContent = 'Профиль сохранён в этом браузере.';
+      });
+    }
+    rootEl.querySelectorAll('[data-mlma-reset-profile]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        state.profile = D.resetProfile();
+        mount(rootEl);
+      });
+    });
+    var searchBtn = rootEl.querySelector('#mlma-search-btn');
+    if (searchBtn) searchBtn.style.display = 'inline-flex';
+    rootEl.querySelectorAll('[data-mlma-preset]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        D.trackEvent('academy_preset_click', { itemId: el.getAttribute('data-mlma-preset') || '', source: 'home' });
+      });
+    });
+    var homeForm = rootEl.querySelector('form[action="/library"]');
+    if (homeForm && state.page === 'home') {
+      homeForm.addEventListener('submit', function () {
+        var field = homeForm.querySelector('#mlma-home-q');
+        D.trackEvent('academy_search', { query: field ? field.value : '', source: 'home' });
+      });
+    }
+    bindLibrary(state, rootEl);
+  }
+
+  function mount(existingRoot) {
+    if (typeof document === 'undefined') return;
+    var rootEl = existingRoot || document.querySelector('.mlma[data-mlma-page]');
+    if (!rootEl) return;
+    if (!existingRoot && rootEl.dataset.initialized === 'true') return;
+    rootEl.dataset.initialized = 'true';
+    var catalog = readCatalog();
+    var preview = currentPage(rootEl) === 'preview' || D.isPreviewHost(window.location.hostname);
+    var R = D.routes(catalog.config);
+    var sectionById = {};
+    for (var i = 0; i < catalog.sections.length; i += 1) {
+      sectionById[catalog.sections[i].sectionId] = catalog.sections[i];
+    }
+    var state = {
+      root: rootEl,
+      page: currentPage(rootEl),
+      preview: preview,
+      allTracks: catalog.tracks,
+      tracks: D.listVisible(catalog.tracks, preview),
+      sections: catalog.sections,
+      sectionById: sectionById,
+      index: D.indexById(catalog.tracks, true),
+      rules: catalog.rules,
+      pilot: catalog.pilot,
+      config: catalog.config,
+      profile: D.getProfile(),
+      R: R,
+    };
+    rootEl.innerHTML =
+      header(state) +
+      '<main id="mlma-main">' +
+      pageBody(state) +
+      '</main>' +
+      footer(state) +
+      mobileNav(state);
+    bind(state, rootEl);
+    if (state.page === 'home') D.trackEvent('academy_home_open', { source: 'home' });
+    if (state.page === 'library' || state.page === 'preview') D.trackEvent('library_open', { source: state.page });
+    if (state.page === 'track') {
+      var opened = D.normalizeTrackId(queryParam('id'));
+      var openedTrack = opened ? D.getById(state.allTracks, opened, true) : null;
+      var canStart = openedTrack ? D.getTrackStatusView(openedTrack).canStart : false;
+      D.trackEvent(canStart ? 'track_open' : 'track_preview_open', {
+        itemId: opened || '',
+        status: openedTrack ? D.getTrackStatusView(openedTrack).contentStatus : 'missing',
+        source: 'track',
+      });
+    }
+  }
+
+  D.mount = mount;
+  D.readCatalog = readCatalog;
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { mount(); });
+    else mount();
+  }
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+
