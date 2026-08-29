@@ -33,6 +33,8 @@ import {
   allowedOrigin,
   identityFromBindBody,
   userKeyFromIdentity,
+  emailAliasKey,
+  mergeAccountRows,
   normalizeTrackId,
   nowIso,
   newSessionId,
@@ -229,6 +231,13 @@ export default {
       const userKey = userKeyFromIdentity(identity);
       if (!userKey) return json({ ok: false, reason: 'identity_required' }, 400, origin);
       let row = await loadAccount(env, userKey);
+      const aliasKey = emailAliasKey(identity);
+      if (aliasKey && aliasKey !== userKey) {
+        const alias = await loadAccount(env, aliasKey);
+        if (alias) {
+          row = mergeAccountRows(row || emptyAccount(identity), alias);
+        }
+      }
       if (!row) row = emptyAccount(identity);
       else applyIdentity(row, identity);
       if (row.identityLevel !== 'verified') {
@@ -237,6 +246,9 @@ export default {
       }
       row.sessionSid = newSessionId();
       await saveAccount(env, userKey, row);
+      if (aliasKey && aliasKey !== userKey) {
+        await saveAccount(env, aliasKey, row);
+      }
       const exp = Math.floor(Date.now() / 1000) + SESSION_TTL_SEC;
       const token = await signSession(env.MLMA_SESSION_SECRET, userKey, exp, { sid: row.sessionSid });
       const pub = publicAccount(row);

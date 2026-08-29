@@ -67,6 +67,25 @@ describe('Account API Worker', () => {
     assert.equal(anon.status, 401);
   });
 
+  it('склеивает маршрут email-ключа с maId при повторном bind', async () => {
+    resetRateLimitForTests();
+    const env = memoryEnv();
+    const emailFirst = await call(env, '/api/session/bind', { email: 'merge@b.c' });
+    assert.equal(emailFirst.status, 200, JSON.stringify(emailFirst.data));
+    const cookieEmail = sid(emailFirst.cookie);
+    assert.ok(cookieEmail, emailFirst.cookie);
+    const afterSave = await call(env, '/api/account/route/save', { trackId: 'A1-010' }, cookieEmail);
+    assert.equal(afterSave.status, 200, JSON.stringify(afterSave.data));
+    assert.deepEqual(afterSave.data.account.savedTrackIds, ['A1-010']);
+    assert.ok(env._store.has('user:em:merge@b.c'));
+    const later = await call(env, '/api/session/bind', { maId: '61060949', email: 'merge@b.c' });
+    assert.ok(env._store.has('user:ma:61060949'));
+    const cookieMa = sid(later.cookie);
+    const got = await call(env, '/api/account/get', {}, cookieMa);
+    assert.deepEqual(got.data.account.savedTrackIds, ['A1-010']);
+    assert.equal(got.data.identityLevel, 'tilda_unverified');
+  });
+
   it('мигрирует localStorage без потери при ошибке каталога', async () => {
     resetRateLimitForTests();
     const env = memoryEnv();

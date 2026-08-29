@@ -51,6 +51,24 @@ export function userKeyFromIdentity(identity) {
   return '';
 }
 
+export function emailAliasKey(identity) {
+  const email = normalizeEmail(identity && identity.email);
+  if (email && email.includes('@')) return 'em:' + email;
+  return '';
+}
+
+export function mergeAccountRows(primary, alias) {
+  if (!alias) return primary;
+  if (!primary) return alias;
+  const merged = mergeTrackIds(primary.savedTrackIds, alias.savedTrackIds);
+  primary.savedTrackIds = merged.trackIds;
+  primary.route = { trackIds: merged.trackIds };
+  if (!primary.profile || !primary.profile.displayName) {
+    primary.profile = Object.assign({}, alias.profile || {}, primary.profile || {});
+  }
+  return primary;
+}
+
 export function isVerifiedIdentity(level) {
   return level === IDENTITY_VERIFIED;
 }
@@ -237,11 +255,15 @@ function macEqual(expected, actual) {
   return diff === 0;
 }
 
+function tokenPart(value) {
+  return encodeURIComponent(String(value)).replace(/\./g, '%2E');
+}
+
 export async function signSession(secret, userKey, exp, extra = {}) {
   const sid = extra.sid || newSessionId();
   const payload = sid + '.' + userKey + '.' + exp;
   const mac = await hmacHex(secret, payload);
-  return 'v2.' + encodeURIComponent(sid) + '.' + encodeURIComponent(userKey) + '.' + exp + '.' + mac;
+  return 'v2.' + tokenPart(sid) + '.' + tokenPart(userKey) + '.' + exp + '.' + mac;
 }
 
 export async function verifySession(secret, token) {
