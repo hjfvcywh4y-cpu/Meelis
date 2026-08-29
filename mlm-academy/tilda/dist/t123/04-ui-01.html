@@ -73,8 +73,27 @@
   }
 
   function isActivePath(pathname, href) {
-    var clean = href.split('?')[0];
+    var parts = href.split('?');
+    var clean = parts[0];
+    var hrefTab = '';
+    try {
+      hrefTab = new URLSearchParams(parts[1] || '').get('tab') || '';
+    } catch (err) {
+      hrefTab = '';
+    }
     if (clean === '/academy') return pathname === '/academy' || pathname === '/';
+    if (clean === '/library') return pathname === '/library' || pathname.indexOf('/library/') === 0;
+    if (clean === '/my' && !hrefTab) return pathname === '/my';
+    if (clean === '/my/route') {
+      var currentTab = '';
+      try {
+        currentTab = new URLSearchParams(window.location.search).get('tab') || '';
+      } catch (err2) {
+        currentTab = '';
+      }
+      if (hrefTab) return pathname === '/my/route' && currentTab === hrefTab;
+      return pathname === '/my/route' && !currentTab;
+    }
     return pathname === clean || pathname.indexOf(clean + '/') === 0;
   }
 
@@ -139,6 +158,37 @@
     return state.account || { loggedIn: false };
   }
 
+  function profileMenu(state) {
+    var account = accountOf(state);
+    var initial = ((account.name || account.email || 'M').trim().charAt(0) || 'M').toUpperCase();
+    var name = account.name || account.email || 'Кабинет';
+    if (account.loggedIn) {
+      return (
+        '<div class="mlma-account">' +
+        '<a class="mlma-avatar" href="' +
+        esc(state.R.my()) +
+        '" id="mlma-login-btn" aria-label="Личный кабинет">' +
+        esc(initial) +
+        '</a>' +
+        '<details class="mlma-account-menu">' +
+        '<summary class="mlma-account-name">' +
+        esc(name) +
+        '</summary>' +
+        '<div class="mlma-account-drop">' +
+        '<a href="' + esc(state.R.my()) + '">Кабинет</a>' +
+        '<a href="' + esc(state.R.profile()) + '">Профиль</a>' +
+        '<a href="' + esc(state.R.access()) + '">Доступ</a>' +
+        '<a href="/members/logout">Выход</a>' +
+        '</div></details></div>'
+      );
+    }
+    return (
+      '<a class="mlma-avatar mlma-avatar-guest" href="' +
+      esc(state.R.my()) +
+      '" id="mlma-login-btn" aria-label="Войти в кабинет">Вход</a>'
+    );
+  }
+
   function btn(href, label, variant, extraClass) {
     var cls = 'mlma-btn' + (variant ? ' mlma-btn-' + variant : '') + (extraClass ? ' ' + extraClass : '');
     return '<a class="' + cls + '" href="' + esc(href) + '">' + esc(label) + '</a>';
@@ -197,9 +247,7 @@
       '<a class="mlma-btn mlma-btn-small mlma-btn-ghost" href="' +
       esc(R.library()) +
       '" id="mlma-search-btn">Поиск</a>' +
-      (accountOf(state).loggedIn
-        ? '<a class="mlma-btn mlma-btn-small mlma-btn-ghost" href="' + esc(R.my()) + '" id="mlma-login-btn">Кабинет</a>'
-        : '<a class="mlma-btn mlma-btn-small mlma-btn-ghost" href="' + esc(D.membersLoginUrl(pathName())) + '" id="mlma-login-btn">Войти</a>') +
+      profileMenu(state) +
       '<a class="mlma-btn mlma-btn-small mlma-btn-primary" href="' +
       esc(R.start()) +
       '">Найти свой шаг</a></div></div>' +
@@ -236,12 +284,22 @@
   function mobileNav(state) {
     var R = state.R;
     var path = pathName();
-    var items = [
-      { href: R.home(), label: 'Academy' },
-      { href: R.library(), label: 'Библиотека' },
-      { href: R.start(), label: 'Старт' },
-      { href: accountOf(state).loggedIn ? R.my() : D.membersLoginUrl(path), label: accountOf(state).loggedIn ? 'Кабинет' : 'Войти' },
-    ];
+    var items;
+    if (isCabinetPage(state.page) || (state.page === 'access' && accountOf(state).loggedIn)) {
+      items = [
+        { href: R.my(), label: 'Главная' },
+        { href: R.myRoute(), label: 'Маршрут' },
+        { href: R.myTracks(), label: 'Треки' },
+        { href: R.profile(), label: 'Ещё' },
+      ];
+    } else {
+      items = [
+        { href: R.home(), label: 'Academy' },
+        { href: R.library(), label: 'Библиотека' },
+        { href: R.start(), label: 'Старт' },
+        { href: R.my(), label: accountOf(state).loggedIn ? 'Кабинет' : 'Войти' },
+      ];
+    }
     var html = '<nav class="mlma-mobile" aria-label="Мобильная навигация">';
     for (var i = 0; i < items.length; i += 1) {
       html +=

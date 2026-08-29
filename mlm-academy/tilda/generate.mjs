@@ -274,6 +274,7 @@ const FAVICON_SVG =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#C45F42"/><rect x="7" y="7" width="18" height="18" rx="3" fill="none" stroke="#1c1914" stroke-width="2"/></svg>',
   );
 const RERANK_PUBLIC_URL = process.env.MLMA_RERANK_PUBLIC_URL || 'https://mlma-search.mlmacademy-search.workers.dev/api/rerank';
+const ACCOUNT_PUBLIC_URL = process.env.MLMA_API_PUBLIC_URL || 'https://mlma-account.mlmacademy-search.workers.dev/api';
 
 function robotsForPage(page) {
   if (page.members === 'member' || page.members === 'editor') return 'noindex, nofollow';
@@ -362,6 +363,10 @@ function seoHead(page, opts = {}) {
   const rerankScript = rerankUrl
     ? `<script>window.MLMA_RERANK_URL = ${JSON.stringify(rerankUrl)};</script>`
     : '<!-- window.MLMA_RERANK_URL задаётся после деплоя search-proxy. Ключ модели в Tilda не класть. -->';
+  const accountUrl = opts.preview ? '/api' : ACCOUNT_PUBLIC_URL;
+  const accountScript = accountUrl
+    ? `<script>window.MLMA_API_URL = ${JSON.stringify(accountUrl)};</script>`
+    : '<!-- window.MLMA_API_URL задаётся после деплоя account-proxy. Секреты в Tilda не класть. -->';
   return `<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Onest:wght@400;700;800&display=swap" rel="stylesheet">
@@ -377,6 +382,7 @@ function seoHead(page, opts = {}) {
 <script>document.documentElement.lang = 'ru';</script>
 ${jsonLdForPage(page)}
 ${rerankScript}
+${accountScript}
 <style>
   html, body, #allrecords, .t-records, .t-body { background: #f4f0e8 !important; }
   body { margin: 0 !important; }
@@ -398,6 +404,9 @@ for (const page of pages) {
 const cssBlock = `<style>\n${css.trim()}\n</style>\n`;
 if (cssBlock.length > T123_LIMIT) throw new Error('CSS больше лимита T123: ' + cssBlock.length);
 write(path.join(DIST, 't123/01-css.html'), t123Wrap(cssBlock, 'Блок T123 №1: стили .mlma'));
+const membersCss = fs.readFileSync(path.join(SRC, 'members-bridge.css'), 'utf8');
+write(path.join(DIST, 't123/members-bridge.css'), membersCss);
+write(path.join(DIST, 'shared/members-bridge.css'), membersCss);
 
 const dataChunks = splitText(json, 40000);
 dataChunks.forEach((chunk, index) => {

@@ -33,7 +33,7 @@
       { href: R.myResults(), label: 'Результаты', id: 'results' },
       { href: R.mySaved ? R.mySaved() : '/my/route?tab=saved', label: 'Сохранённое', id: 'saved' },
       { href: R.access(), label: 'Покупки и доступ', id: 'access' },
-      { href: R.profile(), label: 'Профиль и настройки', id: 'profile' },
+      { href: R.profile(), label: 'Профиль', id: 'profile' },
     ];
     var tab = '';
     try {
@@ -202,15 +202,23 @@
           '" aria-pressed="' +
           (saved ? 'true' : 'false') +
           '">' +
-          (saved ? 'Убрать из сохранённого' : 'Сохранить в маршрут') +
+          (saved ? 'Убрать из маршрута' : 'Сохранить в маршрут') +
           '</button>'
-        : '<a class="mlma-btn mlma-btn-primary mlma-btn-block" style="margin-top:12px" href="' +
-          esc(D.membersLoginUrl(pathName())) +
-          '">Войти, чтобы сохранить</a>') +
-      '<p class="mlma-muted" style="margin-top:12px;font-size:13px;line-height:1.45">' +
+        : '<button type="button" class="mlma-btn mlma-btn-primary mlma-btn-block" style="margin-top:12px" data-mlma-save-guest="' +
+          esc(track.trackId) +
+          '">Сохранить в маршрут</button>') +
+      '<p class="mlma-muted" id="mlma-save-hint" style="margin-top:12px;font-size:13px;line-height:1.45">' +
       (state.account && state.account.loggedIn
-        ? (state.account.storageMode === 'server' ? 'Сохранение привязано к кабинету.' : 'Пока сохраняется в этом браузере. После подключения сервера маршрут будет следовать за входом.')
-        : 'Описание можно читать без входа. Чтобы сохранить маршрут, создайте бесплатный кабинет.') +
+        ? (state.account.storageMode === 'server'
+          ? 'Трек сохраняется в кабинете и доступен с другого устройства.'
+          : state.account.storageMode === 'restoring'
+            ? 'Данные восстанавливаются…'
+            : state.account.storageMode === 'offline'
+              ? 'Нет соединения. Пока сохраняем в этом браузере.'
+              : state.account.storageMode === 'error'
+                ? 'Сервер недоступен. Локальная копия сохранена в этом браузере.'
+                : 'Пока сохраняется в этом браузере.')
+        : 'Описание можно читать без входа. После регистрации трек сразу окажется в маршруте.') +
       '</p></div>' +
       '<section class="mlma-card mlma-pad"><span class="mlma-meta">Паспорт</span><dl style="margin-top:12px">' +
       '<div class="mlma-row"><dt class="mlma-meta mlma-muted">Раздел</dt><dd style="margin-top:4px;font-weight:700">' +

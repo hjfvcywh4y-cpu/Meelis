@@ -167,3 +167,39 @@ create policy saved_self on saved_tracks for all using (user_id in (select id fr
 create policy routes_self on user_routes for all using (user_id in (select id from users where email = auth.jwt()->>'email'));
 create policy runs_self on track_runs for all using (user_id in (select id from users where email = auth.jwt()->>'email'));
 create policy artifacts_self on artifacts for select using (user_id in (select id from users where email = auth.jwt()->>'email'));
+
+-- identityLevel: tilda_unverified по умолчанию. verified ставит только service role
+-- после Supabase Auth / webhook. Клиентским bind это поле не повышается.
+alter table users add column if not exists auth_user_id uuid unique;
+alter table users add column if not exists identity_level text not null default 'tilda_unverified';
+alter table users add constraint users_identity_level_check
+  check (identity_level in ('tilda_unverified', 'verified'));
+
+alter table user_routes add column if not exists session_sid text;
+
+-- Предпочтительные политики по auth.uid() (после привязки auth_user_id).
+-- Старые политики по email остаются для поэтапного перехода.
+create policy users_auth_uid on users for select using (auth_user_id = auth.uid());
+create policy profiles_auth_uid on profiles for all using (
+  user_id in (select id from users where auth_user_id = auth.uid())
+);
+create policy entitlements_auth_uid on entitlements for select using (
+  user_id in (select id from users where auth_user_id = auth.uid() and identity_level = 'verified')
+);
+create policy saved_auth_uid on saved_tracks for all using (
+  user_id in (select id from users where auth_user_id = auth.uid())
+);
+create policy routes_auth_uid on user_routes for all using (
+  user_id in (select id from users where auth_user_id = auth.uid())
+);
+create policy runs_auth_uid on track_runs for all using (
+  user_id in (select id from users where auth_user_id = auth.uid())
+);
+create policy artifacts_auth_uid on artifacts for select using (
+  user_id in (select id from users where auth_user_id = auth.uid())
+);
+
+-- Платежи и права пишет только service role, не anon/authenticated клиент.
+revoke insert, update, delete on entitlements from anon, authenticated;
+revoke insert, update, delete on payments from anon, authenticated;
+revoke insert, update, delete on orders from anon, authenticated;

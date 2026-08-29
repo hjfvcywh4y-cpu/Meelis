@@ -1,41 +1,47 @@
-# Подключение Supabase к MLM Academy
+# Подключение хранилища кабинета MLM Academy
 
 Секреты не класть в Tilda, HEAD, клиентский JavaScript и git.
 
-## Переменные окружения (только сервер)
+## Что работает сейчас
+
+Живой контур этой итерации — Cloudflare Worker `account-proxy` + KV:
+
+- публичный URL: `https://mlma-account.mlmacademy-search.workers.dev/api`
+- cookie `mlma_sid` (HMAC, HttpOnly)
+- маршрут, профиль, миграция localStorage, аналитика
+
+SQL в `schema.sql` — контракт на случай Supabase. RLS: пользователь читает только свои строки.
+
+## Идентификация
+
+Документированный клиентский слой Tilda Members: `window.mauser`, `localStorage tilda_members_profile23906986`, cookie `ma_id` / `ma_email`.
+
+Tilda не даёт server-side verify member-token. Первый `POST /api/session/bind` принимает maId/email с Origin Академии и выдаёт свою cookie. Дальше чтение и запись идут только по cookie. Клиентский `userId` не авторизует.
+
+Это **не** защита оплаты. Сессия bind имеет `identityLevel: tilda_unverified`.
+Платные права требуют `identityLevel: verified` (Supabase Auth + webhook). См. `server/supabase-auth.md`.
+
+## Переменные (только сервер Worker)
+
+```
+MLMA_SESSION_SECRET=
+```
+
+Клиенту в HEAD:
+
+```html
+<script>window.MLMA_API_URL = "https://mlma-account.mlmacademy-search.workers.dev/api";</script>
+```
+
+Если понадобится Supabase:
 
 ```
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 MLMA_WEBHOOK_SECRET=
-MLMA_API_PUBLIC_URL=
 ```
-
-Клиенту в HEAD Tilda можно отдать только публичный URL API:
-
-```html
-<script>window.MLMA_API_URL = "https://<worker-or-edge>/api";</script>
-```
-
-`SUPABASE_SERVICE_ROLE_KEY` и `MLMA_WEBHOOK_SECRET` на сайт не попадают.
-
-## Шаги
-
-1. Создать проект Supabase.
-2. Выполнить `server/schema.sql`.
-3. Собрать Worker/Edge из `server/payment-webhook.js` и `server/account-api.js`.
-4. Задать секреты в окружении воркера, не в репозитории.
-5. Проверить, что анонимный GET HTML Академии не содержит `service_role` и webhook secret.
-6. После этого выставить `window.MLMA_API_URL`. До этого кабинет работает в `local_fallback`.
-
-## Что умеет заглушка без Supabase
-
-- Регистрация и вход — Tilda Members.
-- Профиль, сохранённые треки, тестовые заказы — `localStorage` `mlma.account.v1`.
-- Это запасной контур: при смене устройства данные профиля Академии не восстанавливаются, пока нет сервера.
-- Сессия Tilda (email/имя) восстанавливается, если пользователь снова входит.
 
 ## Интерфейс репозитория
 
-См. `tilda/src/storage.js`: `loadAccount`, `saveProfile`, `saveSavedTracks`, `saveEntitlements`, `saveOrder`, `savePayment`, `saveArtifact`, `saveRun`.
+См. `tilda/src/storage.js`: `loadAccount`, `saveTrackToRoute`, `removeTrackFromRoute`, `hydrateAccountFromServer`, `saveProfile`.

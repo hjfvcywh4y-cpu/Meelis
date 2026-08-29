@@ -1,0 +1,11 @@
+name = "mlma-account"
+main = "worker.js"
+compatibility_date = "2026-08-01"
+workers_dev = true
+account_id = "1097bdc74e5788fb297506389defcfea"
+
+# Секрет MLMA_SESSION_SECRET задаётся через wrangler secret, не в этом файле.
+
+[[kv_namespaces]]
+binding = "MLMA_ACCOUNT"
+id = "0b46cfe22b7d4f2ab1adb0af4f68d4a8"
