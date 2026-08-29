@@ -30,22 +30,27 @@ describe('SEO сборки', () => {
     assert.doesNotMatch(home, /"@type":"Course"/);
   });
 
-  it('robots.txt не блокирует академию и указывает HTTPS sitemap', () => {
+  it('robots.txt открывает академию и юридические документы, sitemap использует HTTPS', () => {
     const robots = fs.readFileSync(path.join(DIST, 'seo/robots.txt'), 'utf8');
     const sitemap = fs.readFileSync(path.join(DIST, 'seo/sitemap-academy.xml'), 'utf8');
     assert.match(robots, /Allow: \/pricing/);
     assert.match(robots, /Allow: \/payment-and-access/);
-    assert.match(robots, /Disallow: \/privacy/);
-    assert.match(robots, /Disallow: \/offer/);
+    assert.match(robots, /Allow: \/privacy/);
+    assert.match(robots, /Allow: \/consent/);
+    assert.match(robots, /Allow: \/offer/);
+    assert.match(robots, /Allow: \/requisites/);
     assert.match(sitemap, /https:\/\/mlmacademy.ru\/pricing/);
-    assert.doesNotMatch(sitemap, /\/privacy</);
-    assert.doesNotMatch(sitemap, /\/offer</);
-    assert.doesNotMatch(sitemap, /\/requisites</);
+    assert.match(sitemap, /\/privacy</);
+    assert.match(sitemap, /\/consent</);
+    assert.match(sitemap, /\/offer</);
+    assert.match(sitemap, /\/requisites</);
     const privacy = fs.readFileSync(path.join(DIST, 't123/heads/privacy.html'), 'utf8');
+    const consent = fs.readFileSync(path.join(DIST, 't123/heads/consent.html'), 'utf8');
     const offer = fs.readFileSync(path.join(DIST, 't123/heads/offer.html'), 'utf8');
     const pricing = fs.readFileSync(path.join(DIST, 't123/heads/pricing.html'), 'utf8');
-    assert.match(privacy, /name="robots" content="noindex, nofollow"/);
-    assert.match(offer, /name="robots" content="noindex, nofollow"/);
+    assert.match(privacy, /name="robots" content="index, follow"/);
+    assert.match(consent, /name="robots" content="index, follow"/);
+    assert.match(offer, /name="robots" content="index, follow"/);
     assert.match(pricing, /name="robots" content="index, follow"/);
     assert.match(robots, /Sitemap: https:\/\/mlmacademy.ru\/sitemap.xml/);
     assert.match(sitemap, /https:\/\/mlmacademy.ru\/library/);

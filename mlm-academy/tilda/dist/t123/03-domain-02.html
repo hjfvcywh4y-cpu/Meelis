@@ -1,4 +1,4 @@
-<!-- Блок T123: доменная логика 2/11 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: доменная логика 2/12 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
 /**
  * Состояния пользователя, права и CTA. Не содержит секретов и полного текста треков.
@@ -86,7 +86,40 @@
   }
 
   function membersLogoutUrl() {
-    return '/members/logout';
+    return '/members/login?exit=y';
+  }
+
+  function performMembersLogout(event) {
+    if (event && event.preventDefault) event.preventDefault();
+    try {
+      if (typeof root.tma__userbar__sendLogout === 'function') {
+        root.tma__userbar__sendLogout();
+        return;
+      }
+      if (typeof root.tma__sign__sendLogoutWihtRedirect === 'function') {
+        root.tma__sign__sendLogoutWihtRedirect();
+        return;
+      }
+    } catch (err) {
+      /* fall through to native Tilda URL */
+    }
+    try {
+      var project = '';
+      if (root.tildaMembers && root.tildaMembers.settingStyles && root.tildaMembers.settingStyles.projectid) {
+        project = String(root.tildaMembers.settingStyles.projectid);
+      } else {
+        var rec = root.document && root.document.querySelector('[data-tilda-project-id]');
+        project = rec ? rec.getAttribute('data-tilda-project-id') || '' : '';
+      }
+      if (project) {
+        root.localStorage.removeItem('tilda_members_profile' + project);
+        root.localStorage.removeItem('tilda_members_profile' + project + '_timestamp');
+      }
+      root.mauser = {};
+    } catch (err2) {
+      /* ignore */
+    }
+    root.location.replace('/members/login?exit=y');
   }
 
   function membersSignupUrl(returnPath) {
@@ -295,6 +328,7 @@
   api.TIME_BUDGET = TIME_BUDGET;
   api.readMembersSession = readMembersSession;
   api.membersLogoutUrl = membersLogoutUrl;
+  api.performMembersLogout = performMembersLogout;
   api.membersSignupUrl = membersSignupUrl;
   api.normalizeAccess = normalizeAccess;
   api.deriveSeoStatus = deriveSeoStatus;

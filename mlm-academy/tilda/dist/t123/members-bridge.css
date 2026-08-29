@@ -27,6 +27,28 @@ input[type="text"] {
   background: #fffdf8 !important;
 }
 
+.mlma-members-consent {
+  margin: 16px 0;
+  color: #1c1914;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: left;
+}
+.mlma-members-consent label {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+.mlma-members-consent input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  flex: 0 0 auto;
+}
+.mlma-members-consent a {
+  text-decoration: underline;
+}
+
 .mlma-members-brand {
   display: flex;
   align-items: center;

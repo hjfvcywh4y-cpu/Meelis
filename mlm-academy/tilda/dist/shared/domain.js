@@ -579,6 +579,9 @@
       privacy: function () {
         return '/privacy';
       },
+      consent: function () {
+        return '/consent';
+      },
       offer: function () {
         return '/offer';
       },
@@ -599,7 +602,7 @@
         return '/members/signup?redirecturl=' + encodeURIComponent(path);
       },
       logout: function () {
-        return '/members/logout';
+        return membersLogoutUrl();
       },
       previewCatalog: function () {
         return '/preview/catalog';
@@ -828,6 +831,7 @@
     normalizeAccess: normalizeAccess,
     deriveSeoStatus: deriveSeoStatus,
     membersLoginUrl: membersLoginUrl,
+    membersLogoutUrl: membersLogoutUrl,
     membersRecoverUrl: membersRecoverUrl,
     siteHomeUrl: siteHomeUrl,
     b2bFromResearchUrl: b2bFromResearchUrl,
@@ -838,6 +842,10 @@
   function membersLoginUrl(returnPath) {
     var path = String(returnPath || '/my').replace(/^\//, '');
     return '/members/login?redirecturl=' + encodeURIComponent(path);
+  }
+
+  function membersLogoutUrl() {
+    return '/members/login?exit=y';
   }
 
   function membersRecoverUrl(returnPath) {
@@ -970,7 +978,40 @@
   }
 
   function membersLogoutUrl() {
-    return '/members/logout';
+    return '/members/login?exit=y';
+  }
+
+  function performMembersLogout(event) {
+    if (event && event.preventDefault) event.preventDefault();
+    try {
+      if (typeof root.tma__userbar__sendLogout === 'function') {
+        root.tma__userbar__sendLogout();
+        return;
+      }
+      if (typeof root.tma__sign__sendLogoutWihtRedirect === 'function') {
+        root.tma__sign__sendLogoutWihtRedirect();
+        return;
+      }
+    } catch (err) {
+      /* fall through to native Tilda URL */
+    }
+    try {
+      var project = '';
+      if (root.tildaMembers && root.tildaMembers.settingStyles && root.tildaMembers.settingStyles.projectid) {
+        project = String(root.tildaMembers.settingStyles.projectid);
+      } else {
+        var rec = root.document && root.document.querySelector('[data-tilda-project-id]');
+        project = rec ? rec.getAttribute('data-tilda-project-id') || '' : '';
+      }
+      if (project) {
+        root.localStorage.removeItem('tilda_members_profile' + project);
+        root.localStorage.removeItem('tilda_members_profile' + project + '_timestamp');
+      }
+      root.mauser = {};
+    } catch (err2) {
+      /* ignore */
+    }
+    root.location.replace('/members/login?exit=y');
   }
 
   function membersSignupUrl(returnPath) {
@@ -1179,6 +1220,7 @@
   api.TIME_BUDGET = TIME_BUDGET;
   api.readMembersSession = readMembersSession;
   api.membersLogoutUrl = membersLogoutUrl;
+  api.performMembersLogout = performMembersLogout;
   api.membersSignupUrl = membersSignupUrl;
   api.normalizeAccess = normalizeAccess;
   api.deriveSeoStatus = deriveSeoStatus;
@@ -2151,7 +2193,6 @@
 
   var PAYMENTS_ENABLED = false;
   var COMMERCE_PREVIEW_ENABLED = false;
-  var LEGAL_PLACEHOLDER = '[ЗАПОЛНИТЬ ВЛАДЕЛЬЦУ ПЕРЕД ПУБЛИКАЦИЕЙ]';
   var REQUIRED_CODES = [
     'B2C-FREE-001',
     'B2C-TRACK-001',
@@ -2491,7 +2532,6 @@
 
   api.PAYMENTS_ENABLED = PAYMENTS_ENABLED;
   api.COMMERCE_PREVIEW_ENABLED = COMMERCE_PREVIEW_ENABLED;
-  api.LEGAL_PLACEHOLDER = LEGAL_PLACEHOLDER;
   api.PRODUCT_CODES = REQUIRED_CODES;
   api.readProductCatalog = readCatalog;
   api.listProducts = listProducts;
@@ -2518,6 +2558,122 @@
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
+
+/* __MLMA_UI_SPLIT__ */
+
+/**
+ * Юридические документы MLM Academy.
+ * Реквизиты оператора взяты с опубликованной корпоративной главной mlmacademy.ru.
+ * Оплата и ЮKassa не подключены — это отражено в текстах.
+ */
+(function (root) {
+  'use strict';
+  var api = root.MLMA;
+  if (!api) return;
+
+  var OPERATOR = {
+    name: 'Индивидуальный предприниматель Борисенко Татьяна Анатольевна',
+    inn: '532000135580',
+    ogrn: '323547600157157',
+    address: 'Россия, г. Новосибирск, ул. Линейная, д. 120',
+    email: '1071@savv.tech',
+    phone: '+7 999 450 10 71',
+    site: 'https://mlmacademy.ru',
+    brand: 'MLM Academy',
+    approvedAt: '29 августа 2026 г.',
+    version: '1.0',
+  };
+
+  function doc(kind) {
+    if (kind === 'privacy') return privacy();
+    if (kind === 'consent') return consent();
+    if (kind === 'offer') return offer();
+    if (kind === 'requisites') return requisites();
+    return privacy();
+  }
+
+  function privacy() {
+    return {
+      eyebrow: 'Документ · версия ' + OPERATOR.version,
+      title: 'Политика конфиденциальности',
+      lead: 'Политика описывает, как MLM Academy обрабатывает персональные данные при работе сайта и бесплатного кабинета. Действует с ' + OPERATOR.approvedAt + '.',
+      crumb: 'Политика',
+      sections: [
+        ['1. Оператор', 'Оператор персональных данных: ' + OPERATOR.name + ', ИНН ' + OPERATOR.inn + ', ОГРНИП ' + OPERATOR.ogrn + '. Адрес: ' + OPERATOR.address + '. Контакт для запросов субъекта: ' + OPERATOR.email + ', телефон ' + OPERATOR.phone + '. Сайт: ' + OPERATOR.site + '.'],
+        ['2. Какие данные обрабатываются', 'При регистрации кабинета Tilda Members: имя, адрес электронной почты, пароль (хранится у Tilda, Академия пароль не получает). После входа: идентификатор кабинета Tilda, сохранённый маршрут треков, ответы профиля (роль, задача, опыт), технические cookies сессии. В поиске и результатах пользователь может ввести текст запроса — мы просим не указывать чужие персональные данные. Данные банковских карт Академия не собирает: эквайринг не подключён.'],
+        ['3. Цели обработки', 'Создание и ведение бесплатного кабинета; вход на защищённые страницы; сохранение маршрута и локальных результатов; ответы на обращения; исполнение требований закона. Рассылка писем о маршруте — только если пользователь включил соответствующую отметку в профиле. Рекламные рассылки третьим лицам не ведутся.'],
+        ['4. Правовые основания', 'Согласие субъекта при регистрации кабинета (ст. 6, 9 Федерального закона от 27.07.2006 № 152-ФЗ). Исполнение пользовательского соглашения / оферты в части бесплатного кабинета. Законные интересы оператора — работоспособность сайта и безопасность. Обработка специальных категорий данных не ведётся.'],
+        ['5. Передача и обработчики', 'Данные передаются обработчикам, без которых кабинет не работает: Tilda Publishing (личный кабинет, хостинг страниц); Cloudflare, Inc. (сеть доставки, Account Worker, хранение маршрута в Cloudflare KV). Трансграничная передача возможна, потому что инфраструктура Tilda и Cloudflare может находиться за пределами РФ. ЮKassa, Supabase и платёжные провайдеры не подключены и данные им не передаются. Третьим лицам в маркетинговых целях данные не продаются.'],
+        ['6. Сроки хранения', 'Данные кабинета хранятся, пока существует учётная запись Tilda Members и пока это нужно для целей кабинета, либо до отзыва согласия / требования об удалении. Технические логи — в пределах, необходимых для безопасности, обычно не дольше 12 месяцев. Локальные копии в браузере пользователь может очистить сам.'],
+        ['7. Права субъекта', 'Пользователь вправе запросить сведения об обработке, выгрузку данных, исправление, ограничение обработки, отзыв согласия и удаление кабинета. Запрос направляется на ' + OPERATOR.email + '. Ответ — в срок, установленный 152-ФЗ. Часть данных (маршрут) можно выгрузить кнопкой на этой странице с текущего устройства.'],
+        ['8. Cookies', 'Сайт использует cookies Tilda Members для входа, техническую cookie сессии кабинета Академии (mlma_sid) и cookies Cloudflare. Они нужны для работы входа и сохранения маршрута, а не для рекламы третьих лиц.'],
+        ['9. Безопасность', 'Доступ к кабинету защищён паролем Tilda. Сессия Академии передаётся по HTTPS. Оператор не запрашивает пароль на страницах Академии. Никакая форма Академии не принимает данные карт.'],
+        ['10. Изменения', 'Новая версия публикуется на ' + OPERATOR.site + '/privacy. Дата утверждения этой версии: ' + OPERATOR.approvedAt + '.'],
+      ],
+    };
+  }
+
+  function consent() {
+    return {
+      eyebrow: 'Документ · версия ' + OPERATOR.version,
+      title: 'Согласие на обработку и передачу персональных данных',
+      lead: 'Этот документ показывается при регистрации кабинета. Регистрация возможна только после отметки согласия.',
+      crumb: 'Согласие',
+      sections: [
+        ['1. Кто даёт согласие', 'Физическое лицо, создающее кабинет MLM Academy на ' + OPERATOR.site + ', даёт ' + OPERATOR.name + ' (ИНН ' + OPERATOR.inn + ', ОГРНИП ' + OPERATOR.ogrn + ') согласие на обработку своих персональных данных.'],
+        ['2. Какие данные', 'Имя, адрес электронной почты, пароль учётной записи Tilda Members, идентификатор кабинета, сведения профиля (роль, задача, опыт — по желанию), сохранённый маршрут треков, технические данные сессии и устройства, текст обращений на ' + OPERATOR.email + '.'],
+        ['3. Для чего', 'Регистрация и вход в бесплатный кабинет, сохранение маршрута, показ страниц Академии, связь по вопросам кабинета, исполнение оферты в части бесплатного доступа, соблюдение закона.'],
+        ['4. Передача обработчикам', 'Субъект соглашается на передачу указанных данных обработчикам: Tilda Publishing — для учётки и входа; Cloudflare — для работы сайта и хранения маршрута. Передача нужна, чтобы кабинет работал. Платёжным организациям данные не передаются, пока эквайринг не подключён.'],
+        ['5. Трансграничная передача', 'Субъект уведомлён и согласен, что Tilda и Cloudflare могут обрабатывать данные на серверах за пределами Российской Федерации.'],
+        ['6. Срок и отзыв', 'Согласие действует с момента отметки при регистрации и до удаления кабинета либо письменного отзыва на ' + OPERATOR.email + '. Отзыв не влияет на обработку, которая уже выполнена, и может сделать невозможным вход в кабинет.'],
+        ['7. Добровольность', 'Без согласия зарегистрировать кабинет нельзя. Сайт и библиотека треков доступны без кабинета. Согласие не включает продажу данных и не включает приём оплаты.'],
+      ],
+    };
+  }
+
+  function offer() {
+    return {
+      eyebrow: 'Документ · версия ' + OPERATOR.version,
+      title: 'Публичная оферта',
+      lead: 'Оферта на использование бесплатного кабинета и материалов MLM Academy. Платные услуги по этой оферте не оказываются, пока не подключён эквайринг и не опубликован полный трек.',
+      crumb: 'Оферта',
+      sections: [
+        ['1. Исполнитель', OPERATOR.name + ', ИНН ' + OPERATOR.inn + ', ОГРНИП ' + OPERATOR.ogrn + ', адрес: ' + OPERATOR.address + '. Контакт: ' + OPERATOR.email + ', ' + OPERATOR.phone + '.'],
+        ['2. Акцепт', 'Акцепт оферты — регистрация кабинета с согласием на обработку персональных данных либо фактическое использование публичных страниц сайта. Для бесплатного просмотра каталога регистрация не обязательна.'],
+        ['3. Предмет', 'Исполнитель предоставляет доступ к библиотеке описаний треков и, после регистрации, к бесплатному кабинету: сохранение маршрута, профиль, просмотр статусов доступа. 112 карточек каталога — описания. Это не 112 готовых к продаже курсов.'],
+        ['4. Платные услуги', 'Разовые покупки треков, мини-маршрута и маршрута из шести, командный и корпоративный формат описаны на /pricing как ориентиры. Оплатить их сейчас нельзя. Кнопок «Купить» нет. Подписка не предлагается. Когда оплата будет запущена, условия платного доступа будут опубликованы отдельно либо новой редакцией оферты.'],
+        ['5. Бесплатный кабинет', 'Кабинет FREE не даёт полного платного контента. Сохранённый трек не считается купленным. Tilda Members подтверждает вход, но не выдаёт платные права.'],
+        ['6. Оплата', 'Денежные средства по этой редакции не принимаются. Интернет-эквайринг не подключён.'],
+        ['7. Срок доступа', 'Публичный каталог доступен бессрочно, пока страница опубликована. Срок будущего разового платного доступа, когда он появится, — 365 дней с серверного подтверждения оплаты.'],
+        ['8. Возврат', 'Поскольку оплата не принимается, возврат денежных средств не применяется. Когда появится оплата, правила возврата будут в новой редакции оферты.'],
+        ['9. Ответственность', 'Материалы носят практический навигационный характер и не являются гарантией дохода, трудоустройства или результата в сети. Пользователь сам соблюдает законодательство о рекламе и защите прав потребителей в своей деятельности.'],
+        ['10. Изменение и дата', 'Исполнитель публикует новую редакцию на ' + OPERATOR.site + '/offer. Редакция ' + OPERATOR.version + ' утверждена ' + OPERATOR.approvedAt + '.'],
+      ],
+    };
+  }
+
+  function requisites() {
+    return {
+      eyebrow: 'Документ · версия ' + OPERATOR.version,
+      title: 'Реквизиты',
+      lead: 'Реквизиты исполнителя MLM Academy. Совпадают с подвалом корпоративной главной сайта.',
+      crumb: 'Реквизиты',
+      sections: [
+        ['Исполнитель', OPERATOR.name],
+        ['ИНН', OPERATOR.inn],
+        ['ОГРНИП', OPERATOR.ogrn],
+        ['Адрес', OPERATOR.address],
+        ['Email', OPERATOR.email],
+        ['Телефон', OPERATOR.phone],
+        ['Сайт', OPERATOR.site],
+        ['Документы', 'Политика конфиденциальности: ' + OPERATOR.site + '/privacy. Согласие на обработку и передачу персональных данных: ' + OPERATOR.site + '/consent. Публичная оферта: ' + OPERATOR.site + '/offer.'],
+      ],
+    };
+  }
+
+  api.LEGAL_OPERATOR = OPERATOR;
+  api.legalDocument = doc;
+})(typeof window !== 'undefined' ? window : globalThis);
 
 /* __MLMA_UI_SPLIT__ */
 

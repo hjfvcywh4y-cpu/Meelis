@@ -579,6 +579,9 @@
       privacy: function () {
         return '/privacy';
       },
+      consent: function () {
+        return '/consent';
+      },
       offer: function () {
         return '/offer';
       },
@@ -599,7 +602,7 @@
         return '/members/signup?redirecturl=' + encodeURIComponent(path);
       },
       logout: function () {
-        return '/members/logout';
+        return membersLogoutUrl();
       },
       previewCatalog: function () {
         return '/preview/catalog';
@@ -828,6 +831,7 @@
     normalizeAccess: normalizeAccess,
     deriveSeoStatus: deriveSeoStatus,
     membersLoginUrl: membersLoginUrl,
+    membersLogoutUrl: membersLogoutUrl,
     membersRecoverUrl: membersRecoverUrl,
     siteHomeUrl: siteHomeUrl,
     b2bFromResearchUrl: b2bFromResearchUrl,
@@ -838,6 +842,10 @@
   function membersLoginUrl(returnPath) {
     var path = String(returnPath || '/my').replace(/^\//, '');
     return '/members/login?redirecturl=' + encodeURIComponent(path);
+  }
+
+  function membersLogoutUrl() {
+    return '/members/login?exit=y';
   }
 
   function membersRecoverUrl(returnPath) {

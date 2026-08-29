@@ -21,6 +21,7 @@
   var renderAccess = D._ui.renderAccess;
   var renderPricing = D._ui.renderPricing;
   var renderPrivacy = D._ui.renderPrivacy;
+  var renderConsent = D._ui.renderConsent;
   var renderPurchases = D._ui.renderPurchases;
   var renderOffer = D._ui.renderOffer;
   var renderRequisites = D._ui.renderRequisites;
@@ -213,6 +214,8 @@
         return renderPricing(state);
       case 'privacy':
         return renderPrivacy(state);
+      case 'consent':
+        return renderConsent ? renderConsent(state) : renderPrivacy(state);
       case 'purchases':
         return renderPurchases ? renderPurchases(state) : renderAccess(state);
       case 'offer':
