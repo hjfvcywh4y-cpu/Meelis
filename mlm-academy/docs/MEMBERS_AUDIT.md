@@ -57,4 +57,16 @@
 | `mlma.outbox.v1` | очередь событий на сервер | нет |
 | `mlma.library.v1` | возврат к поиску | нет |
 
-После подключения Supabase (`window.MLMA_API_URL`) клиент начинает писать на сервер. До этого режим честно называется `local_fallback`.
+После подключения Account API (`window.MLMA_API_URL`) клиент пишет маршрут на
+сервер. localStorage остаётся fallback и источником миграции. Режим
+`server` показывается только после успешного ответа API.
+
+## Состояние 29 августа 2026
+
+- Пользователь id `61058717` (`o_053@mail.ru`) добавлен в FREE.
+- FREE homepage `/my` (211140509), страниц в группе: 5 (кабинет + `/access`).
+- `addAfterConfirm` через API `editgroup` не изменился (`no_required_params`).
+  Автодобавление в FREE уже было включено; остальные группы тоже имеют флаг.
+  Новых регистраций в Editor/ADMIN нет. Нужна ручная проверка чекбокса в UI
+  Tilda, если появятся лишние автодобавления.
+- Account API: `https://mlma-account.mlmacademy-search.workers.dev/api`.

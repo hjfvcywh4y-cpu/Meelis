@@ -248,6 +248,16 @@
     if (state === 'expired') {
       return { kind: 'renew', title: 'Доступ закончился', why: 'Профиль, история и результаты на месте. Чтобы снова открыть платные треки, продлите доступ.', href: '/access', cta: 'Продлить доступ' };
     }
+    if (!(profile.savedTrackIds && profile.savedTrackIds.length)) {
+      return {
+        kind: 'empty_route',
+        title: 'Ваш маршрут пока пуст. Опишите ситуацию — мы подберём первый полезный трек.',
+        why: 'Одно действие сейчас важнее длинного списка курсов.',
+        href: '/start',
+        cta: 'Подобрать трек',
+        secondary: { href: '/library', label: 'Открыть библиотеку' },
+      };
+    }
     var next = api.resolveNextAction({ profile: profile, tracks: tracks });
     if (next.kind === 'open_track' && next.track) {
       var action = cardAction(next.track, account);

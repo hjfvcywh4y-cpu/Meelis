@@ -11,11 +11,14 @@
   var EVENTS = [
     'signup_started',
     'signup_completed',
+    'login_completed',
     'profile_completed',
     'search_submitted',
     'search_results_shown',
     'track_card_opened',
     'track_saved',
+    'track_unsaved',
+    'route_opened',
     'locked_track_opened',
     'checkout_started',
     'payment_succeeded',
@@ -29,6 +32,7 @@
     'next_track_opened',
     'access_expired',
     'subscription_renewed',
+    'sync_error',
   ];
 
   var BLOCKED = /password|passwd|secret|token|card|pan|cvv|cvc|iban|artifact|answer|message_body|full_text/i;

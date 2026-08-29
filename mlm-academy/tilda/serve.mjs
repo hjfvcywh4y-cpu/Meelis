@@ -11,6 +11,14 @@ const PAGES = JSON.parse(fs.readFileSync(path.join(__dirname, 'pages.json'), 'ut
 const PORT = Number(process.env.MLMA_TILDA_PORT || 4173);
 
 const byUrl = new Map(PAGES.map((page) => [page.url, page.file]));
+const accountStore = new Map();
+const accountEnv = {
+  MLMA_SESSION_SECRET: process.env.MLMA_SESSION_SECRET || 'local-dev-only-not-for-tilda',
+  MLMA_ACCOUNT: {
+    get: async (key) => accountStore.get(key) || null,
+    put: async (key, value) => { accountStore.set(key, value); },
+  },
+};
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -22,6 +30,32 @@ const TYPES = {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || '/', 'http://127.0.0.1');
   let pathname = url.pathname.replace(/\/+$/, '') || '/';
+  if (
+    pathname === '/api/health' ||
+    pathname === '/health' ||
+    pathname.indexOf('/api/session/') === 0 ||
+    pathname.indexOf('/api/account/') === 0 ||
+    pathname === '/api/analytics'
+  ) {
+    const accountWorker = (await import(path.join(__dirname, '../account-proxy/worker.js'))).default;
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    const body = Buffer.concat(chunks);
+    const headers = new Headers();
+    for (const [key, value] of Object.entries(req.headers)) {
+      if (value) headers.set(key, Array.isArray(value) ? value.join(',') : String(value));
+    }
+    const request = new Request('http://127.0.0.1' + pathname, {
+      method: req.method || 'GET',
+      headers,
+      body: req.method === 'POST' || req.method === 'PUT' || req.method === 'OPTIONS' ? body : undefined,
+    });
+    const out = await accountWorker.fetch(request, accountEnv);
+    const outHeaders = Object.fromEntries(out.headers.entries());
+    res.writeHead(out.status, outHeaders);
+    res.end(Buffer.from(await out.arrayBuffer()));
+    return;
+  }
   if (pathname === '/api/search/rerank' || pathname === '/api/rerank') {
     const { handleRerankRequest } = await import(path.join(__dirname, '../search-proxy/rerank-core.js'));
     const chunks = [];

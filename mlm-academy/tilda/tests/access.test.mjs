@@ -139,3 +139,30 @@ describe('аналитика', () => {
     assert.match(clean.email, /\*\*\*/);
   });
 });
+
+describe('кабинет и маршрут', () => {
+  it('пустой маршрут предлагает подобрать трек, а не «нет материалов»', () => {
+    const rec = MLMA.recommendedAction({
+      account: { loggedIn: true, groups: ['FREE'], entitlements: [] },
+      profile: { displayName: 'Роман', partnerRole: 'novice', consentAt: '2026-01-01', savedTrackIds: [], onboardingComplete: true },
+      tracks: [track({ publicationStatus: 'promo', access: 'promo', contentStatus: 'published' })],
+    });
+    assert.equal(rec.kind, 'empty_route');
+    assert.match(rec.title, /маршрут пока пуст/i);
+    assert.equal(rec.cta, 'Подобрать трек');
+    assert.ok(rec.secondary);
+  });
+
+  it('гость кладёт pendingTrackId, а не выдаёт себе права', () => {
+    globalThis.sessionStorage = {
+      _d: {},
+      getItem: function (k) { return Object.prototype.hasOwnProperty.call(this._d, k) ? this._d[k] : null; },
+      setItem: function (k, v) { this._d[k] = String(v); },
+      removeItem: function (k) { delete this._d[k]; },
+    };
+    MLMA.writePendingTrackId('A1-010');
+    assert.equal(MLMA.readPendingTrackId(), 'A1-010');
+    MLMA.clearPendingTrackId();
+    assert.equal(MLMA.readPendingTrackId(), '');
+  });
+});

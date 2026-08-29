@@ -1,0 +1,9 @@
+{
+  "name": "mlma-account-proxy",
+  "private": true,
+  "type": "module",
+  "description": "Сервер кабинета MLM Academy. Секреты только в env Worker.",
+  "devDependencies": {
+    "wrangler": "^4.127.1"
+  }
+}

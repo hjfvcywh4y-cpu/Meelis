@@ -137,6 +137,37 @@
     return state.account || { loggedIn: false };
   }
 
+  function profileMenu(state) {
+    var account = accountOf(state);
+    var initial = ((account.name || account.email || 'M').trim().charAt(0) || 'M').toUpperCase();
+    var name = account.name || account.email || 'Кабинет';
+    if (account.loggedIn) {
+      return (
+        '<div class="mlma-account">' +
+        '<a class="mlma-avatar" href="' +
+        esc(state.R.my()) +
+        '" id="mlma-login-btn" aria-label="Личный кабинет">' +
+        esc(initial) +
+        '</a>' +
+        '<details class="mlma-account-menu">' +
+        '<summary class="mlma-account-name">' +
+        esc(name) +
+        '</summary>' +
+        '<div class="mlma-account-drop">' +
+        '<a href="' + esc(state.R.my()) + '">Кабинет</a>' +
+        '<a href="' + esc(state.R.profile()) + '">Профиль</a>' +
+        '<a href="' + esc(state.R.access()) + '">Доступ</a>' +
+        '<a href="/members/logout">Выход</a>' +
+        '</div></details></div>'
+      );
+    }
+    return (
+      '<a class="mlma-avatar mlma-avatar-guest" href="' +
+      esc(state.R.my()) +
+      '" id="mlma-login-btn" aria-label="Войти в кабинет">Вход</a>'
+    );
+  }
+
   function btn(href, label, variant, extraClass) {
     var cls = 'mlma-btn' + (variant ? ' mlma-btn-' + variant : '') + (extraClass ? ' ' + extraClass : '');
     return '<a class="' + cls + '" href="' + esc(href) + '">' + esc(label) + '</a>';
@@ -195,9 +226,7 @@
       '<a class="mlma-btn mlma-btn-small mlma-btn-ghost" href="' +
       esc(R.library()) +
       '" id="mlma-search-btn">Поиск</a>' +
-      (accountOf(state).loggedIn
-        ? '<a class="mlma-btn mlma-btn-small mlma-btn-ghost" href="' + esc(R.my()) + '" id="mlma-login-btn">Кабинет</a>'
-        : '<a class="mlma-btn mlma-btn-small mlma-btn-ghost" href="' + esc(D.membersLoginUrl(pathName())) + '" id="mlma-login-btn">Войти</a>') +
+      profileMenu(state) +
       '<a class="mlma-btn mlma-btn-small mlma-btn-primary" href="' +
       esc(R.start()) +
       '">Найти свой шаг</a></div></div>' +
@@ -234,12 +263,22 @@
   function mobileNav(state) {
     var R = state.R;
     var path = pathName();
-    var items = [
-      { href: R.home(), label: 'Academy' },
-      { href: R.library(), label: 'Библиотека' },
-      { href: R.start(), label: 'Старт' },
-      { href: accountOf(state).loggedIn ? R.my() : D.membersLoginUrl(path), label: accountOf(state).loggedIn ? 'Кабинет' : 'Войти' },
-    ];
+    var items;
+    if (isCabinetPage(state.page) || (state.page === 'access' && accountOf(state).loggedIn)) {
+      items = [
+        { href: R.my(), label: 'Главная' },
+        { href: R.myRoute(), label: 'Маршрут' },
+        { href: R.myTracks(), label: 'Треки' },
+        { href: R.profile(), label: 'Ещё' },
+      ];
+    } else {
+      items = [
+        { href: R.home(), label: 'Academy' },
+        { href: R.library(), label: 'Библиотека' },
+        { href: R.start(), label: 'Старт' },
+        { href: R.my(), label: accountOf(state).loggedIn ? 'Кабинет' : 'Войти' },
+      ];
+    }
     var html = '<nav class="mlma-mobile" aria-label="Мобильная навигация">';
     for (var i = 0; i < items.length; i += 1) {
       html +=
@@ -997,7 +1036,7 @@
       { href: R.myResults(), label: 'Результаты', id: 'results' },
       { href: R.mySaved ? R.mySaved() : '/my/route?tab=saved', label: 'Сохранённое', id: 'saved' },
       { href: R.access(), label: 'Покупки и доступ', id: 'access' },
-      { href: R.profile(), label: 'Профиль и настройки', id: 'profile' },
+      { href: R.profile(), label: 'Профиль', id: 'profile' },
     ];
     var tab = '';
     try {
@@ -1166,15 +1205,23 @@
           '" aria-pressed="' +
           (saved ? 'true' : 'false') +
           '">' +
-          (saved ? 'Убрать из сохранённого' : 'Сохранить в маршрут') +
+          (saved ? 'Убрать из маршрута' : 'Сохранить в маршрут') +
           '</button>'
-        : '<a class="mlma-btn mlma-btn-primary mlma-btn-block" style="margin-top:12px" href="' +
-          esc(D.membersLoginUrl(pathName())) +
-          '">Войти, чтобы сохранить</a>') +
-      '<p class="mlma-muted" style="margin-top:12px;font-size:13px;line-height:1.45">' +
+        : '<button type="button" class="mlma-btn mlma-btn-primary mlma-btn-block" style="margin-top:12px" data-mlma-save-guest="' +
+          esc(track.trackId) +
+          '">Сохранить в маршрут</button>') +
+      '<p class="mlma-muted" id="mlma-save-hint" style="margin-top:12px;font-size:13px;line-height:1.45">' +
       (state.account && state.account.loggedIn
-        ? (state.account.storageMode === 'server' ? 'Сохранение привязано к кабинету.' : 'Пока сохраняется в этом браузере. После подключения сервера маршрут будет следовать за входом.')
-        : 'Описание можно читать без входа. Чтобы сохранить маршрут, создайте бесплатный кабинет.') +
+        ? (state.account.storageMode === 'server'
+          ? 'Трек сохраняется в кабинете и доступен с другого устройства.'
+          : state.account.storageMode === 'restoring'
+            ? 'Данные восстанавливаются…'
+            : state.account.storageMode === 'offline'
+              ? 'Нет соединения. Пока сохраняем в этом браузере.'
+              : state.account.storageMode === 'error'
+                ? 'Сервер недоступен. Локальная копия сохранена в этом браузере.'
+                : 'Пока сохраняется в этом браузере.')
+        : 'Описание можно читать без входа. После регистрации трек сразу окажется в маршруте.') +
       '</p></div>' +
       '<section class="mlma-card mlma-pad"><span class="mlma-meta">Паспорт</span><dl style="margin-top:12px">' +
       '<div class="mlma-row"><dt class="mlma-meta mlma-muted">Раздел</dt><dd style="margin-top:4px;font-weight:700">' +
@@ -1375,54 +1422,121 @@
   var cabinetNav = D._ui.cabinetNav;
   var queryParam = D._ui.queryParam;
 
+  function cabinetStatusBanner(state) {
+    var mode = state.account && state.account.storageMode;
+    if (mode === 'restoring') return '<div class="mlma-state mlma-state-load" role="status">Данные восстанавливаются…</div>';
+    if (mode === 'offline') return '<div class="mlma-state mlma-state-warn" role="status">Нет соединения. Показана локальная копия. Серверные данные не удалялись.</div>';
+    if (mode === 'error') return '<div class="mlma-state mlma-state-warn" role="status">Ошибка сервера. Маршрут сохранён в этом браузере и будет синхронизирован позже.</div>';
+    return '';
+  }
+
+  function uniqueSavedIds(state) {
+    var ids = (state.profile && state.profile.savedTrackIds) || [];
+    if (state.account && state.account.savedTrackIds && state.account.savedTrackIds.length) ids = state.account.savedTrackIds;
+    return D.uniqueTrackIds ? D.uniqueTrackIds(ids) : ids;
+  }
+
+  function trackById(state, id) {
+    if (state.index && state.index[id]) return state.index[id];
+    return D.getById ? D.getById(state.tracks, id, true) : null;
+  }
+
+  function userStatusLabel(account) {
+    var state = D.resolveUserState ? D.resolveUserState(account) : 'registered';
+    return { guest: 'Гость', registered: 'Бесплатный кабинет · FREE', paid: 'Есть доступ', expired: 'Доступ закончился' }[state] || 'Кабинет';
+  }
+
+  function routeTrackStatus(track, state, index) {
+    if (!track) return { key: 'missing', label: 'нет в каталоге', tone: 'neutral', action: null };
+    var entitled = D.isEntitledToTrack ? D.isEntitledToTrack(track, state.account) : false;
+    var access = D.normalizeAccess ? D.normalizeAccess(track.access) : track.access;
+    var run = state.account && state.account.runs ? state.account.runs[track.trackId] : null;
+    var view = D.getTrackStatusView(track, { entitled: entitled });
+    var href = state.R.track(track.trackId);
+    if (run && (run.status === 'completed' || run.status === 'done')) {
+      return { key: 'done', label: 'завершён', tone: 'good', action: { href: href, label: 'Открыть' } };
+    }
+    if (run && run.status && run.status !== 'preview') {
+      return { key: 'started', label: 'начат', tone: 'accent', action: { href: href, label: 'Продолжить прохождение' } };
+    }
+    if (access === 'paid' && !entitled) {
+      return { key: 'locked', label: 'закрыт', tone: 'warn', action: { href: state.R.access() + '?product=start&track=' + encodeURIComponent(track.trackId), label: 'Перейти к покупке доступа' } };
+    }
+    if (index === 0) return { key: 'next', label: 'рекомендован следующим', tone: 'accent', action: { href: href, label: view.canStart ? 'Открыть трек' : 'Открыть описание' } };
+    if (entitled || access === 'public' || access === 'promo') {
+      return { key: 'available', label: 'доступен', tone: 'good', action: { href: href, label: 'Открыть трек' } };
+    }
+    return { key: 'saved', label: 'сохранён', tone: 'neutral', action: { href: href, label: 'Открыть описание' } };
+  }
+
   function renderMy(state) {
     var R = state.R;
-    var decision = D.resolveNextAction({ profile: state.profile, tracks: state.tracks });
-    var alternatives = D.resolveAlternatives(decision, { profile: state.profile, tracks: state.tracks });
-    var selected = state.profile.selectedSectionId ? state.sectionById[state.profile.selectedSectionId] : null;
+    var account = state.account || { loggedIn: false };
+    var savedIds = uniqueSavedIds(state);
     var savedTracks = [];
-    for (var i = 0; i < state.profile.savedTrackIds.length; i += 1) {
-      var found = null;
-      for (var t = 0; t < state.tracks.length; t += 1) {
-        if (state.tracks[t].trackId === state.profile.savedTrackIds[i]) found = state.tracks[t];
-      }
+    for (var i = 0; i < savedIds.length; i += 1) {
+      var found = trackById(state, savedIds[i]);
       if (found) savedTracks.push(found);
     }
-    var altHtml = '';
-    if (alternatives.length) {
-      altHtml = '<section class="mlma-card mlma-pad-lg" style="padding:28px"><span class="mlma-eyebrow">Альтернативы</span><h2 class="mlma-h3" style="margin-top:16px">Если сейчас не подходит</h2><ul style="margin-top:20px;display:grid;gap:12px">';
-      for (var a = 0; a < alternatives.length; a += 1) {
-        var track = alternatives[a];
-        var status = D.getTrackStatusView(track);
-        altHtml +=
-          '<li><a class="mlma-card-soft mlma-card-hover" href="' +
-          esc(R.track(track.trackId)) +
-          '" style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;padding:16px;' +
-          D.styleAttr(track.sectionId) +
-          '"><span><span class="mlma-meta" style="display:block">' +
-          esc(track.trackId) +
-          ' · ' +
-          esc((state.sectionById[track.sectionId] || {}).shortTitle || track.sectionId) +
-          '</span><span style="display:block;margin-top:8px;font-size:16px;font-weight:700">' +
-          esc(track.title) +
-          '</span></span>' +
-          badge(status.label, status.tone) +
-          '</a></li>';
+    var greetingName = (state.profile.displayName || account.name || '').trim() || 'в Академии';
+    var lastStarted = null;
+    var runs = account.runs || {};
+    var runKeys = Object.keys(runs);
+    for (var r = 0; r < runKeys.length; r += 1) {
+      var run = runs[runKeys[r]];
+      if (!run || run.status === 'completed' || run.status === 'done' || run.status === 'preview') continue;
+      var startedTrack = trackById(state, runKeys[r]);
+      if (startedTrack && (!lastStarted || String(run.updatedAt || '') > String(lastStarted.run.updatedAt || ''))) {
+        lastStarted = { track: startedTrack, run: run };
       }
-      altHtml += '</ul></section>';
     }
-    var savedList = '';
-    if (!savedTracks.length) {
-      savedList = '<p class="mlma-muted" style="margin-top:16px;font-size:15px">Здесь появятся треки, которые вы отложили. Сохранить трек можно с его страницы.</p>';
-    } else {
-      savedList = '<ul style="margin-top:16px;display:grid;gap:8px">';
-      for (var s = 0; s < Math.min(5, savedTracks.length); s += 1) {
+    var nearestResult = account.artifacts && account.artifacts[0] ? account.artifacts[0] : null;
+    var rec = D.recommendedAction
+      ? D.recommendedAction({ account: account, profile: state.profile, tracks: state.tracks })
+      : { title: 'Подобрать трек', why: '', href: R.start(), cta: 'Подобрать трек', secondary: { href: R.library(), label: 'Открыть библиотеку' } };
+    var routeCard = savedTracks.length
+      ? '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Активный маршрут</span><h2 class="mlma-h3" style="margin-top:12px">' +
+        esc(savedTracks[0].title) +
+        '</h2><p class="mlma-muted" style="margin-top:8px">' +
+        esc(savedTracks[0].situation) +
+        '</p><p class="mlma-meta" style="margin-top:12px">' +
+        savedTracks.length +
+        ' ' +
+        esc(D.pluralTracks(savedTracks.length)) +
+        '</p><div class="mlma-actions" style="margin-top:16px">' +
+        btn(R.myRoute(), 'Открыть маршрут', 'primary') +
+        '</div></section>'
+      : '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Маршрут</span><h2 class="mlma-h3" style="margin-top:12px">Ваш маршрут пока пуст. Опишите ситуацию — мы подберём первый полезный трек.</h2><div class="mlma-actions" style="margin-top:20px">' +
+        btn(R.start(), 'Подобрать трек', 'primary') +
+        btn(R.library(), 'Открыть библиотеку') +
+        '</div></section>';
+    var startedCard = lastStarted
+      ? '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Последний начатый трек</span><h2 class="mlma-h3" style="margin-top:12px">' +
+        esc(lastStarted.track.title) +
+        '</h2><div class="mlma-actions" style="margin-top:16px">' +
+        btn(R.track(lastStarted.track.trackId), 'Продолжить', 'primary') +
+        '</div></section>'
+      : '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Последний начатый трек</span><p class="mlma-muted" style="margin-top:12px">Когда начнёте трек, продолжение появится здесь.</p></section>';
+    var resultCard = nearestResult
+      ? '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Ближайший результат</span><p style="margin-top:12px;font-weight:700">' +
+        esc(nearestResult.preview || nearestResult.kind || 'Результат') +
+        '</p><div class="mlma-actions" style="margin-top:16px">' +
+        btn(R.myResults(), 'Открыть результаты') +
+        '</div></section>'
+      : '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Ближайший результат</span><p class="mlma-muted" style="margin-top:12px">Результат отсутствует. Он появится после рабочего следа, а не после просмотра.</p></section>';
+    var savedList = '<p class="mlma-muted" style="margin-top:12px">Сохранённых треков пока нет.</p>';
+    if (savedTracks.length) {
+      savedList = '<ul class="mlma-cabinet-list">';
+      for (var s = 0; s < Math.min(4, savedTracks.length); s += 1) {
+        var st = routeTrackStatus(savedTracks[s], state, s);
         savedList +=
-          '<li class="mlma-row"><a href="' +
+          '<li><a href="' +
           esc(R.track(savedTracks[s].trackId)) +
-          '"><span class="mlma-meta" style="display:block">' +
+          '"><span class="mlma-meta">' +
           esc(savedTracks[s].trackId) +
-          '</span><span style="display:block;margin-top:4px;font-size:15px;font-weight:700">' +
+          ' · ' +
+          esc(st.label) +
+          '</span><span class="mlma-cabinet-title">' +
           esc(savedTracks[s].title) +
           '</span></a></li>';
       }
@@ -1432,8 +1546,8 @@
       pageHead(
         {
           eyebrow: 'Кабинет',
-          title: 'Следующее действие',
-          lead: 'Здесь всегда одно главное действие. Остальное — маршрут, сохранённое и доступ.',
+          title: 'Здравствуйте, ' + greetingName,
+          lead: 'Одно следующее действие. Остальное — маршрут, треки и доступ.',
           crumbs: [
             { label: 'Academy', href: R.home() },
             { label: 'Кабинет' },
@@ -1442,50 +1556,33 @@
         R,
       ) +
       (cabinetNav ? cabinetNav(state) : '') +
+      cabinetStatusBanner(state) +
       '<div class="mlma-wrap mlma-split mlma-split-84" style="padding-top:24px;padding-bottom:56px"><div style="display:grid;gap:24px;align-content:start">' +
-      (D.onboardingComplete && !D.onboardingComplete(state.profile)
-        ? '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Настройка</span><h2 class="mlma-h3" style="margin-top:12px">Короткий профиль — 1–2 минуты</h2><p class="mlma-muted" style="margin-top:8px">Имя, роль и согласие обязательны. Остальное можно пропустить и заполнить позже.</p><div class="mlma-actions" style="margin-top:16px">' +
-          btn(R.profile() + '?setup=1', 'Заполнить', 'primary') +
-          '<button type="button" class="mlma-btn" data-mlma-skip-onboarding="1">Пропустить необязательное</button></div></section>'
-        : '') +
-      (D.recommendedAction
-        ? (function () {
-            var rec = D.recommendedAction({ account: state.account, profile: state.profile, tracks: state.tracks });
-            return (
-              '<article class="mlma-card mlma-lime mlma-pad-lg" style="padding:32px"><span class="mlma-meta">Следующее действие</span><h2 class="mlma-h2" style="margin-top:16px">' +
-              esc(rec.title) +
-              '</h2><p class="mlma-lead" style="margin-top:16px">' +
-              esc(rec.why) +
-              '</p><div class="mlma-actions" style="margin-top:24px">' +
-              btn(rec.href, rec.cta, 'primary') +
-              (rec.secondary ? btn(rec.secondary.href, rec.secondary.label) : '') +
-              '</div></article>'
-            );
-          })()
-        : nextActionCard(decision, state)) +
-      altHtml +
-      '<section class="mlma-card mlma-pad-lg" style="padding:28px"><span class="mlma-eyebrow">Результаты</span><h2 class="mlma-h3" style="margin-top:16px">' +
-      ((state.account && state.account.artifacts && state.account.artifacts.length) ? 'Последние материалы' : 'Пока пусто') +
-      '</h2><p class="mlma-muted" style="margin-top:16px;max-width:62ch;font-size:16px">Здесь появятся тексты, списки и ответы после прохождения трека.</p><div style="margin-top:24px">' +
-      btn(R.myResults(), 'Открыть результаты', '', 'mlma-btn-small') +
-      '</div></section></div><aside style="display:grid;gap:16px;align-content:start">' +
-      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow mlma-eyebrow-dark">Контекст</span><h2 class="mlma-h3" style="margin-top:16px">Что уже известно</h2><dl style="margin-top:16px">' +
-      '<div class="mlma-row"><dt class="mlma-meta mlma-muted">Раздел</dt><dd style="margin-top:4px;font-weight:700">' +
-      esc(selected ? selected.shortTitle : 'Не выбран') +
-      '</dd></div><div class="mlma-row"><dt class="mlma-meta mlma-muted">Текущая задача</dt><dd style="margin-top:4px;font-weight:700">' +
-      esc(state.profile.currentTask || state.profile.currentGoal || 'Не сформулирована') +
-      '</dd></div><div class="mlma-row"><dt class="mlma-meta mlma-muted">Сохранено</dt><dd style="margin-top:4px;font-weight:700">' +
-      savedTracks.length +
-      '</dd></div><div class="mlma-row"><dt class="mlma-meta mlma-muted">Доступ</dt><dd style="margin-top:4px;font-weight:700">' +
-      esc({ guest: 'Гость', registered: 'Бесплатный кабинет', paid: 'Есть доступ', expired: 'Доступ закончился' }[D.resolveUserState ? D.resolveUserState(state.account) : 'registered'] || 'Кабинет') +
-      '</dd></div></dl><div class="mlma-actions" style="margin-top:20px;flex-direction:column">' +
-      btn(R.profile(), 'Профиль и настройки', '', 'mlma-btn-small') +
-      btn(R.start(), 'Поменять ситуацию', '', 'mlma-btn-small') +
-      '</div></section>' +
-      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Сохранённое</span><h2 class="mlma-h3" style="margin-top:16px">Отложенные треки</h2>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-meta">Статус</span><p style="margin-top:8px;font-weight:800">' +
+      esc(userStatusLabel(account)) +
+      '</p></section>' +
+      '<article class="mlma-card mlma-lime mlma-pad-lg" style="padding:32px"><span class="mlma-meta">Следующее действие</span><h2 class="mlma-h2" style="margin-top:16px">' +
+      esc(rec.title) +
+      '</h2><p class="mlma-lead" style="margin-top:16px">' +
+      esc(rec.why || '') +
+      '</p><div class="mlma-actions" style="margin-top:24px">' +
+      btn(rec.href, rec.cta, 'primary') +
+      (rec.secondary ? btn(rec.secondary.href, rec.secondary.label) : '') +
+      '</div></article>' +
+      routeCard +
+      startedCard +
+      resultCard +
+      '</div><aside style="display:grid;gap:16px;align-content:start">' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Сохранённые треки</span>' +
       savedList +
-      '<div style="margin-top:20px">' +
-      btn(R.mySaved ? R.mySaved() : '/my/route?tab=saved', 'Все сохранённые', '', 'mlma-btn-small') +
+      '<div style="margin-top:16px">' +
+      btn(R.mySaved(), 'Все сохранённые', '', 'mlma-btn-small') +
+      '</div></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Доступ</span><h2 class="mlma-h3" style="margin-top:12px">' +
+      esc(userStatusLabel(account)) +
+      '</h2><p class="mlma-muted" style="margin-top:8px">Платные материалы группе FREE не открываются. Пакеты появятся после оплаты.</p><div class="mlma-actions" style="margin-top:16px">' +
+      btn(R.access(), 'Покупки и доступ', '', 'mlma-btn-small') +
+      btn(R.profile(), 'Профиль', '', 'mlma-btn-small') +
       '</div></section></aside></div>'
     );
   }
@@ -1518,145 +1615,138 @@
   function renderRoute(state) {
     var R = state.R;
     var tab = queryParam('tab');
-    function savedListBlock(kind) {
-      var ids = kind === 'tracks'
-        ? (state.account && state.account.runs ? Object.keys(state.account.runs) : []).concat(state.profile.savedTrackIds)
-        : state.profile.savedTrackIds;
-      var seen = {};
-      var items = [];
+    var savedIds = uniqueSavedIds(state);
+    function classify(track) {
+      var st = routeTrackStatus(track, state, -1);
+      var entitled = D.isEntitledToTrack ? D.isEntitledToTrack(track, state.account) : false;
+      var access = D.normalizeAccess ? D.normalizeAccess(track.access) : track.access;
+      var purchased = entitled && access === 'paid';
+      return { st: st, entitled: entitled, access: access, purchased: purchased };
+    }
+    function tracksTabBlock() {
+      var sub = queryParam('set') || 'available';
+      var ids = savedIds.concat(state.account && state.account.runs ? Object.keys(state.account.runs) : []);
+      ids = D.uniqueTrackIds ? D.uniqueTrackIds(ids) : ids;
+      var buckets = { available: [], started: [], done: [] };
       for (var i = 0; i < ids.length; i += 1) {
-        if (seen[ids[i]]) continue;
-        seen[ids[i]] = true;
-        var found = state.index[ids[i]] || null;
-        if (found) items.push(found);
+        var track = trackById(state, ids[i]);
+        if (!track) continue;
+        var info = classify(track);
+        if (info.st.key === 'done') buckets.done.push(track);
+        else if (info.st.key === 'started') buckets.started.push(track);
+        else if (info.purchased || info.access === 'public' || info.access === 'promo') buckets.available.push(track);
       }
-      if (!items.length) {
-        return emptyState({
-          title: kind === 'tracks' ? 'Пока нет начатых треков' : 'Пока ничего не сохранено',
-          description: kind === 'tracks' ? 'Когда появится содержание, начатые и завершённые треки будут здесь.' : 'Отметьте карточку в поиске или на странице описания — она появится здесь.',
+      var current = buckets[sub] || buckets.available;
+      var nav =
+        '<div class="mlma-chip-row" style="margin-bottom:20px">' +
+        [['available', 'Доступные'], ['started', 'Начатые'], ['done', 'Завершённые']].map(function (pair) {
+          return '<a class="mlma-chip' + (sub === pair[0] ? ' mlma-chip-on' : '') + '" href="' + esc(R.myTracks() + '&set=' + pair[0]) + '">' + pair[1] + '</a>';
+        }).join('') +
+        '</div>';
+      if (!current.length) {
+        return nav + emptyState({
+          title: sub === 'done' ? 'Завершённых треков пока нет' : sub === 'started' ? 'Начатых треков пока нет' : 'Пока нет доступных треков',
+          description: 'Закрытый трек может лежать в маршруте, но не считается приобретённым, пока нет оплаты.',
           actions: btn(R.library(), 'Открыть библиотеку', 'primary'),
         });
       }
-      var html = '<ul style="display:grid;gap:12px">';
-      for (var t = 0; t < items.length; t += 1) {
-        html +=
-          '<li class="mlma-card-soft" style="padding:16px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><a href="' +
-          esc(R.track(items[t].trackId)) +
-          '"><span class="mlma-meta">' +
-          esc(items[t].trackId) +
-          '</span><span style="display:block;margin-top:6px;font-weight:700">' +
-          esc(items[t].title) +
-          '</span></a>' +
-          (kind === 'saved'
-            ? '<button type="button" class="mlma-btn mlma-btn-small" data-mlma-save="' + esc(items[t].trackId) + '">Убрать</button>'
-            : '') +
-          '</li>';
+      var html = nav + '<ul class="mlma-route-list">';
+      for (var t = 0; t < current.length; t += 1) {
+        var item = current[t];
+        var st = routeTrackStatus(item, state, t);
+        html += routeRow(item, st, t, state, false);
       }
       return html + '</ul>';
     }
-    var savedNodes = [];
-    for (var i = 0; i < state.profile.savedTrackIds.length; i += 1) {
-      var track = null;
-      for (var t = 0; t < state.tracks.length; t += 1) {
-        if (state.tracks[t].trackId === state.profile.savedTrackIds[i]) track = state.tracks[t];
-      }
+    function routeRow(track, st, index, state, controls) {
+      var cover = D.sectionCoverUrl ? D.sectionCoverUrl(track.sectionId) : '';
+      return (
+        '<li class="mlma-route-item mlma-card" style="' +
+        D.styleAttr(track.sectionId) +
+        '"><span class="mlma-route-num">' +
+        (index + 1) +
+        '</span>' +
+        (cover ? '<img class="mlma-route-cover" src="' + esc(cover) + '" alt="">' : '<span class="mlma-route-cover mlma-route-cover-empty"></span>') +
+        '<div class="mlma-route-body"><span class="mlma-meta">' +
+        esc(track.trackId) +
+        ' · ' +
+        esc(st.label) +
+        '</span><a class="mlma-cabinet-title" href="' +
+        esc(state.R.track(track.trackId)) +
+        '">' +
+        esc(track.title) +
+        '</a><p class="mlma-muted">' +
+        esc(track.situation) +
+        '</p><p>Ожидаемый результат: ' +
+        esc(track.outcome) +
+        '</p><div class="mlma-actions" style="margin-top:12px">' +
+        (st.action ? btn(st.action.href, st.action.label, 'primary', 'mlma-btn-small') : '') +
+        (controls
+          ? '<button type="button" class="mlma-btn mlma-btn-small" data-mlma-route-del="' +
+            esc(track.trackId) +
+            '">Удалить из маршрута</button>' +
+            (index > 0 ? '<button type="button" class="mlma-btn mlma-btn-small" data-mlma-route-up="' + esc(track.trackId) + '">Выше</button>' : '') +
+            '<button type="button" class="mlma-btn mlma-btn-small" data-mlma-route-down="' + esc(track.trackId) + '">Ниже</button>'
+          : '') +
+        '</div></div></li>'
+      );
+    }
+    if (tab === 'tracks') {
+      return (
+        pageHead({ eyebrow: 'Кабинет', title: 'Мои треки', lead: 'Доступные, начатые и завершённые. Закрытый трек в маршруте не считается купленным.', crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Кабинет', href: R.my() }, { label: 'Мои треки' }] }, R) +
+        (cabinetNav ? cabinetNav(state) : '') +
+        cabinetStatusBanner(state) +
+        '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px">' +
+        tracksTabBlock() +
+        '</div>'
+      );
+    }
+    if (tab === 'saved') {
+      var savedHtml = savedIds.length
+        ? '<ul class="mlma-route-list">' + savedIds.map(function (id, idx) {
+            var track = trackById(state, id);
+            if (!track) return '';
+            return routeRow(track, routeTrackStatus(track, state, idx), idx, state, true);
+          }).join('') + '</ul>'
+        : emptyState({ title: 'Пока ничего не сохранено', description: 'Отметьте карточку в библиотеке — она появится здесь и в маршруте.', actions: btn(R.library(), 'Открыть библиотеку', 'primary') });
+      return (
+        pageHead({ eyebrow: 'Кабинет', title: 'Сохранённое', lead: 'Треки, которые вы отметили. Это ещё не покупка.', crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Кабинет', href: R.my() }, { label: 'Сохранённое' }] }, R) +
+        (cabinetNav ? cabinetNav(state) : '') +
+        cabinetStatusBanner(state) +
+        '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px">' + savedHtml + '</div>'
+      );
+    }
+    var rows = '';
+    for (var n = 0; n < savedIds.length; n += 1) {
+      var track = trackById(state, savedIds[n]);
       if (!track) continue;
-      savedNodes.push({
-        trackId: track.trackId,
-        sectionId: track.sectionId,
-        label: track.title,
-        state: savedNodes.length === 0 ? 'current' : 'future',
-        linkable: true,
-        href: R.track(track.trackId),
-      });
+      rows += routeRow(track, routeTrackStatus(track, state, n), n, state, true);
     }
-    var demo = '';
-    if (state.preview && state.pilot && state.pilot.nodes && state.pilot.nodes.length) {
-      var nodes = state.pilot.nodes.slice(0, 5);
-      var currentIndex = Math.min(3, nodes.length - 1);
-      var demoNodes = [];
-      for (var n = 0; n < nodes.length; n += 1) {
-        var node = nodes[n];
-        demoNodes.push({
-          trackId: node.trackId,
-          sectionId: node.sectionId,
-          label: node.title,
-          state: n < currentIndex ? 'done' : n === currentIndex ? 'current' : 'future',
-          linkable: !!state.index[node.trackId],
-          href: R.track(node.trackId),
+    var body = savedIds.length
+      ? '<ol class="mlma-route-list">' + rows + '</ol>'
+      : emptyState({
+          title: 'Ваш маршрут пока пуст. Опишите ситуацию — мы подберём первый полезный трек.',
+          description: 'Маршрут собирается из сохранённых треков. Закрытый трек можно держать в очереди, не открывая содержание.',
+          actions: btn(R.start(), 'Подобрать трек', 'primary') + btn(R.library(), 'Открыть библиотеку'),
         });
-      }
-      var branches = '';
-      var current = nodes[currentIndex];
-      if (current && current.nextTrackIds) {
-        var branchItems = [];
-        for (var b = 0; b < current.nextTrackIds.length && branchItems.length < 3; b += 1) {
-          var next = state.index[current.nextTrackIds[b]];
-          if (next) branchItems.push(next);
-        }
-        if (branchItems.length) {
-          branches = '<div style="margin-top:32px"><span class="mlma-meta">Развилки после текущего шага · не больше трёх</span><ul class="mlma-grid-3" style="margin-top:16px">';
-          for (var x = 0; x < branchItems.length; x += 1) {
-            branches +=
-              '<li><a class="mlma-card-soft mlma-card-hover" href="' +
-              esc(R.track(branchItems[x].trackId)) +
-              '" style="display:block;padding:16px;' +
-              D.styleAttr(branchItems[x].sectionId) +
-              '"><span class="mlma-meta">' +
-              esc(branchItems[x].trackId) +
-              '</span><span style="display:block;margin-top:8px;font-size:15px;font-weight:700">' +
-              esc(branchItems[x].title) +
-              '</span></a></li>';
-          }
-          branches += '</ul></div>';
-        }
-      }
-      demo =
-        '<section class="mlma-card mlma-pad-lg" style="padding:28px"><span class="mlma-eyebrow mlma-eyebrow-accent">Демонстрация · только предпросмотр</span><h2 class="mlma-h3" style="margin-top:16px">Как будет выглядеть ветка целиком</h2>' +
-        '<p class="mlma-muted" style="margin-top:16px;max-width:70ch;font-size:16px">Ниже — пилотная ветка каталога, а не ваш прогресс. Она показывает форму маршрута: несколько сделанных шагов, один текущий и развилки после него.</p><div style="margin-top:32px">' +
-        stepper(demoNodes) +
-        branches +
-        '</div></section>';
-    }
-    var myBranch = savedNodes.length
-      ? '<div style="margin-top:28px">' +
-        stepper(savedNodes) +
-        '<p class="mlma-muted" style="margin-top:24px;max-width:70ch;font-size:15px">Порядок задаёте вы. Когда у треков появится содержание, сюда добавятся отметки о выполненных действиях и зафиксированных результатах.</p></div>'
-      : '<div style="margin-top:28px">' +
-        emptyState({
-          title: 'Здесь пока нет вашего маршрута',
-          description: 'Маршрут собирается из треков, которые вы сохранили, и из того, что вы реально сделали. Начните с выбора ситуации — раздел и первый шаг появятся здесь.',
-          actions: btn(R.start(), 'Выбрать ситуацию', 'primary') + btn(R.library(), 'Открыть библиотеку'),
-        }) +
-        '</div>';
     return (
       pageHead(
         {
           eyebrow: 'Кабинет',
-          title: tab === 'tracks' ? 'Мои треки' : tab === 'saved' ? 'Сохранённое' : 'Мой маршрут',
-          lead:
-            tab === 'tracks'
-              ? 'Доступные, начатые и завершённые. Пустые карточки без содержания нельзя начать.'
-              : tab === 'saved'
-                ? 'Треки, которые вы отметили в поиске и на страницах описаний.'
-                : 'Не лестница из уроков, а текущая ветка: что сделано, где вы сейчас и куда свернуть.',
+          title: 'Мой маршрут',
+          lead: 'Последовательность выбранных треков: статус доступа, прохождение и следующее действие.',
           crumbs: [
             { label: 'Academy', href: R.home() },
             { label: 'Кабинет', href: R.my() },
-            { label: tab === 'tracks' ? 'Мои треки' : tab === 'saved' ? 'Сохранённое' : 'Мой маршрут' },
+            { label: 'Мой маршрут' },
           ],
         },
         R,
       ) +
       (cabinetNav ? cabinetNav(state) : '') +
-      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:40px"><section>' +
-      (tab === 'tracks' || tab === 'saved' ? savedListBlock(tab) : '') +
-      (tab ? '' : '<span class="mlma-eyebrow mlma-eyebrow-dark">Моя ветка</span><h2 class="mlma-h3" style="margin-top:16px">' +
-      (savedNodes.length ? 'Треки, которые вы отложили' : 'Маршрут ещё не начат') +
-      '</h2>' +
-      myBranch) +
-      '</section>' +
-      (tab || !state.preview ? '' : demo) +
+      cabinetStatusBanner(state) +
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px">' +
+      body +
       '</div>'
     );
   }
@@ -1774,6 +1864,9 @@
       '<form class="mlma-card mlma-pad-lg" style="padding:28px" id="mlma-profile-form"><span class="mlma-eyebrow mlma-eyebrow-dark">Короткая настройка</span>' +
       '<h2 class="mlma-h3" style="margin-top:16px">Заполняется за одну-две минуты</h2>' +
       '<div style="margin-top:28px;display:grid;gap:20px">' +
+      '<div><span class="mlma-meta" style="display:block;margin-bottom:8px">Email</span><p style="font-weight:700">' +
+      esc((state.account && state.account.email) || 'Появится после входа') +
+      '</p></div>' +
       '<div><label class="mlma-meta" style="display:block;margin-bottom:8px" for="mlma-name">Имя</label>' +
       '<input id="mlma-name" class="mlma-field" name="displayName" maxlength="80" value="' +
       esc(state.profile.displayName || (state.account && state.account.name) || '') +
@@ -2540,10 +2633,67 @@
       el.addEventListener('click', function () {
         var id = el.getAttribute('data-mlma-save');
         if (!id) return;
+        var wasSaved = (state.profile.savedTrackIds || []).indexOf(D.normalizeTrackId(id)) !== -1;
+        if (wasSaved && D.removeTrackFromRoute) {
+          D.removeTrackFromRoute(id).then(function () {
+            D.trackEvent('track_unsaved', { itemId: id, source: state.page });
+            mount(rootEl);
+          });
+          return;
+        }
+        if (D.saveTrackToRoute) {
+          D.saveTrackToRoute(id).then(function (result) {
+            D.trackEvent('track_saved', { itemId: id, source: state.page });
+            state.saveNotice = result && result.ok ? 'saved' : result && result.fallback ? 'fallback' : 'saved';
+            mount(rootEl);
+            var hint = rootEl.querySelector('#mlma-save-hint');
+            if (hint && result && result.ok) hint.textContent = 'Трек сохранён в вашем маршруте.';
+          });
+          return;
+        }
         state.profile = D.toggleSavedTrack(id);
         D.trackEvent('track_saved', { itemId: id, source: state.page });
         mount(rootEl);
       });
+    });
+    rootEl.querySelectorAll('[data-mlma-save-guest]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = D.normalizeTrackId(el.getAttribute('data-mlma-save-guest'));
+        if (D.writePendingTrackId) D.writePendingTrackId(id);
+        D.trackEvent('signup_started', { itemId: id, source: 'save_guest' });
+        var returnPath = D.routes().track(id);
+        window.location.href = D.membersSignupUrl(returnPath);
+      });
+    });
+    rootEl.querySelectorAll('[data-mlma-route-del]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = el.getAttribute('data-mlma-route-del');
+        if (D.removeTrackFromRoute) {
+          D.removeTrackFromRoute(id).then(function () {
+            D.trackEvent('track_unsaved', { itemId: id, source: 'route' });
+            mount(rootEl);
+          });
+        }
+      });
+    });
+    function moveRoute(id, dir) {
+      var ids = (state.profile.savedTrackIds || []).slice();
+      var idx = ids.indexOf(D.normalizeTrackId(id));
+      if (idx < 0) return;
+      var next = idx + dir;
+      if (next < 0 || next >= ids.length) return;
+      var tmp = ids[idx];
+      ids[idx] = ids[next];
+      ids[next] = tmp;
+      if (D.reorderRoute) {
+        D.reorderRoute(ids).then(function () { mount(rootEl); });
+      }
+    }
+    rootEl.querySelectorAll('[data-mlma-route-up]').forEach(function (el) {
+      el.addEventListener('click', function () { moveRoute(el.getAttribute('data-mlma-route-up'), -1); });
+    });
+    rootEl.querySelectorAll('[data-mlma-route-down]').forEach(function (el) {
+      el.addEventListener('click', function () { moveRoute(el.getAttribute('data-mlma-route-down'), 1); });
     });
     var form = rootEl.querySelector('#mlma-profile-form');
     if (form) {
@@ -2882,9 +3032,33 @@
       footer(state) +
       mobileNav(state);
     bind(state, rootEl);
+    if (!existingRoot && D.hydrateAccountFromServer && state.account && state.account.loggedIn) {
+      D.hydrateAccountFromServer(D.readMembersSession ? D.readMembersSession() : state.account).then(function (account) {
+        if (!account) return;
+        var prevMode = state.account && state.account.storageMode;
+        state.account = account;
+        if (account.profile) state.profile = account.profile;
+        if (prevMode === 'server' && account.storageMode === 'server') {
+          var same = JSON.stringify((state.profile && state.profile.savedTrackIds) || []) === JSON.stringify(account.savedTrackIds || (account.profile && account.profile.savedTrackIds) || []);
+          if (same) return;
+        }
+        mount(rootEl);
+      });
+    }
     if (state.page === 'home') {
       D.trackEvent('academy_open', { source: 'home' });
       D.trackEvent('academy_home_open', { source: 'home' });
+    }
+    if (state.page === 'route') D.trackEvent('route_opened', { source: queryParam('tab') || 'route' });
+    if (state.page === 'my' && state.account && state.account.loggedIn) {
+      try {
+        if (window.sessionStorage && !window.sessionStorage.getItem('mlma.login.tracked')) {
+          window.sessionStorage.setItem('mlma.login.tracked', '1');
+          D.trackEvent('login_completed', { source: 'cabinet' });
+        }
+      } catch (err) {
+        /* ignore */
+      }
     }
     if (state.page === 'library' || state.page === 'preview') D.trackEvent('library_open', { source: state.page });
     if (state.page === 'track') {

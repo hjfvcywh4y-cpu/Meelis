@@ -388,10 +388,67 @@
       el.addEventListener('click', function () {
         var id = el.getAttribute('data-mlma-save');
         if (!id) return;
+        var wasSaved = (state.profile.savedTrackIds || []).indexOf(D.normalizeTrackId(id)) !== -1;
+        if (wasSaved && D.removeTrackFromRoute) {
+          D.removeTrackFromRoute(id).then(function () {
+            D.trackEvent('track_unsaved', { itemId: id, source: state.page });
+            mount(rootEl);
+          });
+          return;
+        }
+        if (D.saveTrackToRoute) {
+          D.saveTrackToRoute(id).then(function (result) {
+            D.trackEvent('track_saved', { itemId: id, source: state.page });
+            state.saveNotice = result && result.ok ? 'saved' : result && result.fallback ? 'fallback' : 'saved';
+            mount(rootEl);
+            var hint = rootEl.querySelector('#mlma-save-hint');
+            if (hint && result && result.ok) hint.textContent = 'Трек сохранён в вашем маршруте.';
+          });
+          return;
+        }
         state.profile = D.toggleSavedTrack(id);
         D.trackEvent('track_saved', { itemId: id, source: state.page });
         mount(rootEl);
       });
+    });
+    rootEl.querySelectorAll('[data-mlma-save-guest]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = D.normalizeTrackId(el.getAttribute('data-mlma-save-guest'));
+        if (D.writePendingTrackId) D.writePendingTrackId(id);
+        D.trackEvent('signup_started', { itemId: id, source: 'save_guest' });
+        var returnPath = D.routes().track(id);
+        window.location.href = D.membersSignupUrl(returnPath);
+      });
+    });
+    rootEl.querySelectorAll('[data-mlma-route-del]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = el.getAttribute('data-mlma-route-del');
+        if (D.removeTrackFromRoute) {
+          D.removeTrackFromRoute(id).then(function () {
+            D.trackEvent('track_unsaved', { itemId: id, source: 'route' });
+            mount(rootEl);
+          });
+        }
+      });
+    });
+    function moveRoute(id, dir) {
+      var ids = (state.profile.savedTrackIds || []).slice();
+      var idx = ids.indexOf(D.normalizeTrackId(id));
+      if (idx < 0) return;
+      var next = idx + dir;
+      if (next < 0 || next >= ids.length) return;
+      var tmp = ids[idx];
+      ids[idx] = ids[next];
+      ids[next] = tmp;
+      if (D.reorderRoute) {
+        D.reorderRoute(ids).then(function () { mount(rootEl); });
+      }
+    }
+    rootEl.querySelectorAll('[data-mlma-route-up]').forEach(function (el) {
+      el.addEventListener('click', function () { moveRoute(el.getAttribute('data-mlma-route-up'), -1); });
+    });
+    rootEl.querySelectorAll('[data-mlma-route-down]').forEach(function (el) {
+      el.addEventListener('click', function () { moveRoute(el.getAttribute('data-mlma-route-down'), 1); });
     });
     var form = rootEl.querySelector('#mlma-profile-form');
     if (form) {
@@ -730,9 +787,33 @@
       footer(state) +
       mobileNav(state);
     bind(state, rootEl);
+    if (!existingRoot && D.hydrateAccountFromServer && state.account && state.account.loggedIn) {
+      D.hydrateAccountFromServer(D.readMembersSession ? D.readMembersSession() : state.account).then(function (account) {
+        if (!account) return;
+        var prevMode = state.account && state.account.storageMode;
+        state.account = account;
+        if (account.profile) state.profile = account.profile;
+        if (prevMode === 'server' && account.storageMode === 'server') {
+          var same = JSON.stringify((state.profile && state.profile.savedTrackIds) || []) === JSON.stringify(account.savedTrackIds || (account.profile && account.profile.savedTrackIds) || []);
+          if (same) return;
+        }
+        mount(rootEl);
+      });
+    }
     if (state.page === 'home') {
       D.trackEvent('academy_open', { source: 'home' });
       D.trackEvent('academy_home_open', { source: 'home' });
+    }
+    if (state.page === 'route') D.trackEvent('route_opened', { source: queryParam('tab') || 'route' });
+    if (state.page === 'my' && state.account && state.account.loggedIn) {
+      try {
+        if (window.sessionStorage && !window.sessionStorage.getItem('mlma.login.tracked')) {
+          window.sessionStorage.setItem('mlma.login.tracked', '1');
+          D.trackEvent('login_completed', { source: 'cabinet' });
+        }
+      } catch (err) {
+        /* ignore */
+      }
     }
     if (state.page === 'library' || state.page === 'preview') D.trackEvent('library_open', { source: state.page });
     if (state.page === 'track') {
