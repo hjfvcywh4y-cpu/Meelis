@@ -1,0 +1,600 @@
+<!-- Блок T123: доменная логика 12/12 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<script>
+/**
+ * Онтология и runtime трека. Справочники из библиотеки конструкций.
+ * Не показывает служебные ID в пользовательском UI.
+ */
+(function (root) {
+  'use strict';
+  var api = root.MLMA;
+  if (!api) return;
+
+  var RUNTIME_KEY = 'mlma.runtime.v1';
+  var INACTIVITY_MS = 36 * 60 * 60 * 1000;
+  var PRESSURE_RE = /гарант\w* доход|обязательно куп|впари|развед[её]нн|дави на человека/;
+
+  var GENRE = {
+    'GEN-003': { label: 'Расследование', pattern: 'Факт → версия → проверка → заключение', accent: 'investigation' },
+    'GEN-001': { label: 'Путешествие', pattern: 'Карта → точка → открытие', accent: 'expedition' },
+    'GEN-008': { label: 'Создание', pattern: 'Черновик → сборка → версия', accent: 'workshop' },
+    'GEN-004': { label: 'Миссия', pattern: 'Цель → этап → контроль → завершение', accent: 'mission' },
+    'GEN-011': { label: 'Практика', pattern: 'Задача → действие → след', accent: 'practice' },
+    'GEN-024': { label: 'Тренировка', pattern: 'Попытка → разбор → повтор', accent: 'practice' },
+    'GEN-012': { label: 'Переговоры', pattern: 'Контакт → ответ → следующий шаг', accent: 'mission' },
+    'GEN-010': { label: 'Эксперимент', pattern: 'Гипотеза → проба → вывод', accent: 'investigation' },
+    'GEN-016': { label: 'Самопроверка', pattern: 'Состояние → выбор → фиксация', accent: 'practice' },
+    'GEN-022': { label: 'Сборка системы', pattern: 'Элемент → связь → контур', accent: 'workshop' },
+  };
+
+  var TOPOLOGY = {
+    linear: 'TOP-001',
+    'linear-with-checkpoints': 'TOP-002',
+    ladder: 'TOP-003',
+    cycle: 'TOP-005',
+    'retry-loop': 'TOP-006',
+    branch: 'TOP-007',
+    'branch-and-converge': 'TOP-008',
+    'multiple-endings': 'TOP-009',
+    adaptive: 'TOP-010',
+    'hub-and-spoke': 'TOP-011',
+    'stage-gate': 'TOP-015',
+    detour: 'TOP-016',
+    unlock: 'TOP-017',
+    accumulation: 'TOP-018',
+    'time-limited': 'TOP-019',
+  };
+
+  function fmt(track) {
+    return api.normalizeSearchText(track.format || '');
+  }
+
+  function blob(track) {
+    return api.normalizeSearchText([track.title, track.situation, track.outcome, track.format, track.module].join(' '));
+  }
+
+  function itemKind(track) {
+    if (track && (track.type === 'material' || track.k === 'm')) return 'material';
+    var f = fmt(track || {});
+    if (/видео|статья|лонгрид|презентац|pdf|памятк|гайд|инструкц лекц/.test(f) && !/практик|конструктор|чек|карт|план|диагност/.test(f)) {
+      return 'material';
+    }
+    return 'track';
+  }
+
+  function mapMechanic(track) {
+    var f = fmt(track);
+    var t = blob(track);
+    if (/диагност|самодиагност|шкал/.test(f + ' ' + t)) return { id: 'MEC-010', name: 'Шкала самооценки' };
+    if (/decision tree|развилк/.test(f)) return { id: 'MEC-009', name: 'Ветвящийся диагностический тест' };
+    if (/decision gate|матриц|выбор/.test(f)) return { id: 'MEC-001', name: 'Тест с одним выбором' };
+    if (/тренаж|практик реплик|микропрактик|аудио/.test(f)) return { id: 'MEC-012', name: 'Демонстрация и повтор' };
+    if (/конструктор|редактор|переформулир/.test(f)) return { id: 'MEC-031', name: 'Сборка рабочего объекта' };
+    if (/карт/.test(f)) return { id: 'MEC-012', name: 'Карточная сортировка' };
+    if (/план|календар|crm|мини-crm/.test(f)) return { id: 'MEC-031', name: 'Сборка рабочего объекта' };
+    if (/чек/.test(f)) return { id: 'MEC-003', name: 'Верно / неверно' };
+    if (/калькулятор|приоритиз/.test(f)) return { id: 'MEC-025', name: 'Когнитивная работа' };
+    return { id: 'MEC-007', name: 'Открытый вопрос' };
+  }
+
+  function mapGenre(track) {
+    var f = fmt(track);
+    var t = blob(track);
+    if (/диагност|разбор|аудит/.test(f + ' ' + t)) return 'GEN-003';
+    if (/эксперимент|микроэкспозиц/.test(f + ' ' + t)) return 'GEN-010';
+    if (/конструктор|сборк|прототип/.test(f)) return 'GEN-008';
+    if (/план|календар|маршрут|crm/.test(f + ' ' + t)) return 'GEN-004';
+    if (/практик|тренаж|реплик/.test(f)) return 'GEN-024';
+    if (/самодиагност|рефлекс/.test(f)) return 'GEN-016';
+    if (/сообщен|звон|встреч|диалог/.test(t)) return 'GEN-012';
+    return 'GEN-011';
+  }
+
+  function mapScenario(track) {
+    var f = fmt(track);
+    if (/диагност/.test(f)) return { id: 'SCN-015', name: 'Самодиагностика → выбор шага' };
+    if (/практик|тренаж|реплик/.test(f)) return { id: 'SCN-002', name: 'Демонстрация → повтор' };
+    if (/конструктор|форм/.test(f)) return { id: 'SCN-001', name: 'Объяснение → применение' };
+    if (/план-факт|отклонен/.test(f + ' ' + blob(track))) return { id: 'SCN-050', name: 'План-факт → корректировка' };
+    if (/план|crm/.test(f)) return { id: 'SCN-032', name: 'Приоритет → фокус' };
+    if (/чек|gate/.test(f)) return { id: 'SCN-054', name: 'Чек-лист → исполнение' };
+    return { id: 'SCN-051', name: 'Подготовка → действие → фиксация' };
+  }
+
+  function mapArtifact(track) {
+    var f = fmt(track);
+    var o = api.normalizeSearchText(track.outcome || '');
+    if (/сообщен|реплик|фраз|текст/.test(f + ' ' + o)) return { id: 'ART-021', name: 'Текст сообщения' };
+    if (/план|календар/.test(f + ' ' + o)) return { id: 'ART-006', name: 'План действий' };
+    if (/карт/.test(f)) return { id: 'ART-013', name: 'Карта' };
+    if (/решен|выбор|роль/.test(f + ' ' + o)) return { id: 'ART-001', name: 'Зафиксированное решение' };
+    return { id: 'ART-003', name: 'Заполненная форма' };
+  }
+
+  function mapEvidence(track) {
+    var f = fmt(track);
+    if (/сообщен|реплик|практик|отправ/.test(f + ' ' + api.normalizeSearchText(track.title || ''))) {
+      return { id: 'EVD-002', name: 'Короткий ответ', source: 'artifact+note', strength: 'medium' };
+    }
+    if (/план|карт|конструктор|форм/.test(f)) {
+      return { id: 'EVD-003', name: 'Заполненная форма', source: 'artifact', strength: 'medium' };
+    }
+    return { id: 'EVD-002', name: 'Короткий ответ', source: 'artifact+note', strength: 'medium' };
+  }
+
+  function mapFunction(track) {
+    var f = fmt(track);
+    if (/диагност/.test(f)) return { id: 'FUN-010', name: 'Диагностика' };
+    if (/практик|тренаж/.test(f)) return { id: 'FUN-012', name: 'Тренировка' };
+    if (/конструктор|форм/.test(f)) return { id: 'FUN-014', name: 'Создание артефакта' };
+    if (/план/.test(f)) return { id: 'FUN-006', name: 'Подготовка к действию' };
+    if (track.sectionId === 'A3') return { id: 'FUN-007', name: 'Активация' };
+    if (track.sectionId === 'A1') return { id: 'FUN-001', name: 'Ориентация' };
+    return { id: 'FUN-008', name: 'Исполнение' };
+  }
+
+  function mapTopology(track) {
+    var f = fmt(track);
+    if (/развилк|decision tree/.test(f)) return 'TOP-007';
+    if (/повторн|диагност \+/.test(f)) return 'TOP-006';
+    if (/gate|чек/.test(f)) return 'TOP-015';
+    if (/план-факт|ритм|привыч/.test(f + ' ' + blob(track))) return 'TOP-005';
+    return 'TOP-002';
+  }
+
+  function isPerformanceTrack(track) {
+    var t = blob(track);
+    return /план-факт|отклонен|ритм|повторн продаж|клиентск опыт/.test(t) || track.sectionId === 'A6' && /план|crm|ритм/.test(fmt(track));
+  }
+
+  function defaultReactions() {
+    return [
+      { event: 'track_evidence_rejected', reaction: 'retry' },
+      { event: 'track_inactive', reaction: 'hint' },
+      { event: 'track_complete', reaction: 'next_track' },
+      { event: 'track_retry', reaction: 'corrective_track' },
+      { event: 'leader_escalation', reaction: 'escalation' },
+    ];
+  }
+
+  function knownTaxonomy(id) {
+    return /^(FUN|MEC|GEN|TOP|SCN|ART|EVD|CMP|FDB|BRN|CNT|SET|TON|EVT|REA)-\d{3}$/.test(id || '');
+  }
+
+  function derivePassport(track) {
+    if (!track) return null;
+    var kind = itemKind(track);
+    var mechanic = mapMechanic(track);
+    var genreId = mapGenre(track);
+    var scenario = mapScenario(track);
+    var artifact = mapArtifact(track);
+    var evidence = mapEvidence(track);
+    var fn = mapFunction(track);
+    var genre = GENRE[genreId] || GENRE['GEN-011'];
+    return {
+      trackId: track.trackId,
+      type: kind,
+      status: track.publicationStatus || 'planned',
+      title: track.title,
+      trigger: track.situation,
+      inputState: track.situation,
+      targetState: track.outcome,
+      mainTask: track.title,
+      businessFunction: fn,
+      leadingMechanic: mechanic,
+      dominantGenre: genreId,
+      genreLabel: genre.label,
+      genrePattern: genre.pattern,
+      genreAccent: genre.accent,
+      setting: 'SET-001',
+      tone: ['TON-005', 'TON-023'],
+      topology: mapTopology(track),
+      scenarioPattern: scenario,
+      artifact: artifact,
+      evidence: evidence,
+      completionCriteria: {
+        technical: 'CMP-002',
+        quality: 'CMP-011',
+        business: null,
+      },
+      feedbackRules: ['FDB-001', 'FDB-006', 'FDB-022'],
+      branches: {
+        success: 'BRN-001',
+        error: 'BRN-007',
+        inactivity: 'BRN-009',
+        highResult: 'BRN-003',
+        risk: 'BRN-006',
+      },
+      container: 'CNT-001',
+      nextTrackIds: (track.nextTrackIds || []).slice(),
+      relatedMaterialIds: [],
+      needsContent: track.contentStatus === 'metadata_only',
+      executable: kind === 'track' && !!(track.situation && track.outcome && track.title),
+      class: isPerformanceTrack(track) ? 'performance' : kind,
+      economicHypothesis: {
+        process: isPerformanceTrack(track) ? (track.module || '') : '',
+        metric: null,
+        proxyMetric: null,
+        expectedInfluence: null,
+        measurementDesign: null,
+      },
+      managementReactions: defaultReactions(),
+      analyticsEvents: ['track_preview_open', 'track_start', 'track_action_submitted', 'track_evidence_submitted', 'track_complete', 'track_next_recommended'],
+    };
+  }
+
+  function validateTrack(track, catalog) {
+    var issues = [];
+    if (!track || !api.TRACK_ID_RE.test(track.trackId || '')) issues.push('broken_id');
+    var passport = derivePassport(track);
+    if (!passport) return { ok: false, issues: ['missing_track'], passport: null };
+    var kind = passport.type;
+    if (!passport.trigger) issues.push('missing_trigger');
+    if (!passport.inputState) issues.push('missing_input_state');
+    if (!passport.targetState) issues.push('missing_target_state');
+    if (!passport.mainTask) issues.push('missing_main_task');
+    if (!passport.leadingMechanic || !passport.leadingMechanic.id) issues.push('missing_mechanic');
+    if (!passport.evidence || !passport.evidence.id) issues.push('missing_evidence');
+    if (passport.completionCriteria && passport.completionCriteria.technical === 'view-only') issues.push('completion-by-view-only');
+    if (kind === 'track' && !passport.nextTrackIds.length) issues.push('missing_next_step');
+    var byId = {};
+    if (Array.isArray(catalog)) {
+      for (var i = 0; i < catalog.length; i += 1) byId[catalog[i].trackId] = catalog[i];
+    }
+    for (var n = 0; n < passport.nextTrackIds.length; n += 1) {
+      if (catalog && !byId[passport.nextTrackIds[n]]) issues.push('broken_nextTrackId');
+    }
+    var prereq = track.prerequisiteIds || [];
+    for (var p = 0; p < prereq.length; p += 1) {
+      if (catalog && !byId[prereq[p]]) issues.push('broken_prerequisite');
+    }
+    var related = track.relatedMaterialIds || passport.relatedMaterialIds || [];
+    for (var r = 0; r < related.length; r += 1) {
+      if (catalog && !byId[related[r]]) issues.push('broken_material_relation');
+    }
+    if (!knownTaxonomy(passport.businessFunction.id)) issues.push('unknown_taxonomy_id');
+    if (!knownTaxonomy(passport.leadingMechanic.id)) issues.push('unknown_taxonomy_id');
+    if (!knownTaxonomy(passport.dominantGenre)) issues.push('unknown_taxonomy_id');
+    if (!knownTaxonomy(passport.topology)) issues.push('unknown_taxonomy_id');
+    if (!knownTaxonomy(passport.scenarioPattern.id)) issues.push('unknown_taxonomy_id');
+    if (!knownTaxonomy(passport.artifact.id)) issues.push('unknown_taxonomy_id');
+    if (!knownTaxonomy(passport.evidence.id)) issues.push('unknown_taxonomy_id');
+    var branchValues = [passport.branches.success, passport.branches.error, passport.branches.inactivity, passport.branches.highResult, passport.branches.risk];
+    var same = branchValues.every(function (id) { return id === branchValues[0]; });
+    if (same) issues.push('same_result_in_all_branches');
+    if (!passport.executable && kind === 'track' && track.publicationStatus === 'planned') issues.push('coming-soon-without-preview');
+    if (!passport.executable && kind === 'track') issues.push('coming-soon-with-start-cta');
+    if (itemKind(track) === 'track' && !track.title) issues.push('track_without_title');
+    if (kind === 'track' && !track.trackId) issues.push('track_without_url');
+    return { ok: issues.filter(function (code) { return code !== 'missing_next_step'; }).length === 0, issues: issues, passport: passport };
+  }
+
+  function validateCatalog(catalog) {
+    var rows = [];
+    var seen = {};
+    var pointed = {};
+    for (var i = 0; i < catalog.length; i += 1) {
+      var track = catalog[i];
+      if (seen[track.trackId]) rows.push({ trackId: track.trackId, issues: ['duplicate_id'] });
+      seen[track.trackId] = true;
+      var ids = track.nextTrackIds || [];
+      for (var n = 0; n < ids.length; n += 1) pointed[ids[n]] = true;
+      var result = validateTrack(track, catalog);
+      var critical = result.issues.filter(function (code) {
+        return code !== 'missing_next_step';
+      });
+      if (critical.length) rows.push({ trackId: track.trackId, issues: critical });
+    }
+    for (var j = 0; j < catalog.length; j += 1) {
+      if (!pointed[catalog[j].trackId] && catalog[j].sectionId !== 'A1') {
+        /* entry tracks may be orphans by design; only flag if also no next */
+      }
+    }
+    var expected = { A1: 16, A2: 16, A3: 17, A4: 17, A5: 14, A6: 32 };
+    var counts = { A1: 0, A2: 0, A3: 0, A4: 0, A5: 0, A6: 0 };
+    for (var s = 0; s < catalog.length; s += 1) {
+      if (counts[catalog[s].sectionId] != null) counts[catalog[s].sectionId] += 1;
+    }
+    var countIssues = [];
+    if (catalog.length !== 112) countIssues.push('expected_112_got_' + catalog.length);
+    if (Object.keys(seen).length !== catalog.length) countIssues.push('duplicate_track_ids');
+    Object.keys(expected).forEach(function (sectionId) {
+      if (counts[sectionId] !== expected[sectionId]) {
+        countIssues.push('section_' + sectionId + '_' + counts[sectionId] + '_expected_' + expected[sectionId]);
+      }
+    });
+    return {
+      ok: rows.length === 0 && countIssues.length === 0,
+      failures: rows,
+      total: catalog.length,
+      unique: Object.keys(seen).length,
+      sectionCounts: counts,
+      countIssues: countIssues,
+    };
+  }
+
+  function emptyRuntime(trackId) {
+    return {
+      trackId: trackId,
+      status: 'preview',
+      step: 'preview',
+      attempts: 0,
+      artifact: '',
+      evidenceNote: '',
+      evidenceDone: false,
+      branch: '',
+      feedback: null,
+      trackVersion: '',
+      verificationStatus: '',
+      verificationLabel: '',
+      startedAt: '',
+      completedAt: '',
+      updatedAt: '',
+    };
+  }
+
+  function readRuntimeAll() {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return {};
+      var raw = window.localStorage.getItem(RUNTIME_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (err) {
+      return {};
+    }
+  }
+
+  function writeRuntimeAll(all) {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return;
+      window.localStorage.setItem(RUNTIME_KEY, JSON.stringify(all));
+    } catch (err) {
+      /* ignore */
+    }
+  }
+
+  function getRuntime(trackId) {
+    var all = readRuntimeAll();
+    return all[trackId] || emptyRuntime(trackId);
+  }
+
+  function saveRuntime(state) {
+    var all = readRuntimeAll();
+    state.updatedAt = new Date().toISOString();
+    all[state.trackId] = state;
+    writeRuntimeAll(all);
+    return state;
+  }
+
+  function isInactive(state) {
+    if (!state || !state.updatedAt || state.status === 'preview' || state.status === 'complete') return false;
+    var then = Date.parse(state.updatedAt);
+    if (!then) return false;
+    return Date.now() - then > INACTIVITY_MS;
+  }
+
+  function qualityCheck(track, payload) {
+    var artifact = String(payload.artifact || '').trim();
+    var note = String(payload.evidenceNote || '').trim();
+    var gaps = [];
+    if (artifact.length < 40) gaps.push('Результат слишком короткий: опишите конкретный рабочий объект, а не намёк.');
+    if (/^(готово|сделал|ок|yes|да)[.!\s]*$/i.test(artifact)) gaps.push('Самоотметка «готово» не считается доказательством.');
+    if (!note || note.length < 12) gaps.push('Нет следа действия: кратко напишите, что именно зафиксировано.');
+    if (/^я сделал/i.test(note) && note.length < 24) gaps.push('«Я сделал» без факта не принимается. Укажите, что создано или куда отправлено.');
+    if (PRESSURE_RE.test(artifact.toLowerCase())) {
+      return { branch: 'risk', gaps: ['В тексте есть давление или недопустимое обещание. Такой результат нельзя принимать.'], high: false };
+    }
+    var outcome = api.normalizeSearchText(track.outcome || '');
+    var artNorm = api.normalizeSearchText(artifact);
+    var tokens = outcome.split(' ').filter(function (w) { return w.length > 4; }).slice(0, 4);
+    var hits = 0;
+    for (var i = 0; i < tokens.length; i += 1) {
+      if (artNorm.indexOf(tokens[i]) !== -1) hits += 1;
+    }
+    if (tokens.length && hits === 0) {
+      gaps.push('Результат не связан с ожидаемым следом трека. Вернитесь к формулировке результата.');
+    }
+    if (gaps.length) return { branch: 'error', gaps: gaps, high: false };
+    var high = artifact.length > 280 && /(следующ|дата|когда|кому)/.test(artNorm);
+    return { branch: high ? 'highResult' : 'success', gaps: [], high: high };
+  }
+
+  function buildFeedback(track, check) {
+    if (check.branch === 'risk') {
+      return {
+        title: 'Остановка: риск в формулировке',
+        got: 'Система прочитала недопустимое обещание или давление.',
+        gap: check.gaps[0],
+        change: 'Уберите гарантии дохода, принуждение и чужие обещания. Оставьте только конкретное действие.',
+        now: 'Исправьте текст и отправьте попытку снова.',
+        retry: true,
+      };
+    }
+    if (check.branch === 'error') {
+      return {
+        title: 'Пока нельзя принять результат',
+        got: 'Черновик получен, но не проходит качественный порог.',
+        gap: check.gaps.join(' '),
+        change: 'Сделайте объект конкретным: что создано, для какой ситуации, какой следующий факт.',
+        now: 'Исправьте артефакт и повторите сдачу.',
+        retry: true,
+      };
+    }
+    return {
+      title: check.high ? 'Сильный результат. Можно ускорить маршрут' : 'Результат принят как рабочий след',
+      got: 'Есть наблюдаемый объект и короткое подтверждение действия.',
+      gap: 'Бизнес-событие вне этого трека не требуется.',
+      change: 'Если позже появится внешний факт, вернитесь и дополните след.',
+      now: check.high ? 'Можно перейти к следующему действию без дополнительного закрепления.' : 'Дальше — следующее лучшее действие, а не похожий материал.',
+      retry: false,
+    };
+  }
+
+  function persistRunMeta(state) {
+    var session = api.readMembersSession ? api.readMembersSession() : { loggedIn: false };
+    var repo = api.getRepo ? api.getRepo() : null;
+    if (repo && repo.saveRun) {
+      repo.saveRun(session, state.trackId, {
+        status: state.status,
+        step: state.step,
+        trackVersion: state.trackVersion || '',
+        startedAt: state.startedAt || '',
+        completedAt: state.status === 'complete' ? (state.updatedAt || '') : '',
+      });
+    }
+    return state;
+  }
+
+  function startRuntime(track) {
+    var state = getRuntime(track.trackId);
+    state.status = 'active';
+    state.step = 'action';
+    state.branch = '';
+    state.feedback = null;
+    if (!state.startedAt) state.startedAt = new Date().toISOString();
+    if (!state.trackVersion) {
+      try {
+        state.trackVersion = String((root.MLMA_PAYLOAD && root.MLMA_PAYLOAD.version) || '');
+      } catch (err) {
+        state.trackVersion = '';
+      }
+    }
+    saveRuntime(state);
+    persistRunMeta(state);
+    return state;
+  }
+
+  function submitRuntime(track, payload) {
+    var state = getRuntime(track.trackId);
+    state.attempts += 1;
+    state.artifact = String(payload.artifact || '');
+    state.evidenceNote = String(payload.evidenceNote || '');
+    state.evidenceDone = !!payload.evidenceDone;
+    var check = qualityCheck(track, payload);
+    state.branch = check.branch;
+    state.feedback = buildFeedback(track, check);
+    state.step = 'feedback';
+    state.status = check.branch === 'success' || check.branch === 'highResult' ? 'complete' : 'retry';
+    state.verificationStatus = 'self_checked';
+    state.verificationLabel = 'Самопроверка по критериям';
+    saveRuntime(state);
+    persistRunMeta(state);
+    return { state: state, check: check };
+  }
+
+  function retryRuntime(track) {
+    var state = getRuntime(track.trackId);
+    state.status = 'active';
+    state.step = 'action';
+    state.branch = 'error';
+    saveRuntime(state);
+    persistRunMeta(state);
+    return state;
+  }
+
+  function nextBestAction(track, catalog, runtime, profile) {
+    catalog = catalog || [];
+    var byId = {};
+    for (var i = 0; i < catalog.length; i += 1) byId[catalog[i].trackId] = catalog[i];
+    var branch = runtime && runtime.branch;
+    if (branch === 'error' || branch === 'risk') {
+      if (runtime && runtime.attempts >= 2) {
+        return {
+          kind: 'corrective',
+          reason: 'quality_gap',
+          track: track,
+          title: 'Повторить этот трек меньшим шагом',
+          why: 'Критерий снова не пройден. Сначала закрыть разрыв, затем идти дальше.',
+        };
+      }
+      return {
+        kind: 'retry',
+        reason: 'quality_gap',
+        track: track,
+        title: 'Повторить этот трек',
+        why: 'Критерий не пройден. Сначала закрыть разрыв, затем идти дальше.',
+      };
+    }
+    var ids = track.nextTrackIds || [];
+    var goal = profile && profile.selectedSectionId;
+    var picked = null;
+    var reason = 'explicit_next_edge';
+    for (var n = 0; n < ids.length; n += 1) {
+      var cand = byId[ids[n]];
+      if (!cand) continue;
+      if (goal && cand.sectionId === goal) {
+        picked = cand;
+        reason = 'matches_profile_goal';
+        break;
+      }
+      if (!picked) picked = cand;
+    }
+    if (!picked) {
+      return { kind: 'section', reason: 'same_section', track: null, sectionId: track.sectionId, title: 'Вернуться в раздел', why: 'Прямого следующего трека нет.' };
+    }
+    if (branch === 'highResult' && ids[1] && byId[ids[1]]) {
+      picked = byId[ids[1]];
+      reason = 'high_result_skip';
+    }
+    return {
+      kind: 'open_track',
+      reason: reason,
+      track: picked,
+      title: picked.title,
+      why: 'Следующее состояние после «' + track.title + '».',
+    };
+  }
+
+  function relatedContent(track, catalog, limit) {
+    limit = limit || 3;
+    if (typeof api.relatedTracks === 'function') {
+      var related = api.relatedTracks(track, catalog, limit + 3, {});
+      var next = {};
+      var ids = track.nextTrackIds || [];
+      for (var i = 0; i < ids.length; i += 1) next[ids[i]] = true;
+      var out = [];
+      for (var r = 0; r < related.length && out.length < limit; r += 1) {
+        if (next[related[r].trackId]) continue;
+        out.push(related[r]);
+      }
+      return out;
+    }
+    return [];
+  }
+
+  function searchFields(track) {
+    var p = derivePassport(track);
+    return {
+      trigger: api.normalizeSearchText(p.trigger),
+      inputState: api.normalizeSearchText(p.inputState),
+      targetState: api.normalizeSearchText(p.targetState),
+      mainTask: api.normalizeSearchText(p.mainTask),
+      mechanic: api.normalizeSearchText(p.leadingMechanic.name),
+      artifact: api.normalizeSearchText(p.artifact.name),
+      evidence: api.normalizeSearchText(p.evidence.name),
+      functionName: api.normalizeSearchText(p.businessFunction.name),
+    };
+  }
+
+  api.RUNTIME_KEY = RUNTIME_KEY;
+  api.TOPOLOGY = TOPOLOGY;
+  api.GENRE = GENRE;
+  api.itemKind = itemKind;
+  api.derivePassport = derivePassport;
+  api.validateTrack = validateTrack;
+  api.validateCatalog = validateCatalog;
+  api.getRuntime = getRuntime;
+  api.listRuntimes = function () { return readRuntimeAll(); };
+  api.startRuntime = startRuntime;
+  api.submitRuntime = submitRuntime;
+  api.retryRuntime = retryRuntime;
+  api.isInactive = isInactive;
+  api.nextBestAction = nextBestAction;
+  api.relatedContent = relatedContent;
+  api.searchFields = searchFields;
+  api.qualityCheck = qualityCheck;
+  api.isPerformanceTrack = isPerformanceTrack;
+  api.defaultReactions = defaultReactions;
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+

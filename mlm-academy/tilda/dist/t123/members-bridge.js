@@ -67,6 +67,33 @@
     'Last Name': 'Фамилия',
   };
 
+  function ensureRegistrationConsent() {
+    var form = document.getElementById('form-signup');
+    if (!form || form.querySelector('#mlma-members-consent')) return;
+    var submit = form.querySelector('.tlk-form__submit-wrap, button[type="submit"], input[type="submit"]');
+    if (!submit) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'mlma-members-consent';
+    wrap.innerHTML =
+      '<label><input type="checkbox" id="mlma-members-consent" name="mlma_members_consent" required> ' +
+      '<span>Я принимаю <a href="/consent" target="_blank" rel="noopener">согласие на обработку и передачу персональных данных</a> ' +
+      'и <a href="/privacy" target="_blank" rel="noopener">политику конфиденциальности</a>.</span></label>';
+    var submitWrap = submit.closest ? submit.closest('.tlk-form__submit-wrap') || submit : submit;
+    submitWrap.parentNode.insertBefore(wrap, submitWrap);
+    form.addEventListener(
+      'submit',
+      function (event) {
+        var checkbox = form.querySelector('#mlma-members-consent');
+        if (checkbox && !checkbox.checked) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          checkbox.reportValidity();
+        }
+      },
+      true,
+    );
+  }
+
   function translateNode(root) {
     if (!root) return;
     var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
@@ -85,6 +112,7 @@
 
   function translateAll() {
     translateNode(document.getElementById('allrecords') || document.body);
+    ensureRegistrationConsent();
   }
 
   translateAll();

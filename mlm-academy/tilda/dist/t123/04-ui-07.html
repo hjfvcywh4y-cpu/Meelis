@@ -324,6 +324,11 @@
         menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
       });
     }
+    rootEl.querySelectorAll('[data-mlma-logout]').forEach(function (el) {
+      el.addEventListener('click', function (event) {
+        if (D.performMembersLogout) D.performMembersLogout(event);
+      });
+    });
     rootEl.querySelectorAll('[data-mlma-run-start]').forEach(function (el) {
       el.addEventListener('click', function () {
         var id = D.normalizeTrackId(el.getAttribute('data-mlma-run-start'));
