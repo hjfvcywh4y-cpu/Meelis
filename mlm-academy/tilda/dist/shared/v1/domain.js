@@ -2874,6 +2874,7 @@
   };
   api._legalRequisites = requisites;
   api._legalOffer = offer;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
 
 /* __MLMA_UI_SPLIT__ */

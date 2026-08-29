@@ -519,9 +519,15 @@ a.mlma-card:hover, a.mlma-card-soft:hover { text-decoration: none; color: inheri
   .mlma-footer-col summary {
     cursor: default;
     padding-top: 0;
+    pointer-events: none;
   }
+  .mlma-footer-col ul,
+  .mlma-footer-col > ul,
   .mlma-footer-col > :not(summary) {
     display: grid !important;
+    height: auto !important;
+    visibility: visible !important;
+    overflow: visible !important;
   }
 }
 

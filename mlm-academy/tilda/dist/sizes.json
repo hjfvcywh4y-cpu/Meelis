@@ -1,11 +1,11 @@
 {
   "assetsVersion": "v1",
   "schema": "mlma.catalog.public.v1",
-  "css": 32284,
+  "css": 32457,
   "json": 53253,
   "dataChunks": 2,
-  "domain": 259145,
-  "ui": 170348,
+  "domain": 259222,
+  "ui": 170353,
   "trackModules": [
     "a2-008.module.js"
   ],
@@ -25,7 +25,7 @@
     "css": 32284,
     "json": 53253,
     "dataChunks": 2,
-    "domain": 258404,
+    "domain": 259145,
     "ui": 170348,
     "trackModules": [
       "a2-008.module.js"
@@ -43,11 +43,11 @@
     "previous": {
       "assetsVersion": "v1",
       "schema": "mlma.catalog.public.v1",
-      "css": 29246,
+      "css": 32284,
       "json": 53253,
       "dataChunks": 2,
-      "domain": 233013,
-      "ui": 163255,
+      "domain": 258404,
+      "ui": 170348,
       "trackModules": [
         "a2-008.module.js"
       ],
@@ -130,8 +130,8 @@
               "css": 29246,
               "json": 53253,
               "dataChunks": 2,
-              "domain": 230742,
-              "ui": 162997,
+              "domain": 233013,
+              "ui": 163255,
               "trackModules": [
                 "a2-008.module.js"
               ],
@@ -170,10 +170,13 @@
                   "assetsVersion": "v1",
                   "schema": "mlma.catalog.public.v1",
                   "css": 29246,
-                  "json": 53240,
+                  "json": 53253,
                   "dataChunks": 2,
-                  "domain": 229257,
-                  "ui": 162519,
+                  "domain": 230742,
+                  "ui": 162997,
+                  "trackModules": [
+                    "a2-008.module.js"
+                  ],
                   "tracks": 112,
                   "uniqueTrackIds": 112,
                   "sectionCounts": {
@@ -188,10 +191,10 @@
                     "assetsVersion": "v1",
                     "schema": "mlma.catalog.public.v1",
                     "css": 29246,
-                    "json": 53232,
+                    "json": 53240,
                     "dataChunks": 2,
-                    "domain": 218024,
-                    "ui": 161971,
+                    "domain": 229257,
+                    "ui": 162519,
                     "tracks": 112,
                     "uniqueTrackIds": 112,
                     "sectionCounts": {
@@ -223,11 +226,11 @@
                       "previous": {
                         "assetsVersion": "v1",
                         "schema": "mlma.catalog.public.v1",
-                        "css": 29207,
+                        "css": 29246,
                         "json": 53232,
                         "dataChunks": 2,
-                        "domain": 218035,
-                        "ui": 161938,
+                        "domain": 218024,
+                        "ui": 161971,
                         "tracks": 112,
                         "uniqueTrackIds": 112,
                         "sectionCounts": {
@@ -281,7 +284,7 @@
                               "json": 53232,
                               "dataChunks": 2,
                               "domain": 218035,
-                              "ui": 161934,
+                              "ui": 161938,
                               "tracks": 112,
                               "uniqueTrackIds": 112,
                               "sectionCounts": {
@@ -298,8 +301,8 @@
                                 "css": 29207,
                                 "json": 53232,
                                 "dataChunks": 2,
-                                "domain": 219042,
-                                "ui": 162936,
+                                "domain": 218035,
+                                "ui": 161934,
                                 "tracks": 112,
                                 "uniqueTrackIds": 112,
                                 "sectionCounts": {
@@ -316,7 +319,7 @@
                                   "css": 29207,
                                   "json": 53232,
                                   "dataChunks": 2,
-                                  "domain": 219251,
+                                  "domain": 219042,
                                   "ui": 162936,
                                   "tracks": 112,
                                   "uniqueTrackIds": 112,
@@ -332,10 +335,10 @@
                                     "assetsVersion": "v1",
                                     "schema": "mlma.catalog.public.v1",
                                     "css": 29207,
-                                    "json": 47266,
+                                    "json": 53232,
                                     "dataChunks": 2,
-                                    "domain": 203174,
-                                    "ui": 151418,
+                                    "domain": 219251,
+                                    "ui": 162936,
                                     "tracks": 112,
                                     "uniqueTrackIds": 112,
                                     "sectionCounts": {
@@ -347,12 +350,31 @@
                                       "A6": 32
                                     },
                                     "previous": {
+                                      "assetsVersion": "v1",
+                                      "schema": "mlma.catalog.public.v1",
                                       "css": 29207,
-                                      "json": 47211,
+                                      "json": 47266,
                                       "dataChunks": 2,
-                                      "domain": 194163,
-                                      "ui": 146792,
-                                      "tracks": 112
+                                      "domain": 203174,
+                                      "ui": 151418,
+                                      "tracks": 112,
+                                      "uniqueTrackIds": 112,
+                                      "sectionCounts": {
+                                        "A1": 16,
+                                        "A2": 16,
+                                        "A3": 17,
+                                        "A4": 17,
+                                        "A5": 14,
+                                        "A6": 32
+                                      },
+                                      "previous": {
+                                        "css": 29207,
+                                        "json": 47211,
+                                        "dataChunks": 2,
+                                        "domain": 194163,
+                                        "ui": 146792,
+                                        "tracks": 112
+                                      }
                                     }
                                   }
                                 }

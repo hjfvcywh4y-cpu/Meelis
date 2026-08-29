@@ -307,7 +307,7 @@
         items += '<li><a href="' + esc(groups[i].links[j].href) + '">' + esc(groups[i].links[j].label) + '</a></li>';
       }
       cols +=
-        '<details class="mlma-footer-col">' +
+        '<details class="mlma-footer-col" open>' +
         '<summary>' +
         esc(groups[i].title) +
         '</summary><ul>' +
@@ -3045,6 +3045,22 @@
       });
     });
     var cookieBox = rootEl.querySelector('#mlma-cookie');
+    var cookieChoice = '';
+    try {
+      cookieChoice = window.localStorage.getItem('mlma.cookieChoice.v1') || '';
+    } catch (err) {
+      cookieChoice = '';
+    }
+    if (cookieBox && !cookieChoice) cookieBox.hidden = false;
+    try {
+      if (window.matchMedia && window.matchMedia('(max-width: 767px)').matches) {
+        rootEl.querySelectorAll('.mlma-footer-col').forEach(function (el) {
+          el.removeAttribute('open');
+        });
+      }
+    } catch (err2) {
+      /* ignore */
+    }
     var cookieChoice = '';
     try {
       cookieChoice = window.localStorage.getItem('mlma.cookieChoice.v1') || '';

@@ -307,7 +307,7 @@
         items += '<li><a href="' + esc(groups[i].links[j].href) + '">' + esc(groups[i].links[j].label) + '</a></li>';
       }
       cols +=
-        '<details class="mlma-footer-col">' +
+        '<details class="mlma-footer-col" open>' +
         '<summary>' +
         esc(groups[i].title) +
         '</summary><ul>' +
