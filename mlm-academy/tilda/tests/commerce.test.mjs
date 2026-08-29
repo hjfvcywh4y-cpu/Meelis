@@ -18,6 +18,7 @@ require('../src/access.js');
 require('../src/storage.js');
 require('../src/payments.js');
 require('../src/commerce.js');
+require('../src/legal.js');
 require('../src/search.js');
 require('../src/analytics.js');
 const MLMA = require('../src/ontology.js');
@@ -117,5 +118,32 @@ describe('продуктовый справочник и commercial gate', () =>
     assert.equal(view.buy_enabled, false);
     assert.equal(typeof MLMA.writeLaunchNotify, 'undefined');
     assert.equal(typeof MLMA.readLaunchNotify, 'undefined');
+  });
+
+  it('юридические документы не содержат плейсхолдеров и называют оператора', () => {
+    for (const kind of ['privacy', 'consent', 'offer', 'requisites']) {
+      const document = MLMA.legalDocument(kind);
+      const text = JSON.stringify(document);
+      assert.ok(text.includes('Борисенко Татьяна Анатольевна'));
+      assert.ok(!text.includes('[ЗАПОЛНИТЬ'));
+    }
+    assert.equal(MLMA.LEGAL_OPERATOR.inn, '532000135580');
+    assert.equal(MLMA.LEGAL_OPERATOR.ogrn, '323547600157157');
+  });
+
+  it('выход использует штатный Tilda exit=y, а не несуществующий /members/logout', () => {
+    assert.equal(MLMA.membersLogoutUrl(), '/members/login?exit=y');
+    assert.equal(MLMA.routes().logout(), '/members/login?exit=y');
+    const ui = fs.readFileSync(path.join(__dirname, '../src/ui.js'), 'utf8');
+    assert.match(ui, /data-mlma-logout/);
+    assert.ok(!ui.includes('href="/members/logout"'));
+  });
+
+  it('регистрация требует согласие со ссылками на политику и передачу данных', () => {
+    const bridge = fs.readFileSync(path.join(__dirname, '../src/members-bridge.js'), 'utf8');
+    assert.match(bridge, /id="mlma-members-consent"/);
+    assert.match(bridge, /name="mlma_members_consent" required/);
+    assert.match(bridge, /href="\/consent"/);
+    assert.match(bridge, /href="\/privacy"/);
   });
 });

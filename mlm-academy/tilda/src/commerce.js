@@ -9,7 +9,6 @@
 
   var PAYMENTS_ENABLED = false;
   var COMMERCE_PREVIEW_ENABLED = false;
-  var LEGAL_PLACEHOLDER = '[ЗАПОЛНИТЬ ВЛАДЕЛЬЦУ ПЕРЕД ПУБЛИКАЦИЕЙ]';
   var REQUIRED_CODES = [
     'B2C-FREE-001',
     'B2C-TRACK-001',
@@ -349,7 +348,6 @@
 
   api.PAYMENTS_ENABLED = PAYMENTS_ENABLED;
   api.COMMERCE_PREVIEW_ENABLED = COMMERCE_PREVIEW_ENABLED;
-  api.LEGAL_PLACEHOLDER = LEGAL_PLACEHOLDER;
   api.PRODUCT_CODES = REQUIRED_CODES;
   api.readProductCatalog = readCatalog;
   api.listProducts = listProducts;
