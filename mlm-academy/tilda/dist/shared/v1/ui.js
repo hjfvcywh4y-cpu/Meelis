@@ -71,8 +71,27 @@
   }
 
   function isActivePath(pathname, href) {
-    var clean = href.split('?')[0];
+    var parts = href.split('?');
+    var clean = parts[0];
+    var hrefTab = '';
+    try {
+      hrefTab = new URLSearchParams(parts[1] || '').get('tab') || '';
+    } catch (err) {
+      hrefTab = '';
+    }
     if (clean === '/academy') return pathname === '/academy' || pathname === '/';
+    if (clean === '/library') return pathname === '/library' || pathname.indexOf('/library/') === 0;
+    if (clean === '/my' && !hrefTab) return pathname === '/my';
+    if (clean === '/my/route') {
+      var currentTab = '';
+      try {
+        currentTab = new URLSearchParams(window.location.search).get('tab') || '';
+      } catch (err2) {
+        currentTab = '';
+      }
+      if (hrefTab) return pathname === '/my/route' && currentTab === hrefTab;
+      return pathname === '/my/route' && !currentTab;
+    }
     return pathname === clean || pathname.indexOf(clean + '/') === 0;
   }
 
