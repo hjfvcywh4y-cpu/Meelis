@@ -60,7 +60,7 @@ global.window.MLMA = global.MLMA;
 
 require('../src/tracks/a2-008.module.js');
 
-const module = (global.window.MLMA_TRACK_MODULES || global.MLMA_TRACK_MODULES)['A2-008'];
+const trackModule = (global.window.MLMA_TRACK_MODULES || global.MLMA_TRACK_MODULES)['A2-008'];
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function isoDate(offsetDays) {
@@ -77,15 +77,15 @@ function fillFive(state, extras) {
     ['наставница с прошлой работы', 'попросила коротко рассказать, чем занят'],
   ].concat(extras || []);
   while (state.moduleData.candidates.length < base.length) {
-    module.handleAction('add');
-    state = module.getState();
+    trackModule.handleAction('add');
+    state = trackModule.getState();
   }
   base.forEach(function (row, index) {
     state.moduleData.candidates[index].descriptor = row[0];
     state.moduleData.candidates[index].reasonText = row[1];
   });
-  module.saveState(state, false);
-  return module.getState();
+  trackModule.saveState(state, false);
+  return trackModule.getState();
 }
 
 function scoreAll(state, mode) {
@@ -96,8 +96,8 @@ function scoreAll(state, mode) {
       candidate.scores = { relationship: '2', reason: '2', respect: '2', clarity: '2' };
     }
   });
-  module.saveState(state, false);
-  return module.getState();
+  trackModule.saveState(state, false);
+  return trackModule.getState();
 }
 
 function planAll(state, firstAction) {
@@ -108,13 +108,13 @@ function planAll(state, firstAction) {
       date: isoDate(index === 0 ? 1 : 3),
     };
   });
-  module.saveState(state, false);
-  return module.getState();
+  trackModule.saveState(state, false);
+  return trackModule.getState();
 }
 
 describe('A2-008 исполняемый трек', () => {
   before(() => {
-    module.reset();
+    trackModule.reset();
     savedRuns.length = 0;
     analytics.length = 0;
   });
@@ -126,60 +126,60 @@ describe('A2-008 исполняемый трек', () => {
       assertions += 1;
     }
 
-    check(!!module, 'модуль зарегистрирован по trackId');
+    check(!!trackModule, 'модуль зарегистрирован по trackId');
     check(
-      module.passport.businessFunction.id === 'FUN-006' &&
-        module.passport.leadingMechanic.id === 'MEC-014' &&
-        module.passport.dominantGenre === 'GEN-011' &&
-        module.passport.topology === 'TOP-002' &&
-        module.passport.scenarioPattern.id === 'SCN-122' &&
-        module.passport.artifact.id === 'ART-006' &&
-        module.passport.evidence.id === 'EVD-003',
+      trackModule.passport.businessFunction.id === 'FUN-006' &&
+        trackModule.passport.leadingMechanic.id === 'MEC-014' &&
+        trackModule.passport.dominantGenre === 'GEN-011' &&
+        trackModule.passport.topology === 'TOP-002' &&
+        trackModule.passport.scenarioPattern.id === 'SCN-122' &&
+        trackModule.passport.artifact.id === 'ART-006' &&
+        trackModule.passport.evidence.id === 'EVD-003',
       'паспорт FUN-006 MEC-014 GEN-011 TOP-002 SCN-122 ART-006 EVD-003',
     );
 
-    check(module.hasPrivateData('коллега ivan@mail.test') === true, 'email блокируется');
-    check(module.hasPrivateData('+7 999 123-45-67 коллега') === true, 'телефон блокируется');
-    check(module.hasPrivateData('улица Ленина дом 10') === true, 'адрес блокируется');
-    check(module.hasPressure('гарантирую доход без риска') === true, 'давление блокируется');
+    check(trackModule.hasPrivateData('коллега ivan@mail.test') === true, 'email блокируется');
+    check(trackModule.hasPrivateData('+7 999 123-45-67 коллега') === true, 'телефон блокируется');
+    check(trackModule.hasPrivateData('улица Ленина дом 10') === true, 'адрес блокируется');
+    check(trackModule.hasPressure('гарантирую доход без риска') === true, 'давление блокируется');
 
-    let state = module.reset();
+    let state = trackModule.reset();
     state = fillFive(state);
     state.moduleData.candidates[0].reasonText = 'написать на ivan@mail.test';
-    module.saveState(state, false);
-    check(!!module.validateCandidateStage(module.getState()), 'PII на шаге кандидатов');
+    trackModule.saveState(state, false);
+    check(!!trackModule.validateCandidateStage(trackModule.getState()), 'PII на шаге кандидатов');
 
-    state = module.reset();
+    state = trackModule.reset();
     state = fillFive(state);
-    module.handleAction('candidates-next');
-    state = scoreAll(module.getState(), 'weak');
-    const weak = module.buildShortlist(state);
+    trackModule.handleAction('candidates-next');
+    state = scoreAll(trackModule.getState(), 'weak');
+    const weak = trackModule.buildShortlist(state);
     check(!!weak.error && weak.ids.length === 0, 'меньше пяти уместных → A2-010');
 
-    state = module.reset();
+    state = trackModule.reset();
     state = fillFive(state);
-    module.handleAction('candidates-next');
-    state = scoreAll(module.getState(), 'strong');
-    module.handleAction('rank-next');
-    state = module.getState();
+    trackModule.handleAction('candidates-next');
+    state = scoreAll(trackModule.getState(), 'strong');
+    trackModule.handleAction('rank-next');
+    state = trackModule.getState();
     check(state.moduleData.shortlistIds.length === 5, 'shortlist из пяти');
 
     state.moduleData.plan[state.moduleData.shortlistIds[0]].date = isoDate(20);
-    module.saveState(state, false);
-    check(!!module.validatePlan(module.getState()), 'дата позже семи дней отклоняется');
+    trackModule.saveState(state, false);
+    check(!!trackModule.validatePlan(trackModule.getState()), 'дата позже семи дней отклоняется');
 
-    state = planAll(module.getState(), 'message');
-    module.handleAction('plan-next');
-    state = module.getState();
-    module.handleAction('complete');
-    check(!!module.getState().moduleData.message, 'без трёх подтверждений план не принимается');
-    state = module.getState();
+    state = planAll(trackModule.getState(), 'message');
+    trackModule.handleAction('plan-next');
+    state = trackModule.getState();
+    trackModule.handleAction('complete');
+    check(!!trackModule.getState().moduleData.message, 'без трёх подтверждений план не принимается');
+    state = trackModule.getState();
     state.moduleData.confirmations = { noWorthScore: true, noPressure: true, rightToDecline: true };
-    module.saveState(state, false);
+    trackModule.saveState(state, false);
     savedRuns.length = 0;
     analytics.length = 0;
-    module.handleAction('complete');
-    state = module.getState();
+    trackModule.handleAction('complete');
+    state = trackModule.getState();
     check(state.status === 'complete' && state.moduleData.nextTrackId === 'A3-002', 'обычное завершение → A3-002');
     check(state.artifact.indexOf('коллега из прошлого проекта') !== -1, 'локальный артефакт «Мои пять»');
 
@@ -192,19 +192,19 @@ describe('A2-008 исполняемый трек', () => {
       'на сервер уходят только метаданные',
     );
 
-    const payload = JSON.stringify(module.safeAnalyticsPayload({ selectedActionTypes: 'message' }));
+    const payload = JSON.stringify(trackModule.safeAnalyticsPayload({ selectedActionTypes: 'message' }));
     check(!/коллега из прошлого|бегового клуба/.test(payload), 'аналитика без описаний людей');
 
-    state = module.reset();
+    state = trackModule.reset();
     state = fillFive(state);
-    module.handleAction('candidates-next');
-    state = scoreAll(module.getState(), 'strong');
-    module.handleAction('rank-next');
-    state = planAll(module.getState(), 'referral_call');
+    trackModule.handleAction('candidates-next');
+    state = scoreAll(trackModule.getState(), 'strong');
+    trackModule.handleAction('rank-next');
+    state = planAll(trackModule.getState(), 'referral_call');
     state.moduleData.confirmations = { noWorthScore: true, noPressure: true, rightToDecline: true };
-    module.saveState(state, false);
-    module.handleAction('complete');
-    check(module.getState().moduleData.nextTrackId === 'A3-003', 'звонок по рекомендации → A3-003');
+    trackModule.saveState(state, false);
+    trackModule.handleAction('complete');
+    check(trackModule.getState().moduleData.nextTrackId === 'A3-003', 'звонок по рекомендации → A3-003');
 
     const generic = fs.readFileSync(path.join(__dirname, '../src/ui.js'), 'utf8');
     check(
