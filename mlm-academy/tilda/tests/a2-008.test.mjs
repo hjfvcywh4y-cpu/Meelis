@@ -174,8 +174,8 @@ describe('A2-008 исполняемый трек', () => {
 
     const moduleSrc = fs.readFileSync(path.join(__dirname, '../src/tracks/a2-008.module.js'), 'utf8');
     check(
-      moduleSrc.includes('flex-direction:column') &&
-        moduleSrc.includes('.a2008-progress b{position:relative;z-index:1') &&
+      moduleSrc.includes('padding:36px 10px 0 0') &&
+        moduleSrc.includes('.a2008-progress b{display:block!important') &&
         !moduleSrc.includes('__MLMA_UI_SPLIT__'),
       'подписи шагов ниже линии прогресса, модуль не режется маркером T123',
     );

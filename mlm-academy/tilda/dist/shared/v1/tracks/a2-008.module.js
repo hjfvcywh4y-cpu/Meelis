@@ -2,7 +2,7 @@
   'use strict';
 
   var TRACK_ID = 'A2-008';
-  var VERSION = '1.0.1';
+  var VERSION = '1.0.2';
   var D = root.MLMA || {};
   var STORAGE_KEY = D.RUNTIME_KEY || 'mlma.runtime.v1';
   var MAX_CANDIDATES = 10;
@@ -772,12 +772,12 @@
       '.a2008 *{box-sizing:border-box}',
       '.a2008-kicker{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}',
       '.a2008-local{font:600 12px/1.2 "JetBrains Mono",monospace;color:#526057;background:var(--a2-soft);padding:7px 10px;border-radius:3px}',
-      '.a2008-progress{list-style:none;margin:22px 0 30px;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;overflow:visible}',
-      '.a2008-progress li{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:8px;color:#7b756c;font-size:12px;min-width:0;padding-right:10px}',
-      '.a2008-progress li:after{content:"";position:absolute;left:27px;right:-8px;top:13px;height:2px;background:#d7d0c5;z-index:0}',
+      '.a2008-progress{list-style:none;margin:22px 0 32px;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;overflow:visible}',
+      '.a2008-progress li{position:relative;display:block!important;margin:0!important;list-style:none!important;min-width:0;padding:36px 10px 0 0;color:#7b756c;font-size:12px;background:transparent!important}',
+      '.a2008-progress li:after{content:"";position:absolute;left:27px;right:-8px;top:13px;height:2px;background:#d7d0c5;z-index:0;pointer-events:none}',
       '.a2008-progress li:last-child:after{display:none}',
-      '.a2008-progress span{position:relative;z-index:1;display:grid;place-items:center;width:27px;height:27px;border:1px solid #b8afa3;border-radius:50%;background:var(--surface);font-weight:800;flex:0 0 auto}',
-      '.a2008-progress b{position:relative;z-index:1;font-weight:700;line-height:1.25;max-width:100%}',
+      '.a2008-progress li>span{position:absolute;left:0;top:0;z-index:1;display:grid;place-items:center;width:27px;height:27px;border:1px solid #b8afa3;border-radius:50%;background:var(--surface);font-weight:800}',
+      '.a2008-progress b{display:block!important;position:relative;z-index:1;font-weight:700;line-height:1.25;max-width:100%;background:var(--surface);padding:2px 4px 0 0}',
       '.a2008-progress .is-current,.a2008-progress .is-done{color:var(--ink)}',
       '.a2008-progress .is-current span{border-color:var(--a2);box-shadow:0 0 0 3px var(--a2-soft)}',
       '.a2008-progress .is-done span{background:var(--a2);border-color:var(--a2);color:white}',
@@ -810,9 +810,9 @@
       '.a2008-rank-card>div:first-child{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center}',
       '.a2008-rank-card>div:first-child p{grid-column:2;margin:3px 0 0;color:#6b655c;font-size:13px}',
       '.a2008-score-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 18px;align-items:start}',
-      '.a2008-score-grid label{border-top:0;padding-top:0}',
-      '.a2008-score-grid label:nth-child(n+3){border-top:1px solid #ddd5ca;padding-top:12px}',
-      '.a2008-score-grid small{display:block;min-height:0;color:#756f66;font-size:11px;line-height:1.35;margin:0 0 8px;position:relative;z-index:1;background:var(--surface)}',
+      '.a2008-score-grid label{border-top:0!important;padding-top:0}',
+      '.a2008-score-grid label:nth-child(n+3){border-top:1px solid #ddd5ca!important;padding-top:12px}',
+      '.a2008-score-grid small{display:block;min-height:0;color:#756f66;font-size:11px;line-height:1.35;margin:0 0 8px;position:relative;z-index:1;background:var(--surface);border:0!important}',
       '.a2008-plan-title{align-items:flex-start}',
       '.a2008-plan-title>div{flex:1}',
       '.a2008-plan-title p{margin:3px 0 0;color:#6b655c;font-size:13px}',
@@ -829,7 +829,7 @@
       '.a2008-complete-mark{display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:var(--a2);color:white;font-size:28px;font-weight:900}',
       '.a2008-reset{justify-self:start;margin-top:6px}',
       '.a2008-toast{position:fixed;left:50%;bottom:28px;z-index:99999;transform:translateX(-50%);background:#1c1914;color:white;padding:12px 18px;border-radius:3px;font-weight:800;box-shadow:0 6px 24px rgba(0,0,0,.25)}',
-      '@media(max-width:720px){.a2008-progress{grid-template-columns:repeat(4,27px);justify-content:space-between}.a2008-progress b{display:none}.a2008-progress li:after{right:-45px}.a2008-two,.a2008-three,.a2008-score-grid{grid-template-columns:1fr}.a2008{padding:20px!important}.a2008-actions .mlma-btn,.a2008-actions a.mlma-btn{width:100%}.a2008-stage-head h2{font-size:28px}}',
+      '@media(max-width:720px){.a2008-progress{grid-template-columns:repeat(4,27px);justify-content:space-between}.a2008-progress li{padding:0}.a2008-progress b{display:none!important}.a2008-progress li:after{right:-45px}.a2008-two,.a2008-three,.a2008-score-grid{grid-template-columns:1fr}.a2008{padding:20px!important}.a2008-actions .mlma-btn,.a2008-actions a.mlma-btn{width:100%}.a2008-stage-head h2{font-size:28px}}',
       '@media(prefers-reduced-motion:reduce){.a2008 *{scroll-behavior:auto!important;transition:none!important}}',
     ].join('');
     var style = root.document.getElementById('a2008-styles');
