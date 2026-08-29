@@ -56,6 +56,20 @@ class FeedbackStatsTests(unittest.TestCase):
             menus.upcoming_button_label(menus.UPCOMING_EVENTS[0]),
             menus.MENU_LABELS,
         )
+        self.assertEqual(
+            menus.ARCHIVE_EVENTS[0]["url"],
+            "https://t.me/ideraofficial/143",
+        )
+        self.assertIn(
+            menus.archive_button_label(menus.ARCHIVE_EVENTS[0]),
+            menus.MENU_LABELS,
+        )
+        partner_btns = [
+            btn.text
+            for row in menus.partners_keyboard().keyboard
+            for btn in row
+        ]
+        self.assertNotIn("🎬 Видеоуроки", partner_btns)
 
     def test_service_chat_roundtrip(self) -> None:
         self.assertIsNone(stats.get_service_chat_id())
