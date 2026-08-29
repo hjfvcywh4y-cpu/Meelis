@@ -88,9 +88,9 @@ async function main() {
   if (!contour && !/Контур прохождения/.test(contourText)) {
     throw new Error('expected contour copy for unfilled track');
   }
-  await page.getByRole('link', { name: /Войти, чтобы сохранить/ }).waitFor();
-  const saveGuest = await page.getByRole('link', { name: /Войти, чтобы сохранить/ }).count();
-  if (!saveGuest) throw new Error('guest must be asked to log in to save');
+  await page.getByRole('button', { name: /Сохранить в маршрут/ }).waitFor();
+  const buyOnTrack = await page.getByRole('link', { name: /Купить доступ/ }).count();
+  if (buyOnTrack) throw new Error('metadata-only track must not show Купить доступ');
 
   await page.goto(BASE + '/start', { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: /написать/i }).first().click();
@@ -110,7 +110,9 @@ async function main() {
   const pricingText = await page.locator('#mlma-main').innerText();
   const buyLinks = await page.getByRole('link', { name: /Купить/ }).count();
   if (buyLinks) throw new Error('pricing must not sell');
-  if (/112 готовых/.test(pricingText)) throw new Error('pricing must not promise 112 ready tracks');
+  if (/(?:доступны|готовы) 112|112 готовых треков доступн/i.test(pricingText)) {
+    throw new Error('pricing must not promise 112 ready tracks');
+  }
   if (!/Готовится к запуску/.test(pricingText)) throw new Error('pricing missing gated status');
   if (!/Обсудить командный запуск/.test(pricingText) || !/Обсудить корпоративный пилот/.test(pricingText)) {
     throw new Error('pricing missing B2B discuss CTAs');
