@@ -54,11 +54,10 @@
     var s = String(Math.round(n));
     var out = '';
     for (var i = 0; i < s.length; i += 1) {
-      var pos = s.length - i;
       out = s.charAt(s.length - 1 - i) + out;
-      if (pos > 1 && pos % 3 === 1) out = ' ' + out;
+      if (i % 3 === 2 && i !== s.length - 1) out = '\u00a0' + out;
     }
-    return out + ' ₽';
+    return out + '\u00a0₽';
   }
 
   function isLocalPreviewHost() {

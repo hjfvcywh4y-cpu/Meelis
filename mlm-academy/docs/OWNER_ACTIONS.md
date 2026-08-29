@@ -1,89 +1,76 @@
 # Ручные действия владельца · предплатёжная витрина
 
 Автоматически обойти публикацию Tilda и настройки Members нельзя.
-Формат шага: **раздел Tilda → страница → блок/поле → старое значение → новое значение → кнопка → проверка**.
+Формат оставшихся шагов: **раздел Tilda → страница → блок/поле → старое значение → новое значение → кнопка → проверка**.
 
-Ничего из этого агент не публиковал на живой сайт. Пока шаг не выполнен в Tilda и не открыт без `preview`, считать его только в GitHub.
+Ниже жёстко разделено, что уже на `https://mlmacademy.ru`, что осталось владельцу, и что сознательно не публиковалось.
 
-## 1. Внешние assets `/shared/v1/*` — сначала одна страница
+## Статус живого сайта (сделано агентом)
 
-Живой сайт сейчас на блоках T123. Не переключать все страницы сразу.
+Проект `23906986`, папка MLM Academy, `ASSET_BASE=https://mlma-account.mlmacademy-search.workers.dev`.
 
-1. Assets уже на Account Worker: `ASSET_BASE=https://mlma-account.mlmacademy-search.workers.dev` (`/v1/mlma.css`, `catalog-data.js`, `domain.js`, `ui.js`).
-2. Tilda → страница `/about` → блоки T123 `01-css`, `02-data-*`, `03-domain-*`, `04-ui-*` → скрыть, не удалять (rollback).
-3. Та же страница → новый T123 → вставить `tilda/dist/t123/external-loader-v1.live.html` → Сохранить → Опубликовать страницу.
-4. HEAD и mount `mounts/about.html` не менять.
-5. Проверка: https://mlmacademy.ru/about открывается, стили `.mlma` на месте, в консоли нет 404 по assets.
-6. Rollback: показать обратно скрытые T123 `01-css` / `02-data-*` / `03-domain-*` / `04-ui-*` → Сохранить → Опубликовать.
+| URL | Статус |
+|---|---|
+| `/academy`, `/start`, `/library`, `/library/a1`…`/a6`, `/track`, `/about` | опубликованы, внешний loader v1, старые T123 скрыты (не удалены) |
+| `/pricing` | опубликована, pageid `213078109` |
+| `/access` | обновлена новой копией, public |
+| `/payment-and-access` | опубликована, pageid `213078309` |
+| `/my`, `/my/route`, `/my/results`, `/profile` | кабинет, Member/FREE |
+| `/my/purchases` | опубликована, pageid `213078509`, группы Member/Editor/FREE |
+| `/` | корпоративная вёрстка не менялась; в proof-блоке есть «Открыть MLM Academy» → `/academy` |
+| Account Worker | `PAYMENTS_ENABLED=false`, `COMMERCE_PREVIEW_ENABLED=false`; `POST /api/checkout/create` → 403 |
 
-После успешного `/about`:
+Rollback на `/about` проверен: скрыть loader / показать старые T123 → живая страница без `/v1/domain.js`; вернуть loader → снова v1. Старые record id на about: `3424150101`–`0801`; loader `3426070101`; mount `3426070301`.
 
-1. Группа 1: `/academy`, `/start` — тот же loader, smoke: 6 карточек разделов, поиск не стартует при наборе.
-2. Группа 2: `/library`, `/library/a1`…`/library/a6`, `/track` — 112 карточек, Enter и «Найти решение».
-3. Группа 3: `/my`, `/my/route`, `/my/results`, `/my/purchases`, `/profile` — кабинет, мобильное меню.
-4. Группа 4: `/pricing`, `/access`, `/payment-and-access`.
+## Осталось владельцу
 
-Не оставлять часть страниц на другой версии каталога.
+1. **Members → язык и extra CSS/JS.** Живой `/members/login` и `/members/signup` остаются английскими («Log In To Your Account»). API `savecustomcss` / `savecustomjs` / `savelanguage` у этого кабинета отвечают HTML 404. Сделать вручную:
+   - Members → Настройки личного кабинета → extra CSS: вставить `tilda/dist/t123/members-bridge.css` → Сохранить.
+   - Тот же раздел → extra HTML/JS: `tilda/dist/t123/members-bridge.js` → Сохранить.
+   - Если есть переключатель языка интерфейса Members → русский.
+   - Проверка: https://mlmacademy.ru/members/login показывает «Войти в кабинет», фон `#f4f0e8`.
+   - Не заявлять, что вход на русском, пока это не видно на живых страницах.
+2. **Настройки сайта Tilda → robots.txt и sitemap** из `tilda/dist/seo/`.
+3. **SQL** `003_product_catalog.sql` не применялся (Supabase в этой итерации не подключался).
 
-## 2. Страницы, которые можно опубликовать
+## Сознательно не публиковалось
 
-Проект `23906986`, папка MLM Academy. Members: **не** добавлять в группы (кроме кабинета).
+| URL | Почему |
+|---|---|
+| `/offer` | плейсхолдеры `[ЗАПОЛНИТЬ ВЛАДЕЛЬЦУ…]` |
+| `/requisites` | нет утверждённых реквизитов |
+| `/privacy` | не утверждённая политика |
+| `/preview/commerce` | editor-only preview состояний покупки |
+| checkout, «Купить», тестовые покупки, фиктивные entitlements | `PAYMENTS_ENABLED=false` |
 
-Для каждой новой страницы:
+ЮKassa, webhook, подписка, verified Auth и Supabase не подключались.
 
-1. Tilda → Страницы → Создать страницу.
-2. Настройки страницы → Title / URL / HTML в HEAD → значения из таблицы.
-3. Скрыть стандартные header/footer Tilda.
-4. Добавить блоки T123 по `tilda/dist/TILDA_CHECKLIST.md` **или** external-loader после шага 1.
-5. Последний блок: mount из таблицы.
-6. Отступы блока = 0 → Сохранить → Опубликовать.
-7. Проверка: URL открывается без `tilda.cc/page` preview, нет кнопки «Купить».
+## 1. Внешние assets `/shared/v1/*`
 
-| Title | URL | HEAD | Mount | Индексация |
-|---|---|---|---|---|
-| Тарифы · MLM Academy | `/pricing` | `t123/heads/pricing.html` | `t123/mounts/pricing.html` | да |
-| Доступ · MLM Academy | `/access` уже есть — обновить блоки T123/loader | `t123/heads/access.html` | `t123/mounts/access.html` | да |
-| Оплата и доступ · MLM Academy | `/payment-and-access` | `t123/heads/payment-and-access.html` | `t123/mounts/payment-and-access.html` | да |
-| Покупки и доступ · MLM Academy | `/my/purchases` | `t123/heads/purchases.html` | `t123/mounts/purchases.html` | нет; группа Member |
+Сделано: сначала `/about`, затем остальные Academy-страницы на том же loader. Rollback сохранён скрытыми T123.
 
-`/access` на живом сайте, скорее всего, ещё со старым текстом про тестовый пакет. Обновить блоки до новой сборки, затем опубликовать.
+Повторный rollback при сбое:
 
-После публикации обновить в настройках сайта Tilda `robots.txt` и sitemap из `tilda/dist/seo/`.
+1. Tilda → страница → показать скрытые T123 `01-css` / `02-data-*` / `03-domain-*` / `04-ui-*`.
+2. Скрыть блок `external-loader-v1.live.html` (не удалять).
+3. Сохранить → Опубликовать.
+4. Проверка: в HTML нет `workers.dev/v1/domain.js`, оболочка снова из inline T123.
 
-## 3. Страницы, которые нельзя публиковать как действующие документы
+## 2. Страницы витрины
 
-Создать в редакторе можно, **не нажимать «Опубликовать» как оферту/политику/реквизиты**:
+Сделано. Повторно публиковать не нужно, пока не меняется mount/HEAD.
 
-| Title | URL | Пометка |
-|---|---|---|
-| Политика… черновик | `/privacy` | `noindex`; не называть утверждённой |
-| Публичная оферта · черновик | `/offer` | поля `[ЗАПОЛНИТЬ ВЛАДЕЛЬЦУ ПЕРЕД ПУБЛИКАЦИЕЙ]` |
-| Реквизиты · черновик | `/requisites` | без фиктивных ФИО/ИНН |
-| Предпросмотр состояний покупки | `/preview/commerce` | только editor; не публиковать на боевом домене |
+## 3. Юридические страницы
 
-Если `/privacy` уже создана как публичная — в Настройки страницы → HTML в HEAD поставить `noindex, nofollow` из `t123/heads/privacy.html`. Не добавлять в sitemap.
+Создать в редакторе можно, **не нажимать «Опубликовать»** как оферту/политику/реквизиты, пока поля не заполнены владельцем.
 
-## 4. Members: язык, CSS, JS
+## 4. Members: группы
 
-1. Настройки сайта → Личный кабинет / Members → дополнительный CSS
-   - старое: пусто или предыдущий фрагмент
-   - новое: `tilda/dist/t123/members-bridge.css`
-   - Сохранить → проверить `/members/login`: фон `#f4f0e8`
-2. Тот же раздел → дополнительный HTML/JS
-   - новое: `tilda/dist/t123/members-bridge.js`
-   - проверить `/members/login?mlma=recover`
-3. Язык интерфейса Members → русский
-   - живой `/members/login` сейчас английский («Log In To Your Account»)
-4. Группа Member → Страницы → добавить `/my/purchases` → Сохранить.
-5. `/preview/commerce` не добавлять в Member. Если нужен editor — только группа Editor, и не публиковать URL.
-
-**Не заявлять, что вход на русском, пока это не видно на живых `/members/login` и `/members/signup`.**
+Сделано: `/access` убран из FREE (страница публичная). `/my/purchases` добавлен в Member, Editor, FREE. `/preview/commerce` в группы не добавлять.
 
 ## 5. B2B-навигация
 
-Tilda → страница `/` → блок меню/кнопки → старое: нет `href="/academy"` → новое: ссылка «MLM Academy» → `/academy` → Сохранить → Опубликовать.
-Проверка: в HTML живой `/` есть `href="/academy"` или `href="https://mlmacademy.ru/academy"`.
-Корпоративную вёрстку не менять.
+Сделано: на `/` есть `href="/academy"` и текст «Открыть MLM Academy». Корпоративную вёрстку не менять.
 
 ## 6. Worker
 

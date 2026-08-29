@@ -102,6 +102,15 @@ describe('продуктовый справочник и commercial gate', () =>
     assert.notEqual(row.key, 'purchased');
   });
 
+  it('formatPrice группирует тысячи справа, без разрыва последней цифры', () => {
+    const norm = (s) => String(s).replace(/\u00a0/g, ' ');
+    assert.equal(norm(MLMA.formatPrice(0)), '0 ₽');
+    assert.equal(norm(MLMA.formatPrice(590)), '590 ₽');
+    assert.equal(norm(MLMA.formatPrice(1490)), '1 490 ₽');
+    assert.equal(norm(MLMA.formatPrice(2990)), '2 990 ₽');
+    assert.equal(norm(MLMA.formatPrice(99000)), '99 000 ₽');
+  });
+
   it('нет кнопки «Сообщить о запуске» и нет сбора заявок в localStorage', () => {
     const view = MLMA.productCardView(MLMA.getProductByCode('B2C-TRACK-001'));
     assert.equal(view.cta, 'preparing');

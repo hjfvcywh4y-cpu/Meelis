@@ -117,9 +117,10 @@ async function main() {
   if (/Сообщить о запуске|заявка отправлена|мы сообщим/i.test(pricingText)) {
     throw new Error('pricing must not pretend a launch request was submitted');
   }
-  if (!/от 590/.test(pricingText) || !/от 1 490/.test(pricingText) || !/от 2 990/.test(pricingText)) {
+  if (!/от 590/.test(pricingText) || !/от 1[\s\u00a0]490/.test(pricingText) || !/от 2[\s\u00a0]990/.test(pricingText)) {
     throw new Error('pricing missing launch prices');
   }
+  if (/149 0|299 0/.test(pricingText)) throw new Error('pricing must not split thousands as 149 0');
   if (!/Обсудить командный запуск/.test(pricingText) || !/Обсудить корпоративный пилот/.test(pricingText)) {
     throw new Error('pricing missing B2B discuss CTAs');
   }

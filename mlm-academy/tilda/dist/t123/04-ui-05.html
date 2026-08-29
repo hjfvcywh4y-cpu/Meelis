@@ -18,9 +18,9 @@
     var launch = D.formatPrice ? D.formatPrice(product.launch_price) : product.launch_price + ' ₽';
     var regular = D.formatPrice ? D.formatPrice(product.regular_price) : product.regular_price + ' ₽';
     if (product.launch_price != null && product.regular_price != null && product.launch_price !== product.regular_price) {
-      return '<span class="mlma-h3">' + esc(launch) + '</span> <s class="mlma-muted" style="margin-left:8px">' + esc(regular) + '</s>';
+      return '<span class="mlma-h3 mlma-price">' + esc(launch) + '</span> <s class="mlma-muted mlma-price" style="margin-left:8px">' + esc(regular) + '</s>';
     }
-    return '<span class="mlma-h3">' + esc(launch || regular) + '</span>';
+    return '<span class="mlma-h3 mlma-price">' + esc(launch || regular) + '</span>';
   }
 
   function renderAccess(state) {
