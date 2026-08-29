@@ -461,3 +461,13 @@ describe('статья-мост research/marketing-plan', () => {
   });
 });
 
+describe('поиск только по кнопке Найти решение', () => {
+  it('не вешает живой поиск на ввод в строку', () => {
+    const ui = fs.readFileSync(path.join(__dirname, '../src/ui.js'), 'utf8');
+    assert.equal(ui.includes("search.addEventListener('input'"), false);
+    assert.match(ui, /id="mlma-lib-form"/);
+    assert.match(ui, /type="submit">Найти решение/);
+    assert.match(ui, /form\.addEventListener\('submit'/);
+  });
+});
+

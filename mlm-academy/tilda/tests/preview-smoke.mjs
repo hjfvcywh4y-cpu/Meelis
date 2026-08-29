@@ -32,9 +32,17 @@ async function main() {
 
   await page.getByRole('button', { name: 'Фильтры' }).click();
   await page.waitForSelector('#mlma-drawer:not([hidden])');
+  await page.locator('#mlma-drawer [data-mlma-drawer-close]').first().click();
+  await page.waitForFunction(() => document.querySelector('#mlma-drawer')?.hidden === true);
 
   await page.fill('#mlma-search', 'боюсь написать знакомому');
-  await page.waitForTimeout(350);
+  await page.waitForTimeout(400);
+  const stillDefault = await page.locator('.mlma-track-card').count();
+  if (stillDefault < 12 || stillDefault > 18) {
+    throw new Error('typing must not search until submit: ' + stillDefault);
+  }
+  await page.locator('#mlma-lib-form button[type="submit"]').click();
+  await page.waitForFunction(() => document.querySelectorAll('.mlma-track-card').length <= 8);
   const firstTitle = await page.locator('.mlma-track-card h3').first().innerText();
   if (!/первое сообщение/i.test(firstTitle)) throw new Error('search ranking: ' + firstTitle);
   const covers = await page.locator('.mlma-track-cover').count();
@@ -47,6 +55,12 @@ async function main() {
 
   await page.fill('#mlma-search', 'Хочу открыть новый город');
   await page.waitForTimeout(400);
+  const stillOldSearch = await page.locator('.mlma-track-card h3').first().innerText();
+  if (!/первое сообщение/i.test(stillOldSearch)) {
+    throw new Error('typing over previous query must wait for submit: ' + stillOldSearch);
+  }
+  await page.locator('#mlma-lib-form button[type="submit"]').click();
+  await page.waitForFunction(() => /города пока нет|регион пока нет/i.test(document.querySelector('#mlma-results')?.innerText || ''));
   const cityTitle = await page.locator('#mlma-results').innerText();
   if (/Точного трека пока нет/i.test(cityTitle)) throw new Error('city should show adjacent tracks: ' + cityTitle.slice(0, 240));
   if (!/города пока нет|регион пока нет/i.test(cityTitle)) throw new Error('city missing honesty: ' + cityTitle.slice(0, 240));
