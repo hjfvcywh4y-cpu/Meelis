@@ -154,27 +154,32 @@
     "file": "privacy.html",
     "url": "/privacy",
     "page": "privacy",
-    "title": "Политика конфиденциальности · черновик · MLM Academy",
-    "members": "public",
-    "noindex": true
+    "title": "Политика конфиденциальности · MLM Academy",
+    "members": "public"
+  },
+  {
+    "id": "consent",
+    "file": "consent.html",
+    "url": "/consent",
+    "page": "consent",
+    "title": "Согласие на обработку и передачу персональных данных · MLM Academy",
+    "members": "public"
   },
   {
     "id": "offer",
     "file": "offer.html",
     "url": "/offer",
     "page": "offer",
-    "title": "Публичная оферта · черновик · MLM Academy",
-    "members": "public",
-    "noindex": true
+    "title": "Публичная оферта · MLM Academy",
+    "members": "public"
   },
   {
     "id": "requisites",
     "file": "requisites.html",
     "url": "/requisites",
     "page": "requisites",
-    "title": "Реквизиты · черновик · MLM Academy",
-    "members": "public",
-    "noindex": true
+    "title": "Реквизиты · MLM Academy",
+    "members": "public"
   },
   {
     "id": "purchases",

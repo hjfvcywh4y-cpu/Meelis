@@ -55,6 +55,7 @@ require('../src/access.js');
 require('../src/storage.js');
 require('../src/payments.js');
 require('../src/commerce.js');
+require('../src/legal.js');
 require('../src/search.js');
 require('../src/analytics.js');
 const MLMA = require('../src/ontology.js');
@@ -277,13 +278,25 @@ describe('Tilda-MVP: pending, runtime, analytics, payments', () => {
     const R = MLMA.routes();
     assert.equal(R.pricing(), '/pricing');
     assert.equal(R.privacy(), '/privacy');
+    assert.equal(R.consent(), '/consent');
     assert.equal(R.purchases(), '/my/purchases');
     assert.equal(R.offer(), '/offer');
     assert.equal(R.requisites(), '/requisites');
     assert.equal(R.paymentAndAccess(), '/payment-and-access');
+    assert.equal(R.logout(), '/members/login?exit=y');
+    assert.equal(MLMA.membersLogoutUrl(), '/members/login?exit=y');
     assert.equal(MLMA.membersRecoverUrl('/profile'), '/members/login?mlma=recover&redirecturl=profile');
     assert.equal(MLMA.PAYMENTS_ENABLED, false);
     assert.equal(MLMA.COMMERCE_PREVIEW_ENABLED, false);
     assert.equal(MLMA.PAYMENT_TEST_MODE, true);
+  });
+
+  it('выход идёт на Tilda exit=y, в UI есть обработчик, в регистрации — галочка согласия', () => {
+    const ui = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../src/ui.js'), 'utf8');
+    const bridge = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../src/members-bridge.js'), 'utf8');
+    assert.match(ui, /data-mlma-logout/);
+    assert.match(ui, /performMembersLogout/);
+    assert.match(bridge, /pdn_consent/);
+    assert.match(bridge, /mlmacademy\.ru\/consent/);
   });
 });

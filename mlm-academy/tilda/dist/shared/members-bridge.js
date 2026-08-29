@@ -90,9 +90,93 @@
   translateAll();
   setTimeout(translateAll, 400);
   setTimeout(translateAll, 1200);
+
+  var CONSENT_LABEL =
+    '<label class="mlma-pdn-consent" style="display:flex;gap:8px;align-items:flex-start;text-align:left;font-size:13px;line-height:1.45;margin:12px 0">' +
+    '<input type="checkbox" name="pdn_consent" required>' +
+    '<span>Я даю согласие на обработку и передачу персональных данных согласно ' +
+    '<a href="https://mlmacademy.ru/consent" target="_blank" rel="noopener">документу</a> ' +
+    'и подтверждаю, что ознакомился с ' +
+    '<a href="https://mlmacademy.ru/privacy" target="_blank" rel="noopener">политикой конфиденциальности</a>.</span></label>';
+
+  function isSignupPath() {
+    try {
+      return /\/members\/signup/i.test(String(location.pathname || ''));
+    } catch (err) {
+      return false;
+    }
+  }
+
+  function findSignupForm() {
+    var forms = document.querySelectorAll('form');
+    for (var i = 0; i < forms.length; i += 1) {
+      var action = String(forms[i].getAttribute('action') || forms[i].getAttribute('data-formaction') || '').toLowerCase();
+      if (action.indexOf('/api/signup') !== -1) return forms[i];
+    }
+    if (!isSignupPath()) return null;
+    for (var j = 0; j < forms.length; j += 1) {
+      var hasPass = forms[j].querySelector('input[type="password"]');
+      var hasEmail = forms[j].querySelector('input[type="email"], input[name="email"]');
+      if (hasPass && hasEmail) return forms[j];
+    }
+    return null;
+  }
+
+  function injectSignupConsent() {
+    if (!isSignupPath()) return;
+    var form = findSignupForm();
+    if (!form) return;
+    if (!form.querySelector('input[name="pdn_consent"]')) {
+      var wrap = document.createElement('div');
+      wrap.className = 'mlma-pdn-consent-wrap';
+      wrap.innerHTML = CONSENT_LABEL;
+      var holder = form.querySelector('.tlk-form__sub-text');
+      var submit = form.querySelector('button[type="submit"], input[type="submit"], .t-submit, [data-tilda-submit]');
+      if (holder) holder.appendChild(wrap);
+      else if (submit && submit.parentNode) submit.parentNode.insertBefore(wrap, submit);
+      else form.appendChild(wrap);
+    }
+    if (form.getAttribute('data-mlma-pdn-bound') === '1') return;
+    form.setAttribute('data-mlma-pdn-bound', '1');
+    form.addEventListener(
+      'submit',
+      function (event) {
+        var box = form.querySelector('input[name="pdn_consent"]');
+        if (box && !box.checked) {
+          event.preventDefault();
+          event.stopPropagation();
+          if (box.reportValidity) box.reportValidity();
+          else box.focus();
+        }
+      },
+      true,
+    );
+    var buttons = form.querySelectorAll('button, input[type="submit"], .t-submit');
+    for (var b = 0; b < buttons.length; b += 1) {
+      buttons[b].addEventListener(
+        'click',
+        function (event) {
+          var box = form.querySelector('input[name="pdn_consent"]');
+          if (box && !box.checked) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (box.reportValidity) box.reportValidity();
+            else box.focus();
+          }
+        },
+        true,
+      );
+    }
+  }
+
+  injectSignupConsent();
+  setTimeout(injectSignupConsent, 400);
+  setTimeout(injectSignupConsent, 1200);
+
   try {
     var obs = new MutationObserver(function () {
       translateAll();
+      injectSignupConsent();
     });
     obs.observe(document.body, { childList: true, subtree: true, characterData: true });
   } catch (err) {

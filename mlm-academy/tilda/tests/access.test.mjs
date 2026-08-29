@@ -8,6 +8,7 @@ require('../src/access.js');
 require('../src/storage.js');
 require('../src/payments.js');
 require('../src/commerce.js');
+require('../src/legal.js');
 require('../src/search.js');
 require('../src/analytics.js');
 const MLMA = require('../src/ontology.js');

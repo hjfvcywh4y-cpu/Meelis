@@ -18,6 +18,7 @@ require('../src/access.js');
 require('../src/storage.js');
 require('../src/payments.js');
 require('../src/commerce.js');
+require('../src/legal.js');
 require('../src/search.js');
 require('../src/analytics.js');
 const MLMA = require('../src/ontology.js');
@@ -117,5 +118,21 @@ describe('продуктовый справочник и commercial gate', () =>
     assert.equal(view.buy_enabled, false);
     assert.equal(typeof MLMA.writeLaunchNotify, 'undefined');
     assert.equal(typeof MLMA.readLaunchNotify, 'undefined');
+  });
+
+  it('юридические документы опубликованы с реквизитами оператора, без плейсхолдера', () => {
+    assert.equal(productsFile.legal.offer_status, 'published');
+    assert.equal(productsFile.legal.privacy_status, 'approved');
+    assert.equal(productsFile.legal.requisites_status, 'filled');
+    const privacy = MLMA.legalDocument('privacy');
+    const consent = MLMA.legalDocument('consent');
+    const offer = MLMA.legalDocument('offer');
+    const requisites = MLMA.legalDocument('requisites');
+    const blob = JSON.stringify([privacy, consent, offer, requisites]);
+    assert.match(privacy.title, /Политика конфиденциальности/);
+    assert.match(consent.title, /Согласие на обработку и передачу/);
+    assert.match(blob, /Борисенко Татьяна Анатольевна/);
+    assert.match(blob, /532000135580/);
+    assert.doesNotMatch(blob, /LEGAL_PLACEHOLDER|ЗАПОЛНИТЬ ВЛАДЕЛЬЦУ/);
   });
 });

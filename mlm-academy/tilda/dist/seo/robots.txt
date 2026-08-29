@@ -6,10 +6,11 @@ Allow: /about
 Allow: /access
 Allow: /pricing
 Allow: /payment-and-access
+Allow: /privacy
+Allow: /consent
+Allow: /offer
+Allow: /requisites
 Allow: /research
-Disallow: /privacy
-Disallow: /offer
-Disallow: /requisites
 Disallow: /my
 Disallow: /my/
 Disallow: /profile

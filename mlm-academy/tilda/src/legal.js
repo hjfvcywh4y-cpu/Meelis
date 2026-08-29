@@ -1,5 +1,3 @@
-<!-- Блок T123: доменная логика 6/12 Не публиковать. Не вставлять в общесайтовый HEAD. -->
-<script>
 /**
  * Юридические документы MLM Academy.
  * Реквизиты оператора взяты с опубликованной корпоративной главной mlmacademy.ru.
@@ -113,5 +111,3 @@
   api.LEGAL_OPERATOR = OPERATOR;
   api.legalDocument = doc;
 })(typeof window !== 'undefined' ? window : globalThis);
-</script>
-
