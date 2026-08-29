@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const MLMA = require('./src/domain.js');
+require('./src/legal.js');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -138,6 +139,11 @@ if (productCodes.size !== requiredProductCodes.length) {
 for (const code of requiredProductCodes) {
   if (!productCodes.has(code)) throw new Error('Нет продукта ' + code);
 }
+
+const legalGate = typeof MLMA.assertLegalPublishReady === 'function' ? MLMA.assertLegalPublishReady() : { ok: false, reason: 'legal_module_missing' };
+if (!legalGate.ok) {
+  throw new Error('Юридическая публикация заблокирована: ' + legalGate.reason);
+}
 for (const row of productsFile.products) {
   if (row.publication_status === 'active') {
     throw new Error('Продукт ' + row.product_code + ' не должен быть active до gate');
@@ -170,6 +176,16 @@ const ontologyJs = fs.readFileSync(path.join(SRC, 'ontology.js'), 'utf8');
 const SPLIT = '\n\n/* __MLMA_UI_SPLIT__ */\n\n';
 const domainJs = [domainCore.trim(), accessJs.trim(), storageJs.trim(), paymentsJs.trim(), commerceJs.trim(), legalJs.trim(), searchJs.trim(), analyticsJs.trim()].join(SPLIT) + '\n\n' + ontologyJs.trim();
 const uiJs = fs.readFileSync(path.join(SRC, 'ui.js'), 'utf8');
+const publicBundle = domainJs + uiJs + css;
+const oldSeller = ['Бор' + 'исенко', 'Бале' + 'шенко', '532000' + '135580', '1071@savv' + '.tech'];
+for (const needle of oldSeller) {
+  if (publicBundle.includes(needle)) {
+    throw new Error('В публичной сборке Academy найден прежний продавец');
+  }
+}
+if (/\b\d{20}\b/.test(legalJs) || /БИК\s*\d{9}/.test(legalJs)) {
+  throw new Error('В публичных юридических текстах найдены банковские реквизиты');
+}
 
 function listTrackModuleFiles() {
   const dir = path.join(SRC, 'tracks');
@@ -207,11 +223,14 @@ const pages = [
   { id: 'profile', file: 'profile.html', url: '/profile', page: 'profile', title: 'Профиль · MLM Academy', members: 'member' },
   { id: 'access', file: 'access.html', url: '/access', page: 'access', title: 'Доступ · MLM Academy', members: 'public' },
   { id: 'pricing', file: 'pricing.html', url: '/pricing', page: 'pricing', title: 'Тарифы · MLM Academy', members: 'public' },
-  { id: 'payment-and-access', file: 'payment-and-access.html', url: '/payment-and-access', page: 'payment-and-access', title: 'Оплата и доступ · MLM Academy', members: 'public' },
-  { id: 'privacy', file: 'privacy.html', url: '/privacy', page: 'privacy', title: 'Политика конфиденциальности · MLM Academy', members: 'public' },
-  { id: 'consent', file: 'consent.html', url: '/consent', page: 'consent', title: 'Согласие на обработку и передачу персональных данных · MLM Academy', members: 'public' },
-  { id: 'offer', file: 'offer.html', url: '/offer', page: 'offer', title: 'Публичная оферта · MLM Academy', members: 'public' },
-  { id: 'requisites', file: 'requisites.html', url: '/requisites', page: 'requisites', title: 'Реквизиты · MLM Academy', members: 'public' },
+  { id: 'payment-and-access', file: 'payment-and-access.html', url: '/payment-and-access', page: 'payment-and-access', title: 'Оплата, доступ и возврат — MLM Academy', members: 'public' },
+  { id: 'privacy', file: 'privacy.html', url: '/privacy', page: 'privacy', title: 'Политика обработки персональных данных — MLM Academy', members: 'public' },
+  { id: 'consent', file: 'consent.html', url: '/consent', page: 'consent', title: 'Согласие на обработку персональных данных — MLM Academy', members: 'public' },
+  { id: 'offer', file: 'offer.html', url: '/offer', page: 'offer', title: 'Публичная оферта — MLM Academy', members: 'public' },
+  { id: 'requisites', file: 'requisites.html', url: '/requisites', page: 'requisites', title: 'Реквизиты исполнителя — MLM Academy', members: 'public' },
+  { id: 'documents', file: 'documents.html', url: '/documents', page: 'documents', title: 'Документы — MLM Academy', members: 'public' },
+  { id: 'cookies', file: 'cookies.html', url: '/cookies', page: 'cookies', title: 'Cookies и локальное хранилище — MLM Academy', members: 'public' },
+  { id: 'marketing-consent', file: 'marketing-consent.html', url: '/marketing-consent', page: 'marketing-consent', title: 'Согласие на получение информационных и рекламных сообщений — MLM Academy', members: 'public' },
   { id: 'purchases', file: 'my-purchases.html', url: '/my/purchases', page: 'purchases', title: 'Покупки и доступ · MLM Academy', members: 'member' },
   { id: 'preview', file: 'preview-catalog.html', url: '/preview/catalog', page: 'preview', title: 'Предпросмотр каталога · MLM Academy', members: 'editor' },
   { id: 'preview-commerce', file: 'preview-commerce.html', url: '/preview/commerce', page: 'preview-commerce', title: 'Предпросмотр состояний покупки · MLM Academy', members: 'editor', noindex: true },
@@ -353,6 +372,39 @@ function noscriptFor(page) {
   </div>
 </noscript>`;
   }
+  if (page.page === 'documents') {
+    const docs = typeof MLMA.publicDocuments === 'function' ? MLMA.publicDocuments() : [];
+    const list = docs
+      .map((doc) => `<li><a href="${escapeHtml(doc.path)}">${escapeHtml(doc.title)}</a></li>`)
+      .join('\n      ');
+    return `<noscript>
+  <div class="mlma-noscript">
+    <h1>Центр документов MLM Academy</h1>
+    <p>Отдельные публичные страницы. Тексты не объединены.</p>
+    <ul>
+      ${list}
+    </ul>
+    ${back}
+  </div>
+</noscript>`;
+  }
+  if (page.page === 'requisites') {
+    const op = MLMA.LEGAL_OPERATOR || {};
+    return `<noscript>
+  <div class="mlma-noscript">
+    <h1>Реквизиты исполнителя</h1>
+    <p>Исполнитель: ${escapeHtml(op.fullName || op.name || '')}</p>
+    <p>Статус: ${escapeHtml(op.legalStatus || '')}</p>
+    <p>ИНН: ${escapeHtml(op.inn || '')}</p>
+    <p>Email: <a href="mailto:${escapeHtml(op.email || '')}">${escapeHtml(op.email || '')}</a></p>
+    <p>Телефон: <a href="tel:${escapeHtml(op.phoneE164 || '')}">${escapeHtml(op.phone || '')}</a></p>
+    <p>Сайт: <a href="${escapeHtml(op.site || 'https://mlmacademy.ru')}">${escapeHtml(op.site || 'https://mlmacademy.ru')}</a></p>
+    <p>Публичная ссылка для ЮKassa: https://mlmacademy.ru/requisites</p>
+    <p><a href="/documents">Все документы</a></p>
+    ${back}
+  </div>
+</noscript>`;
+  }
   return `<noscript>
   <div class="mlma-noscript">
     <h1>${escapeHtml(page.title)}</h1>
@@ -439,11 +491,14 @@ function seoHead(page, opts = {}) {
     track: 'Карточка трека: ситуация, действие, рабочий след и следующее лучшее действие.',
     access: 'FREE, будущие разовые покупки, командный и корпоративный формат. Платные продукты готовятся, кнопки покупки нет.',
     pricing: 'Тарифы MLM Academy: демо, один трек от 590 ₽, мини-маршрут от 1 490 ₽, маршрут из шести от 2 990 ₽. Оплатить пока нельзя.',
-    'payment-and-access': 'Как будет устроена оплата и доступ. Сейчас эквайринг не подключён, деньги не принимаются.',
-    privacy: 'Политика конфиденциальности MLM Academy: какие данные обрабатываются, кому передаются и как отозвать согласие.',
-    consent: 'Согласие на обработку и передачу персональных данных при регистрации кабинета MLM Academy.',
-    offer: 'Публичная оферта на бесплатный кабинет MLM Academy. Платные услуги пока не оказываются.',
-    requisites: 'Реквизиты ИП Борисенко Татьяна Анатольевна: ИНН, ОГРНИП, адрес, контакты.',
+    'payment-and-access': 'Как оплачиваются продукты MLM Academy, когда открывается доступ и как обратиться за возвратом. Сейчас эквайринг не подключён.',
+    privacy: 'Как MLM Academy собирает, использует, хранит и защищает персональные данные.',
+    consent: 'Отдельное согласие на обработку персональных данных при регистрации кабинета MLM Academy.',
+    offer: 'Условия оказания дистанционных информационно-консультационных услуг MLM Academy.',
+    requisites: 'Сведения об исполнителе и контакты MLM Academy.',
+    documents: 'Центр публичных документов MLM Academy: реквизиты, оферта, политика, согласия, cookies, оплата и возврат.',
+    cookies: 'Какие cookies и ключи браузера использует MLM Academy для входа, сессии и маршрута.',
+    'marketing-consent': 'Необязательное согласие на новости и специальные предложения MLM Academy.',
     purchases: 'Покупки и доступ кабинета. Страница не индексируется.',
     'preview-commerce': 'Служебный предпросмотр состояний покупки. Не публиковать.',
     my: 'Личный кабинет MLM Academy. Страница не индексируется.',
@@ -728,7 +783,7 @@ ${pages.map((page) => `| ${page.title} | \`${page.url}\` | \`mounts/${page.id}.h
 
 Публичные (не добавлять ни в одну группу): \`/academy\`, \`/start\`, \`/library\`,
 \`/library/a1\`…\`/library/a6\`, \`/track\`, \`/about\`, \`/access\`, \`/pricing\`, \`/payment-and-access\`,
-\`/privacy\`, \`/consent\`, \`/offer\`, \`/requisites\`.
+\`/privacy\`, \`/consent\`, \`/offer\`, \`/requisites\`, \`/documents\`, \`/cookies\`, \`/marketing-consent\`.
 \`/preview/commerce\` не публиковать. Живую главную \`/\` и прочие
 маркетинговые страницы в группы не добавлять.
 
@@ -805,6 +860,9 @@ Allow: /privacy
 Allow: /consent
 Allow: /offer
 Allow: /requisites
+Allow: /documents
+Allow: /cookies
+Allow: /marketing-consent
 Allow: /research
 Disallow: /my
 Disallow: /my/

@@ -268,33 +268,77 @@
 
   function footer(state) {
     var R = state.R;
-    var links = [
-      { href: R.home(), label: 'Academy' },
-      { href: R.library(), label: 'Библиотека' },
-      { href: R.start(), label: 'С чего начать' },
-      { href: R.about(), label: 'Как создаётся библиотека' },
-      { href: R.access(), label: 'Доступ' },
-      { href: R.pricing ? R.pricing() : '/pricing', label: 'Тарифы' },
-      { href: R.paymentAndAccess && R.paymentAndAccess() ? R.paymentAndAccess() : '/payment-and-access', label: 'Оплата и доступ' },
-      { href: R.my(), label: 'Кабинет' },
-      { href: R.research ? R.research() : '/research/marketing-plan', label: 'Исследование' },
-      { href: R.privacy ? R.privacy() : '/privacy', label: 'Политика' },
-      { href: R.consent ? R.consent() : '/consent', label: 'Согласие' },
-      { href: R.offer ? R.offer() : '/offer', label: 'Оферта' },
-      { href: R.requisites ? R.requisites() : '/requisites', label: 'Реквизиты' },
-      { href: D.siteHomeUrl(), label: 'Решения для компаний' },
+    var groups = [
+      {
+        title: 'Платформа',
+        links: [
+          { href: R.home(), label: 'Academy' },
+          { href: R.library(), label: 'Библиотека' },
+          { href: R.start(), label: 'С чего начать' },
+        ],
+      },
+      {
+        title: 'О проекте',
+        links: [
+          { href: R.research ? R.research() : '/research/marketing-plan', label: 'Исследование' },
+          { href: R.about(), label: 'Как создаётся библиотека' },
+          { href: D.siteHomeUrl(), label: 'Решения для компаний' },
+        ],
+      },
+      {
+        title: 'Доступ',
+        links: [
+          { href: R.pricing ? R.pricing() : '/pricing', label: 'Тарифы' },
+          { href: (R.paymentAndAccess && R.paymentAndAccess()) || '/payment-and-access', label: 'Оплата и доступ' },
+          { href: R.my(), label: 'Кабинет' },
+        ],
+      },
+      {
+        title: 'Документы',
+        links: [
+          { href: (R.documents && R.documents()) || '/documents', label: 'Все документы' },
+          { href: (R.requisites && R.requisites()) || '/requisites', label: 'Реквизиты' },
+          { href: (R.offer && R.offer()) || '/offer', label: 'Оферта' },
+        ],
+      },
     ];
-    var nav = '';
-    for (var i = 0; i < links.length; i += 1) {
-      nav += '<li><a href="' + esc(links[i].href) + '">' + esc(links[i].label) + '</a></li>';
+    var cols = '';
+    for (var i = 0; i < groups.length; i += 1) {
+      var items = '';
+      for (var j = 0; j < groups[i].links.length; j += 1) {
+        items += '<li><a href="' + esc(groups[i].links[j].href) + '">' + esc(groups[i].links[j].label) + '</a></li>';
+      }
+      cols +=
+        '<details class="mlma-footer-col">' +
+        '<summary>' +
+        esc(groups[i].title) +
+        '</summary><ul>' +
+        items +
+        '</ul></details>';
     }
     return (
-      '<footer class="mlma-footer"><div class="mlma-wrap" style="display:flex;flex-direction:column;gap:24px;padding-top:32px;padding-bottom:32px">' +
-      '<div><p style="font-size:17px;font-weight:800;letter-spacing:-0.03em">MLM Academy</p>' +
-      '<p class="mlma-footer-muted" style="margin-top:8px;max-width:460px;font-size:14px;line-height:1.5">Рабочий навигатор партнёра: ситуация → действие → результат → следующий шаг.</p></div>' +
-      '<nav aria-label="Навигация в подвале"><ul style="display:flex;flex-wrap:wrap;gap:8px 24px;font-size:14px;font-weight:700">' +
-      nav +
-      '</ul></nav></div></footer>'
+      '<footer class="mlma-footer"><div class="mlma-wrap mlma-footer-inner">' +
+      '<div class="mlma-footer-brand"><p class="mlma-footer-name">MLM Academy</p>' +
+      '<p class="mlma-footer-muted">Рабочий навигатор партнёра: ситуация → действие → результат → следующий шаг.</p></div>' +
+      '<nav class="mlma-footer-cols" aria-label="Навигация в подвале">' +
+      cols +
+      '</nav></div></footer>' +
+      cookieBannerHtml(state)
+    );
+  }
+
+  function cookieBannerHtml(state) {
+    var href = (state.R.cookies && state.R.cookies()) || '/cookies';
+    return (
+      '<div class="mlma-cookie" id="mlma-cookie" hidden role="dialog" aria-label="Cookies">' +
+      '<p>Мы используем необходимые cookies для входа, безопасности и сохранения маршрута. Необязательная аналитика включается только с вашего разрешения.</p>' +
+      '<div class="mlma-cookie-actions">' +
+      '<button type="button" class="mlma-btn mlma-btn-small mlma-btn-primary" data-mlma-cookie="necessary">Только необходимые</button>' +
+      '<button type="button" class="mlma-btn mlma-btn-small" data-mlma-cookie="analytics">Разрешить аналитику</button>' +
+      '<a class="mlma-btn mlma-btn-small" href="' +
+      esc(href) +
+      '">Настроить</a>' +
+      '</div></div>'
     );
   }
 

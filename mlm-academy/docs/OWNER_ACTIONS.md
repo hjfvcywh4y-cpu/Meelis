@@ -42,7 +42,9 @@ Rollback на `/about` проверен: скрыть loader / показать 
 
 ЮKassa, webhook, подписка, verified Auth и Supabase не подключались.
 
-Юридические страницы `/privacy`, `/consent`, `/offer`, `/requisites` публикуются как действующие документы оператора (ИП Борисенко Т. А.). Платные услуги в оферте по-прежнему не оказываются.
+Юридические страницы `/documents`, `/privacy`, `/consent`, `/offer`, `/requisites`, `/cookies`, `/marketing-consent`, `/payment-and-access` публикуются как действующие документы исполнителя (Осипов Роман Георгиевич, НПД, ИНН 532013301192). Платные услуги по-прежнему не оказываются: `PAYMENTS_ENABLED=false`.
+
+Публичные документы не добавлять в группы Members. ЮKassa должна получать `https://mlmacademy.ru/requisites`.
 
 ## 1. Внешние assets `/shared/v1/*`
 

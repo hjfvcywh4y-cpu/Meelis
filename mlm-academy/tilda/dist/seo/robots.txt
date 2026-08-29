@@ -10,6 +10,9 @@ Allow: /privacy
 Allow: /consent
 Allow: /offer
 Allow: /requisites
+Allow: /documents
+Allow: /cookies
+Allow: /marketing-consent
 Allow: /research
 Disallow: /my
 Disallow: /my/

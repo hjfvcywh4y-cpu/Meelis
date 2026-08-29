@@ -672,6 +672,15 @@
       paymentAndAccess: function () {
         return '/payment-and-access';
       },
+      documents: function () {
+        return '/documents';
+      },
+      cookies: function () {
+        return '/cookies';
+      },
+      marketingConsent: function () {
+        return '/marketing-consent';
+      },
       previewCommerce: function () {
         return '/preview/commerce';
       },

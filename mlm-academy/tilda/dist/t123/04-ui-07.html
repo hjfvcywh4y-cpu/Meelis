@@ -329,6 +329,24 @@
         if (D.performMembersLogout) D.performMembersLogout(event);
       });
     });
+    var cookieBox = rootEl.querySelector('#mlma-cookie');
+    var cookieChoice = '';
+    try {
+      cookieChoice = window.localStorage.getItem('mlma.cookieChoice.v1') || '';
+    } catch (err) {
+      cookieChoice = '';
+    }
+    if (cookieBox && !cookieChoice) cookieBox.hidden = false;
+    rootEl.querySelectorAll('[data-mlma-cookie]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        try {
+          window.localStorage.setItem('mlma.cookieChoice.v1', el.getAttribute('data-mlma-cookie') || 'necessary');
+        } catch (err) {
+          /* ignore */
+        }
+        if (cookieBox) cookieBox.hidden = true;
+      });
+    });
     rootEl.querySelectorAll('[data-mlma-run-start]').forEach(function (el) {
       el.addEventListener('click', function () {
         var id = D.normalizeTrackId(el.getAttribute('data-mlma-run-start'));
@@ -651,20 +669,36 @@
         results: { title: 'Результаты · MLM Academy', desc: 'Результаты кабинета. Страница не индексируется.' },
         profile: { title: 'Профиль · MLM Academy', desc: 'Профиль кабинета. Страница не индексируется.' },
         privacy: {
-          title: 'Политика конфиденциальности · MLM Academy',
-          desc: 'Политика конфиденциальности MLM Academy: какие данные обрабатываются, кому передаются и как отозвать согласие.',
+          title: 'Политика обработки персональных данных — MLM Academy',
+          desc: 'Как MLM Academy собирает, использует, хранит и защищает персональные данные.',
         },
         consent: {
-          title: 'Согласие на обработку и передачу персональных данных · MLM Academy',
-          desc: 'Согласие на обработку и передачу персональных данных при регистрации кабинета MLM Academy.',
+          title: 'Согласие на обработку персональных данных — MLM Academy',
+          desc: 'Отдельное согласие на обработку персональных данных при регистрации кабинета MLM Academy.',
         },
         offer: {
-          title: 'Публичная оферта · MLM Academy',
-          desc: 'Публичная оферта на бесплатный кабинет MLM Academy. Платные услуги пока не оказываются.',
+          title: 'Публичная оферта — MLM Academy',
+          desc: 'Условия оказания дистанционных информационно-консультационных услуг MLM Academy.',
         },
         requisites: {
-          title: 'Реквизиты · MLM Academy',
-          desc: 'Реквизиты ИП Борисенко Татьяна Анатольевна: ИНН, ОГРНИП, адрес, контакты.',
+          title: 'Реквизиты исполнителя — MLM Academy',
+          desc: 'Сведения об исполнителе и контакты MLM Academy.',
+        },
+        documents: {
+          title: 'Документы — MLM Academy',
+          desc: 'Центр публичных документов MLM Academy: реквизиты, оферта, политика, согласия, cookies, оплата и возврат.',
+        },
+        cookies: {
+          title: 'Cookies и локальное хранилище — MLM Academy',
+          desc: 'Какие cookies и ключи браузера использует MLM Academy для входа, сессии и маршрута.',
+        },
+        'marketing-consent': {
+          title: 'Согласие на получение информационных и рекламных сообщений — MLM Academy',
+          desc: 'Необязательное согласие на новости и специальные предложения MLM Academy.',
+        },
+        'payment-and-access': {
+          title: 'Оплата, доступ и возврат — MLM Academy',
+          desc: 'Как оплачиваются продукты MLM Academy, когда открывается доступ и как обратиться за возвратом.',
         },
       };
       var sectionSeo = {

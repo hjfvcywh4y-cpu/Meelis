@@ -10,7 +10,7 @@
 2. Скрыть стандартные header/footer Tilda на этой странице
 3. T123: `01-css.html`
 4. T123: все `02-data-*.html` по порядку
-5. T123: все `03-domain-*.html` по порядку (сейчас 12)
+5. T123: все `03-domain-*.html` по порядку (сейчас 13)
 6. T123: все `03b-tracks-*.html` по порядку, если есть исполняемые модули (сейчас 1)
 7. T123: все `04-ui-*.html` по порядку (сейчас 7)
 8. T123: `mounts/<id>.html` этой страницы
@@ -61,11 +61,14 @@
 | Профиль · MLM Academy | `/profile` | `mounts/profile.html` | member |
 | Доступ · MLM Academy | `/access` | `mounts/access.html` | public |
 | Тарифы · MLM Academy | `/pricing` | `mounts/pricing.html` | public |
-| Оплата и доступ · MLM Academy | `/payment-and-access` | `mounts/payment-and-access.html` | public |
-| Политика конфиденциальности · MLM Academy | `/privacy` | `mounts/privacy.html` | public |
-| Согласие на обработку и передачу персональных данных · MLM Academy | `/consent` | `mounts/consent.html` | public |
-| Публичная оферта · MLM Academy | `/offer` | `mounts/offer.html` | public |
-| Реквизиты · MLM Academy | `/requisites` | `mounts/requisites.html` | public |
+| Оплата, доступ и возврат — MLM Academy | `/payment-and-access` | `mounts/payment-and-access.html` | public |
+| Политика обработки персональных данных — MLM Academy | `/privacy` | `mounts/privacy.html` | public |
+| Согласие на обработку персональных данных — MLM Academy | `/consent` | `mounts/consent.html` | public |
+| Публичная оферта — MLM Academy | `/offer` | `mounts/offer.html` | public |
+| Реквизиты исполнителя — MLM Academy | `/requisites` | `mounts/requisites.html` | public |
+| Документы — MLM Academy | `/documents` | `mounts/documents.html` | public |
+| Cookies и локальное хранилище — MLM Academy | `/cookies` | `mounts/cookies.html` | public |
+| Согласие на получение информационных и рекламных сообщений — MLM Academy | `/marketing-consent` | `mounts/marketing-consent.html` | public |
 | Покупки и доступ · MLM Academy | `/my/purchases` | `mounts/purchases.html` | member |
 | Предпросмотр каталога · MLM Academy | `/preview/catalog` | `mounts/preview.html` | editor |
 | Предпросмотр состояний покупки · MLM Academy | `/preview/commerce` | `mounts/preview-commerce.html` | editor |
@@ -97,7 +100,7 @@
 
 Публичные (не добавлять ни в одну группу): `/academy`, `/start`, `/library`,
 `/library/a1`…`/library/a6`, `/track`, `/about`, `/access`, `/pricing`, `/payment-and-access`,
-`/privacy`, `/consent`, `/offer`, `/requisites`.
+`/privacy`, `/consent`, `/offer`, `/requisites`, `/documents`, `/cookies`, `/marketing-consent`.
 `/preview/commerce` не публиковать. Живую главную `/` и прочие
 маркетинговые страницы в группы не добавлять.
 
