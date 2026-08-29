@@ -309,8 +309,6 @@ def keyboard_for(
         "about": menus.about_keyboard(),
         "partners": menus.partners_keyboard(),
         "materials": menus.materials_keyboard(),
-        "video_lessons": menus.video_lessons_keyboard(),
-        "video_lesson_item": menus.video_lessons_keyboard(),
         "business_tools": menus.business_tools_keyboard(),
         "track": menus.track_keyboard(),
         "visitka": menus.visitka_keyboard(),
@@ -1810,7 +1808,6 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "about": menus.ABOUT_TEXT,
         "partners": menus.PARTNERS_TEXT,
         "materials": menus.MATERIALS_TEXT,
-        "video_lessons": menus.VIDEO_LESSONS_TEXT,
         "business_tools": menus.BUSINESS_TOOLS_TEXT,
         "track": menus.TRACK_TEXT,
         "ip_self": menus.IP_SELF_TEXT,
@@ -1962,21 +1959,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
     if text == menus.BTN_PARTNERS_PDF:
         await reply_html(update, menus.MATERIALS_TEXT, context, screen="materials")
-        return
-    if text == menus.BTN_VIDEO_LESSONS:
-        await reply_html(
-            update, menus.VIDEO_LESSONS_TEXT, context, screen="video_lessons"
-        )
-        return
-    video_lesson = menus.VIDEO_LESSON_BY_BUTTON.get(text)
-    if video_lesson:
-        await reply_html(
-            update,
-            menus.video_lesson_text(video_lesson),
-            context,
-            screen="video_lesson_item",
-            preview=True,
-        )
         return
     if text in {menus.BTN_STICKERS, menus.BTN_STICKER_ETG}:
         await send_pack_preview(

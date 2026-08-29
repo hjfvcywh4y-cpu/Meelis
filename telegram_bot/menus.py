@@ -172,7 +172,6 @@ BTN_VIDEO_LAUNCH = f"{idera_fallback('rocket')} Запустить"
 TRACK_BUTTON_ALIASES = frozenset({"IDera GO", BTN_TRACK})
 VIDEO_30S_ALIASES = frozenset({"GO снимать видео за 30 секунд", BTN_VIDEO_30S})
 BTN_PARTNERS_PDF = "📄 Материалы"
-BTN_VIDEO_LESSONS = "🎬 Видеоуроки"
 BTN_PARTNER_SYSTEM = "📋 Система работы партнёров"
 BTN_STICKERS = "Stickers"
 BTN_EMOJI = "Emoji"
@@ -256,7 +255,6 @@ def partners_keyboard() -> ReplyKeyboardMarkup:
     return kb(
         [
             [BTN_BUSINESS_TOOLS],
-            [BTN_VIDEO_LESSONS],
             [BTN_PARTNERS_PDF],
             [BTN_BACK],
         ]
@@ -576,7 +574,7 @@ PVZ_TEXT = (
 
 PARTNERS_TEXT = (
     f"{idera('blue')} <b>Материалы для партнёров</b>\n\n"
-    "Бизнес-инструменты, видеоуроки и файлы для работы с клиентами.\n"
+    "Бизнес-инструменты и файлы для работы с клиентами.\n"
     f"Выбери раздел {idera('blue')}"
 )
 
@@ -788,6 +786,19 @@ ARCHIVE_TEXT = (
 # Новые эфиры добавляются сюда — кнопка в архиве собирается из date + name.
 ARCHIVE_EVENTS: list[dict[str, str]] = [
     {
+        "date": "27.08.2026",
+        "name": "Старт без хаоса",
+        "url": "https://t.me/ideraofficial/143",
+        "title": "Старт без хаоса | Запись первого урока",
+        "body": (
+            "Как начать эффективно, даже если раньше вы не работали в сетевом бизнесе.\n\n"
+            "Вместе с Дианой Хадиуллиной: три опоры партнёрского пути, базовый "
+            "маршрут на старте, роль продукта и плана вознаграждения, первые "
+            "действия нового партнёра, наставник и дубликация.\n\n"
+            "Длительность ≈ 51 мин."
+        ),
+    },
+    {
         "date": "21.08.2026",
         "name": "IDera DETOX",
         "url": "https://t.me/ideraofficial/124",
@@ -859,56 +870,6 @@ ARCHIVE_BY_BUTTON = {
 }
 if len(ARCHIVE_BY_BUTTON) != len(ARCHIVE_EVENTS):
     raise ValueError("Archive events must have unique date + name buttons")
-
-VIDEO_LESSONS_TEXT = (
-    f"{idera('star')} <b>Видеоуроки</b>\n\n"
-    "Записи школы и уроков для партнёров IDera.\n"
-    f"Выбери урок {idera('blue')}"
-)
-
-# Новые уроки добавляются сюда — кнопка берётся из name.
-VIDEO_LESSONS: list[dict[str, str]] = [
-    {
-        "name": "Урок 1 | Старт без хаоса",
-        "url": "https://t.me/ideraofficial/143",
-        "title": "Старт без хаоса | Запись первого урока",
-        "body": (
-            "Как начать эффективно, даже если раньше вы не работали в сетевом бизнесе.\n\n"
-            "Вместе с Дианой Хадиуллиной: три опоры партнёрского пути, базовый "
-            "маршрут на старте, роль продукта и плана вознаграждения, первые "
-            "действия нового партнёра, наставник и дубликация.\n\n"
-            "Длительность ≈ 51 мин."
-        ),
-    },
-]
-
-
-def video_lesson_button_label(lesson: dict[str, str]) -> str:
-    """ReplyKeyboard: название урока. В Telegram не больше 64 символов."""
-    return lesson["name"][:64]
-
-
-def video_lesson_text(lesson: dict[str, str]) -> str:
-    url = lesson["url"]
-    return (
-        f"<b>{lesson['title']}</b>\n\n"
-        f"{lesson['body']}\n\n"
-        "Смотреть запись:\n"
-        f'<a href="{url}">{url}</a>'
-    )
-
-
-def video_lessons_keyboard() -> ReplyKeyboardMarkup:
-    rows = [[video_lesson_button_label(lesson)] for lesson in VIDEO_LESSONS]
-    rows.append([BTN_BACK])
-    return kb(rows)
-
-
-VIDEO_LESSON_BY_BUTTON = {
-    video_lesson_button_label(lesson): lesson for lesson in VIDEO_LESSONS
-}
-if len(VIDEO_LESSON_BY_BUTTON) != len(VIDEO_LESSONS):
-    raise ValueError("Video lessons must have unique names")
 
 PRODUCT_TEXT = (
     f"{idera('blue')} <b>Продукт</b>\n\n"
@@ -1000,7 +961,6 @@ MENU_LABELS = frozenset(
     | QUIZ_START_ALIASES
     | set(ARCHIVE_BY_BUTTON)
     | set(UPCOMING_BY_BUTTON)
-    | set(VIDEO_LESSON_BY_BUTTON)
     | set(QUAL_RANK_BUTTONS)
     | {"🏠 Главное меню"}
 )
@@ -1012,8 +972,6 @@ PARENT = {
     "about": "business",
     "partners": "business",
     "materials": "partners",
-    "video_lessons": "partners",
-    "video_lesson_item": "video_lessons",
     "business_tools": "partners",
     "visitka_pick": "business_tools",
     "visitka": "visitka_pick",
