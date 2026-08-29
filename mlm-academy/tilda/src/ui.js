@@ -2171,7 +2171,6 @@
     var extra = {};
     if (state.page === 'section') extra.stage = state.root.getAttribute('data-mlma-section') || '';
     var filters = D.parseLibraryState(window.location.search, extra);
-    var timer = null;
     var drawerOpen = false;
     var shown = D.PAGE_SIZE || 15;
     var host = null;
@@ -2245,25 +2244,13 @@
     }
 
     function bindChrome() {
-      var search = target.querySelector('#mlma-search');
-      if (search) {
-        search.addEventListener('input', function () {
-          var value = search.value;
-          window.clearTimeout(timer);
-          timer = window.setTimeout(function () {
-            filters.q = value;
-            filters.preset = null;
-            shown = D.PAGE_SIZE || 15;
-            paint({ keepFocus: true, url: 'replace' });
-          }, 200);
-        });
-      }
       var form = target.querySelector('#mlma-lib-form');
       if (form) {
         form.addEventListener('submit', function (event) {
           event.preventDefault();
           var field = target.querySelector('#mlma-search');
           filters.q = field ? field.value : '';
+          filters.preset = null;
           shown = D.PAGE_SIZE || 15;
           paint({ url: 'push' });
         });
@@ -2375,8 +2362,12 @@
       opts = opts || {};
       var keep = opts.keepFocus;
       var selection = null;
+      var typed = null;
       var searchBefore = target.querySelector('#mlma-search');
-      if (keep && searchBefore) selection = searchBefore.selectionStart;
+      if (searchBefore) {
+        typed = searchBefore.value;
+        if (keep) selection = searchBefore.selectionStart;
+      }
       var wasOpen = drawerOpen;
       var scrollY = opts.preserveScroll ? (window.scrollY || 0) : null;
       lastResult = opts.result || D.searchCatalog(state.tracks, filters);
@@ -2388,6 +2379,9 @@
       bindChrome();
       if (wasOpen) setDrawer(true);
       var search = target.querySelector('#mlma-search');
+      if (search && opts.skipRerank && typed != null && typed !== search.value) {
+        search.value = typed;
+      }
       if (keep && search) {
         search.focus();
         try {
