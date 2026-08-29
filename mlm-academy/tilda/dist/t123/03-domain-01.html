@@ -148,6 +148,75 @@
     return modules[id] || null;
   }
 
+  function assetsVersionDir() {
+    try {
+      if (typeof document === 'undefined') return '';
+      var scripts = document.getElementsByTagName('script');
+      for (var i = 0; i < scripts.length; i += 1) {
+        var src = String(scripts[i].src || '');
+        var match = src.match(/^(.*\/v1)\/(?:domain|ui|catalog-data)\.js(?:\?|$)/i);
+        if (match) return match[1];
+      }
+    } catch (err) {
+      /* ignore */
+    }
+    return '';
+  }
+
+  function trackModuleUrl(trackId) {
+    var dir = assetsVersionDir();
+    if (!dir) return '';
+    var bust = '';
+    try {
+      bust = (root.MLMA_PAYLOAD && root.MLMA_PAYLOAD.version) || '';
+    } catch (err) {
+      bust = '';
+    }
+    var file = String(trackId || '').toLowerCase() + '.module.js';
+    return dir + '/tracks/' + file + (bust ? '?v=' + encodeURIComponent(bust) : '');
+  }
+
+  var moduleLoadWaiters = {};
+
+  function loadTrackModule(trackId, onDone) {
+    var id = String(trackId || '').toUpperCase();
+    var existing = getTrackModule(id);
+    if (existing) {
+      if (typeof onDone === 'function') onDone(existing);
+      return existing;
+    }
+    if (!id || typeof document === 'undefined') {
+      if (typeof onDone === 'function') onDone(null);
+      return null;
+    }
+    var url = trackModuleUrl(id);
+    if (!url) {
+      if (typeof onDone === 'function') onDone(null);
+      return null;
+    }
+    if (moduleLoadWaiters[id]) {
+      if (typeof onDone === 'function') moduleLoadWaiters[id].push(onDone);
+      return null;
+    }
+    moduleLoadWaiters[id] = typeof onDone === 'function' ? [onDone] : [];
+    var script = document.createElement('script');
+    script.src = url;
+    script.async = true;
+    script.onload = function () {
+      var mod = getTrackModule(id);
+      var waiters = moduleLoadWaiters[id] || [];
+      delete moduleLoadWaiters[id];
+      for (var i = 0; i < waiters.length; i += 1) waiters[i](mod);
+    };
+    script.onerror = function () {
+      var waiters = moduleLoadWaiters[id] || [];
+      delete moduleLoadWaiters[id];
+      for (var i = 0; i < waiters.length; i += 1) waiters[i](null);
+    };
+    (document.head || document.documentElement).appendChild(script);
+    return null;
+  }
+
   function deriveSeoStatus(track) {
     if (!track) return 'noindex';
     if (track.seoStatus === 'index' || track.seoStatus === 'noindex') return track.seoStatus;
@@ -845,6 +914,8 @@
     normalizeAccess: normalizeAccess,
     hasExecutableContent: hasExecutableContent,
     getTrackModule: getTrackModule,
+    trackModuleUrl: trackModuleUrl,
+    loadTrackModule: loadTrackModule,
     deriveSeoStatus: deriveSeoStatus,
     membersLoginUrl: membersLoginUrl,
     membersRecoverUrl: membersRecoverUrl,

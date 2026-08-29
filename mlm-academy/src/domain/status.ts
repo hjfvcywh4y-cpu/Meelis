@@ -108,5 +108,6 @@ export const CONTENT_STATUS_LABELS: Record<ContentStatus, string> = {
   draft: 'Черновик содержания',
   review: 'Содержание на проверке',
   published: 'Содержание опубликовано',
+  complete: 'Содержание готово',
   archived: 'Содержание в архиве',
 };

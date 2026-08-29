@@ -798,6 +798,16 @@
       var openedTrack = opened ? D.getById(state.allTracks, opened, true) : null;
       var canStart = openedTrack ? D.getTrackStatusView(openedTrack).canStart : false;
       var openedRuntime = opened && D.getRuntime ? D.getRuntime(opened) : null;
+      if (
+        openedTrack &&
+        canStart &&
+        D.loadTrackModule &&
+        !D.getTrackModule(openedTrack.trackId)
+      ) {
+        D.loadTrackModule(openedTrack.trackId, function (mod) {
+          if (mod) mount(rootEl);
+        });
+      }
       D.trackEvent('track_card_opened', { itemId: opened || '', source: 'track' });
       if (openedTrack && D.normalizeAccess && D.normalizeAccess(openedTrack.access) === 'paid' && D.isEntitledToTrack && !D.isEntitledToTrack(openedTrack, state.account)) {
         D.trackEvent('locked_track_opened', { itemId: opened || '' });
