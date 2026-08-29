@@ -2,7 +2,7 @@
   'use strict';
 
   var TRACK_ID = 'A2-008';
-  var VERSION = '1.0.0';
+  var VERSION = '1.0.1';
   var D = root.MLMA || {};
   var STORAGE_KEY = D.RUNTIME_KEY || 'mlma.runtime.v1';
   var MAX_CANDIDATES = 10;
@@ -182,7 +182,8 @@
     runtime.startedAt = runtime.startedAt || nowIso();
     runtime.updatedAt = runtime.updatedAt || nowIso();
     runtime.trackVersion = VERSION;
-    if (!runtime.moduleData || runtime.moduleData.version !== VERSION) runtime.moduleData = defaultModuleData();
+    if (!runtime.moduleData || typeof runtime.moduleData !== 'object') runtime.moduleData = defaultModuleData();
+    runtime.moduleData.version = VERSION;
     if (!Array.isArray(runtime.moduleData.candidates)) runtime.moduleData.candidates = defaultModuleData().candidates;
     while (runtime.moduleData.candidates.length < MIN_CANDIDATES) runtime.moduleData.candidates.push(newCandidate());
     runtime.moduleData.plan = runtime.moduleData.plan || {};
@@ -352,10 +353,13 @@
       }
       rows += '</div></article>';
     }
+    var fitCount = list.filter(isActionFit).length;
+    var fitHint = '<p class="a2008-footnote">Уместных для первого действия сейчас: <strong>' + fitCount + ' из ' + list.length + '</strong>. Нужны пять. «Частично» считается: это честная оценка, а не отсев.</p>';
     return (
       '<div class="a2008-stage"><div class="a2008-stage-head"><span class="mlma-eyebrow">Шаг 2 из 4</span><h2>Оцените уместность действия</h2>' +
       '<p>Не «насколько ценен человек», а «есть ли у меня честный и понятный следующий шаг».</p></div>' +
       messageHtml(state) +
+      fitHint +
       (state.branch === 'not_enough_candidates' ? '<div class="a2008-actions"><a class="mlma-btn" href="/track?id=A2-010">Открыть A2-010 · Карта тёплых кругов</a></div>' : '') +
       '<div class="a2008-stack">' + rows + '</div>' +
       '<div class="a2008-actions"><button type="button" class="mlma-btn" data-a2008-action="back-candidates">Назад</button>' +
@@ -482,6 +486,25 @@
     return SCORE_FIELDS.every(function (item) { return scores[item[0]] !== '' && scores[item[0]] != null; });
   }
 
+  function isActionFit(candidate) {
+    return completedScores(candidate) && scoreCandidate(candidate) > 0;
+  }
+
+  function syncScoresFromDom(state) {
+    if (!root.document) return state;
+    var rootEl = root.document.querySelector('[data-mlma-track-runtime="' + TRACK_ID + '"]');
+    if (!rootEl) return state;
+    var selects = rootEl.querySelectorAll('select[data-score-field][data-id]');
+    for (var i = 0; i < selects.length; i += 1) {
+      var el = selects[i];
+      var scored = candidateById(state, el.getAttribute('data-id'));
+      if (!scored) continue;
+      scored.scores = scored.scores || { relationship: '', reason: '', respect: '', clarity: '' };
+      scored.scores[el.getAttribute('data-score-field')] = String(el.value || '');
+    }
+    return state;
+  }
+
   function validateCandidateStage(state) {
     var list = filledCandidates(state);
     if (list.length < MIN_CANDIDATES) return 'Заполните хотя бы пять вариантов. Если список не складывается, используйте трек A2-010 «Карта тёплых кругов».';
@@ -497,17 +520,23 @@
   function buildShortlist(state) {
     var list = filledCandidates(state);
     for (var i = 0; i < list.length; i += 1) {
-      if (!completedScores(list[i])) return { error: 'Оцените все четыре критерия у каждого варианта.', ids: [] };
+      if (!completedScores(list[i])) return { error: 'Оцените все четыре критерия у каждого варианта. «Частично» — нормальный ответ и входит в пятёрку.', ids: [] };
     }
-    var eligible = list.filter(function (candidate) {
-      return Number(candidate.scores.respect) >= 1 && Number(candidate.scores.clarity) >= 1 && scoreCandidate(candidate) >= 4;
-    });
+    var eligible = list.filter(isActionFit);
     eligible.sort(function (a, b) {
       var diff = scoreCandidate(b) - scoreCandidate(a);
       return diff || list.indexOf(a) - list.indexOf(b);
     });
     if (eligible.length < MIN_CANDIDATES) {
-      return { error: 'Сейчас уместных вариантов меньше пяти. Это нормальная развилка: расширьте контекст через A2-010 «Карта тёплых кругов» или вернитесь и добавьте кандидатов.', ids: [] };
+      return {
+        error:
+          'Уместных вариантов ' +
+          eligible.length +
+          ' из ' +
+          list.length +
+          '. Нужны пять человек хотя бы с одной оценкой «Частично» или «Да». Четыре «Нет» человека не считаем. Добавьте кандидатов или откройте A2-010 «Карта тёплых кругов».',
+        ids: [],
+      };
     }
     return { error: '', ids: eligible.slice(0, MIN_CANDIDATES).map(function (candidate) { return candidate.id; }) };
   }
@@ -599,6 +628,7 @@
       m.stage = 1;
       state.step = 'candidates';
     } else if (action === 'rank-next') {
+      state = syncScoresFromDom(state);
       var result = buildShortlist(state);
       if (result.error) {
         m.message = result.error;
@@ -736,19 +766,18 @@
   }
 
   function ensureStyles() {
-    if (!root.document || root.document.getElementById('a2008-styles')) return;
-    var style = root.document.createElement('style');
-    style.id = 'a2008-styles';
-    style.textContent = [
-      '.a2008{--a2:#3D6B4F;--a2-soft:#e3ece5;--ink:#1c1914;--paper:#f4f0e8;--surface:#fffcf7;overflow:hidden}',
+    if (!root.document) return;
+    var css = [
+      '.a2008{--a2:#3D6B4F;--a2-soft:#e3ece5;--ink:#1c1914;--paper:#f4f0e8;--surface:#fffcf7;overflow:visible}',
       '.a2008 *{box-sizing:border-box}',
       '.a2008-kicker{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}',
       '.a2008-local{font:600 12px/1.2 "JetBrains Mono",monospace;color:#526057;background:var(--a2-soft);padding:7px 10px;border-radius:3px}',
-      '.a2008-progress{list-style:none;margin:22px 0 30px;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}',
-      '.a2008-progress li{position:relative;display:flex;align-items:center;gap:8px;color:#7b756c;font-size:12px;min-width:0}',
-      '.a2008-progress li:after{content:"";position:absolute;left:31px;right:-8px;top:13px;height:2px;background:#d7d0c5;z-index:0}',
+      '.a2008-progress{list-style:none;margin:22px 0 30px;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;overflow:visible}',
+      '.a2008-progress li{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:8px;color:#7b756c;font-size:12px;min-width:0;padding-right:10px}',
+      '.a2008-progress li:after{content:"";position:absolute;left:27px;right:-8px;top:13px;height:2px;background:#d7d0c5;z-index:0}',
       '.a2008-progress li:last-child:after{display:none}',
       '.a2008-progress span{position:relative;z-index:1;display:grid;place-items:center;width:27px;height:27px;border:1px solid #b8afa3;border-radius:50%;background:var(--surface);font-weight:800;flex:0 0 auto}',
+      '.a2008-progress b{position:relative;z-index:1;font-weight:700;line-height:1.25;max-width:100%}',
       '.a2008-progress .is-current,.a2008-progress .is-done{color:var(--ink)}',
       '.a2008-progress .is-current span{border-color:var(--a2);box-shadow:0 0 0 3px var(--a2-soft)}',
       '.a2008-progress .is-done span{background:var(--a2);border-color:var(--a2);color:white}',
@@ -780,9 +809,10 @@
       '.a2008-rank-card{display:grid;gap:16px}',
       '.a2008-rank-card>div:first-child{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center}',
       '.a2008-rank-card>div:first-child p{grid-column:2;margin:3px 0 0;color:#6b655c;font-size:13px}',
-      '.a2008-score-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}',
-      '.a2008-score-grid label{border-top:1px solid #ddd5ca;padding-top:10px}',
-      '.a2008-score-grid small{display:block;min-height:36px;color:#756f66;font-size:11px;line-height:1.35;margin-bottom:7px}',
+      '.a2008-score-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 18px;align-items:start}',
+      '.a2008-score-grid label{border-top:0;padding-top:0}',
+      '.a2008-score-grid label:nth-child(n+3){border-top:1px solid #ddd5ca;padding-top:12px}',
+      '.a2008-score-grid small{display:block;min-height:0;color:#756f66;font-size:11px;line-height:1.35;margin:0 0 8px;position:relative;z-index:1;background:var(--surface)}',
       '.a2008-plan-title{align-items:flex-start}',
       '.a2008-plan-title>div{flex:1}',
       '.a2008-plan-title p{margin:3px 0 0;color:#6b655c;font-size:13px}',
@@ -802,7 +832,16 @@
       '@media(max-width:720px){.a2008-progress{grid-template-columns:repeat(4,27px);justify-content:space-between}.a2008-progress b{display:none}.a2008-progress li:after{right:-45px}.a2008-two,.a2008-three,.a2008-score-grid{grid-template-columns:1fr}.a2008{padding:20px!important}.a2008-actions .mlma-btn,.a2008-actions a.mlma-btn{width:100%}.a2008-stage-head h2{font-size:28px}}',
       '@media(prefers-reduced-motion:reduce){.a2008 *{scroll-behavior:auto!important;transition:none!important}}',
     ].join('');
-    root.document.head.appendChild(style);
+    var style = root.document.getElementById('a2008-styles');
+    if (!style) {
+      style = root.document.createElement('style');
+      style.id = 'a2008-styles';
+      root.document.head.appendChild(style);
+    }
+    if (style.getAttribute('data-a2008-css') !== VERSION) {
+      style.textContent = css;
+      style.setAttribute('data-a2008-css', VERSION);
+    }
   }
 
   function installCoreAdapters() {
@@ -839,6 +878,7 @@
     hasPressure: hasPressure,
     validateCandidateStage: validateCandidateStage,
     buildShortlist: buildShortlist,
+    isActionFit: isActionFit,
     validatePlan: validatePlan,
     chooseNextTrack: chooseNextTrack,
     artifactText: artifactText,

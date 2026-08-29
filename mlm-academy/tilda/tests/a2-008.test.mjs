@@ -92,6 +92,8 @@ function scoreAll(state, mode) {
   state.moduleData.candidates.forEach(function (candidate, index) {
     if (mode === 'weak' && index >= 3) {
       candidate.scores = { relationship: '0', reason: '0', respect: '0', clarity: '0' };
+    } else if (mode === 'partial') {
+      candidate.scores = { relationship: '2', reason: '1', respect: '1', clarity: '1' };
     } else {
       candidate.scores = { relationship: '2', reason: '2', respect: '2', clarity: '2' };
     }
@@ -159,6 +161,28 @@ describe('A2-008 исполняемый трек', () => {
     state = trackModule.reset();
     state = fillFive(state);
     trackModule.handleAction('candidates-next');
+    state = scoreAll(trackModule.getState(), 'partial');
+    const partial = trackModule.buildShortlist(state);
+    check(!partial.error && partial.ids.length === 5, 'пять человек с «Частично» собираются в shortlist');
+
+    const stored = JSON.parse(local.getItem('mlma.runtime.v1'));
+    stored['A2-008'].moduleData.version = '1.0.0';
+    stored['A2-008'].trackVersion = '1.0.0';
+    local.setItem('mlma.runtime.v1', JSON.stringify(stored));
+    const migrated = trackModule.getState();
+    check(migrated.moduleData.candidates[0].descriptor === 'коллега из прошлого проекта', 'патч версии не стирает черновик');
+
+    const moduleSrc = fs.readFileSync(path.join(__dirname, '../src/tracks/a2-008.module.js'), 'utf8');
+    check(
+      moduleSrc.includes('flex-direction:column') &&
+        moduleSrc.includes('.a2008-progress b{position:relative;z-index:1') &&
+        !moduleSrc.includes('__MLMA_UI_SPLIT__'),
+      'подписи шагов ниже линии прогресса, модуль не режется маркером T123',
+    );
+
+    state = trackModule.reset();
+    state = fillFive(state);
+    trackModule.handleAction('candidates-next');
     state = scoreAll(trackModule.getState(), 'strong');
     trackModule.handleAction('rank-next');
     state = trackModule.getState();
@@ -213,6 +237,6 @@ describe('A2-008 исполняемый трек', () => {
     );
 
     console.log('A2-008: ' + assertions + ' assertions passed; full path and privacy gate verified.');
-    assert.equal(assertions, 17);
+    assert.equal(assertions, 20);
   });
 });

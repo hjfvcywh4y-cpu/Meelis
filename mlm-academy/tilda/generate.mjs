@@ -17,6 +17,7 @@ const SRC = path.join(__dirname, 'src');
 const DIST = path.join(__dirname, 'dist');
 const T123_LIMIT = 45000;
 const ASSETS_VERSION = 'v1';
+const ASSET_BASE_LIVE = 'https://mlma-account.mlmacademy-search.workers.dev';
 const CATALOG_SCHEMA = 'mlma.catalog.public.v1';
 const EXPECTED_SECTION_COUNTS = { A1: 16, A2: 16, A3: 17, A4: 17, A5: 14, A6: 32 };
 const PILOT_EXECUTABLE = {
@@ -183,9 +184,6 @@ function moduleCacheBust(fileName) {
 }
 
 const trackModuleFiles = listTrackModuleFiles();
-const trackModulesJs = trackModuleFiles
-  .map((name) => fs.readFileSync(path.join(SRC, 'tracks', name), 'utf8').trim())
-  .join('\n\n');
 const trackModuleScriptTags = (base) =>
   trackModuleFiles
     .map((name) => `<script src="${base}/${ASSETS_VERSION}/tracks/${name}?v=${moduleCacheBust(name)}"></script>`)
@@ -541,9 +539,30 @@ function writeScriptChunks(source, basename, label) {
 }
 
 const domainFiles = writeScriptChunks(domainJs, '03-domain', 'доменная логика');
-const trackFiles = trackModulesJs
-  ? writeScriptChunks(trackModulesJs, '03b-tracks', 'модули треков')
-  : [];
+const trackFiles = [];
+if (trackModuleFiles.length) {
+  const inner =
+    trackModuleFiles
+      .map(function (name) {
+        return (
+          '<script src="' +
+          ASSET_BASE_LIVE +
+          '/' +
+          ASSETS_VERSION +
+          '/tracks/' +
+          name +
+          '?v=' +
+          encodeURIComponent(moduleCacheBust(name)) +
+          '"></script>'
+        );
+      })
+      .join('\n') + '\n';
+  write(
+    path.join(DIST, 't123', '03b-tracks.html'),
+    t123Wrap(inner, 'Блок T123: модули треков. Script src, без инлайна IIFE.'),
+  );
+  trackFiles.push('03b-tracks.html');
+}
 const uiFiles = writeScriptChunks(uiJs, '04-ui', 'рендер оболочки');
 
 for (const page of pages) {
@@ -629,7 +648,6 @@ ${trackModuleScriptTags('ASSET_BASE')}
 <script src="ASSET_BASE/${ASSETS_VERSION}/ui.js?v=${catalogFile.version}"></script>
 `;
 write(path.join(DIST, 't123/external-loader-v1.html'), t123Wrap(loader, `Внешний loader assets ${ASSETS_VERSION}. Сначала одна тестовая страница.`));
-const ASSET_BASE_LIVE = 'https://mlma-account.mlmacademy-search.workers.dev';
 write(
   path.join(DIST, 't123/external-loader-v1.live.html'),
   t123Wrap(loader.replace(/ASSET_BASE/g, ASSET_BASE_LIVE), `Живой loader ${ASSETS_VERSION}. ASSET_BASE=${ASSET_BASE_LIVE}`),
