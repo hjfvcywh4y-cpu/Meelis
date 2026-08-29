@@ -149,6 +149,7 @@
       { href: R.library(), label: 'Библиотека' },
       { href: R.start(), label: 'С чего начать' },
       { href: R.about(), label: 'Как создаётся' },
+      { href: R.research ? R.research() : '/research/marketing-plan', label: 'Исследование' },
       { href: D.siteHomeUrl(), label: 'Решения для компаний' },
     ];
     if (isCabinetPage(state.page) || (state.page === 'access' && accountOf(state).loggedIn)) {
@@ -452,6 +453,17 @@
       '<p class="mlma-meta">Схема маршрута</p>' +
       '<ol class="mlma-scheme-list"><li>Ситуация</li><li>Подходящий трек</li><li>Действие</li><li>Следующий шаг</li></ol>' +
       '<p class="mlma-muted" style="margin-top:16px;font-size:14px;line-height:1.45">Сначала узнаёте себя в описании. Потом берёте одно действие. После результата видите продолжение.</p></aside></div></section>' +
+      '<section class="mlma-band" id="mlma-research-entry"><div class="mlma-wrap">' +
+      '<div class="mlma-research-cta">' +
+      '<span class="mlma-eyebrow">Исследование</span>' +
+      '<h2 class="mlma-h2" style="margin-top:16px;max-width:22ch;color:inherit">Почему маркетинг-плана недостаточно</h2>' +
+      '<p class="mlma-lead" style="margin-top:16px;max-width:70ch">Маркетинг-план показывает партнёру цель, условия и вознаграждение. Но между целью и результатом остаётся разрыв: что конкретно человек должен сделать сегодня.</p>' +
+      '<p style="margin-top:14px;max-width:70ch;font-size:16px;line-height:1.5;color:var(--mlma-on-ink-muted)">Мы изучили, как крупные MLM-компании соединяют маркетинг-план, ежедневные действия партнёра, follow-up, прогресс и работу наставника.</p>' +
+      '<div class="mlma-actions" style="margin-top:24px">' +
+      '<a class="mlma-btn mlma-btn-accent" href="' +
+      esc(R.research ? R.research() : '/research/marketing-plan') +
+      '" data-mlma-funnel="research_open_from_b2c" data-source-page="/academy" data-cta-position="academy_home_after_hero" data-article-slug="marketing-plan">Читать исследование</a>' +
+      '</div></div></div></section>' +
       '<section class="mlma-band"><div class="mlma-wrap">' +
       '<span class="mlma-eyebrow mlma-eyebrow-dark">Почему появилась Academy</span>' +
       '<h2 class="mlma-h2" style="margin-top:16px;max-width:24ch">Маркетинг-план показывает, куда прийти. Но не всегда говорит, что сделать сегодня.</h2>' +
@@ -490,17 +502,6 @@
       esc(R.track('A3-016')) +
       '">Открыть разговор через настоящий повод</a></p></li>' +
       '</ol></div></section>' +
-      '<section class="mlma-band" id="mlma-research-entry"><div class="mlma-wrap">' +
-      '<div class="mlma-research-cta">' +
-      '<span class="mlma-eyebrow">Для компаний и лидеров</span>' +
-      '<h2 class="mlma-h2" style="margin-top:16px;max-width:22ch;color:inherit">Почему маркетинг-плана недостаточно</h2>' +
-      '<p class="mlma-lead" style="margin-top:16px;max-width:70ch">Маркетинг-план показывает партнёру цель, условия и вознаграждение. Но между целью и результатом остаётся разрыв: что конкретно человек должен сделать сегодня.</p>' +
-      '<p style="margin-top:14px;max-width:70ch;font-size:16px;line-height:1.5;color:var(--mlma-on-ink-muted)">Мы изучили, как крупные MLM-компании соединяют маркетинг-план, ежедневные действия партнёра, follow-up, прогресс и работу наставника.</p>' +
-      '<div class="mlma-actions" style="margin-top:24px">' +
-      '<a class="mlma-btn mlma-btn-accent" href="' +
-      esc(R.research ? R.research() : '/research/marketing-plan') +
-      '" data-mlma-funnel="research_open_from_b2c" data-source-page="/academy" data-cta-position="academy_home_after_route" data-article-slug="marketing-plan">Читать исследование</a>' +
-      '</div></div></div></section>' +
       '<section class="mlma-band"><div class="mlma-wrap"><div class="mlma-card mlma-pad-lg" style="padding:32px">' +
       '<span class="mlma-eyebrow mlma-eyebrow-accent">Как создаётся библиотека</span>' +
       '<h2 class="mlma-h2" style="margin-top:16px;max-width:22ch">Не пересказ учебников, а переработанная рабочая система</h2>' +
