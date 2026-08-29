@@ -46,7 +46,7 @@
     track_evidence_submitted: 'artifact_created',
   };
 
-  var BLOCKED = /password|passwd|secret|token|card|pan|cvv|cvc|iban|artifact|answer|message_body|full_text/i;
+  var BLOCKED = /password|passwd|secret|token|card|pan|cvv|cvc|iban|artifact|answer|message_body|full_text|candidateDescriptor|descriptor|reasonText|planText|personalData|completedArtifact/i;
   var CHAIN_KEY = 'mlma.search.chain.v1';
   var lastCanonical = { name: '', key: '', at: 0 };
 

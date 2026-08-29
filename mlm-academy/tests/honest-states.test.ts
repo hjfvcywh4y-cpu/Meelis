@@ -36,6 +36,15 @@ describe('честные состояния трека', () => {
     expect(view.showProgress).toBe(true);
   });
 
+  it('complete тоже считается готовым содержанием', () => {
+    const view = getTrackStatusView({
+      publicationStatus: 'published',
+      contentStatus: 'complete',
+    });
+    expect(view.availability).toBe('available');
+    expect(view.canStart).toBe(true);
+  });
+
   it('без entitlement трек показывается как «Нет доступа», а не как готовый', () => {
     expect(
       getTrackAvailability(
@@ -45,10 +54,10 @@ describe('честные состояния трека', () => {
     ).toBe('locked');
   });
 
-  it('ни один трек текущего каталога не заявляет готовое содержание', () => {
-    for (const track of listPublicTracks({ preview: true })) {
-      expect(getTrackStatusView(track).canStart).toBe(false);
-    }
+  it('исполняемое содержание есть только у пилотного A2-008', () => {
+    const ready = listPublicTracks({ preview: true }).filter((track) => getTrackStatusView(track).canStart);
+    expect(ready.map((track) => track.trackId)).toEqual(['A2-008']);
+    expect(getTrackStatusView(ready[0]!).canStart).toBe(true);
   });
 });
 

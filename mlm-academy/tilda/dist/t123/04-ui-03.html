@@ -236,6 +236,19 @@
   }
 
   function renderTrackRuntime(track, passport, runtime, nba, R, inactive) {
+    var trackModules = root.MLMA_TRACK_MODULES || {};
+    var trackModule = (D.getTrackModule && D.getTrackModule(track.trackId)) || trackModules[track.trackId];
+    if (trackModule && typeof trackModule.render === 'function') {
+      return trackModule.render({
+        track: track,
+        passport: trackModule.passport || passport,
+        runtime: runtime,
+        nba: nba,
+        R: R,
+        inactive: inactive,
+        esc: esc,
+      });
+    }
     runtime = runtime || { status: 'active', step: 'action', artifact: '', evidenceNote: '', attempts: 0 };
     var html = '<section class="mlma-runtime mlma-card mlma-pad-lg" id="mlma-runtime" data-mlma-track-runtime="' + esc(track.trackId) + '">';
     html += '<span class="mlma-eyebrow">Текущий шаг</span>';

@@ -304,4 +304,12 @@ describe('маршрутизация обязательных запросов',
     assert.ok(payload.candidates.some((row) => row.trackId === 'A1-010'));
     assert.ok(payload.candidates.length >= 12);
   });
+
+  it('поиск в оболочке запускается только submit/Enter, не по вводу', () => {
+    const ui = fs.readFileSync(path.join(__dirname, '../src/ui.js'), 'utf8');
+    assert.match(ui, /form\.addEventListener\('submit'/);
+    assert.equal(/#mlma-search[\s\S]{0,240}addEventListener\('input'/.test(ui), false);
+    assert.equal(/addEventListener\('input'[\s\S]{0,200}searchCatalog/.test(ui), false);
+    assert.match(ui, /type="search" name="q"/);
+  });
 });

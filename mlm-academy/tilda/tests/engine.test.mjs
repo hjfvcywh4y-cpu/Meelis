@@ -88,6 +88,19 @@ describe('честные статусы', () => {
     assert.notEqual(status.label, 'Скоро');
     assert.match(status.explanation, /Начать/);
   });
+
+  it('A2-008 с complete открывает старт, остальные planned остаются контуром', () => {
+    const catalogPath = path.join(__dirname, '../../src/data/tracks.catalog.json');
+    const raw = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
+    const tracks = MLMA.toPublicList(raw.tracks);
+    const a2008 = tracks.find((item) => item.trackId === 'A2-008');
+    const other = tracks.find((item) => item.trackId === 'A3-002');
+    assert.equal(a2008.publicationStatus, 'published');
+    assert.equal(a2008.contentStatus, 'complete');
+    assert.equal(a2008.access, 'public');
+    assert.equal(MLMA.getTrackStatusView(a2008).canStart, true);
+    assert.equal(MLMA.getTrackStatusView(other).canStart, false);
+  });
 });
 
 describe('поиск', () => {

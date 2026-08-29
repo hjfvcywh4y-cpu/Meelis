@@ -438,6 +438,8 @@
         trackVersion: state.trackVersion || '',
         startedAt: state.startedAt || '',
         completedAt: state.status === 'complete' ? (state.updatedAt || '') : '',
+        branch: state.branch || '',
+        nextTrackId: (state.moduleData && state.moduleData.nextTrackId) || '',
       });
     }
     return state;
@@ -445,10 +447,24 @@
 
   function startRuntime(track) {
     var state = getRuntime(track.trackId);
+    var modules = root.MLMA_TRACK_MODULES || {};
+    var trackModule = track && (modules[track.trackId] || modules[String(track.trackId || '').toUpperCase()]);
     state.status = 'active';
-    state.step = 'action';
-    state.branch = '';
-    state.feedback = null;
+    if (trackModule) {
+      if (!state.step || state.step === 'preview' || state.step === 'action') {
+        state.step = (state.moduleData && state.moduleData.stage === 2)
+          ? 'rank'
+          : (state.moduleData && state.moduleData.stage === 3)
+            ? 'plan'
+            : (state.moduleData && state.moduleData.stage === 4)
+              ? 'artifact'
+              : 'candidates';
+      }
+    } else {
+      state.step = 'action';
+      state.branch = '';
+      state.feedback = null;
+    }
     if (!state.startedAt) state.startedAt = new Date().toISOString();
     if (!state.trackVersion) {
       try {

@@ -134,6 +134,18 @@
     return 'paid';
   }
 
+  function hasExecutableContent(track) {
+    if (!track) return false;
+    var cs = String(track.contentStatus || '');
+    return cs === 'published' || cs === 'complete';
+  }
+
+  function getTrackModule(trackId) {
+    var id = String(trackId || '').toUpperCase();
+    var modules = root.MLMA_TRACK_MODULES || {};
+    return modules[id] || null;
+  }
+
   function deriveSeoStatus(track) {
     if (!track) return 'noindex';
     if (track.seoStatus === 'index' || track.seoStatus === 'noindex') return track.seoStatus;
@@ -269,7 +281,7 @@
     if (track.publicationStatus === 'archived' || track.contentStatus === 'archived') return 'archived';
     if (track.publicationStatus !== 'published') return 'preparing';
     if (!entitled) return 'locked';
-    return track.contentStatus === 'published' ? 'available' : 'published_empty';
+    return hasExecutableContent(track) ? 'available' : 'published_empty';
   }
 
   function getTrackStatusView(track, options) {
@@ -829,6 +841,8 @@
     isPreviewHost: isPreviewHost,
     clone: clone,
     normalizeAccess: normalizeAccess,
+    hasExecutableContent: hasExecutableContent,
+    getTrackModule: getTrackModule,
     deriveSeoStatus: deriveSeoStatus,
     membersLoginUrl: membersLoginUrl,
     membersRecoverUrl: membersRecoverUrl,
@@ -1470,6 +1484,8 @@
         startedAt: String(row.startedAt || '').slice(0, 40),
         completedAt: String(row.completedAt || '').slice(0, 40),
         updatedAt: String(row.updatedAt || '').slice(0, 40),
+        branch: String(row.branch || '').slice(0, 40),
+        nextTrackId: String(row.nextTrackId || '').slice(0, 16),
       };
     });
     return out;
@@ -1762,6 +1778,8 @@
       trackVersion: String((runtime && runtime.trackVersion) || '').slice(0, 40),
       startedAt: String((runtime && runtime.startedAt) || '').slice(0, 40),
       completedAt: String((runtime && runtime.completedAt) || '').slice(0, 40),
+      branch: String((runtime && runtime.branch) || '').slice(0, 40),
+      nextTrackId: String((runtime && runtime.nextTrackId) || '').slice(0, 16),
     };
     return this.request('/account/run', { trackId: trackId, runtime: meta })
       .then(function (data) {
@@ -5035,7 +5053,7 @@
     track_evidence_submitted: 'artifact_created',
   };
 
-  var BLOCKED = /password|passwd|secret|token|card|pan|cvv|cvc|iban|artifact|answer|message_body|full_text/i;
+  var BLOCKED = /password|passwd|secret|token|card|pan|cvv|cvc|iban|artifact|answer|message_body|full_text|candidateDescriptor|descriptor|reasonText|planText|personalData|completedArtifact/i;
   var CHAIN_KEY = 'mlma.search.chain.v1';
   var lastCanonical = { name: '', key: '', at: 0 };
 
@@ -5575,6 +5593,8 @@
         trackVersion: state.trackVersion || '',
         startedAt: state.startedAt || '',
         completedAt: state.status === 'complete' ? (state.updatedAt || '') : '',
+        branch: state.branch || '',
+        nextTrackId: (state.moduleData && state.moduleData.nextTrackId) || '',
       });
     }
     return state;
@@ -5582,10 +5602,24 @@
 
   function startRuntime(track) {
     var state = getRuntime(track.trackId);
+    var modules = root.MLMA_TRACK_MODULES || {};
+    var trackModule = track && (modules[track.trackId] || modules[String(track.trackId || '').toUpperCase()]);
     state.status = 'active';
-    state.step = 'action';
-    state.branch = '';
-    state.feedback = null;
+    if (trackModule) {
+      if (!state.step || state.step === 'preview' || state.step === 'action') {
+        state.step = (state.moduleData && state.moduleData.stage === 2)
+          ? 'rank'
+          : (state.moduleData && state.moduleData.stage === 3)
+            ? 'plan'
+            : (state.moduleData && state.moduleData.stage === 4)
+              ? 'artifact'
+              : 'candidates';
+      }
+    } else {
+      state.step = 'action';
+      state.branch = '';
+      state.feedback = null;
+    }
     if (!state.startedAt) state.startedAt = new Date().toISOString();
     if (!state.trackVersion) {
       try {

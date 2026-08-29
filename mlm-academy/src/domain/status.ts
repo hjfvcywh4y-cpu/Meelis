@@ -33,7 +33,9 @@ export function getTrackAvailability(
   }
   if (track.publicationStatus !== 'published') return 'preparing';
   if (!entitled) return 'locked';
-  return track.contentStatus === 'published' ? 'available' : 'published_empty';
+  return track.contentStatus === 'published' || track.contentStatus === 'complete'
+    ? 'available'
+    : 'published_empty';
 }
 
 export function getTrackStatusView(

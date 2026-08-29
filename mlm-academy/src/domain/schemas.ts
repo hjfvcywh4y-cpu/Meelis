@@ -55,7 +55,7 @@ export const internalTrackMetadataSchema = z
     publicationStatus: z.enum(['planned', 'draft', 'review', 'published', 'archived', 'unknown']),
     visibility: z.enum(['hidden', 'catalog', 'direct_only']).default('catalog'),
     access: z.enum(['undecided', 'free', 'paid', 'organization', 'invite']).default('undecided'),
-    contentStatus: z.enum(['metadata_only', 'draft', 'review', 'published', 'archived']),
+    contentStatus: z.enum(['metadata_only', 'draft', 'review', 'published', 'complete', 'archived']),
     adaptationLevel: z.string().nullable().default(null),
     transformationType: z.string().nullable().default(null),
     internalNote: z.string().nullable().default(null),
