@@ -1493,18 +1493,17 @@
     this.lastError = '';
   }
   HttpRepo.prototype.request = function (path, body) {
-    var self = this;
     if (typeof fetch !== 'function') return Promise.reject(new Error('no_fetch'));
     return fetch(this.base + path, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       credentials: 'include',
       body: JSON.stringify(body || {}),
-    }).then(function (res) {
-      return res.json().catch(function () { return {}; }).then(function (data) {
+    }).then((res) => {
+      return res.json().catch(function () { return {}; }).then((data) => {
         if (!res.ok) {
-          self.lastError = (data && data.reason) || ('api_' + res.status);
-          var err = new Error(self.lastError);
+          this.lastError = (data && data.reason) || ('api_' + res.status);
+          var err = new Error(this.lastError);
           err.status = res.status;
           throw err;
         }
@@ -1524,11 +1523,10 @@
     return loadRecord(session);
   };
   HttpRepo.prototype.loadAccountRemote = function (session) {
-    var self = this;
     return this.bind(session)
-      .then(function (bound) {
+      .then((bound) => {
         if (bound && bound.account) return bound;
-        return self.request('/account/get', {});
+        return this.request('/account/get', {});
       })
       .then(function (data) {
         setSync(MODE_SERVER);
@@ -1537,7 +1535,6 @@
   };
   HttpRepo.prototype.saveProfile = function (session, profile) {
     LocalRepo.saveProfile(session, profile);
-    var self = this;
     return this.request('/account/profile', { profile: profile })
       .then(function (data) {
         if (data && data.account) applyAccountToLocal(session, data.account);
