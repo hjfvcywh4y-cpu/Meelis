@@ -235,6 +235,8 @@
         startedAt: String(row.startedAt || '').slice(0, 40),
         completedAt: String(row.completedAt || '').slice(0, 40),
         updatedAt: String(row.updatedAt || '').slice(0, 40),
+        branch: String(row.branch || '').slice(0, 40),
+        nextTrackId: String(row.nextTrackId || '').slice(0, 16),
       };
     });
     return out;
@@ -527,6 +529,8 @@
       trackVersion: String((runtime && runtime.trackVersion) || '').slice(0, 40),
       startedAt: String((runtime && runtime.startedAt) || '').slice(0, 40),
       completedAt: String((runtime && runtime.completedAt) || '').slice(0, 40),
+      branch: String((runtime && runtime.branch) || '').slice(0, 40),
+      nextTrackId: String((runtime && runtime.nextTrackId) || '').slice(0, 16),
     };
     return this.request('/account/run', { trackId: trackId, runtime: meta })
       .then(function (data) {

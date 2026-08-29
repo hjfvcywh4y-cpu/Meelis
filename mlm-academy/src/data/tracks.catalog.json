@@ -1,5 +1,5 @@
 {
-  "version": "0.2",
+  "version": "0.5",
   "generatedFrom": "MLM_Academy_содержание_библиотеки_v0.2_полный_PDF.xlsx",
   "tracks": [
     {
@@ -705,17 +705,17 @@
       "situation": "Я бесконечно составляю списки и никому не пишу",
       "outcome": "Выбраны пять уместных контактов и по каждому определен следующий шаг",
       "priority": "P0",
-      "format": "Выбор 5 контактов",
+      "format": "Ранжирование + недельный спринт",
       "nextTrackIds": [
         "A3-002",
         "A3-003"
       ],
       "legacyPublicUrl": "https://mlmacademy.ru/track/a2-008",
       "pageStatusRaw": "Не создана",
-      "publicationStatus": "planned",
+      "publicationStatus": "published",
       "visibility": "catalog",
-      "access": "undecided",
-      "contentStatus": "metadata_only",
+      "access": "free",
+      "contentStatus": "complete",
       "adaptationLevel": "Осовременить",
       "transformationType": "Синтез",
       "internalNote": null,

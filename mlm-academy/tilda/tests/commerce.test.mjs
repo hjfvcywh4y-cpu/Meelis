@@ -24,18 +24,27 @@ require('../src/analytics.js');
 const MLMA = require('../src/ontology.js');
 
 describe('продуктовый справочник и commercial gate', () => {
-  it('каталог треков: 112 unique Track ID, все planned / metadata_only', () => {
+  it('каталог треков: 112 unique Track ID, пилот только A2-008', () => {
     const tracks = tracksFile.tracks;
     assert.equal(tracks.length, 112);
     const ids = new Set(tracks.map((row) => row.trackId));
     assert.equal(ids.size, 112);
     const counts = { A1: 0, A2: 0, A3: 0, A4: 0, A5: 0, A6: 0 };
+    const published = [];
     for (const row of tracks) {
       counts[row.sectionId] += 1;
-      assert.equal(row.publicationStatus, 'planned');
-      assert.equal(row.contentStatus, 'metadata_only');
+      if (row.trackId === 'A2-008') {
+        assert.equal(row.publicationStatus, 'published');
+        assert.equal(row.contentStatus, 'complete');
+        assert.equal(row.access, 'free');
+        published.push(row.trackId);
+      } else {
+        assert.equal(row.publicationStatus, 'planned');
+        assert.equal(row.contentStatus, 'metadata_only');
+      }
       assert.equal(MLMA.canShowBuyButton(MLMA.getProductByCode('B2C-TRACK-001'), MLMA.toPublicTrack(row)), false);
     }
+    assert.deepEqual(published, ['A2-008']);
     assert.deepEqual(counts, { A1: 16, A2: 16, A3: 17, A4: 17, A5: 14, A6: 32 });
   });
 

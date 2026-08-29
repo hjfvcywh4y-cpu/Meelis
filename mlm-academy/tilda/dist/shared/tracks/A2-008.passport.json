@@ -1,0 +1,202 @@
+{
+  "$schema": "https://mlmacademy.ru/schemas/track-passport.v1.json",
+  "trackId": "A2-008",
+  "version": "1.0.0",
+  "type": "track",
+  "status": "complete",
+  "title": "Выбрать пять людей для следующего действия",
+  "shortTitle": "Мои пять",
+  "source": {
+    "book": "Иван Рыбкин. Система продаж страховых продуктов",
+    "printedPages": "236–238",
+    "adaptation": "Сохранены письменный рабочий список и план контактов. Исключены оценка платёжеспособности, «прибыльности» человека, давление и сбор лишних персональных данных."
+  },
+  "purpose": {
+    "function": {
+      "id": "FUN-006",
+      "name": "Подготовка к действию"
+    },
+    "audiences": [
+      {
+        "id": "AUD-002",
+        "name": "Новичок"
+      },
+      {
+        "id": "AUD-014",
+        "name": "Осознаёт проблему"
+      },
+      {
+        "id": "AUD-035",
+        "name": "Индивидуальное прохождение"
+      }
+    ],
+    "trigger": {
+      "id": "TRG-034",
+      "name": "Осознанный выбор участника"
+    },
+    "inputState": {
+      "id": "IN-009",
+      "name": "Есть намерение без действия",
+      "copy": "Я бесконечно составляю списки и никому не пишу"
+    },
+    "targetState": {
+      "id": "OUT-008",
+      "name": "Собрал план",
+      "copy": "Выбраны пять уместных контактов и по каждому определён следующий шаг на ближайшие семь дней"
+    }
+  },
+  "construction": {
+    "leadingMechanic": {
+      "id": "MEC-014",
+      "name": "Ранжирование"
+    },
+    "supportingMechanic": {
+      "id": "MEC-063",
+      "name": "Заполнение шаблона"
+    },
+    "dominantGenre": {
+      "id": "GEN-011",
+      "name": "Профессиональная практика"
+    },
+    "tones": [
+      {
+        "id": "TON-005",
+        "name": "Практичный"
+      },
+      {
+        "id": "TON-006",
+        "name": "Поддерживающий"
+      }
+    ],
+    "topology": {
+      "id": "TOP-002",
+      "name": "Линейная с контрольными точками"
+    },
+    "scenario": {
+      "id": "SCN-122",
+      "name": "Недельный спринт"
+    },
+    "universalConstruction": {
+      "id": "UC-013",
+      "name": "Матрица → приоритет → действие"
+    }
+  },
+  "route": {
+    "academySection": "A2",
+    "academyModule": "Рабочая база",
+    "platformRouteSegment": "activation.first-contact.preparation",
+    "marketingPlanSegment": null,
+    "companyMarketingPlanSegment": null,
+    "priority": "P0",
+    "estimatedMinutes": 20,
+    "nextTrackIds": [
+      "A3-002",
+      "A3-003"
+    ],
+    "correctiveTrackId": "A2-010"
+  },
+  "runtime": {
+    "stages": [
+      {
+        "id": "candidates",
+        "name": "Собрать кандидатов",
+        "gate": "Не менее пяти заполненных описаний без контактов и персональных данных"
+      },
+      {
+        "id": "rank",
+        "name": "Проверить уместность",
+        "gate": "Каждый вариант оценён по четырём критериям уместности действия"
+      },
+      {
+        "id": "plan",
+        "name": "Назначить действия",
+        "gate": "Для пяти приоритетов выбраны действие, канал и дата не позднее семи дней"
+      },
+      {
+        "id": "artifact",
+        "name": "Принять план",
+        "gate": "Подтверждены этические критерии и создан рабочий артефакт"
+      }
+    ],
+    "artifact": {
+      "id": "ART-006",
+      "name": "План действий"
+    },
+    "evidence": {
+      "id": "EVD-003",
+      "name": "Заполненная форма"
+    },
+    "completionCriteria": [
+      {
+        "id": "CMP-002",
+        "name": "Артефакт создан"
+      },
+      {
+        "id": "CMP-011",
+        "name": "Принят по рубрике"
+      }
+    ],
+    "privacy": {
+      "artifactStorage": "local_only",
+      "serverPayload": "metadata_only",
+      "forbiddenInput": [
+        "full_name",
+        "phone",
+        "email",
+        "address",
+        "income",
+        "solvency_score"
+      ]
+    }
+  },
+  "branches": {
+    "success": {
+      "condition": "План из пяти действий принят",
+      "defaultNextTrackId": "A3-002"
+    },
+    "referral": {
+      "condition": "Первое действие — звонок по рекомендации",
+      "nextTrackId": "A3-003"
+    },
+    "notEnoughCandidates": {
+      "condition": "Меньше пяти уместных вариантов",
+      "nextTrackId": "A2-010"
+    },
+    "risk": {
+      "condition": "Обнаружены персональные данные, давление или обещания",
+      "nextAction": "Исправить текущий план"
+    }
+  },
+  "analytics": {
+    "canonicalEvents": [
+      "track_started",
+      "step_completed",
+      "artifact_created",
+      "track_completed",
+      "next_track_opened"
+    ],
+    "safeDimensions": [
+      "trackId",
+      "trackVersion",
+      "stage",
+      "candidateCount",
+      "shortlistCount",
+      "selectedActionTypes",
+      "daysToFirstAction",
+      "branch",
+      "nextTrackId"
+    ],
+    "neverSend": [
+      "candidateDescriptor",
+      "reason",
+      "planText",
+      "personalData"
+    ]
+  },
+  "productAdapter": {
+    "brandId": null,
+    "productId": null,
+    "allowedClaims": [],
+    "legalDisclaimerId": null
+  }
+}

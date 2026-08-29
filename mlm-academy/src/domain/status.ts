@@ -33,7 +33,9 @@ export function getTrackAvailability(
   }
   if (track.publicationStatus !== 'published') return 'preparing';
   if (!entitled) return 'locked';
-  return track.contentStatus === 'published' ? 'available' : 'published_empty';
+  return track.contentStatus === 'published' || track.contentStatus === 'complete'
+    ? 'available'
+    : 'published_empty';
 }
 
 export function getTrackStatusView(
@@ -106,5 +108,6 @@ export const CONTENT_STATUS_LABELS: Record<ContentStatus, string> = {
   draft: 'Черновик содержания',
   review: 'Содержание на проверке',
   published: 'Содержание опубликовано',
+  complete: 'Содержание готово',
   archived: 'Содержание в архиве',
 };

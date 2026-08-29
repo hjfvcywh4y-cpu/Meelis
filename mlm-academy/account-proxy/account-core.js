@@ -24,7 +24,7 @@ export const RATE_BIND_LIMIT = 20;
 export const RATE_BIND_WINDOW_MS = 10 * 60 * 1000;
 export const RATE_API_LIMIT = 90;
 export const RATE_API_WINDOW_MS = 60 * 1000;
-const ANALYTICS_BLOCKED = /password|passwd|secret|token|card|pan|cvv|cvc|iban|artifact|answer|message_body|full_text/i;
+const ANALYTICS_BLOCKED = /password|passwd|secret|token|card|pan|cvv|cvc|iban|artifact|answer|message_body|full_text|candidateDescriptor|descriptor|reasonText|planText|personalData|completedArtifact/i;
 
 export function nowIso(date = new Date()) {
   return date.toISOString();
@@ -215,6 +215,8 @@ export function sanitizeRunMeta(runtime) {
     startedAt: String(src.startedAt || '').slice(0, 40),
     completedAt: String(src.completedAt || '').slice(0, 40),
     updatedAt: String(src.updatedAt || '').slice(0, 40),
+    branch: String(src.branch || '').slice(0, 40),
+    nextTrackId: String(src.nextTrackId || '').slice(0, 16),
   };
 }
 

@@ -17,8 +17,12 @@ const SRC = path.join(__dirname, 'src');
 const DIST = path.join(__dirname, 'dist');
 const T123_LIMIT = 45000;
 const ASSETS_VERSION = 'v1';
+const ASSET_BASE_LIVE = 'https://mlma-account.mlmacademy-search.workers.dev';
 const CATALOG_SCHEMA = 'mlma.catalog.public.v1';
 const EXPECTED_SECTION_COUNTS = { A1: 16, A2: 16, A3: 17, A4: 17, A5: 14, A6: 32 };
+const PILOT_EXECUTABLE = {
+  'A2-008': { ps: 'published', cs: 'complete' },
+};
 
 const FORBIDDEN = [
   'adaptationDecision',
@@ -57,6 +61,12 @@ const sectionCounts = { A1: 0, A2: 0, A3: 0, A4: 0, A5: 0, A6: 0 };
 for (const row of tracks) {
   if (sectionCounts[row.s] == null) throw new Error('Неизвестный раздел ' + row.s);
   sectionCounts[row.s] += 1;
+  const pilot = PILOT_EXECUTABLE[row.id];
+  if (pilot) {
+    if (row.ps !== pilot.ps) throw new Error('Пилотный трек ' + row.id + ' должен быть ' + pilot.ps + ', сейчас ' + row.ps);
+    if (row.cs !== pilot.cs) throw new Error('Пилотный трек ' + row.id + ' должен быть ' + pilot.cs + ', сейчас ' + row.cs);
+    continue;
+  }
   if (row.ps !== 'planned') throw new Error('Трек ' + row.id + ' должен быть planned, сейчас ' + row.ps);
   if (row.cs !== 'metadata_only') throw new Error('Трек ' + row.id + ' должен быть metadata_only, сейчас ' + row.cs);
 }
@@ -160,6 +170,24 @@ const ontologyJs = fs.readFileSync(path.join(SRC, 'ontology.js'), 'utf8');
 const SPLIT = '\n\n/* __MLMA_UI_SPLIT__ */\n\n';
 const domainJs = [domainCore.trim(), accessJs.trim(), storageJs.trim(), paymentsJs.trim(), commerceJs.trim(), legalJs.trim(), searchJs.trim(), analyticsJs.trim()].join(SPLIT) + '\n\n' + ontologyJs.trim();
 const uiJs = fs.readFileSync(path.join(SRC, 'ui.js'), 'utf8');
+
+function listTrackModuleFiles() {
+  const dir = path.join(SRC, 'tracks');
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir).filter((name) => name.endsWith('.module.js')).sort();
+}
+
+function moduleCacheBust(fileName) {
+  const source = fs.readFileSync(path.join(SRC, 'tracks', fileName), 'utf8');
+  const match = source.match(/var VERSION = '([^']+)'/);
+  return match ? match[1] : catalogFile.version;
+}
+
+const trackModuleFiles = listTrackModuleFiles();
+const trackModuleScriptTags = (base) =>
+  trackModuleFiles
+    .map((name) => `<script src="${base}/${ASSETS_VERSION}/tracks/${name}?v=${moduleCacheBust(name)}"></script>`)
+    .join('\n');
 
 const pages = [
   { id: 'home', file: 'academy.html', url: '/academy', page: 'home', title: 'MLM Academy — библиотека действий', members: 'public' },
@@ -511,6 +539,30 @@ function writeScriptChunks(source, basename, label) {
 }
 
 const domainFiles = writeScriptChunks(domainJs, '03-domain', 'доменная логика');
+const trackFiles = [];
+if (trackModuleFiles.length) {
+  const inner =
+    trackModuleFiles
+      .map(function (name) {
+        return (
+          '<script src="' +
+          ASSET_BASE_LIVE +
+          '/' +
+          ASSETS_VERSION +
+          '/tracks/' +
+          name +
+          '?v=' +
+          encodeURIComponent(moduleCacheBust(name)) +
+          '"></script>'
+        );
+      })
+      .join('\n') + '\n';
+  write(
+    path.join(DIST, 't123', '03b-tracks.html'),
+    t123Wrap(inner, 'Блок T123: модули треков. Script src, без инлайна IIFE.'),
+  );
+  trackFiles.push('03b-tracks.html');
+}
 const uiFiles = writeScriptChunks(uiJs, '04-ui', 'рендер оболочки');
 
 for (const page of pages) {
@@ -540,6 +592,19 @@ write(path.join(v1, 'catalog.schema.json'), fs.readFileSync(path.join(ROOT, 'src
 write(path.join(DIST, 'shared/catalog.schema.json'), fs.readFileSync(path.join(ROOT, 'src/data/catalog.schema.json'), 'utf8'));
 write(path.join(v1, 'products.catalog.json'), JSON.stringify(productsFile, null, 2) + '\n');
 write(path.join(DIST, 'shared/products.catalog.json'), JSON.stringify(productsFile, null, 2) + '\n');
+for (const name of trackModuleFiles) {
+  const contents = fs.readFileSync(path.join(SRC, 'tracks', name), 'utf8');
+  write(path.join(DIST, 'shared/tracks', name), contents);
+  write(path.join(v1, 'tracks', name), contents);
+}
+const passportFiles = fs.existsSync(path.join(SRC, 'tracks'))
+  ? fs.readdirSync(path.join(SRC, 'tracks')).filter((name) => name.endsWith('.passport.json')).sort()
+  : [];
+for (const name of passportFiles) {
+  const contents = fs.readFileSync(path.join(SRC, 'tracks', name), 'utf8');
+  write(path.join(DIST, 'shared/tracks', name), contents);
+  write(path.join(v1, 'tracks', name), contents);
+}
 
 function previewHtml(page) {
   const attrs = [`class="mlma"`, `data-mlma-page="${page.page}"`];
@@ -560,6 +625,9 @@ function previewHtml(page) {
   </div>
   <script src="/shared/${ASSETS_VERSION}/catalog-data.js?v=${bust}"></script>
   <script src="/shared/${ASSETS_VERSION}/domain.js?v=${bust}"></script>
+${trackModuleFiles
+    .map((name) => `  <script src="/shared/${ASSETS_VERSION}/tracks/${name}?v=${bust}-${moduleCacheBust(name)}"></script>`)
+    .join('\n')}
   <script src="/shared/${ASSETS_VERSION}/ui.js?v=${bust}"></script>
 </body>
 </html>
@@ -571,15 +639,15 @@ for (const page of pages) {
 }
 
 const loader = `<!-- Внешние assets ${ASSETS_VERSION}. Не публиковать все страницы сразу.
-Rollback: вернуть блоки T123 01-css, 02-data-*, 03-domain-*, 04-ui-*.
+Rollback: вернуть блоки T123 01-css, 02-data-*, 03-domain-*, 03b-tracks-*, 04-ui-*.
 Замените ASSET_BASE на URL файлов. Секреты сюда не класть. -->
 <link rel="stylesheet" href="ASSET_BASE/${ASSETS_VERSION}/mlma.css?v=${catalogFile.version}">
 <script src="ASSET_BASE/${ASSETS_VERSION}/catalog-data.js?v=${catalogFile.version}"></script>
 <script src="ASSET_BASE/${ASSETS_VERSION}/domain.js?v=${catalogFile.version}"></script>
+${trackModuleScriptTags('ASSET_BASE')}
 <script src="ASSET_BASE/${ASSETS_VERSION}/ui.js?v=${catalogFile.version}"></script>
 `;
 write(path.join(DIST, 't123/external-loader-v1.html'), t123Wrap(loader, `Внешний loader assets ${ASSETS_VERSION}. Сначала одна тестовая страница.`));
-const ASSET_BASE_LIVE = 'https://mlma-account.mlmacademy-search.workers.dev';
 write(
   path.join(DIST, 't123/external-loader-v1.live.html'),
   t123Wrap(loader.replace(/ASSET_BASE/g, ASSET_BASE_LIVE), `Живой loader ${ASSETS_VERSION}. ASSET_BASE=${ASSET_BASE_LIVE}`),
@@ -598,9 +666,10 @@ const checklist = `# Сборка страниц Tilda · MLM Academy
 3. T123: \`01-css.html\`
 4. T123: все \`02-data-*.html\` по порядку
 5. T123: все \`03-domain-*.html\` по порядку (сейчас ${domainFiles.length})
-6. T123: все \`04-ui-*.html\` по порядку (сейчас ${uiFiles.length})
-7. T123: \`mounts/<id>.html\` этой страницы
-8. Отступы блока = 0
+6. T123: все \`03b-tracks-*.html\` по порядку, если есть исполняемые модули (сейчас ${trackFiles.length})
+7. T123: все \`04-ui-*.html\` по порядку (сейчас ${uiFiles.length})
+8. T123: \`mounts/<id>.html\` этой страницы
+9. Отступы блока = 0
 
 После деплоя search-proxy задайте в HEAD \`window.MLMA_RERANK_URL\` на \`https://<домен>/api/rerank\`. API-ключ в Tilda не класть.
 
@@ -705,6 +774,7 @@ const sizes = {
   dataChunks: dataChunks.length,
   domain: domainJs.length,
   ui: uiJs.length,
+  trackModules: trackModuleFiles.slice(),
   tracks: tracks.length,
   uniqueTrackIds: uniqueIds.size,
   sectionCounts,

@@ -16,7 +16,7 @@ export type PublicationStatus =
   | 'archived'
   | 'unknown';
 
-export type ContentStatus = 'metadata_only' | 'draft' | 'review' | 'published' | 'archived';
+export type ContentStatus = 'metadata_only' | 'draft' | 'review' | 'published' | 'complete' | 'archived';
 
 export type Visibility = 'hidden' | 'catalog' | 'direct_only';
 

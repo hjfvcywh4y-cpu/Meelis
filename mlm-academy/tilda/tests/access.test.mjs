@@ -79,6 +79,23 @@ describe('доступ и состояния', () => {
     assert.equal(MLMA.resolveUserState(spoofed), 'registered');
   });
 
+  it('бесплатный published/complete трек открывается без входа', () => {
+    const item = track({
+      trackId: 'A2-008',
+      sectionId: 'A2',
+      publicationStatus: 'published',
+      contentStatus: 'complete',
+      access: 'free',
+    });
+    const guest = { loggedIn: false, entitlements: [] };
+    assert.equal(item.access, 'public');
+    assert.equal(MLMA.getTrackStatusView(item).canStart, true);
+    assert.equal(MLMA.isEntitledToTrack(item, guest), true);
+    assert.equal(MLMA.canOpenTrackBody(item, guest), true);
+    assert.equal(MLMA.cardAction(item, guest).key, 'login_save');
+    assert.equal(MLMA.cardAction(item, { loggedIn: true, groups: ['FREE'] }).key, 'open_free');
+  });
+
   it('verified может открыть платный трек по серверному праву', () => {
     const item = track({ publicationStatus: 'published', contentStatus: 'published' });
     const account = {

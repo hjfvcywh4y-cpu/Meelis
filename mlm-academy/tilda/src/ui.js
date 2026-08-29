@@ -1277,6 +1277,19 @@
   }
 
   function renderTrackRuntime(track, passport, runtime, nba, R, inactive) {
+    var trackModules = root.MLMA_TRACK_MODULES || {};
+    var trackModule = (D.getTrackModule && D.getTrackModule(track.trackId)) || trackModules[track.trackId];
+    if (trackModule && typeof trackModule.render === 'function') {
+      return trackModule.render({
+        track: track,
+        passport: trackModule.passport || passport,
+        runtime: runtime,
+        nba: nba,
+        R: R,
+        inactive: inactive,
+        esc: esc,
+      });
+    }
     runtime = runtime || { status: 'active', step: 'action', artifact: '', evidenceNote: '', attempts: 0 };
     var html = '<section class="mlma-runtime mlma-card mlma-pad-lg" id="mlma-runtime" data-mlma-track-runtime="' + esc(track.trackId) + '">';
     html += '<span class="mlma-eyebrow">Текущий шаг</span>';
@@ -2225,7 +2238,7 @@
       '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Сохранённые маршруты</span>' +
       (rows ? '<ul style="margin-top:12px;display:grid;gap:8px">' + rows + '</ul>' : '<p class="mlma-muted" style="margin-top:12px">Пока ничего не сохранено. Сохранённый трек не считается купленным.</p>') +
       '</section>' +
-      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Будущие доступы</span><p class="mlma-muted" style="margin-top:12px">Куплено / закрыто / готовится появятся после первого complete-трека и серверного подтверждения оплаты. Сейчас все 112 треков — planned / metadata_only.</p></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Будущие доступы</span><p class="mlma-muted" style="margin-top:12px">Куплено / закрыто / готовится появятся после серверного подтверждения оплаты. В пилоте исполняется бесплатный трек A2-008; остальные 111 карточек — planned / metadata_only.</p></section>' +
       '<div class="mlma-actions">' +
       btn(R.library(), 'В библиотеку', 'primary') +
       btn((R.pricing && R.pricing()) || '/pricing', 'Смотреть тарифы') +
@@ -3320,6 +3333,16 @@
       var openedTrack = opened ? D.getById(state.allTracks, opened, true) : null;
       var canStart = openedTrack ? D.getTrackStatusView(openedTrack).canStart : false;
       var openedRuntime = opened && D.getRuntime ? D.getRuntime(opened) : null;
+      if (
+        openedTrack &&
+        canStart &&
+        D.loadTrackModule &&
+        !D.getTrackModule(openedTrack.trackId)
+      ) {
+        D.loadTrackModule(openedTrack.trackId, function (mod) {
+          if (mod) mount(rootEl);
+        });
+      }
       D.trackEvent('track_card_opened', { itemId: opened || '', source: 'track' });
       if (openedTrack && D.normalizeAccess && D.normalizeAccess(openedTrack.access) === 'paid' && D.isEntitledToTrack && !D.isEntitledToTrack(openedTrack, state.account)) {
         D.trackEvent('locked_track_opened', { itemId: opened || '' });

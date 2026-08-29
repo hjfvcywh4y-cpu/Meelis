@@ -8,12 +8,15 @@ test('баннера предпросмотра нет', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Сделать следующий результат');
 });
 
-test('библиотека честно объясняет пустой каталог и показывает шесть входов', async ({ page }) => {
+test('библиотека показывает только опубликованный пилот и скрывает остальные', async ({ page }) => {
   await page.goto('/library');
 
-  await expect(page.getByRole('heading', { name: 'Открытых треков пока нет' })).toBeVisible();
-  await expect(page.locator('section[aria-labelledby="sections-preview"] li')).toHaveCount(6);
+  await expect(page.getByRole('heading', { name: 'Открытых треков пока нет' })).toHaveCount(0);
+  await expect(page.getByText(/^1 трек$/)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Выбрать пять людей для следующего действия' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Написать первое сообщение теплому контакту' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'A1', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'A6', exact: true })).toBeVisible();
 });
 
 test('раздел не показывает готовящиеся треки', async ({ page }) => {

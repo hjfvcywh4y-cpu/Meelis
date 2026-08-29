@@ -34,8 +34,9 @@ describe('поиск по каталогу', () => {
   });
 
   it('фильтрует по доступности', () => {
-    expect(filterTracks(tracks, { availability: 'available' })).toEqual([]);
-    expect(filterTracks(tracks, { availability: 'preparing' })).toHaveLength(112);
+    const available = filterTracks(tracks, { availability: 'available' });
+    expect(available.map((track) => track.trackId)).toEqual(['A2-008']);
+    expect(filterTracks(tracks, { availability: 'preparing' })).toHaveLength(111);
   });
 
   it('группирует по разделам без потери треков', () => {
