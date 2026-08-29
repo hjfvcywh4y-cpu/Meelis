@@ -579,6 +579,9 @@
       privacy: function () {
         return '/privacy';
       },
+      consent: function () {
+        return '/consent';
+      },
       offer: function () {
         return '/offer';
       },
@@ -599,7 +602,7 @@
         return '/members/signup?redirecturl=' + encodeURIComponent(path);
       },
       logout: function () {
-        return '/members/logout';
+        return '/members/login?exit=y';
       },
       previewCatalog: function () {
         return '/preview/catalog';

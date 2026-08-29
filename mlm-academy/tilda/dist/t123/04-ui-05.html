@@ -102,41 +102,78 @@
     );
   }
 
-  function renderPrivacy(state) {
+  function renderLegalPage(state, kind) {
     var R = state.R;
-    var ph = D.LEGAL_PLACEHOLDER || '[ЗАПОЛНИТЬ ВЛАДЕЛЬЦУ ПЕРЕД ПУБЛИКАЦИЕЙ]';
-    var blocks = [
-      ['Оператор', ph],
-      ['Собираемые данные', 'Email и имя кабинета Tilda, сохранённый маршрут, локальные результаты на устройстве. Иные категории — ' + ph],
-      ['Цели', 'Работа бесплатного кабинета и навигация по библиотеке. Цели будущей оплаты — ' + ph],
-      ['Основания', ph],
-      ['Обработчики', 'Сейчас: Tilda, Cloudflare. Будущие: не подключены. Не выдумывать список.'],
-      ['Сроки хранения', ph],
-      ['Удаление', 'После утверждения политики и контакта оператора.'],
-      ['Обращения пользователя', ph],
-      ['Cookies', 'Сессия Tilda Members и технические cookies площадки. Состав — ' + ph],
-      ['Аналитика', 'События без сырого поискового текста. Операторы аналитики — ' + ph],
-      ['Будущая оплата', 'Платёжный провайдер не подключён. Данные карт Академия не собирает.'],
-    ];
+    var doc = D.legalDocument ? D.legalDocument(kind) : null;
+    if (!doc) {
+      return pageHead({ eyebrow: 'Документ', title: 'Документ', lead: '' }, R);
+    }
     var html = '';
-    for (var i = 0; i < blocks.length; i += 1) {
-      html += '<section class="mlma-card mlma-pad"><h2 class="mlma-h3">' + esc(blocks[i][0]) + '</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">' + esc(blocks[i][1]) + '</p></section>';
+    for (var i = 0; i < doc.sections.length; i += 1) {
+      html +=
+        '<section class="mlma-card mlma-pad mlma-legal"><h2 class="mlma-h3">' +
+        esc(doc.sections[i][0]) +
+        '</h2><p class="mlma-muted" style="margin-top:12px;max-width:72ch">' +
+        esc(doc.sections[i][1]) +
+        '</p></section>';
+    }
+    var extra = '';
+    if (kind === 'privacy') {
+      extra =
+        '<div class="mlma-actions"><button type="button" class="mlma-btn mlma-btn-primary" data-mlma-export-local="1">Выгрузить данные этого устройства</button>' +
+        btn((R.consent && R.consent()) || '/consent', 'Согласие на обработку') +
+        btn((R.offer && R.offer()) || '/offer', 'Оферта') +
+        '</div><p id="mlma-export-msg" class="mlma-muted" style="font-size:14px" aria-live="polite"></p>';
+    } else if (kind === 'consent') {
+      extra =
+        '<div class="mlma-actions">' +
+        btn((R.privacy && R.privacy()) || '/privacy', 'Политика конфиденциальности') +
+        btn((R.signup && R.signup()) || '/members/signup', 'К регистрации', 'primary') +
+        '</div>';
+    } else if (kind === 'offer') {
+      extra =
+        '<div class="mlma-actions">' +
+        btn((R.requisites && R.requisites()) || '/requisites', 'Реквизиты') +
+        btn((R.pricing && R.pricing()) || '/pricing', 'Тарифы') +
+        '</div>';
+    } else if (kind === 'requisites') {
+      extra =
+        '<div class="mlma-actions">' +
+        btn((R.offer && R.offer()) || '/offer', 'Оферта') +
+        btn((R.privacy && R.privacy()) || '/privacy', 'Политика') +
+        '</div>';
     }
     return (
       pageHead(
         {
-          eyebrow: 'Черновик · не утверждено · noindex',
-          title: 'Политика конфиденциальности',
-          lead: 'Это структура документа, а не действующая политика. Неизвестные сведения не выдуманы.',
-          crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Черновик политики' }],
+          eyebrow: doc.eyebrow,
+          title: doc.title,
+          lead: doc.lead,
+          crumbs: [{ label: 'Academy', href: R.home() }, { label: doc.crumb }],
         },
         R,
       ) +
       '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:16px">' +
-      '<section class="mlma-card mlma-pad" style="border-color:var(--mlma-danger,#8b2e1f)"><p>Страницу с незаполненными полями нельзя считать опубликованной политикой. Согласие в профиле — только интерфейсная отметка в этом браузере.</p></section>' +
       html +
-      '<div class="mlma-actions"><button type="button" class="mlma-btn mlma-btn-primary" data-mlma-export-local="1">Выгрузить данные этого устройства</button></div><p id="mlma-export-msg" class="mlma-muted" style="font-size:14px" aria-live="polite"></p></div>'
+      extra +
+      '</div>'
     );
+  }
+
+  function renderPrivacy(state) {
+    return renderLegalPage(state, 'privacy');
+  }
+
+  function renderConsent(state) {
+    return renderLegalPage(state, 'consent');
+  }
+
+  function renderOffer(state) {
+    return renderLegalPage(state, 'offer');
+  }
+
+  function renderRequisites(state) {
+    return renderLegalPage(state, 'requisites');
   }
 
   function renderPurchases(state) {
@@ -180,27 +217,6 @@
     );
   }
 
-  function renderOffer(state) {
-    var R = state.R;
-    var ph = D.LEGAL_PLACEHOLDER || '[ЗАПОЛНИТЬ ВЛАДЕЛЬЦУ ПЕРЕД ПУБЛИКАЦИЕЙ]';
-    var items = ['Продавец / исполнитель', 'ИНН', 'Статус НПД или иное', 'Предмет оферты', 'Порядок оплаты', 'Срок доступа', 'Возврат', 'Ответственность', 'Дата вступления в силу'];
-    var list = '';
-    for (var i = 0; i < items.length; i += 1) list += '<li><strong>' + esc(items[i]) + '.</strong> ' + esc(ph) + '</li>';
-    return pageHead({ eyebrow: 'Черновик · не действует', title: 'Публичная оферта', lead: 'Структура оферты без выдуманных реквизитов и юридических условий. Страницу с незаполненными полями нельзя публиковать как действующую оферту.', crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Черновик оферты' }] }, R) +
-      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px"><section class="mlma-card mlma-pad"><ol style="display:grid;gap:12px;font-size:15px;line-height:1.5">' + list + '</ol></section></div>';
-  }
-
-  function renderRequisites(state) {
-    var R = state.R;
-    var ph = D.LEGAL_PLACEHOLDER || '[ЗАПОЛНИТЬ ВЛАДЕЛЬЦУ ПЕРЕД ПУБЛИКАЦИЕЙ]';
-    var fields = ['ФИО самозанятого', 'ИНН', 'Статус НПД', 'Контактный email', 'Телефон', 'Город', 'Способ направления обращений'];
-    var html = '';
-    for (var i = 0; i < fields.length; i += 1) html += '<p><span class="mlma-meta">' + esc(fields[i]) + '</span><br>' + esc(ph) + '</p>';
-    return pageHead({ eyebrow: 'Черновик · не для публикации как реквизиты', title: 'Реквизиты', lead: 'Шаблон без фиктивных данных. Пока поля не заполнены владельцем, страница остаётся черновиком.', crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Черновик реквизитов' }] }, R) +
-      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:16px"><section class="mlma-card mlma-pad" style="display:grid;gap:16px">' + html +
-      '<p class="mlma-muted">Ссылки появятся после утверждения: оферта и политика. Сейчас это черновики.</p></section></div>';
-  }
-
   function renderPaymentAndAccess(state) {
     var R = state.R;
     var steps = [
@@ -239,6 +255,7 @@
   D._ui.renderAccess = renderAccess;
   D._ui.renderPricing = renderPricing;
   D._ui.renderPrivacy = renderPrivacy;
+  D._ui.renderConsent = renderConsent;
   D._ui.renderPurchases = renderPurchases;
   D._ui.renderOffer = renderOffer;
   D._ui.renderRequisites = renderRequisites;

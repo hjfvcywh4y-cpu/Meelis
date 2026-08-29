@@ -324,6 +324,11 @@
         menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
       });
     }
+    rootEl.querySelectorAll('[data-mlma-logout]').forEach(function (el) {
+      el.addEventListener('click', function (event) {
+        if (D.performMembersLogout) D.performMembersLogout(event);
+      });
+    });
     rootEl.querySelectorAll('[data-mlma-run-start]').forEach(function (el) {
       el.addEventListener('click', function () {
         var id = D.normalizeTrackId(el.getAttribute('data-mlma-run-start'));
@@ -645,6 +650,22 @@
         route: { title: 'Мой маршрут · MLM Academy', desc: 'Маршрут кабинета. Страница не индексируется.' },
         results: { title: 'Результаты · MLM Academy', desc: 'Результаты кабинета. Страница не индексируется.' },
         profile: { title: 'Профиль · MLM Academy', desc: 'Профиль кабинета. Страница не индексируется.' },
+        privacy: {
+          title: 'Политика конфиденциальности · MLM Academy',
+          desc: 'Политика конфиденциальности MLM Academy: какие данные обрабатываются, кому передаются и как отозвать согласие.',
+        },
+        consent: {
+          title: 'Согласие на обработку и передачу персональных данных · MLM Academy',
+          desc: 'Согласие на обработку и передачу персональных данных при регистрации кабинета MLM Academy.',
+        },
+        offer: {
+          title: 'Публичная оферта · MLM Academy',
+          desc: 'Публичная оферта на бесплатный кабинет MLM Academy. Платные услуги пока не оказываются.',
+        },
+        requisites: {
+          title: 'Реквизиты · MLM Academy',
+          desc: 'Реквизиты ИП Борисенко Татьяна Анатольевна: ИНН, ОГРНИП, адрес, контакты.',
+        },
       };
       var sectionSeo = {
         A1: { title: 'A1 · Старт и система · MLM Academy', desc: 'Понять роль, причину, продукт и рабочий план. Треки старта без выдуманных уроков.' },

@@ -34,6 +34,7 @@
       { href: R.mySaved ? R.mySaved() : '/my/route?tab=saved', label: 'Сохранённое', id: 'saved' },
       { href: (R.purchases && R.purchases()) || '/my/purchases', label: 'Покупки и доступ', id: 'purchases' },
       { href: R.profile(), label: 'Профиль', id: 'profile' },
+      { href: (R.logout && R.logout()) || '/members/login?exit=y', label: 'Выйти', id: 'logout', logout: true },
     ];
     var tab = '';
     try {
@@ -49,11 +50,13 @@
       else if (items[i].id === 'route') current = state.page === 'route' && !tab;
       else if (items[i].id === 'access') current = state.page === 'access';
       else if (items[i].id === 'purchases') current = state.page === 'purchases';
+      else if (items[i].id === 'logout') current = false;
       else current = state.page === items[i].id;
       html +=
         '<li><a href="' +
         esc(items[i].href) +
         '"' +
+        (items[i].logout ? ' data-mlma-logout="1"' : '') +
         (current ? ' aria-current="page"' : '') +
         '>' +
         esc(items[i].label) +

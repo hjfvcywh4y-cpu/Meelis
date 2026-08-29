@@ -179,7 +179,9 @@
         '<a href="' + esc(state.R.my()) + '">Кабинет</a>' +
         '<a href="' + esc(state.R.profile()) + '">Профиль</a>' +
         '<a href="' + esc((state.R.purchases && state.R.purchases()) || '/my/purchases') + '">Покупки и доступ</a>' +
-        '<a href="/members/logout">Выход</a>' +
+        '<a href="' +
+        esc((state.R.logout && state.R.logout()) || '/members/login?exit=y') +
+        '" data-mlma-logout="1">Выйти</a>' +
         '</div></details></div>'
       );
     }
@@ -255,6 +257,11 @@
       '">Найти свой шаг</a></div></div>' +
       '<div class="mlma-menu" id="mlma-menu" hidden><nav aria-label="Мобильное меню">' +
       nav +
+      (accountOf(state).loggedIn
+        ? '<a href="' +
+          esc((R.logout && R.logout()) || '/members/login?exit=y') +
+          '" data-mlma-logout="1">Выйти</a>'
+        : '') +
       '</nav></div></header>'
     );
   }
@@ -268,9 +275,13 @@
       { href: R.about(), label: 'Как создаётся библиотека' },
       { href: R.access(), label: 'Доступ' },
       { href: R.pricing ? R.pricing() : '/pricing', label: 'Тарифы' },
-      { href: (R.paymentAndAccess && R.paymentAndAccess()) || '/payment-and-access', label: 'Оплата и доступ' },
+      { href: R.paymentAndAccess && R.paymentAndAccess() ? R.paymentAndAccess() : '/payment-and-access', label: 'Оплата и доступ' },
       { href: R.my(), label: 'Кабинет' },
       { href: R.research ? R.research() : '/research/marketing-plan', label: 'Исследование' },
+      { href: R.privacy ? R.privacy() : '/privacy', label: 'Политика' },
+      { href: R.consent ? R.consent() : '/consent', label: 'Согласие' },
+      { href: R.offer ? R.offer() : '/offer', label: 'Оферта' },
+      { href: R.requisites ? R.requisites() : '/requisites', label: 'Реквизиты' },
       { href: D.siteHomeUrl(), label: 'Решения для компаний' },
     ];
     var nav = '';

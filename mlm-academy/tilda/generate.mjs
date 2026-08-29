@@ -153,11 +153,12 @@ const accessJs = fs.readFileSync(path.join(SRC, 'access.js'), 'utf8');
 const storageJs = fs.readFileSync(path.join(SRC, 'storage.js'), 'utf8');
 const paymentsJs = fs.readFileSync(path.join(SRC, 'payments.js'), 'utf8');
 const commerceJs = fs.readFileSync(path.join(SRC, 'commerce.js'), 'utf8');
+const legalJs = fs.readFileSync(path.join(SRC, 'legal.js'), 'utf8');
 const searchJs = fs.readFileSync(path.join(SRC, 'search.js'), 'utf8');
 const analyticsJs = fs.readFileSync(path.join(SRC, 'analytics.js'), 'utf8');
 const ontologyJs = fs.readFileSync(path.join(SRC, 'ontology.js'), 'utf8');
 const SPLIT = '\n\n/* __MLMA_UI_SPLIT__ */\n\n';
-const domainJs = [domainCore.trim(), accessJs.trim(), storageJs.trim(), paymentsJs.trim(), commerceJs.trim(), searchJs.trim(), analyticsJs.trim()].join(SPLIT) + '\n\n' + ontologyJs.trim();
+const domainJs = [domainCore.trim(), accessJs.trim(), storageJs.trim(), paymentsJs.trim(), commerceJs.trim(), legalJs.trim(), searchJs.trim(), analyticsJs.trim()].join(SPLIT) + '\n\n' + ontologyJs.trim();
 const uiJs = fs.readFileSync(path.join(SRC, 'ui.js'), 'utf8');
 
 const pages = [
@@ -179,9 +180,10 @@ const pages = [
   { id: 'access', file: 'access.html', url: '/access', page: 'access', title: 'Доступ · MLM Academy', members: 'public' },
   { id: 'pricing', file: 'pricing.html', url: '/pricing', page: 'pricing', title: 'Тарифы · MLM Academy', members: 'public' },
   { id: 'payment-and-access', file: 'payment-and-access.html', url: '/payment-and-access', page: 'payment-and-access', title: 'Оплата и доступ · MLM Academy', members: 'public' },
-  { id: 'privacy', file: 'privacy.html', url: '/privacy', page: 'privacy', title: 'Политика конфиденциальности · черновик · MLM Academy', members: 'public', noindex: true },
-  { id: 'offer', file: 'offer.html', url: '/offer', page: 'offer', title: 'Публичная оферта · черновик · MLM Academy', members: 'public', noindex: true },
-  { id: 'requisites', file: 'requisites.html', url: '/requisites', page: 'requisites', title: 'Реквизиты · черновик · MLM Academy', members: 'public', noindex: true },
+  { id: 'privacy', file: 'privacy.html', url: '/privacy', page: 'privacy', title: 'Политика конфиденциальности · MLM Academy', members: 'public' },
+  { id: 'consent', file: 'consent.html', url: '/consent', page: 'consent', title: 'Согласие на обработку и передачу персональных данных · MLM Academy', members: 'public' },
+  { id: 'offer', file: 'offer.html', url: '/offer', page: 'offer', title: 'Публичная оферта · MLM Academy', members: 'public' },
+  { id: 'requisites', file: 'requisites.html', url: '/requisites', page: 'requisites', title: 'Реквизиты · MLM Academy', members: 'public' },
   { id: 'purchases', file: 'my-purchases.html', url: '/my/purchases', page: 'purchases', title: 'Покупки и доступ · MLM Academy', members: 'member' },
   { id: 'preview', file: 'preview-catalog.html', url: '/preview/catalog', page: 'preview', title: 'Предпросмотр каталога · MLM Academy', members: 'editor' },
   { id: 'preview-commerce', file: 'preview-commerce.html', url: '/preview/commerce', page: 'preview-commerce', title: 'Предпросмотр состояний покупки · MLM Academy', members: 'editor', noindex: true },
@@ -410,9 +412,10 @@ function seoHead(page, opts = {}) {
     access: 'FREE, будущие разовые покупки, командный и корпоративный формат. Платные продукты готовятся, кнопки покупки нет.',
     pricing: 'Тарифы MLM Academy: демо, один трек от 590 ₽, мини-маршрут от 1 490 ₽, маршрут из шести от 2 990 ₽. Оплатить пока нельзя.',
     'payment-and-access': 'Как будет устроена оплата и доступ. Сейчас эквайринг не подключён, деньги не принимаются.',
-    privacy: 'Черновик политики конфиденциальности. Юридический текст не утверждён.',
-    offer: 'Черновик структуры публичной оферты. Документ не действует.',
-    requisites: 'Черновик реквизитов. Фиктивные данные не вставляются.',
+    privacy: 'Политика конфиденциальности MLM Academy: какие данные обрабатываются, кому передаются и как отозвать согласие.',
+    consent: 'Согласие на обработку и передачу персональных данных при регистрации кабинета MLM Academy.',
+    offer: 'Публичная оферта на бесплатный кабинет MLM Academy. Платные услуги пока не оказываются.',
+    requisites: 'Реквизиты ИП Борисенко Татьяна Анатольевна: ИНН, ОГРНИП, адрес, контакты.',
     purchases: 'Покупки и доступ кабинета. Страница не индексируется.',
     'preview-commerce': 'Служебный предпросмотр состояний покупки. Не публиковать.',
     my: 'Личный кабинет MLM Academy. Страница не индексируется.',
@@ -655,8 +658,8 @@ ${pages.map((page) => `| ${page.title} | \`${page.url}\` | \`mounts/${page.id}.h
 | Editor / ADMIN | те же кабинетные + \`/preview/catalog\` + \`/preview/commerce\` (commerce не публиковать на боевом сайте) |
 
 Публичные (не добавлять ни в одну группу): \`/academy\`, \`/start\`, \`/library\`,
-\`/library/a1\`…\`/library/a6\`, \`/track\`, \`/about\`, \`/access\`, \`/pricing\`, \`/payment-and-access\`.
-Черновики \`/privacy\`, \`/offer\`, \`/requisites\` не публиковать как действующие документы.
+\`/library/a1\`…\`/library/a6\`, \`/track\`, \`/about\`, \`/access\`, \`/pricing\`, \`/payment-and-access\`,
+\`/privacy\`, \`/consent\`, \`/offer\`, \`/requisites\`.
 \`/preview/commerce\` не публиковать. Живую главную \`/\` и прочие
 маркетинговые страницы в группы не добавлять.
 
@@ -728,10 +731,11 @@ Allow: /about
 Allow: /access
 Allow: /pricing
 Allow: /payment-and-access
+Allow: /privacy
+Allow: /consent
+Allow: /offer
+Allow: /requisites
 Allow: /research
-Disallow: /privacy
-Disallow: /offer
-Disallow: /requisites
 Disallow: /my
 Disallow: /my/
 Disallow: /profile

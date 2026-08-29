@@ -11,9 +11,9 @@
     "card_checkout_enabled": false
   },
   "legal": {
-    "offer_status": "draft",
-    "privacy_status": "draft",
-    "requisites_status": "draft",
+    "offer_status": "published",
+    "privacy_status": "approved",
+    "requisites_status": "filled",
     "payment_and_access_status": "prepared"
   },
   "products": [

@@ -521,8 +521,10 @@
       '<label style="display:flex;gap:10px;align-items:flex-start;font-size:14px"><input type="checkbox" id="mlma-consent" name="consent"' +
       (state.profile.consentAt ? ' checked' : '') +
       '> Согласен на обработку персональных данных для работы кабинета. <a href="' +
+      esc((R.consent && R.consent()) || '/consent') +
+      '" target="_blank" rel="noopener">Согласие</a> и <a href="' +
       esc((R.privacy && R.privacy()) || '/privacy') +
-      '">Черновик политики</a></label>' +
+      '" target="_blank" rel="noopener">политика</a></label>' +
       '<label style="display:flex;gap:10px;align-items:flex-start;font-size:14px"><input type="checkbox" id="mlma-notify" name="notifyEmail"' +
       (state.profile.notifyEmail !== false ? ' checked' : '') +
       '> Присылать письма о маршруте на email кабинета</label>' +
@@ -539,7 +541,9 @@
       esc((state.account && state.account.email) || 'Email кабинета появится после входа') +
       '</p><div class="mlma-actions" style="margin-top:16px;flex-direction:column">' +
       btn((D.membersRecoverUrl && D.membersRecoverUrl()) || '/members/login?mlma=recover', 'Сменить пароль', '', 'mlma-btn-small') +
-      '<a class="mlma-btn mlma-btn-small" href="/members/logout">Выйти</a>' +
+      '<a class="mlma-btn mlma-btn-small" href="' +
+      esc((R.logout && R.logout()) || '/members/login?exit=y') +
+      '" data-mlma-logout="1">Выйти</a>' +
       '</div></section><section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Сохранённое</span><h2 class="mlma-h3" style="margin-top:16px">' +
       (savedTracks.length === 0 ? 'Пока ничего не сохранено' : savedTracks.length + ' в маршруте') +
       '</h2>' +
