@@ -10,6 +10,7 @@
   var PAYMENT_STATUSES = ['created', 'pending', 'paid', 'failed', 'cancelled', 'refunded', 'expired'];
   var TEST_MODE = true;
   var PAYMENTS_ENABLED = false;
+  var COMMERCE_PREVIEW_ENABLED = false;
 
   var TILDA_PAYMENT_OPTIONS = [
     { id: 'tilda', name: 'Tilda Payments / ЮKassa через Tilda', members: 'Да, встроенная выдача группы', recurrences: 'Подписка Tilda — отдельно согласовывать', note: 'Проще всего для Members. Вебхук и идемпотентность ограничены кабинетом Tilda.' },
@@ -24,11 +25,15 @@
   }
 
   function productById(id) {
+    if (api.getProductByCode) {
+      var found = api.getProductByCode(id) || api.getProductByCode('B2C-TRACK-001');
+      if (found) return found;
+    }
     var list = api.PRODUCTS || [];
     for (var i = 0; i < list.length; i += 1) {
-      if (list[i].id === id) return list[i];
+      if (list[i].id === id || list[i].product_code === id) return list[i];
     }
-    return list[0] || { id: 'start', group: 'START', title: 'Стартовый пакет', kind: 'pack' };
+    return { product_code: 'B2C-TRACK-001', publication_status: 'gated', title: 'Один трек' };
   }
 
   function createOrder(input) {
@@ -36,15 +41,16 @@
     var product = productById(input.productId || 'start');
     return {
       orderId: input.orderId || newId('ord'),
-      productId: product.id,
-      group: product.group,
-      trackId: input.trackId || '',
+      productId: product.product_code || product.id,
+      group: product.entitlement_type || product.group || '',
+      trackId: input.trackId || product.bound_track_id || '',
       email: input.email || '',
       maId: input.maId || '',
       amount: 0,
       currency: 'RUB',
-      status: 'created',
+      status: 'blocked',
       test: true,
+      reason: 'payments_disabled',
       createdAt: new Date().toISOString(),
     };
   }
@@ -55,7 +61,7 @@
       paymentId: newId('pay'),
       orderId: order.orderId,
       status: 'pending',
-      checkoutUrl: '/access?checkout=' + encodeURIComponent(order.orderId),
+      checkoutUrl: '/pricing',
       test: true,
     };
   };
@@ -156,16 +162,15 @@
     return { ok: true, duplicate: false, account: account, payment: payment };
   }
 
-  function checkoutHref(productId, trackId) {
-    var q = '/access?checkout=1&product=' + encodeURIComponent(productId || 'start');
-    if (trackId) q += '&track=' + encodeURIComponent(trackId);
-    return q;
+  function checkoutHref() {
+    return '/pricing';
   }
 
   api.PAYMENT_STATUSES = PAYMENT_STATUSES;
   api.TILDA_PAYMENT_OPTIONS = TILDA_PAYMENT_OPTIONS;
   api.PAYMENT_TEST_MODE = TEST_MODE;
   api.PAYMENTS_ENABLED = PAYMENTS_ENABLED;
+  api.COMMERCE_PREVIEW_ENABLED = COMMERCE_PREVIEW_ENABLED;
   api.createOrder = createOrder;
   api.TestGateway = TestGateway;
   api.createPaymentGateway = function () {

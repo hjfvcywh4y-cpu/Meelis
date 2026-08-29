@@ -43,6 +43,7 @@ import {
   allowedMethod,
   PAYMENT_PATHS,
   paymentsEnabled,
+  commercePreviewEnabled,
   testMode,
   sanitizeRunMeta,
 } from './account-core.js';
@@ -180,6 +181,7 @@ export default {
           ok: true,
           service: 'mlma-account',
           PAYMENTS_ENABLED: paymentsEnabled(env),
+          COMMERCE_PREVIEW_ENABLED: commercePreviewEnabled(env),
           TEST_MODE: testMode(env),
         },
         200,
@@ -193,7 +195,9 @@ export default {
           {
             ok: false,
             reason: 'payments_disabled',
+            message: 'Оплата ещё не запущена',
             PAYMENTS_ENABLED: false,
+            COMMERCE_PREVIEW_ENABLED: false,
             TEST_MODE: testMode(env),
           },
           403,

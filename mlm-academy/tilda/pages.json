@@ -138,7 +138,15 @@
     "file": "pricing.html",
     "url": "/pricing",
     "page": "pricing",
-    "title": "Условия доступа · MLM Academy",
+    "title": "Тарифы · MLM Academy",
+    "members": "public"
+  },
+  {
+    "id": "payment-and-access",
+    "file": "payment-and-access.html",
+    "url": "/payment-and-access",
+    "page": "payment-and-access",
+    "title": "Оплата и доступ · MLM Academy",
     "members": "public"
   },
   {
@@ -147,7 +155,34 @@
     "url": "/privacy",
     "page": "privacy",
     "title": "Политика конфиденциальности · черновик · MLM Academy",
-    "members": "public"
+    "members": "public",
+    "noindex": true
+  },
+  {
+    "id": "offer",
+    "file": "offer.html",
+    "url": "/offer",
+    "page": "offer",
+    "title": "Публичная оферта · черновик · MLM Academy",
+    "members": "public",
+    "noindex": true
+  },
+  {
+    "id": "requisites",
+    "file": "requisites.html",
+    "url": "/requisites",
+    "page": "requisites",
+    "title": "Реквизиты · черновик · MLM Academy",
+    "members": "public",
+    "noindex": true
+  },
+  {
+    "id": "purchases",
+    "file": "my-purchases.html",
+    "url": "/my/purchases",
+    "page": "purchases",
+    "title": "Покупки и доступ · MLM Academy",
+    "members": "member"
   },
   {
     "id": "preview",
@@ -156,5 +191,14 @@
     "page": "preview",
     "title": "Предпросмотр каталога · MLM Academy",
     "members": "editor"
+  },
+  {
+    "id": "preview-commerce",
+    "file": "preview-commerce.html",
+    "url": "/preview/commerce",
+    "page": "preview-commerce",
+    "title": "Предпросмотр состояний покупки · MLM Academy",
+    "members": "editor",
+    "noindex": true
   }
 ]

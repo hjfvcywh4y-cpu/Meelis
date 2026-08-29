@@ -1,4 +1,4 @@
-<!-- Блок T123: рендер оболочки 5/6 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: рендер оболочки 5/7 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
 (function (root) {
   'use strict';
@@ -7,220 +7,243 @@
   var esc = D._ui.esc;
   var btn = D._ui.btn;
   var pageHead = D._ui.pageHead;
-  var crumbs = D._ui.crumbs;
-  var emptyState = D._ui.emptyState;
-  var renderHome = D._ui.renderHome;
-  var renderStart = D._ui.renderStart;
-  var renderLibrary = D._ui.renderLibrary;
-  var renderSection = D._ui.renderSection;
-  var renderTrack = D._ui.renderTrack;
-  var renderMy = D._ui.renderMy;
-  var renderRoute = D._ui.renderRoute;
-  var renderResults = D._ui.renderResults;
-  var renderProfile = D._ui.renderProfile;
-  var renderAccess = D._ui.renderAccess;
-  var renderPricing = D._ui.renderPricing;
-  var renderPrivacy = D._ui.renderPrivacy;
+  var cabinetNav = D._ui.cabinetNav;
+  var uniqueSavedIds = D._ui.uniqueSavedIds;
+  var trackById = D._ui.trackById;
+  var userStatusLabel = D._ui.userStatusLabel;
 
-  function renderAbout(state) {
+  function priceLine(product) {
+    if (product.launch_price == null && product.regular_price == null) return 'Цена появится после запуска';
+    if (Number(product.launch_price) === 0 && Number(product.regular_price) === 0) return '0 ₽';
+    var launch = D.formatPrice ? D.formatPrice(product.launch_price) : product.launch_price + ' ₽';
+    var regular = D.formatPrice ? D.formatPrice(product.regular_price) : product.regular_price + ' ₽';
+    if (product.launch_price != null && product.regular_price != null && product.launch_price !== product.regular_price) {
+      return '<span class="mlma-h3 mlma-price">' + esc(launch) + '</span> <s class="mlma-muted mlma-price" style="margin-left:8px">' + esc(regular) + '</s>';
+    }
+    return '<span class="mlma-h3 mlma-price">' + esc(launch || regular) + '</span>';
+  }
+
+  function renderAccess(state) {
     var R = state.R;
-    var blocks = [
-      ['Почему мы сделали MLM Academy', 'Маркетинг-план показывает, куда прийти. Реальная работа начинается с ближайшего действия: кому написать, что сказать, как не потерять следующий шаг. Academy собирает эти рабочие ситуации в одну библиотеку.'],
-      ['Проблема разрыва', 'Человек может пройти обучение и всё равно не сделать шаг. Между знанием «нужно найти клиентов» и действием «написать этому человеку сегодня» остаётся пустота. Мы проектируем треки так, чтобы закрывать именно этот разрыв.'],
-    ];
-    var sources = [
-      'рабочие ситуации партнёров',
-      'интервью и наблюдения',
-      'практики прямых продаж',
-      'современные международные подходы',
-      'профессиональные методики',
-      'этические и юридические ограничения',
-    ];
-    var produce = [
-      ['Исходная проблема', 'Конкретная рабочая ситуация, а не общая тема курса.'],
-      ['Ожидаемый результат', 'Что должно остаться после действия: сообщение, список, карта, договорённость.'],
-      ['Действие', 'Один шаг вне экрана, который можно выполнить сегодня.'],
-      ['Артефакт', 'Наблюдаемый след работы, а не «я посмотрел урок».'],
-      ['Проверка завершения', 'Понятный критерий: действие сделано, результат зафиксирован.'],
-      ['Следующий шаг', 'Куда идти дальше в той же рабочей цепочке.'],
-    ];
-    var never = [
-      'давления',
-      'обхода отказа',
-      'манипулятивного закрытия',
-      'медицинских обещаний',
-      'оценки человека по кошельку',
-      'выдуманных историй успеха',
-    ];
-    var ready = [
-      'архитектура из 112 треков',
-      'шесть направлений',
-      'навигация по ситуации',
-      'описания ожидаемых результатов',
-    ];
-    var later = [
-      'задания',
-      'инструменты',
-      'примеры',
-      'фиксация результатов',
-      'маршруты',
-      'кабинет',
-    ];
-    function list(items) {
-      var html = '<ul class="mlma-plain">';
-      for (var i = 0; i < items.length; i += 1) html += '<li>' + esc(items[i]) + '</li>';
-      return html + '</ul>';
-    }
-    var produceHtml = '';
-    for (var p = 0; p < produce.length; p += 1) {
-      produceHtml +=
-        '<li class="mlma-card mlma-pad"><span class="mlma-meta">0' +
-        (p + 1) +
-        '</span><h3 class="mlma-h3" style="margin-top:10px">' +
-        esc(produce[p][0]) +
-        '</h3><p class="mlma-muted" style="margin-top:8px">' +
-        esc(produce[p][1]) +
-        '</p></li>';
-    }
+    var logged = !!(state.account && state.account.loggedIn);
     return (
       pageHead(
         {
-          eyebrow: 'Как создаётся библиотека',
-          title: 'Не пересказ учебников, а рабочая система',
-          lead: 'Страница для партнёра, который хочет понять происхождение Academy — без корпоративного отчёта и без чужих цитат.',
-          crumbs: [
-            { label: 'Academy', href: R.home() },
-            { label: 'Как создаётся' },
-          ],
+          eyebrow: 'Доступ',
+          title: 'Какие форматы доступа будут',
+          lead: 'Сейчас работает бесплатный кабинет FREE. Платные продукты готовятся: купить их нельзя, пока не опубликован первый complete-трек и не подключена оплата.',
+          crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Доступ' }],
         },
         R,
       ) +
-      '<div class="mlma-wrap" style="padding-top:32px;padding-bottom:56px;display:grid;gap:32px">' +
-      '<section class="mlma-card mlma-pad-lg" style="padding:28px"><h2 class="mlma-h3">' +
-      esc(blocks[0][0]) +
-      '</h2><p class="mlma-lead mlma-muted" style="margin-top:12px">' +
-      esc(blocks[0][1]) +
-      '</p></section>' +
-      '<section class="mlma-card mlma-pad-lg" style="padding:28px"><h2 class="mlma-h3">' +
-      esc(blocks[1][0]) +
-      '</h2><p class="mlma-lead mlma-muted" style="margin-top:12px">' +
-      esc(blocks[1][1]) +
-      '</p></section>' +
-      '<section><h2 class="mlma-h3">На чём строится библиотека</h2>' +
-      list(sources) +
-      '</section>' +
-      '<section><h2 class="mlma-h3">Как производится один трек</h2><ul class="mlma-grid-2" style="margin-top:16px">' +
-      produceHtml +
-      '</ul></section>' +
-      '<section><h2 class="mlma-h3">Чего здесь не будет</h2>' +
-      list(never) +
-      '</section>' +
-      '<section class="mlma-split"><div><h2 class="mlma-h3">Что уже готово</h2>' +
-      list(ready) +
-      '</div><div><h2 class="mlma-h3">Что будет добавляться постепенно</h2>' +
-      list(later) +
-      '</div></section>' +
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:20px">' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">FREE</span><h2 class="mlma-h3" style="margin-top:12px">Бесплатный кабинет</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Вход, сохранение маршрута, локальные результаты. Это не полный промотрек и не FULL. Карточка трека в каталоге — описание, а не купленный продукт.</p></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Разовые покупки</span><h2 class="mlma-h3" style="margin-top:12px">Один трек, мини-маршрут, маршрут из шести</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Будущие разовые покупки на 365 дней. Сейчас статус gated. Metadata-only и planned нельзя продавать. 112 карточек каталога не означают 112 готовых треков.</p></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Команда</span><h2 class="mlma-h3" style="margin-top:12px">Маршруты для новичков и партнёров</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Лидер запускает маршруты и снижает ручное сопровождение. Командный формат готовится. Автоматической оплаты нет.</p></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Компания</span><h2 class="mlma-h3" style="margin-top:12px">Корпоративный пилот</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Активация, удержание, аналитика и связь прохождения с коммерческим результатом. Только переговоры, без карточного checkout.</p></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Состояния</span><ul class="mlma-muted" style="margin-top:12px;display:grid;gap:8px;font-size:15px"><li>сохранено — трек в маршруте, это не покупка;</li><li>доступно бесплатно — публичный или промо контур;</li><li>куплено — появится после серверного права;</li><li>закрыто — платное содержание без права;</li><li>готовится — metadata-only, planned или gated.</li></ul></section>' +
       '<div class="mlma-actions">' +
-      btn(R.library(), 'Открыть библиотеку', 'primary') +
-      btn(D.siteHomeUrl(), 'Решения для MLM-компаний') +
+      btn((R.pricing && R.pricing()) || '/pricing', 'Смотреть тарифы', 'primary') +
+      (logged ? btn((R.purchases && R.purchases()) || '/my/purchases', 'Покупки в кабинете') : btn(D.membersSignupUrl('/my'), 'Создать бесплатный кабинет')) +
+      btn((R.paymentAndAccess && R.paymentAndAccess()) || '/payment-and-access', 'Как будет устроена оплата') +
       '</div></div>'
     );
   }
 
-  function renderPreview(state) {
+  function renderPricing(state) {
     var R = state.R;
-    var counts = [];
-    for (var i = 0; i < state.sections.length; i += 1) {
-      var stats = D.sectionStats(state.allTracks, state.sections[i].sectionId);
-      counts.push(
-        '<div class="mlma-card mlma-pad"><dt class="mlma-meta mlma-muted">' +
-          esc(state.sections[i].sectionId) +
-          '</dt><dd style="margin-top:8px;font-size:32px;font-weight:800">' +
-          stats.total +
-          '</dd></div>',
-      );
+    var b2c = D.publicB2CProducts ? D.publicB2CProducts() : [];
+    var cards = '';
+    for (var i = 0; i < b2c.length; i += 1) {
+      var p = b2c[i];
+      var from = p.product_code === 'B2C-FREE-001' ? '0 ₽' : 'от ' + (D.formatPrice ? D.formatPrice(p.launch_price) : p.launch_price + ' ₽');
+      cards +=
+        '<article class="mlma-card mlma-pad" style="padding:24px"><span class="mlma-eyebrow">' +
+        esc(D.storefrontStatusLabel ? D.storefrontStatusLabel(p) : 'Готовится к запуску') +
+        '</span><h2 class="mlma-h3" style="margin-top:12px">' +
+        esc(p.display_name) +
+        '</h2><p class="mlma-muted" style="margin-top:12px">' +
+        esc(p.short_description) +
+        '</p><p style="margin-top:16px">' +
+        priceLine(p) +
+        '</p><p class="mlma-meta" style="margin-top:8px">' +
+        esc(from) +
+        (p.access_days ? ' · ' + p.access_days + ' дней доступа' : '') +
+        '</p><div class="mlma-actions" style="margin-top:20px">' +
+        '<span class="mlma-btn mlma-btn-primary" aria-disabled="true">Готовится к запуску</span>' +
+        '</div></article>';
     }
     return (
       pageHead(
         {
-          eyebrow: 'Служебный экран · редактор',
-          title: 'Предпросмотр каталога',
-          lead: 'Все 112 публичных карточек. Внутренние редакционные поля сюда не попадают. На опубликованном сайте этот экран скрыт.',
-          crumbs: [
-            { label: 'Главная', href: R.home() },
-            { label: 'Предпросмотр каталога' },
-          ],
+          eyebrow: 'Тарифы',
+          title: 'Что можно будет получить и для кого',
+          lead: 'Ориентиры цены уже есть. Оплатить пока нельзя: продукты gated, юридические страницы не утверждены, эквайринг не подключён. Это не 112 готовых треков.',
+          crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Тарифы' }],
         },
         R,
       ) +
-      '<div class="mlma-wrap" style="padding-top:40px;padding-bottom:24px"><p class="mlma-meta" style="margin-bottom:16px">' +
-      state.allTracks.length +
-      ' треков · публичные поля, без внутреннего приоритета</p><dl class="mlma-grid-3">' +
-      counts.join('') +
-      '</dl></div><div id="mlma-catalog"></div>'
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:28px">' +
+      '<section><span class="mlma-eyebrow">Для себя</span><h2 class="mlma-h2" style="margin-top:12px">Новичок и партнёр</h2><p class="mlma-muted" style="margin-top:8px;max-width:70ch">Конкретная задача, один следующий шаг, отдельный трек или короткий маршрут. Понятный результат. Оплатить пока нельзя.</p><div class="mlma-grid-2" style="margin-top:16px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">' +
+      cards +
+      '</div></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Для команды</span><h2 class="mlma-h3" style="margin-top:12px">Лидер запускает маршруты</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Лидер — ранний покупатель командного решения: запуск новичков, меньше ручного сопровождения, контроль прохождения. Наставник видит точки остановки, но не считается автоматически плательщиком. Командный формат готовится. Подписка не продаётся.</p><div class="mlma-actions" style="margin-top:20px">' +
+      btn(D.siteHomeUrl(), 'Обсудить командный запуск', 'primary') +
+      '</div></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Для компании</span><h2 class="mlma-h3" style="margin-top:12px">Корпоративный пилот</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Маршруты для сегментов сети, контроль активации, управленческая аналитика, связь действий с коммерческими результатами. До 30 участников, 8 недель. Ориентир 99 000–149 000 ₽. Только переговоры, без карточного checkout.</p><div class="mlma-actions" style="margin-top:20px">' +
+      btn(D.siteHomeUrl(), 'Обсудить корпоративный пилот', 'primary') +
+      '</div></section>' +
+      '<p class="mlma-muted" style="font-size:14px">Подписка на всю библиотеку и PRO в интерфейс не выводятся. B2C и B2B не смешиваются в одну кнопку покупки. PAYMENTS_ENABLED=false.</p>' +
+      '<div class="mlma-actions">' +
+      btn(R.library(), 'Открыть библиотеку') +
+      btn(R.access(), 'Состояния доступа') +
+      btn((R.paymentAndAccess && R.paymentAndAccess()) || '/payment-and-access', 'Оплата и доступ') +
+      '</div></div>'
     );
   }
 
-  function renderNotFound(state, title) {
+  function renderPrivacy(state) {
     var R = state.R;
+    var ph = D.LEGAL_PLACEHOLDER || '[ЗАПОЛНИТЬ ВЛАДЕЛЬЦУ ПЕРЕД ПУБЛИКАЦИЕЙ]';
+    var blocks = [
+      ['Оператор', ph],
+      ['Собираемые данные', 'Email и имя кабинета Tilda, сохранённый маршрут, локальные результаты на устройстве. Иные категории — ' + ph],
+      ['Цели', 'Работа бесплатного кабинета и навигация по библиотеке. Цели будущей оплаты — ' + ph],
+      ['Основания', ph],
+      ['Обработчики', 'Сейчас: Tilda, Cloudflare. Будущие: не подключены. Не выдумывать список.'],
+      ['Сроки хранения', ph],
+      ['Удаление', 'После утверждения политики и контакта оператора.'],
+      ['Обращения пользователя', ph],
+      ['Cookies', 'Сессия Tilda Members и технические cookies площадки. Состав — ' + ph],
+      ['Аналитика', 'События без сырого поискового текста. Операторы аналитики — ' + ph],
+      ['Будущая оплата', 'Платёжный провайдер не подключён. Данные карт Академия не собирает.'],
+    ];
+    var html = '';
+    for (var i = 0; i < blocks.length; i += 1) {
+      html += '<section class="mlma-card mlma-pad"><h2 class="mlma-h3">' + esc(blocks[i][0]) + '</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">' + esc(blocks[i][1]) + '</p></section>';
+    }
     return (
       pageHead(
         {
-          eyebrow: '404',
-          title: title || 'Такой страницы нет',
-          lead: 'Возможно, адрес трека набран с ошибкой или этот трек ещё не открыт.',
+          eyebrow: 'Черновик · не утверждено · noindex',
+          title: 'Политика конфиденциальности',
+          lead: 'Это структура документа, а не действующая политика. Неизвестные сведения не выдуманы.',
+          crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Черновик политики' }],
         },
         R,
       ) +
-      '<div class="mlma-wrap" style="padding-top:40px;padding-bottom:56px">' +
-      emptyState({
-        title: 'Продолжим оттуда, где есть работа',
-        description: 'Библиотека собрана по ситуациям: выберите ту, что ближе к вашей задаче сейчас. Если вы искали конкретный трек, проверьте его номер — он выглядит так: A3-002.',
-        actions: btn(R.start(), 'Выбрать ситуацию', 'primary') + btn(R.library(), 'Открыть библиотеку') + btn(R.home(), 'На главную'),
-      }) +
-      '</div>'
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:16px">' +
+      '<section class="mlma-card mlma-pad" style="border-color:var(--mlma-danger,#8b2e1f)"><p>Страницу с незаполненными полями нельзя считать опубликованной политикой. Согласие в профиле — только интерфейсная отметка в этом браузере.</p></section>' +
+      html +
+      '<div class="mlma-actions"><button type="button" class="mlma-btn mlma-btn-primary" data-mlma-export-local="1">Выгрузить данные этого устройства</button></div><p id="mlma-export-msg" class="mlma-muted" style="font-size:14px" aria-live="polite"></p></div>'
     );
   }
 
-  function pageBody(state) {
-    switch (state.page) {
-      case 'home':
-        return renderHome(state);
-      case 'start':
-        return renderStart(state);
-      case 'library':
-        return renderLibrary(state);
-      case 'section':
-        return renderSection(state);
-      case 'track':
-        return renderTrack(state);
-      case 'my':
-        return renderMy(state);
-      case 'route':
-        return renderRoute(state);
-      case 'results':
-        return renderResults(state);
-      case 'profile':
-        return renderProfile(state);
-      case 'access':
-        return renderAccess(state);
-      case 'pricing':
-        return renderPricing(state);
-      case 'privacy':
-        return renderPrivacy(state);
-      case 'about':
-        return renderAbout(state);
-      case 'preview':
-        return renderPreview(state);
-      default:
-        return renderNotFound(state);
+  function renderPurchases(state) {
+    var R = state.R;
+    var savedIds = uniqueSavedIds(state);
+    var rows = '';
+    for (var i = 0; i < savedIds.length; i += 1) {
+      var tr = trackById(state, savedIds[i]);
+      if (!tr) continue;
+      var cls = D.classifyAccessRow ? D.classifyAccessRow(tr, state.account, savedIds) : { key: 'saved', label: 'сохранено' };
+      rows +=
+        '<li class="mlma-row"><span>' +
+        esc(tr.title) +
+        '</span><span class="mlma-meta">' +
+        esc(cls.label) +
+        '</span></li>';
     }
+    return (
+      pageHead(
+        {
+          eyebrow: 'Кабинет',
+          title: 'Покупки и доступ',
+          lead: 'У вас пока нет покупок. Платные треки готовятся к запуску. Уже сейчас вы можете сохранять интересные треки в маршрут.',
+          crumbs: [{ label: 'Кабинет', href: R.my() }, { label: 'Покупки' }],
+        },
+        R,
+      ) +
+      cabinetNav(state) +
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:20px">' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">FREE</span><h2 class="mlma-h3" style="margin-top:12px">' +
+      esc(userStatusLabel(state.account)) +
+      '</h2><p class="mlma-muted" style="margin-top:12px">Бесплатный кабинет не выдаёт FULL. Tilda Members не является источником платного права. Срок будущего разового доступа — 365 дней.</p></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Сохранённые маршруты</span>' +
+      (rows ? '<ul style="margin-top:12px;display:grid;gap:8px">' + rows + '</ul>' : '<p class="mlma-muted" style="margin-top:12px">Пока ничего не сохранено. Сохранённый трек не считается купленным.</p>') +
+      '</section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Будущие доступы</span><p class="mlma-muted" style="margin-top:12px">Куплено / закрыто / готовится появятся после первого complete-трека и серверного подтверждения оплаты. Сейчас все 112 треков — planned / metadata_only.</p></section>' +
+      '<div class="mlma-actions">' +
+      btn(R.library(), 'В библиотеку', 'primary') +
+      btn((R.pricing && R.pricing()) || '/pricing', 'Смотреть тарифы') +
+      '</div></div>'
+    );
   }
 
-  D._ui.renderAbout = renderAbout;
-  D._ui.renderPreview = renderPreview;
-  D._ui.renderNotFound = renderNotFound;
-  D._ui.pageBody = pageBody;
+  function renderOffer(state) {
+    var R = state.R;
+    var ph = D.LEGAL_PLACEHOLDER || '[ЗАПОЛНИТЬ ВЛАДЕЛЬЦУ ПЕРЕД ПУБЛИКАЦИЕЙ]';
+    var items = ['Продавец / исполнитель', 'ИНН', 'Статус НПД или иное', 'Предмет оферты', 'Порядок оплаты', 'Срок доступа', 'Возврат', 'Ответственность', 'Дата вступления в силу'];
+    var list = '';
+    for (var i = 0; i < items.length; i += 1) list += '<li><strong>' + esc(items[i]) + '.</strong> ' + esc(ph) + '</li>';
+    return pageHead({ eyebrow: 'Черновик · не действует', title: 'Публичная оферта', lead: 'Структура оферты без выдуманных реквизитов и юридических условий. Страницу с незаполненными полями нельзя публиковать как действующую оферту.', crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Черновик оферты' }] }, R) +
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px"><section class="mlma-card mlma-pad"><ol style="display:grid;gap:12px;font-size:15px;line-height:1.5">' + list + '</ol></section></div>';
+  }
+
+  function renderRequisites(state) {
+    var R = state.R;
+    var ph = D.LEGAL_PLACEHOLDER || '[ЗАПОЛНИТЬ ВЛАДЕЛЬЦУ ПЕРЕД ПУБЛИКАЦИЕЙ]';
+    var fields = ['ФИО самозанятого', 'ИНН', 'Статус НПД', 'Контактный email', 'Телефон', 'Город', 'Способ направления обращений'];
+    var html = '';
+    for (var i = 0; i < fields.length; i += 1) html += '<p><span class="mlma-meta">' + esc(fields[i]) + '</span><br>' + esc(ph) + '</p>';
+    return pageHead({ eyebrow: 'Черновик · не для публикации как реквизиты', title: 'Реквизиты', lead: 'Шаблон без фиктивных данных. Пока поля не заполнены владельцем, страница остаётся черновиком.', crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Черновик реквизитов' }] }, R) +
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:16px"><section class="mlma-card mlma-pad" style="display:grid;gap:16px">' + html +
+      '<p class="mlma-muted">Ссылки появятся после утверждения: оферта и политика. Сейчас это черновики.</p></section></div>';
+  }
+
+  function renderPaymentAndAccess(state) {
+    var R = state.R;
+    var steps = [
+      'Пользователь выбирает опубликованный продукт.',
+      'Проходит подтверждение личности.',
+      'Оплачивает через защищённую форму платёжного провайдера.',
+      'Доступ появляется только после серверного подтверждения.',
+      'Купленные треки отображаются в «Моих треках».',
+      'Срок разового доступа — 365 дней.',
+      'Результаты и прогресс сохраняются.',
+      'Правила возврата будут определены офертой.',
+    ];
+    var list = '';
+    for (var i = 0; i < steps.length; i += 1) list += '<li>' + esc(steps[i]) + '</li>';
+    return pageHead({ eyebrow: 'Как будет работать', title: 'Оплата и доступ', lead: 'Это описание будущей механики. Оплата сейчас не работает. Деньги не принимаются. Право нельзя выдать через localStorage, query-параметр или группу Tilda Members.', crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Оплата и доступ' }] }, R) +
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:20px"><section class="mlma-card mlma-pad"><ol style="margin-top:8px;display:grid;gap:10px;font-size:16px;line-height:1.45">' + list + '</ol></section>' +
+      '<p class="mlma-muted">PAYMENTS_ENABLED=false. COMMERCE_PREVIEW_ENABLED=false. ЮKassa и Supabase не подключены.</p>' +
+      '<div class="mlma-actions">' + btn((R.pricing && R.pricing()) || '/pricing', 'К тарифам', 'primary') + btn(R.access(), 'Состояния доступа') + '</div></div>';
+  }
+
+  function renderPreviewCommerce(state) {
+    if (!D.commercePreviewAllowed || !D.commercePreviewAllowed()) {
+      return pageHead({ eyebrow: 'Служебная страница', title: 'Предпросмотр состояний покупки недоступен', lead: 'Публичный симулятор оплаты не публикуется. COMMERCE_PREVIEW_ENABLED=false.' }, state.R);
+    }
+    var states = D.purchaseUiStates ? D.purchaseUiStates() : [];
+    var product = D.getProductByCode ? D.getProductByCode('B2C-TRACK-001') : null;
+    var view = D.productCardView ? D.productCardView(product) : {};
+    var html = '';
+    for (var i = 0; i < states.length; i += 1) {
+      html += '<article class="mlma-card mlma-pad"><span class="mlma-eyebrow">' + esc(states[i].key) + '</span><h2 class="mlma-h3" style="margin-top:12px">' + esc(states[i].title) + '</h2><p class="mlma-muted" style="margin-top:8px">' + esc(states[i].note) + '</p></article>';
+    }
+    return pageHead({ eyebrow: 'Только локальный preview', title: 'Состояния будущей покупки', lead: 'Фикстуры интерфейса. Тестовая покупка не записывается в маршрут пользователя и не выдаёт право.', crumbs: [{ label: 'Academy', href: state.R.home() }, { label: 'Preview commerce' }] }, state.R) +
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:16px"><section class="mlma-card mlma-pad"><span class="mlma-eyebrow">' + esc(view.status_label || 'Готовится к запуску') + '</span><h2 class="mlma-h3" style="margin-top:12px">' + esc(view.display_name || 'Один трек') + '</h2><p style="margin-top:12px">' + esc(view.launch_price_label || '') + ' / ' + esc(view.regular_price_label || '') + '</p><p class="mlma-muted" style="margin-top:8px">Кнопка «Купить» скрыта. buy_enabled=' + (view.buy_enabled ? 'true' : 'false') + '</p></section>' + html + '</div>';
+  }
+
+  D._ui.renderAccess = renderAccess;
+  D._ui.renderPricing = renderPricing;
+  D._ui.renderPrivacy = renderPrivacy;
+  D._ui.renderPurchases = renderPurchases;
+  D._ui.renderOffer = renderOffer;
+  D._ui.renderRequisites = renderRequisites;
+  D._ui.renderPaymentAndAccess = renderPaymentAndAccess;
+  D._ui.renderPreviewCommerce = renderPreviewCommerce;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 

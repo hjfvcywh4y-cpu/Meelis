@@ -33,8 +33,20 @@ describe('SEO сборки', () => {
   it('robots.txt не блокирует академию и указывает HTTPS sitemap', () => {
     const robots = fs.readFileSync(path.join(DIST, 'seo/robots.txt'), 'utf8');
     const sitemap = fs.readFileSync(path.join(DIST, 'seo/sitemap-academy.xml'), 'utf8');
-    assert.match(robots, /Allow: \/academy/);
-    assert.match(robots, /Disallow: \/my/);
+    assert.match(robots, /Allow: \/pricing/);
+    assert.match(robots, /Allow: \/payment-and-access/);
+    assert.match(robots, /Disallow: \/privacy/);
+    assert.match(robots, /Disallow: \/offer/);
+    assert.match(sitemap, /https:\/\/mlmacademy.ru\/pricing/);
+    assert.doesNotMatch(sitemap, /\/privacy</);
+    assert.doesNotMatch(sitemap, /\/offer</);
+    assert.doesNotMatch(sitemap, /\/requisites</);
+    const privacy = fs.readFileSync(path.join(DIST, 't123/heads/privacy.html'), 'utf8');
+    const offer = fs.readFileSync(path.join(DIST, 't123/heads/offer.html'), 'utf8');
+    const pricing = fs.readFileSync(path.join(DIST, 't123/heads/pricing.html'), 'utf8');
+    assert.match(privacy, /name="robots" content="noindex, nofollow"/);
+    assert.match(offer, /name="robots" content="noindex, nofollow"/);
+    assert.match(pricing, /name="robots" content="index, follow"/);
     assert.match(robots, /Sitemap: https:\/\/mlmacademy.ru\/sitemap.xml/);
     assert.match(sitemap, /https:\/\/mlmacademy.ru\/library/);
     assert.doesNotMatch(sitemap, /\/my</);

@@ -89,5 +89,24 @@ RLS запрещает читать чужие заказы, платежи и �
 - `POST /api/webhooks/yookassa`
 - `GET /api/me/entitlements`
 - `POST /api/refunds/process` — только административный серверный контур
+- `GET|POST /api/commerce/preview`
+
+Правила будущей оплаты (контракт, без живых ресурсов):
+
+1. Цена определяется сервером.
+2. Состав продукта определяется сервером.
+3. Заказ хранит снимок цены и состава.
+4. Клиент не может открыть FULL.
+5. Успешный redirect не является оплатой.
+6. Право создаётся только после проверенного webhook.
+7. Повтор webhook не создаёт дубль.
+8. Возврат не удаляет платёж.
+9. Платное право требует verified user.
+10. Tilda Members не является источником платного права.
+11. Подписка пока не реализуется.
+
+Справочник продуктов: `tilda/src/data/products.catalog.json`. Track ID и `product_code` — разные сущности.
+Таблицы контракта: products, product_versions, product_tracks, orders, order_items, payments, payment_events, refunds, entitlements, audit_log.
 
 Рекуррентная подписка не реализуется. Состояния описаны в `subscription_events`.
+`COMMERCE_PREVIEW_ENABLED=false` в production.

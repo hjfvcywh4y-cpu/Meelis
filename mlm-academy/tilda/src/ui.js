@@ -51,6 +51,7 @@
       rules: payload.rules || null,
       pilot: payload.pilot || null,
       config: payload.config || {},
+      products: payload.products || null,
     };
   }
 
@@ -149,7 +150,7 @@
   }
 
   function isCabinetPage(page) {
-    return page === 'my' || page === 'route' || page === 'results' || page === 'profile';
+    return page === 'my' || page === 'route' || page === 'results' || page === 'profile' || page === 'purchases';
   }
 
   function accountOf(state) {
@@ -175,7 +176,7 @@
         '<div class="mlma-account-drop">' +
         '<a href="' + esc(state.R.my()) + '">Кабинет</a>' +
         '<a href="' + esc(state.R.profile()) + '">Профиль</a>' +
-        '<a href="' + esc(state.R.access()) + '">Доступ</a>' +
+        '<a href="' + esc((state.R.purchases && state.R.purchases()) || '/my/purchases') + '">Покупки и доступ</a>' +
         '<a href="/members/logout">Выход</a>' +
         '</div></details></div>'
       );
@@ -197,6 +198,7 @@
     var items = [
       { href: R.home(), label: 'Academy' },
       { href: R.library(), label: 'Библиотека' },
+      { href: R.pricing ? R.pricing() : '/pricing', label: 'Тарифы' },
       { href: R.start(), label: 'С чего начать' },
       { href: R.about(), label: 'Как создаётся' },
       { href: R.research ? R.research() : '/research/marketing-plan', label: 'Исследование' },
@@ -207,7 +209,7 @@
         { href: R.home(), label: 'Academy' },
         { href: R.library(), label: 'Библиотека' },
         { href: R.my(), label: 'Кабинет' },
-        { href: R.access(), label: 'Доступ' },
+        { href: (R.purchases && R.purchases()) || '/my/purchases', label: 'Покупки' },
       ];
     }
     return items;
@@ -258,12 +260,14 @@
   function footer(state) {
     var R = state.R;
     var links = [
-      { href: R.start(), label: 'С чего начать' },
+      { href: R.home(), label: 'Academy' },
       { href: R.library(), label: 'Библиотека' },
+      { href: R.start(), label: 'С чего начать' },
       { href: R.about(), label: 'Как создаётся библиотека' },
       { href: R.access(), label: 'Доступ' },
-      { href: R.pricing ? R.pricing() : '/pricing', label: 'Условия' },
-      { href: R.privacy ? R.privacy() : '/privacy', label: 'Политика' },
+      { href: R.pricing ? R.pricing() : '/pricing', label: 'Тарифы' },
+      { href: (R.paymentAndAccess && R.paymentAndAccess()) || '/payment-and-access', label: 'Оплата и доступ' },
+      { href: R.my(), label: 'Кабинет' },
       { href: R.research ? R.research() : '/research/marketing-plan', label: 'Исследование' },
       { href: D.siteHomeUrl(), label: 'Решения для компаний' },
     ];
@@ -1058,7 +1062,7 @@
       { href: R.myTracks ? R.myTracks() : '/my/route?tab=tracks', label: 'Мои треки', id: 'tracks' },
       { href: R.myResults(), label: 'Результаты', id: 'results' },
       { href: R.mySaved ? R.mySaved() : '/my/route?tab=saved', label: 'Сохранённое', id: 'saved' },
-      { href: R.access(), label: 'Покупки и доступ', id: 'access' },
+      { href: (R.purchases && R.purchases()) || '/my/purchases', label: 'Покупки и доступ', id: 'purchases' },
       { href: R.profile(), label: 'Профиль', id: 'profile' },
     ];
     var tab = '';
@@ -1074,6 +1078,7 @@
       else if (items[i].id === 'saved') current = state.page === 'route' && tab === 'saved';
       else if (items[i].id === 'route') current = state.page === 'route' && !tab;
       else if (items[i].id === 'access') current = state.page === 'access';
+      else if (items[i].id === 'purchases') current = state.page === 'purchases';
       else current = state.page === items[i].id;
       html +=
         '<li><a href="' +
@@ -1140,14 +1145,14 @@
     var wouldStart = D.getTrackStatusView(track, { entitled: true }).canStart;
     if (!entitled && D.normalizeAccess && D.normalizeAccess(track.access) === 'paid' && wouldStart) {
       runtimeHtml =
-        '<section class="mlma-card mlma-pad-lg" style="padding:28px"><span class="mlma-eyebrow">Доступ к треку</span><h2 class="mlma-h3" style="margin-top:12px">Полный маршрут открывается после доступа</h2>' +
+        '<section class="mlma-card mlma-pad-lg" style="padding:28px"><span class="mlma-eyebrow">Доступ к треку</span><h2 class="mlma-h3" style="margin-top:12px">Платный полный маршрут ещё готовится</h2>' +
         '<p class="mlma-lead" style="margin-top:12px">' + esc(track.situation) + '</p>' +
         '<p style="margin-top:8px">Результат: ' + esc(track.outcome) + '</p>' +
-        '<p class="mlma-muted" style="margin-top:12px">Внутренние шаги и полный текст сюда не выводятся.</p>' +
+        '<p class="mlma-muted" style="margin-top:12px">Карточка трека — не готовый продукт. Metadata-only и planned нельзя купить. Внутренние шаги сюда не выводятся.</p>' +
         '<div class="mlma-actions" style="margin-top:20px">' +
         (state.account && state.account.loggedIn
-          ? btn(R.access() + '?product=start&track=' + encodeURIComponent(track.trackId), 'Купить доступ', 'primary')
-          : btn(D.membersLoginUrl(pathName()), 'Войти, чтобы сохранить', 'primary') + btn(R.access(), 'Смотреть доступ')) +
+          ? btn((R.pricing && R.pricing()) || '/pricing', 'Готовится к запуску', 'primary')
+          : btn(D.membersLoginUrl(pathName()), 'Войти, чтобы сохранить', 'primary') + btn((R.pricing && R.pricing()) || '/pricing', 'Смотреть тарифы')) +
         '</div></section>';
     }
     var nbaHtml = '';
@@ -1484,7 +1489,7 @@
       return { key: 'started', label: 'начат', tone: 'accent', action: { href: href, label: 'Продолжить прохождение' } };
     }
     if (access === 'paid' && !entitled) {
-      return { key: 'locked', label: 'закрыт', tone: 'warn', action: { href: state.R.access() + '?product=start&track=' + encodeURIComponent(track.trackId), label: 'Перейти к покупке доступа' } };
+      return { key: 'preparing', label: 'готовится', tone: 'warn', action: { href: (state.R.pricing && state.R.pricing()) || '/pricing', label: 'Готовится к запуску' } };
     }
     if (index === 0) return { key: 'next', label: 'рекомендован следующим', tone: 'accent', action: { href: href, label: view.canStart ? 'Открыть трек' : 'Открыть описание' } };
     if (entitled || access === 'public' || access === 'promo') {
@@ -1604,8 +1609,8 @@
       '</div></section>' +
       '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Доступ</span><h2 class="mlma-h3" style="margin-top:12px">' +
       esc(userStatusLabel(account)) +
-      '</h2><p class="mlma-muted" style="margin-top:8px">Платные материалы группе FREE не открываются. Пакеты появятся после оплаты.</p><div class="mlma-actions" style="margin-top:16px">' +
-      btn(R.access(), 'Покупки и доступ', '', 'mlma-btn-small') +
+      '</h2><p class="mlma-muted" style="margin-top:8px">Платные материалы группе FREE не открываются. Платные треки готовятся к запуску.</p><div class="mlma-actions" style="margin-top:16px">' +
+      btn((R.purchases && R.purchases()) || '/my/purchases', 'Покупки и доступ', '', 'mlma-btn-small') +
       btn(R.profile(), 'Профиль', '', 'mlma-btn-small') +
       '</div></section></aside></div>'
     );
@@ -1977,159 +1982,266 @@
       (savedTracks.length === 0 ? 'Пока ничего не сохранено' : savedTracks.length + ' в маршруте') +
       '</h2>' +
       savedHtml +
-      '</section><section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Доступ</span><h2 class="mlma-h3" style="margin-top:16px">Пакеты</h2><p class="mlma-muted" style="margin-top:16px;font-size:15px">Сначала кабинет, затем покупка. Реальные списания выключены.</p><div style="margin-top:20px">' +
-      btn(R.access(), 'Покупки и доступ', '', 'mlma-btn-small') +
+      '</section><section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Доступ</span><h2 class="mlma-h3" style="margin-top:16px">Покупки</h2><p class="mlma-muted" style="margin-top:16px;font-size:15px">Настоящих заказов пока нет. Сохранённый трек не считается купленным.</p><div style="margin-top:20px">' +
+      btn((R.purchases && R.purchases()) || '/my/purchases', 'Покупки и доступ', '', 'mlma-btn-small') +
       '</div></section></aside></div>'
     );
+  }
+
+  D._ui.uniqueSavedIds = uniqueSavedIds;
+  D._ui.trackById = trackById;
+  D._ui.userStatusLabel = userStatusLabel;
+  D._ui.renderMy = renderMy;
+  D._ui.renderRoute = renderRoute;
+  D._ui.renderResults = renderResults;
+  D._ui.renderProfile = renderProfile;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* __MLMA_UI_SPLIT__ */
+(function (root) {
+  'use strict';
+  var D = root.MLMA;
+  if (!D || !D._ui) return;
+  var esc = D._ui.esc;
+  var btn = D._ui.btn;
+  var pageHead = D._ui.pageHead;
+  var cabinetNav = D._ui.cabinetNav;
+  var uniqueSavedIds = D._ui.uniqueSavedIds;
+  var trackById = D._ui.trackById;
+  var userStatusLabel = D._ui.userStatusLabel;
+
+  function priceLine(product) {
+    if (product.launch_price == null && product.regular_price == null) return 'Цена появится после запуска';
+    if (Number(product.launch_price) === 0 && Number(product.regular_price) === 0) return '0 ₽';
+    var launch = D.formatPrice ? D.formatPrice(product.launch_price) : product.launch_price + ' ₽';
+    var regular = D.formatPrice ? D.formatPrice(product.regular_price) : product.regular_price + ' ₽';
+    if (product.launch_price != null && product.regular_price != null && product.launch_price !== product.regular_price) {
+      return '<span class="mlma-h3 mlma-price">' + esc(launch) + '</span> <s class="mlma-muted mlma-price" style="margin-left:8px">' + esc(regular) + '</s>';
+    }
+    return '<span class="mlma-h3 mlma-price">' + esc(launch || regular) + '</span>';
   }
 
   function renderAccess(state) {
     var R = state.R;
     var logged = !!(state.account && state.account.loggedIn);
-    var userState = D.resolveUserState ? D.resolveUserState(state.account) : 'guest';
-    var products = D.PRODUCTS || [];
-    var cards = '';
-    for (var i = 0; i < products.length; i += 1) {
-      var p = products[i];
-      cards +=
-        '<article class="mlma-card mlma-pad" style="padding:24px"><span class="mlma-eyebrow">' +
-        esc(p.priceLabel || 'Тестовый режим') +
-        '</span><h2 class="mlma-h3" style="margin-top:12px">' +
-        esc(p.title) +
-        '</h2><p class="mlma-muted" style="margin-top:12px">' +
-        esc(p.summary) +
-        '</p><div class="mlma-actions" style="margin-top:20px">' +
-        (logged
-        ? '<a class="mlma-btn mlma-btn-primary" href="' + esc(D.checkoutHref(p.id, queryParam('track'))) + '" data-mlma-checkout="' + esc(p.id) + '">Запросить тестовый пакет</a>'
-        : btn((R.pricing && R.pricing()) || '/pricing', 'Смотреть условия', 'primary')) +
-        '</div></article>';
-    }
-    var orders = (state.account && state.account.orders) || [];
-    var orderHtml = '';
-    if (logged) {
-      if (!orders.length) orderHtml = '<p class="mlma-muted" style="margin-top:12px">Покупок пока нет. Реальные списания выключены. Тестовая кнопка не выдаёт платный доступ.</p>';
-      else {
-        orderHtml = '<ul style="margin-top:12px;display:grid;gap:8px">';
-        for (var o = 0; o < orders.length; o += 1) {
-          var statusLabel = { created: 'Создан', pending: 'Ожидает', paid: 'Оплачен', failed: 'Отказ', cancelled: 'Отменён', refunded: 'Возврат', expired: 'Истёк' }[orders[o].status] || 'Статус обновлён';
-          orderHtml +=
-            '<li class="mlma-row"><span class="mlma-meta">' +
-            esc(orders[o].orderId) +
-            '</span><span>' +
-            esc(statusLabel) +
-            '</span></li>';
-        }
-        orderHtml += '</ul>';
-      }
-    }
-    var checkoutId = queryParam('checkout');
-    var notice = '';
-    if (userState === 'expired') {
-      notice = '<div class="mlma-card mlma-pad" style="border-color:var(--mlma-danger)"><p>Доступ закончился. История и результаты на месте. Продлите пакет, чтобы снова открыть платные треки.</p></div>';
-    }
-    if (checkoutId && checkoutId !== '1') {
-      notice += '<p class="mlma-lead">Тестовый заказ ' + esc(checkoutId) + '. Деньги не списываются.</p>';
-    }
     return (
       pageHead(
         {
           eyebrow: 'Доступ',
-          title: 'Сначала кабинет, затем пакет',
-          lead: 'Регистрация бесплатная. Покупка подключается отдельно и сейчас идёт только в тестовом режиме.',
-          crumbs: [
-            { label: 'Academy', href: R.home() },
-            { label: 'Доступ' },
-          ],
+          title: 'Какие форматы доступа будут',
+          lead: 'Сейчас работает бесплатный кабинет FREE. Платные продукты готовятся: купить их нельзя, пока не опубликован первый complete-трек и не подключена оплата.',
+          crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Доступ' }],
         },
         R,
       ) +
-      (logged && cabinetNav ? cabinetNav(state) : '') +
-      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:24px">' +
-      notice +
-      '<div class="mlma-grid-2" style="display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">' +
-      cards +
-      '</div>' +
-      (logged
-        ? '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Покупки</span><h2 class="mlma-h3" style="margin-top:12px">Заказы и сроки</h2>' + orderHtml + '</section>'
-        : '<section class="mlma-card mlma-pad"><p>Гость видит только публичные условия. История покупок скрыта. Чтобы сохранить бесплатный маршрут, создайте кабинет.</p><div class="mlma-actions" style="margin-top:16px">' +
-          btn((R.pricing && R.pricing()) || '/pricing', 'Условия доступа', 'primary') +
-          btn(D.membersSignupUrl('/my'), 'Регистрация') +
-          btn(D.membersLoginUrl('/access'), 'Войти') +
-          '</div></section>') +
-      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Как будет устроена оплата</span><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Реальные списания выключены: PAYMENTS_ENABLED=false, TEST_MODE=true. Разовая оплата и подписка не запущены. Кнопка в кабинете не выдаёт FULL.</p></section></div>'
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:20px">' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">FREE</span><h2 class="mlma-h3" style="margin-top:12px">Бесплатный кабинет</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Вход, сохранение маршрута, локальные результаты. Это не полный промотрек и не FULL. Карточка трека в каталоге — описание, а не купленный продукт.</p></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Разовые покупки</span><h2 class="mlma-h3" style="margin-top:12px">Один трек, мини-маршрут, маршрут из шести</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Будущие разовые покупки на 365 дней. Сейчас статус gated. Metadata-only и planned нельзя продавать. 112 карточек каталога не означают 112 готовых треков.</p></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Команда</span><h2 class="mlma-h3" style="margin-top:12px">Маршруты для новичков и партнёров</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Лидер запускает маршруты и снижает ручное сопровождение. Командный формат готовится. Автоматической оплаты нет.</p></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Компания</span><h2 class="mlma-h3" style="margin-top:12px">Корпоративный пилот</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Активация, удержание, аналитика и связь прохождения с коммерческим результатом. Только переговоры, без карточного checkout.</p></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Состояния</span><ul class="mlma-muted" style="margin-top:12px;display:grid;gap:8px;font-size:15px"><li>сохранено — трек в маршруте, это не покупка;</li><li>доступно бесплатно — публичный или промо контур;</li><li>куплено — появится после серверного права;</li><li>закрыто — платное содержание без права;</li><li>готовится — metadata-only, planned или gated.</li></ul></section>' +
+      '<div class="mlma-actions">' +
+      btn((R.pricing && R.pricing()) || '/pricing', 'Смотреть тарифы', 'primary') +
+      (logged ? btn((R.purchases && R.purchases()) || '/my/purchases', 'Покупки в кабинете') : btn(D.membersSignupUrl('/my'), 'Создать бесплатный кабинет')) +
+      btn((R.paymentAndAccess && R.paymentAndAccess()) || '/payment-and-access', 'Как будет устроена оплата') +
+      '</div></div>'
     );
   }
 
   function renderPricing(state) {
     var R = state.R;
-    var logged = !!(state.account && state.account.loggedIn);
+    var b2c = D.publicB2CProducts ? D.publicB2CProducts() : [];
+    var cards = '';
+    for (var i = 0; i < b2c.length; i += 1) {
+      var p = b2c[i];
+      var from = p.product_code === 'B2C-FREE-001' ? '0 ₽' : 'от ' + (D.formatPrice ? D.formatPrice(p.launch_price) : p.launch_price + ' ₽');
+      cards +=
+        '<article class="mlma-card mlma-pad" style="padding:24px"><span class="mlma-eyebrow">' +
+        esc(D.storefrontStatusLabel ? D.storefrontStatusLabel(p) : 'Готовится к запуску') +
+        '</span><h2 class="mlma-h3" style="margin-top:12px">' +
+        esc(p.display_name) +
+        '</h2><p class="mlma-muted" style="margin-top:12px">' +
+        esc(p.short_description) +
+        '</p><p style="margin-top:16px">' +
+        priceLine(p) +
+        '</p><p class="mlma-meta" style="margin-top:8px">' +
+        esc(from) +
+        (p.access_days ? ' · ' + p.access_days + ' дней доступа' : '') +
+        '</p><div class="mlma-actions" style="margin-top:20px">' +
+        '<span class="mlma-btn mlma-btn-primary" aria-disabled="true">Готовится к запуску</span>' +
+        '</div></article>';
+    }
     return (
       pageHead(
         {
-          eyebrow: 'Доступ',
-          title: 'Какие варианты доступа планируются',
-          lead: 'Сейчас можно пользоваться публичной библиотекой и бесплатным кабинетом FREE. Оплата работает только как заготовка в тестовом режиме: деньги не списываются, платные права не выдаются.',
-          crumbs: [
-            { label: 'Academy', href: R.home() },
-            { label: 'Условия доступа' },
-          ],
+          eyebrow: 'Тарифы',
+          title: 'Что можно будет получить и для кого',
+          lead: 'Ориентиры цены уже есть. Оплатить пока нельзя: продукты gated, юридические страницы не утверждены, эквайринг не подключён. Это не 112 готовых треков.',
+          crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Тарифы' }],
         },
         R,
       ) +
-      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:20px">' +
-      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">FREE</span><h2 class="mlma-h3" style="margin-top:12px">Бесплатный кабинет</h2><ul class="mlma-muted" style="margin-top:12px;display:grid;gap:8px;font-size:15px;line-height:1.45"><li>Публичный каталог 112 треков и поиск.</li><li>Сохранение бесплатного маршрута после входа.</li><li>Локальные результаты на этом устройстве.</li><li>Без платного содержания и без истории покупок у гостя.</li></ul></section>' +
-      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Позже</span><h2 class="mlma-h3" style="margin-top:12px">Пакеты START и FULL</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Состав и цена определяются сервером, не кнопкой в браузере. Пакеты появятся после подтверждённой авторизации, тестового магазина ЮKassa и отдельного решения владельца. Рекуррентная подписка не подключается.</p></section>' +
-      '<section class="mlma-card mlma-pad" style="border-color:var(--mlma-danger,#8b2e1f)"><span class="mlma-eyebrow">Тестовый режим</span><p style="margin-top:12px;max-width:70ch">PAYMENTS_ENABLED=false. TEST_MODE=true. Вход Tilda Members не является доказательством личности и не открывает FULL.</p></section>' +
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:28px">' +
+      '<section><span class="mlma-eyebrow">Для себя</span><h2 class="mlma-h2" style="margin-top:12px">Новичок и партнёр</h2><p class="mlma-muted" style="margin-top:8px;max-width:70ch">Конкретная задача, один следующий шаг, отдельный трек или короткий маршрут. Понятный результат. Оплатить пока нельзя.</p><div class="mlma-grid-2" style="margin-top:16px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">' +
+      cards +
+      '</div></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Для команды</span><h2 class="mlma-h3" style="margin-top:12px">Лидер запускает маршруты</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Лидер — ранний покупатель командного решения: запуск новичков, меньше ручного сопровождения, контроль прохождения. Наставник видит точки остановки, но не считается автоматически плательщиком. Командный формат готовится. Подписка не продаётся.</p><div class="mlma-actions" style="margin-top:20px">' +
+      btn(D.siteHomeUrl(), 'Обсудить командный запуск', 'primary') +
+      '</div></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Для компании</span><h2 class="mlma-h3" style="margin-top:12px">Корпоративный пилот</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Маршруты для сегментов сети, контроль активации, управленческая аналитика, связь действий с коммерческими результатами. До 30 участников, 8 недель. Ориентир 99 000–149 000 ₽. Только переговоры, без карточного checkout.</p><div class="mlma-actions" style="margin-top:20px">' +
+      btn(D.siteHomeUrl(), 'Обсудить корпоративный пилот', 'primary') +
+      '</div></section>' +
+      '<p class="mlma-muted" style="font-size:14px">Подписка на всю библиотеку и PRO в интерфейс не выводятся. B2C и B2B не смешиваются в одну кнопку покупки. PAYMENTS_ENABLED=false.</p>' +
       '<div class="mlma-actions">' +
-      (logged ? btn(R.access(), 'История доступа в кабинете', 'primary') : btn(D.membersSignupUrl('/my'), 'Создать бесплатный кабинет', 'primary')) +
       btn(R.library(), 'Открыть библиотеку') +
-      btn((R.privacy && R.privacy()) || '/privacy', 'Политика') +
+      btn(R.access(), 'Состояния доступа') +
+      btn((R.paymentAndAccess && R.paymentAndAccess()) || '/payment-and-access', 'Оплата и доступ') +
       '</div></div>'
     );
   }
 
   function renderPrivacy(state) {
     var R = state.R;
-    var missing = [
-      'Реквизиты оператора персональных данных',
-      'Юридический адрес и контакт для запросов субъекта',
-      'Сроки хранения',
-      'Перечень внешних обработчиков (Cloudflare, Tilda, будущие Supabase и ЮKassa)',
-      'Утверждённый текст политики и дата вступления в силу',
+    var ph = D.LEGAL_PLACEHOLDER || '[ЗАПОЛНИТЬ ВЛАДЕЛЬЦУ ПЕРЕД ПУБЛИКАЦИЕЙ]';
+    var blocks = [
+      ['Оператор', ph],
+      ['Собираемые данные', 'Email и имя кабинета Tilda, сохранённый маршрут, локальные результаты на устройстве. Иные категории — ' + ph],
+      ['Цели', 'Работа бесплатного кабинета и навигация по библиотеке. Цели будущей оплаты — ' + ph],
+      ['Основания', ph],
+      ['Обработчики', 'Сейчас: Tilda, Cloudflare. Будущие: не подключены. Не выдумывать список.'],
+      ['Сроки хранения', ph],
+      ['Удаление', 'После утверждения политики и контакта оператора.'],
+      ['Обращения пользователя', ph],
+      ['Cookies', 'Сессия Tilda Members и технические cookies площадки. Состав — ' + ph],
+      ['Аналитика', 'События без сырого поискового текста. Операторы аналитики — ' + ph],
+      ['Будущая оплата', 'Платёжный провайдер не подключён. Данные карт Академия не собирает.'],
     ];
-    var list = '';
-    for (var i = 0; i < missing.length; i += 1) {
-      list += '<li>' + esc(missing[i]) + '</li>';
+    var html = '';
+    for (var i = 0; i < blocks.length; i += 1) {
+      html += '<section class="mlma-card mlma-pad"><h2 class="mlma-h3">' + esc(blocks[i][0]) + '</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">' + esc(blocks[i][1]) + '</p></section>';
     }
     return (
       pageHead(
         {
-          eyebrow: 'Черновик · не утверждено',
+          eyebrow: 'Черновик · не утверждено · noindex',
           title: 'Политика конфиденциальности',
-          lead: 'Это техническое место для политики, а не опубликованный юридический документ. Текста оператора пока нет — его нельзя выдумать.',
-          crumbs: [
-            { label: 'Academy', href: R.home() },
-            { label: 'Политика' },
-          ],
+          lead: 'Это структура документа, а не действующая политика. Неизвестные сведения не выдуманы.',
+          crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Черновик политики' }],
         },
         R,
       ) +
-      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:20px">' +
-      '<section class="mlma-card mlma-pad"><p>Пока политика не утверждена владельцем, согласие в профиле отмечает только факт интерфейсного подтверждения в этом браузере. Это не замена договора и не основание передавать чувствительные артефакты на сервер.</p></section>' +
-      '<section class="mlma-card mlma-pad"><h2 class="mlma-h3">Чего не хватает для публикации</h2><ul style="margin-top:12px;display:grid;gap:8px">' +
-      list +
-      '</ul></section>' +
-      '<section class="mlma-card mlma-pad"><h2 class="mlma-h3">Что уже можно сделать технически</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Выгрузить данные этого устройства. Запросить удаление — после того, как владелец укажет контакт оператора.</p><div class="mlma-actions" style="margin-top:16px"><button type="button" class="mlma-btn mlma-btn-primary" data-mlma-export-local="1">Выгрузить данные этого устройства</button></div><p id="mlma-export-msg" class="mlma-muted" style="margin-top:12px;font-size:14px" aria-live="polite"></p></section></div>'
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:16px">' +
+      '<section class="mlma-card mlma-pad" style="border-color:var(--mlma-danger,#8b2e1f)"><p>Страницу с незаполненными полями нельзя считать опубликованной политикой. Согласие в профиле — только интерфейсная отметка в этом браузере.</p></section>' +
+      html +
+      '<div class="mlma-actions"><button type="button" class="mlma-btn mlma-btn-primary" data-mlma-export-local="1">Выгрузить данные этого устройства</button></div><p id="mlma-export-msg" class="mlma-muted" style="font-size:14px" aria-live="polite"></p></div>'
     );
   }
 
-  D._ui.renderMy = renderMy;
-  D._ui.renderRoute = renderRoute;
-  D._ui.renderResults = renderResults;
-  D._ui.renderProfile = renderProfile;
+  function renderPurchases(state) {
+    var R = state.R;
+    var savedIds = uniqueSavedIds(state);
+    var rows = '';
+    for (var i = 0; i < savedIds.length; i += 1) {
+      var tr = trackById(state, savedIds[i]);
+      if (!tr) continue;
+      var cls = D.classifyAccessRow ? D.classifyAccessRow(tr, state.account, savedIds) : { key: 'saved', label: 'сохранено' };
+      rows +=
+        '<li class="mlma-row"><span>' +
+        esc(tr.title) +
+        '</span><span class="mlma-meta">' +
+        esc(cls.label) +
+        '</span></li>';
+    }
+    return (
+      pageHead(
+        {
+          eyebrow: 'Кабинет',
+          title: 'Покупки и доступ',
+          lead: 'У вас пока нет покупок. Платные треки готовятся к запуску. Уже сейчас вы можете сохранять интересные треки в маршрут.',
+          crumbs: [{ label: 'Кабинет', href: R.my() }, { label: 'Покупки' }],
+        },
+        R,
+      ) +
+      cabinetNav(state) +
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:20px">' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">FREE</span><h2 class="mlma-h3" style="margin-top:12px">' +
+      esc(userStatusLabel(state.account)) +
+      '</h2><p class="mlma-muted" style="margin-top:12px">Бесплатный кабинет не выдаёт FULL. Tilda Members не является источником платного права. Срок будущего разового доступа — 365 дней.</p></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Сохранённые маршруты</span>' +
+      (rows ? '<ul style="margin-top:12px;display:grid;gap:8px">' + rows + '</ul>' : '<p class="mlma-muted" style="margin-top:12px">Пока ничего не сохранено. Сохранённый трек не считается купленным.</p>') +
+      '</section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Будущие доступы</span><p class="mlma-muted" style="margin-top:12px">Куплено / закрыто / готовится появятся после первого complete-трека и серверного подтверждения оплаты. Сейчас все 112 треков — planned / metadata_only.</p></section>' +
+      '<div class="mlma-actions">' +
+      btn(R.library(), 'В библиотеку', 'primary') +
+      btn((R.pricing && R.pricing()) || '/pricing', 'Смотреть тарифы') +
+      '</div></div>'
+    );
+  }
+
+  function renderOffer(state) {
+    var R = state.R;
+    var ph = D.LEGAL_PLACEHOLDER || '[ЗАПОЛНИТЬ ВЛАДЕЛЬЦУ ПЕРЕД ПУБЛИКАЦИЕЙ]';
+    var items = ['Продавец / исполнитель', 'ИНН', 'Статус НПД или иное', 'Предмет оферты', 'Порядок оплаты', 'Срок доступа', 'Возврат', 'Ответственность', 'Дата вступления в силу'];
+    var list = '';
+    for (var i = 0; i < items.length; i += 1) list += '<li><strong>' + esc(items[i]) + '.</strong> ' + esc(ph) + '</li>';
+    return pageHead({ eyebrow: 'Черновик · не действует', title: 'Публичная оферта', lead: 'Структура оферты без выдуманных реквизитов и юридических условий. Страницу с незаполненными полями нельзя публиковать как действующую оферту.', crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Черновик оферты' }] }, R) +
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px"><section class="mlma-card mlma-pad"><ol style="display:grid;gap:12px;font-size:15px;line-height:1.5">' + list + '</ol></section></div>';
+  }
+
+  function renderRequisites(state) {
+    var R = state.R;
+    var ph = D.LEGAL_PLACEHOLDER || '[ЗАПОЛНИТЬ ВЛАДЕЛЬЦУ ПЕРЕД ПУБЛИКАЦИЕЙ]';
+    var fields = ['ФИО самозанятого', 'ИНН', 'Статус НПД', 'Контактный email', 'Телефон', 'Город', 'Способ направления обращений'];
+    var html = '';
+    for (var i = 0; i < fields.length; i += 1) html += '<p><span class="mlma-meta">' + esc(fields[i]) + '</span><br>' + esc(ph) + '</p>';
+    return pageHead({ eyebrow: 'Черновик · не для публикации как реквизиты', title: 'Реквизиты', lead: 'Шаблон без фиктивных данных. Пока поля не заполнены владельцем, страница остаётся черновиком.', crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Черновик реквизитов' }] }, R) +
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:16px"><section class="mlma-card mlma-pad" style="display:grid;gap:16px">' + html +
+      '<p class="mlma-muted">Ссылки появятся после утверждения: оферта и политика. Сейчас это черновики.</p></section></div>';
+  }
+
+  function renderPaymentAndAccess(state) {
+    var R = state.R;
+    var steps = [
+      'Пользователь выбирает опубликованный продукт.',
+      'Проходит подтверждение личности.',
+      'Оплачивает через защищённую форму платёжного провайдера.',
+      'Доступ появляется только после серверного подтверждения.',
+      'Купленные треки отображаются в «Моих треках».',
+      'Срок разового доступа — 365 дней.',
+      'Результаты и прогресс сохраняются.',
+      'Правила возврата будут определены офертой.',
+    ];
+    var list = '';
+    for (var i = 0; i < steps.length; i += 1) list += '<li>' + esc(steps[i]) + '</li>';
+    return pageHead({ eyebrow: 'Как будет работать', title: 'Оплата и доступ', lead: 'Это описание будущей механики. Оплата сейчас не работает. Деньги не принимаются. Право нельзя выдать через localStorage, query-параметр или группу Tilda Members.', crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Оплата и доступ' }] }, R) +
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:20px"><section class="mlma-card mlma-pad"><ol style="margin-top:8px;display:grid;gap:10px;font-size:16px;line-height:1.45">' + list + '</ol></section>' +
+      '<p class="mlma-muted">PAYMENTS_ENABLED=false. COMMERCE_PREVIEW_ENABLED=false. ЮKassa и Supabase не подключены.</p>' +
+      '<div class="mlma-actions">' + btn((R.pricing && R.pricing()) || '/pricing', 'К тарифам', 'primary') + btn(R.access(), 'Состояния доступа') + '</div></div>';
+  }
+
+  function renderPreviewCommerce(state) {
+    if (!D.commercePreviewAllowed || !D.commercePreviewAllowed()) {
+      return pageHead({ eyebrow: 'Служебная страница', title: 'Предпросмотр состояний покупки недоступен', lead: 'Публичный симулятор оплаты не публикуется. COMMERCE_PREVIEW_ENABLED=false.' }, state.R);
+    }
+    var states = D.purchaseUiStates ? D.purchaseUiStates() : [];
+    var product = D.getProductByCode ? D.getProductByCode('B2C-TRACK-001') : null;
+    var view = D.productCardView ? D.productCardView(product) : {};
+    var html = '';
+    for (var i = 0; i < states.length; i += 1) {
+      html += '<article class="mlma-card mlma-pad"><span class="mlma-eyebrow">' + esc(states[i].key) + '</span><h2 class="mlma-h3" style="margin-top:12px">' + esc(states[i].title) + '</h2><p class="mlma-muted" style="margin-top:8px">' + esc(states[i].note) + '</p></article>';
+    }
+    return pageHead({ eyebrow: 'Только локальный preview', title: 'Состояния будущей покупки', lead: 'Фикстуры интерфейса. Тестовая покупка не записывается в маршрут пользователя и не выдаёт право.', crumbs: [{ label: 'Academy', href: state.R.home() }, { label: 'Preview commerce' }] }, state.R) +
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:16px"><section class="mlma-card mlma-pad"><span class="mlma-eyebrow">' + esc(view.status_label || 'Готовится к запуску') + '</span><h2 class="mlma-h3" style="margin-top:12px">' + esc(view.display_name || 'Один трек') + '</h2><p style="margin-top:12px">' + esc(view.launch_price_label || '') + ' / ' + esc(view.regular_price_label || '') + '</p><p class="mlma-muted" style="margin-top:8px">Кнопка «Купить» скрыта. buy_enabled=' + (view.buy_enabled ? 'true' : 'false') + '</p></section>' + html + '</div>';
+  }
+
   D._ui.renderAccess = renderAccess;
   D._ui.renderPricing = renderPricing;
   D._ui.renderPrivacy = renderPrivacy;
+  D._ui.renderPurchases = renderPurchases;
+  D._ui.renderOffer = renderOffer;
+  D._ui.renderRequisites = renderRequisites;
+  D._ui.renderPaymentAndAccess = renderPaymentAndAccess;
+  D._ui.renderPreviewCommerce = renderPreviewCommerce;
 })(typeof window !== 'undefined' ? window : globalThis);
 
 /* __MLMA_UI_SPLIT__ */
@@ -2154,6 +2266,11 @@
   var renderAccess = D._ui.renderAccess;
   var renderPricing = D._ui.renderPricing;
   var renderPrivacy = D._ui.renderPrivacy;
+  var renderPurchases = D._ui.renderPurchases;
+  var renderOffer = D._ui.renderOffer;
+  var renderRequisites = D._ui.renderRequisites;
+  var renderPaymentAndAccess = D._ui.renderPaymentAndAccess;
+  var renderPreviewCommerce = D._ui.renderPreviewCommerce;
 
   function renderAbout(state) {
     var R = state.R;
@@ -2341,6 +2458,16 @@
         return renderPricing(state);
       case 'privacy':
         return renderPrivacy(state);
+      case 'purchases':
+        return renderPurchases ? renderPurchases(state) : renderAccess(state);
+      case 'offer':
+        return renderOffer ? renderOffer(state) : renderPrivacy(state);
+      case 'requisites':
+        return renderRequisites ? renderRequisites(state) : renderPrivacy(state);
+      case 'payment-and-access':
+        return renderPaymentAndAccess ? renderPaymentAndAccess(state) : renderAccess(state);
+      case 'preview-commerce':
+        return renderPreviewCommerce ? renderPreviewCommerce(state) : renderNotFound(state);
       case 'about':
         return renderAbout(state);
       case 'preview':
@@ -2836,21 +2963,8 @@
     rootEl.querySelectorAll('[data-mlma-checkout]').forEach(function (el) {
       el.addEventListener('click', function (event) {
         event.preventDefault();
-        if (!state.account || !state.account.loggedIn) {
-          window.location.href = D.membersLoginUrl('/access');
-          return;
-        }
-        var productId = el.getAttribute('data-mlma-checkout') || 'start';
-        D.trackEvent('checkout_blocked', { itemId: productId, reason: D.PAYMENTS_ENABLED ? 'identity_unverified' : 'payments_disabled' });
-        var msg = el.parentNode.querySelector('[data-mlma-checkout-msg]');
-        if (!msg) {
-          msg = document.createElement('p');
-          msg.setAttribute('data-mlma-checkout-msg', '1');
-          msg.className = 'mlma-muted';
-          msg.style.marginTop = '12px';
-          el.parentNode.appendChild(msg);
-        }
-        msg.textContent = 'Оплата выключена. PAYMENTS_ENABLED=false. Эта кнопка не выдаёт платный доступ.';
+        D.trackEvent('checkout_blocked', { itemId: el.getAttribute('data-mlma-checkout') || '', reason: 'payments_disabled' });
+        window.location.href = (D.routes().pricing && D.routes().pricing()) || '/pricing';
       });
     });
     rootEl.querySelectorAll('[data-mlma-reset-profile]').forEach(function (el) {

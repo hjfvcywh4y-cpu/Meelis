@@ -39,7 +39,8 @@ const server = http.createServer(async (req, res) => {
     pathname.indexOf('/api/checkout/') === 0 ||
     pathname.indexOf('/api/webhooks/') === 0 ||
     pathname === '/api/me/entitlements' ||
-    pathname.indexOf('/api/refunds/') === 0
+    pathname.indexOf('/api/refunds/') === 0 ||
+    pathname.indexOf('/api/commerce/') === 0
   ) {
     const accountWorker = (await import(path.join(__dirname, '../account-proxy/worker.js'))).default;
     const chunks = [];

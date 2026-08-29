@@ -12,10 +12,7 @@
   var PARTNER_ROLE_LABELS = { novice: 'Новичок', partner: 'Партнёр', leader: 'Лидер' };
   var EXPERIENCE = ['none', 'under_year', 'one_three', 'three_plus'];
   var TIME_BUDGET = ['15', '30', '60', 'more'];
-  var PRODUCTS = [
-    { id: 'start', group: 'START', title: 'Стартовый пакет', kind: 'pack', priceLabel: 'Тестовый режим', summary: 'Маршрут первых действий и доступ к стартовым трекам, когда они будут наполнены.' },
-    { id: 'full', group: 'FULL', title: 'Полная библиотека', kind: 'pack', priceLabel: 'Тестовый режим', summary: 'Доступ ко всей библиотеке в рамках оплаченного периода.' },
-  ];
+  var PRODUCTS = [];
 
   function readCookie(name) {
     try {
@@ -211,7 +208,7 @@
     var view = api.getTrackStatusView(track, { entitled: entitled });
     var access = normalizeAccess(track.access);
     if (state === 'expired' && access === 'paid') {
-      return { key: 'renew', label: 'Продлить доступ', href: '/access' };
+      return { key: 'renew', label: 'Как будет устроен доступ', href: '/pricing' };
     }
     if (!account || !account.loggedIn) {
       return {
@@ -230,11 +227,11 @@
       return { key: 'open_free', label: 'Открыть бесплатно', href: api.routes().track(track.trackId) };
     }
     if (!entitled && access === 'paid') {
-      var ready = api.getTrackStatusView(track, { entitled: true }).canStart;
-      if (ready) {
-        return { key: 'buy', label: 'Купить доступ', href: '/access?product=start&track=' + encodeURIComponent(track.trackId) };
-      }
-      return { key: 'open', label: view.cta || 'Открыть описание', href: api.routes().track(track.trackId) };
+      return {
+        key: 'preparing',
+        label: view.cta || 'Открыть описание',
+        href: api.routes().track(track.trackId),
+      };
     }
     return { key: 'open', label: view.cta || 'Открыть описание', href: api.routes().track(track.trackId) };
   }
@@ -257,7 +254,7 @@
       return { kind: 'onboarding', title: 'Короткая настройка — две минуты', why: 'Имя, роль и текущая задача нужны, чтобы показать первый шаг. Необязательные вопросы можно пропустить.', href: '/profile?setup=1', cta: 'Заполнить профиль' };
     }
     if (state === 'expired') {
-      return { kind: 'renew', title: 'Доступ закончился', why: 'Профиль, история и результаты на месте. Чтобы снова открыть платные треки, продлите доступ.', href: '/access', cta: 'Продлить доступ' };
+      return { kind: 'renew', title: 'Доступ закончился', why: 'Профиль, история и результаты на месте. Платные треки готовятся к запуску.', href: '/pricing', cta: 'Смотреть условия' };
     }
     if (!(profile.savedTrackIds && profile.savedTrackIds.length)) {
       return {
@@ -282,7 +279,7 @@
       };
     }
     if (state === 'registered') {
-      return { kind: 'choose', title: 'Выберите ситуацию или откройте доступ', why: 'Бесплатный кабинет уже есть. Можно пройти промотрек или посмотреть пакеты.', href: '/start', cta: 'Выбрать ситуацию', secondary: { href: '/access', label: 'Смотреть доступ' } };
+      return { kind: 'choose', title: 'Выберите ситуацию или откройте доступ', why: 'Бесплатный кабинет уже есть. Можно сохранить маршрут. Платные треки готовятся к запуску.', href: '/start', cta: 'Выбрать ситуацию', secondary: { href: '/pricing', label: 'Смотреть условия' } };
     }
     return { kind: 'choose', title: 'Выберите ситуацию, в которой сейчас застряли', why: 'Один ответ определит раздел и первый шаг.', href: '/start', cta: 'Выбрать ситуацию' };
   }

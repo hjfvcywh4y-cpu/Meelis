@@ -1,4 +1,4 @@
-<!-- Блок T123: рендер оболочки 4/6 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: рендер оболочки 4/7 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
 (function (root) {
   'use strict';
@@ -51,7 +51,7 @@
       return { key: 'started', label: 'начат', tone: 'accent', action: { href: href, label: 'Продолжить прохождение' } };
     }
     if (access === 'paid' && !entitled) {
-      return { key: 'locked', label: 'закрыт', tone: 'warn', action: { href: state.R.access() + '?product=start&track=' + encodeURIComponent(track.trackId), label: 'Перейти к покупке доступа' } };
+      return { key: 'preparing', label: 'готовится', tone: 'warn', action: { href: (state.R.pricing && state.R.pricing()) || '/pricing', label: 'Готовится к запуску' } };
     }
     if (index === 0) return { key: 'next', label: 'рекомендован следующим', tone: 'accent', action: { href: href, label: view.canStart ? 'Открыть трек' : 'Открыть описание' } };
     if (entitled || access === 'public' || access === 'promo') {
@@ -171,8 +171,8 @@
       '</div></section>' +
       '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Доступ</span><h2 class="mlma-h3" style="margin-top:12px">' +
       esc(userStatusLabel(account)) +
-      '</h2><p class="mlma-muted" style="margin-top:8px">Платные материалы группе FREE не открываются. Пакеты появятся после оплаты.</p><div class="mlma-actions" style="margin-top:16px">' +
-      btn(R.access(), 'Покупки и доступ', '', 'mlma-btn-small') +
+      '</h2><p class="mlma-muted" style="margin-top:8px">Платные материалы группе FREE не открываются. Платные треки готовятся к запуску.</p><div class="mlma-actions" style="margin-top:16px">' +
+      btn((R.purchases && R.purchases()) || '/my/purchases', 'Покупки и доступ', '', 'mlma-btn-small') +
       btn(R.profile(), 'Профиль', '', 'mlma-btn-small') +
       '</div></section></aside></div>'
     );
@@ -544,159 +544,19 @@
       (savedTracks.length === 0 ? 'Пока ничего не сохранено' : savedTracks.length + ' в маршруте') +
       '</h2>' +
       savedHtml +
-      '</section><section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Доступ</span><h2 class="mlma-h3" style="margin-top:16px">Пакеты</h2><p class="mlma-muted" style="margin-top:16px;font-size:15px">Сначала кабинет, затем покупка. Реальные списания выключены.</p><div style="margin-top:20px">' +
-      btn(R.access(), 'Покупки и доступ', '', 'mlma-btn-small') +
+      '</section><section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Доступ</span><h2 class="mlma-h3" style="margin-top:16px">Покупки</h2><p class="mlma-muted" style="margin-top:16px;font-size:15px">Настоящих заказов пока нет. Сохранённый трек не считается купленным.</p><div style="margin-top:20px">' +
+      btn((R.purchases && R.purchases()) || '/my/purchases', 'Покупки и доступ', '', 'mlma-btn-small') +
       '</div></section></aside></div>'
     );
   }
 
-  function renderAccess(state) {
-    var R = state.R;
-    var logged = !!(state.account && state.account.loggedIn);
-    var userState = D.resolveUserState ? D.resolveUserState(state.account) : 'guest';
-    var products = D.PRODUCTS || [];
-    var cards = '';
-    for (var i = 0; i < products.length; i += 1) {
-      var p = products[i];
-      cards +=
-        '<article class="mlma-card mlma-pad" style="padding:24px"><span class="mlma-eyebrow">' +
-        esc(p.priceLabel || 'Тестовый режим') +
-        '</span><h2 class="mlma-h3" style="margin-top:12px">' +
-        esc(p.title) +
-        '</h2><p class="mlma-muted" style="margin-top:12px">' +
-        esc(p.summary) +
-        '</p><div class="mlma-actions" style="margin-top:20px">' +
-        (logged
-        ? '<a class="mlma-btn mlma-btn-primary" href="' + esc(D.checkoutHref(p.id, queryParam('track'))) + '" data-mlma-checkout="' + esc(p.id) + '">Запросить тестовый пакет</a>'
-        : btn((R.pricing && R.pricing()) || '/pricing', 'Смотреть условия', 'primary')) +
-        '</div></article>';
-    }
-    var orders = (state.account && state.account.orders) || [];
-    var orderHtml = '';
-    if (logged) {
-      if (!orders.length) orderHtml = '<p class="mlma-muted" style="margin-top:12px">Покупок пока нет. Реальные списания выключены. Тестовая кнопка не выдаёт платный доступ.</p>';
-      else {
-        orderHtml = '<ul style="margin-top:12px;display:grid;gap:8px">';
-        for (var o = 0; o < orders.length; o += 1) {
-          var statusLabel = { created: 'Создан', pending: 'Ожидает', paid: 'Оплачен', failed: 'Отказ', cancelled: 'Отменён', refunded: 'Возврат', expired: 'Истёк' }[orders[o].status] || 'Статус обновлён';
-          orderHtml +=
-            '<li class="mlma-row"><span class="mlma-meta">' +
-            esc(orders[o].orderId) +
-            '</span><span>' +
-            esc(statusLabel) +
-            '</span></li>';
-        }
-        orderHtml += '</ul>';
-      }
-    }
-    var checkoutId = queryParam('checkout');
-    var notice = '';
-    if (userState === 'expired') {
-      notice = '<div class="mlma-card mlma-pad" style="border-color:var(--mlma-danger)"><p>Доступ закончился. История и результаты на месте. Продлите пакет, чтобы снова открыть платные треки.</p></div>';
-    }
-    if (checkoutId && checkoutId !== '1') {
-      notice += '<p class="mlma-lead">Тестовый заказ ' + esc(checkoutId) + '. Деньги не списываются.</p>';
-    }
-    return (
-      pageHead(
-        {
-          eyebrow: 'Доступ',
-          title: 'Сначала кабинет, затем пакет',
-          lead: 'Регистрация бесплатная. Покупка подключается отдельно и сейчас идёт только в тестовом режиме.',
-          crumbs: [
-            { label: 'Academy', href: R.home() },
-            { label: 'Доступ' },
-          ],
-        },
-        R,
-      ) +
-      (logged && cabinetNav ? cabinetNav(state) : '') +
-      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:24px">' +
-      notice +
-      '<div class="mlma-grid-2" style="display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">' +
-      cards +
-      '</div>' +
-      (logged
-        ? '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Покупки</span><h2 class="mlma-h3" style="margin-top:12px">Заказы и сроки</h2>' + orderHtml + '</section>'
-        : '<section class="mlma-card mlma-pad"><p>Гость видит только публичные условия. История покупок скрыта. Чтобы сохранить бесплатный маршрут, создайте кабинет.</p><div class="mlma-actions" style="margin-top:16px">' +
-          btn((R.pricing && R.pricing()) || '/pricing', 'Условия доступа', 'primary') +
-          btn(D.membersSignupUrl('/my'), 'Регистрация') +
-          btn(D.membersLoginUrl('/access'), 'Войти') +
-          '</div></section>') +
-      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Как будет устроена оплата</span><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Реальные списания выключены: PAYMENTS_ENABLED=false, TEST_MODE=true. Разовая оплата и подписка не запущены. Кнопка в кабинете не выдаёт FULL.</p></section></div>'
-    );
-  }
-
-  function renderPricing(state) {
-    var R = state.R;
-    var logged = !!(state.account && state.account.loggedIn);
-    return (
-      pageHead(
-        {
-          eyebrow: 'Доступ',
-          title: 'Какие варианты доступа планируются',
-          lead: 'Сейчас можно пользоваться публичной библиотекой и бесплатным кабинетом FREE. Оплата работает только как заготовка в тестовом режиме: деньги не списываются, платные права не выдаются.',
-          crumbs: [
-            { label: 'Academy', href: R.home() },
-            { label: 'Условия доступа' },
-          ],
-        },
-        R,
-      ) +
-      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:20px">' +
-      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">FREE</span><h2 class="mlma-h3" style="margin-top:12px">Бесплатный кабинет</h2><ul class="mlma-muted" style="margin-top:12px;display:grid;gap:8px;font-size:15px;line-height:1.45"><li>Публичный каталог 112 треков и поиск.</li><li>Сохранение бесплатного маршрута после входа.</li><li>Локальные результаты на этом устройстве.</li><li>Без платного содержания и без истории покупок у гостя.</li></ul></section>' +
-      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Позже</span><h2 class="mlma-h3" style="margin-top:12px">Пакеты START и FULL</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Состав и цена определяются сервером, не кнопкой в браузере. Пакеты появятся после подтверждённой авторизации, тестового магазина ЮKassa и отдельного решения владельца. Рекуррентная подписка не подключается.</p></section>' +
-      '<section class="mlma-card mlma-pad" style="border-color:var(--mlma-danger,#8b2e1f)"><span class="mlma-eyebrow">Тестовый режим</span><p style="margin-top:12px;max-width:70ch">PAYMENTS_ENABLED=false. TEST_MODE=true. Вход Tilda Members не является доказательством личности и не открывает FULL.</p></section>' +
-      '<div class="mlma-actions">' +
-      (logged ? btn(R.access(), 'История доступа в кабинете', 'primary') : btn(D.membersSignupUrl('/my'), 'Создать бесплатный кабинет', 'primary')) +
-      btn(R.library(), 'Открыть библиотеку') +
-      btn((R.privacy && R.privacy()) || '/privacy', 'Политика') +
-      '</div></div>'
-    );
-  }
-
-  function renderPrivacy(state) {
-    var R = state.R;
-    var missing = [
-      'Реквизиты оператора персональных данных',
-      'Юридический адрес и контакт для запросов субъекта',
-      'Сроки хранения',
-      'Перечень внешних обработчиков (Cloudflare, Tilda, будущие Supabase и ЮKassa)',
-      'Утверждённый текст политики и дата вступления в силу',
-    ];
-    var list = '';
-    for (var i = 0; i < missing.length; i += 1) {
-      list += '<li>' + esc(missing[i]) + '</li>';
-    }
-    return (
-      pageHead(
-        {
-          eyebrow: 'Черновик · не утверждено',
-          title: 'Политика конфиденциальности',
-          lead: 'Это техническое место для политики, а не опубликованный юридический документ. Текста оператора пока нет — его нельзя выдумать.',
-          crumbs: [
-            { label: 'Academy', href: R.home() },
-            { label: 'Политика' },
-          ],
-        },
-        R,
-      ) +
-      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:20px">' +
-      '<section class="mlma-card mlma-pad"><p>Пока политика не утверждена владельцем, согласие в профиле отмечает только факт интерфейсного подтверждения в этом браузере. Это не замена договора и не основание передавать чувствительные артефакты на сервер.</p></section>' +
-      '<section class="mlma-card mlma-pad"><h2 class="mlma-h3">Чего не хватает для публикации</h2><ul style="margin-top:12px;display:grid;gap:8px">' +
-      list +
-      '</ul></section>' +
-      '<section class="mlma-card mlma-pad"><h2 class="mlma-h3">Что уже можно сделать технически</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Выгрузить данные этого устройства. Запросить удаление — после того, как владелец укажет контакт оператора.</p><div class="mlma-actions" style="margin-top:16px"><button type="button" class="mlma-btn mlma-btn-primary" data-mlma-export-local="1">Выгрузить данные этого устройства</button></div><p id="mlma-export-msg" class="mlma-muted" style="margin-top:12px;font-size:14px" aria-live="polite"></p></section></div>'
-    );
-  }
-
+  D._ui.uniqueSavedIds = uniqueSavedIds;
+  D._ui.trackById = trackById;
+  D._ui.userStatusLabel = userStatusLabel;
   D._ui.renderMy = renderMy;
   D._ui.renderRoute = renderRoute;
   D._ui.renderResults = renderResults;
   D._ui.renderProfile = renderProfile;
-  D._ui.renderAccess = renderAccess;
-  D._ui.renderPricing = renderPricing;
-  D._ui.renderPrivacy = renderPrivacy;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 

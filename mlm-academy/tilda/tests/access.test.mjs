@@ -7,6 +7,7 @@ require('../src/domain.js');
 require('../src/access.js');
 require('../src/storage.js');
 require('../src/payments.js');
+require('../src/commerce.js');
 require('../src/search.js');
 require('../src/analytics.js');
 const MLMA = require('../src/ontology.js');
@@ -51,10 +52,11 @@ describe('доступ и состояния', () => {
     assert.equal(MLMA.cardAction(item, account).label, 'Открыть описание');
   });
 
-  it('опубликованный платный трек просит купить доступ', () => {
+  it('опубликованный платный трек без complete не показывает покупку', () => {
     const item = track({ publicationStatus: 'published', contentStatus: 'published' });
     const account = { loggedIn: true, email: 'a@b.c', groups: ['FREE'], entitlements: [] };
-    assert.equal(MLMA.cardAction(item, account).key, 'buy');
+    assert.equal(MLMA.cardAction(item, account).key, 'preparing');
+    assert.notEqual(MLMA.cardAction(item, account).key, 'buy');
   });
 
   it('tilda_unverified не открывает платное тело и не считает START/FULL правом', () => {

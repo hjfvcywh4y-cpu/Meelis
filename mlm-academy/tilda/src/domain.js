@@ -570,11 +570,26 @@
       access: function () {
         return '/access';
       },
+      purchases: function () {
+        return '/my/purchases';
+      },
       pricing: function () {
         return '/pricing';
       },
       privacy: function () {
         return '/privacy';
+      },
+      offer: function () {
+        return '/offer';
+      },
+      requisites: function () {
+        return '/requisites';
+      },
+      paymentAndAccess: function () {
+        return '/payment-and-access';
+      },
+      previewCommerce: function () {
+        return '/preview/commerce';
       },
       login: function (returnPath) {
         return membersLoginUrl(returnPath || '/my');

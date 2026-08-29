@@ -88,9 +88,9 @@ async function main() {
   if (!contour && !/Контур прохождения/.test(contourText)) {
     throw new Error('expected contour copy for unfilled track');
   }
-  await page.getByRole('link', { name: /Войти, чтобы сохранить/ }).waitFor();
-  const saveGuest = await page.getByRole('link', { name: /Войти, чтобы сохранить/ }).count();
-  if (!saveGuest) throw new Error('guest must be asked to log in to save');
+  await page.getByRole('button', { name: /Сохранить в маршрут/ }).waitFor();
+  const buyOnTrack = await page.getByRole('link', { name: /Купить доступ/ }).count();
+  if (buyOnTrack) throw new Error('metadata-only track must not show Купить доступ');
 
   await page.goto(BASE + '/start', { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: /написать/i }).first().click();
@@ -101,7 +101,34 @@ async function main() {
 
   await page.goto(BASE + '/access', { waitUntil: 'networkidle' });
   const accessHtml = await page.locator('#mlma-main').innerText();
-  if (/entitlement|organization|тариф не выбран/i.test(accessHtml)) throw new Error('access jargon');
+  if (/entitlement|organization|тариф не выбран|Купить доступ|Запросить тестовый пакет/i.test(accessHtml)) {
+    throw new Error('access jargon or buy cta: ' + accessHtml.slice(0, 240));
+  }
+  if (!/Платные продукты готовятся|FREE/i.test(accessHtml)) throw new Error('access missing honest copy');
+
+  await page.goto(BASE + '/pricing', { waitUntil: 'networkidle' });
+  const pricingText = await page.locator('#mlma-main').innerText();
+  const buyLinks = await page.getByRole('link', { name: /Купить/ }).count();
+  if (buyLinks) throw new Error('pricing must not sell');
+  if (/(?:доступны|готовы) 112|112 готовых треков доступн/i.test(pricingText)) {
+    throw new Error('pricing must not promise 112 ready tracks');
+  }
+  if (!/Готовится к запуску/.test(pricingText)) throw new Error('pricing missing gated status');
+  if (/Сообщить о запуске|заявка отправлена|мы сообщим/i.test(pricingText)) {
+    throw new Error('pricing must not pretend a launch request was submitted');
+  }
+  if (!/от 590/.test(pricingText) || !/от 1[\s\u00a0]490/.test(pricingText) || !/от 2[\s\u00a0]990/.test(pricingText)) {
+    throw new Error('pricing missing launch prices');
+  }
+  if (/149 0|299 0/.test(pricingText)) throw new Error('pricing must not split thousands as 149 0');
+  if (!/Обсудить командный запуск/.test(pricingText) || !/Обсудить корпоративный пилот/.test(pricingText)) {
+    throw new Error('pricing missing B2B discuss CTAs');
+  }
+
+  await page.goto(BASE + '/my/purchases', { waitUntil: 'networkidle' });
+  const purchasesText = await page.locator('#mlma-main').innerText();
+  if (!/У вас пока нет покупок/.test(purchasesText)) throw new Error('purchases empty state');
+  if (/ORD-|оплачен/i.test(purchasesText)) throw new Error('fake orders on purchases');
 
   await page.goto(BASE + '/my', { waitUntil: 'networkidle' });
   await page.waitForSelector('text=Следующее действие');

@@ -38,6 +38,7 @@ const catalogFile = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/data/tracks.
 const sectionsFile = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/data/sections.json'), 'utf8'));
 const rulesFile = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/data/recommendation.rules.json'), 'utf8'));
 const pilotFile = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/data/pilot.graph.json'), 'utf8'));
+const productsFile = JSON.parse(fs.readFileSync(path.join(__dirname, 'src/data/products.catalog.json'), 'utf8'));
 
 const tracks = catalogFile.tracks
   .slice()
@@ -56,6 +57,8 @@ const sectionCounts = { A1: 0, A2: 0, A3: 0, A4: 0, A5: 0, A6: 0 };
 for (const row of tracks) {
   if (sectionCounts[row.s] == null) throw new Error('Неизвестный раздел ' + row.s);
   sectionCounts[row.s] += 1;
+  if (row.ps !== 'planned') throw new Error('Трек ' + row.id + ' должен быть planned, сейчас ' + row.ps);
+  if (row.cs !== 'metadata_only') throw new Error('Трек ' + row.id + ' должен быть metadata_only, сейчас ' + row.cs);
 }
 for (const [sectionId, expected] of Object.entries(EXPECTED_SECTION_COUNTS)) {
   if (sectionCounts[sectionId] !== expected) {
@@ -98,7 +101,41 @@ const payload = {
     })),
   },
   tracks,
+  products: {
+    schema: productsFile.schema,
+    price_list_version: productsFile.price_list_version,
+    flags: productsFile.flags,
+    legal: productsFile.legal,
+    products: productsFile.products,
+  },
 };
+
+const requiredProductCodes = [
+  'B2C-FREE-001',
+  'B2C-TRACK-001',
+  'B2C-PACK3-001',
+  'B2C-ROUTE6-001',
+  'B2C-LIB-M-001',
+  'B2C-LIB-Y-001',
+  'B2C-PRO-M-001',
+  'B2B-PILOT30-001',
+  'B2B-TEAM20-M-001',
+];
+const productCodes = new Set(productsFile.products.map((row) => row.product_code));
+if (productCodes.size !== requiredProductCodes.length) {
+  throw new Error('Ожидалось ' + requiredProductCodes.length + ' продуктов, получено ' + productCodes.size);
+}
+for (const code of requiredProductCodes) {
+  if (!productCodes.has(code)) throw new Error('Нет продукта ' + code);
+}
+for (const row of productsFile.products) {
+  if (row.publication_status === 'active') {
+    throw new Error('Продукт ' + row.product_code + ' не должен быть active до gate');
+  }
+  if (row.checkout_eligible) {
+    throw new Error('Продукт ' + row.product_code + ' не должен быть checkout_eligible');
+  }
+}
 
 const json = JSON.stringify(payload).replace(/</g, '\\u003c');
 for (const needle of FORBIDDEN) {
@@ -115,11 +152,12 @@ const domainCore = fs.readFileSync(path.join(SRC, 'domain.js'), 'utf8');
 const accessJs = fs.readFileSync(path.join(SRC, 'access.js'), 'utf8');
 const storageJs = fs.readFileSync(path.join(SRC, 'storage.js'), 'utf8');
 const paymentsJs = fs.readFileSync(path.join(SRC, 'payments.js'), 'utf8');
+const commerceJs = fs.readFileSync(path.join(SRC, 'commerce.js'), 'utf8');
 const searchJs = fs.readFileSync(path.join(SRC, 'search.js'), 'utf8');
 const analyticsJs = fs.readFileSync(path.join(SRC, 'analytics.js'), 'utf8');
 const ontologyJs = fs.readFileSync(path.join(SRC, 'ontology.js'), 'utf8');
 const SPLIT = '\n\n/* __MLMA_UI_SPLIT__ */\n\n';
-const domainJs = [domainCore.trim(), accessJs.trim(), storageJs.trim(), paymentsJs.trim(), searchJs.trim(), analyticsJs.trim()].join(SPLIT) + '\n\n' + ontologyJs.trim();
+const domainJs = [domainCore.trim(), accessJs.trim(), storageJs.trim(), paymentsJs.trim(), commerceJs.trim(), searchJs.trim(), analyticsJs.trim()].join(SPLIT) + '\n\n' + ontologyJs.trim();
 const uiJs = fs.readFileSync(path.join(SRC, 'ui.js'), 'utf8');
 
 const pages = [
@@ -139,9 +177,14 @@ const pages = [
   { id: 'results', file: 'my-results.html', url: '/my/results', page: 'results', title: 'Мои результаты · MLM Academy', members: 'member' },
   { id: 'profile', file: 'profile.html', url: '/profile', page: 'profile', title: 'Профиль · MLM Academy', members: 'member' },
   { id: 'access', file: 'access.html', url: '/access', page: 'access', title: 'Доступ · MLM Academy', members: 'public' },
-  { id: 'pricing', file: 'pricing.html', url: '/pricing', page: 'pricing', title: 'Условия доступа · MLM Academy', members: 'public' },
-  { id: 'privacy', file: 'privacy.html', url: '/privacy', page: 'privacy', title: 'Политика конфиденциальности · черновик · MLM Academy', members: 'public' },
+  { id: 'pricing', file: 'pricing.html', url: '/pricing', page: 'pricing', title: 'Тарифы · MLM Academy', members: 'public' },
+  { id: 'payment-and-access', file: 'payment-and-access.html', url: '/payment-and-access', page: 'payment-and-access', title: 'Оплата и доступ · MLM Academy', members: 'public' },
+  { id: 'privacy', file: 'privacy.html', url: '/privacy', page: 'privacy', title: 'Политика конфиденциальности · черновик · MLM Academy', members: 'public', noindex: true },
+  { id: 'offer', file: 'offer.html', url: '/offer', page: 'offer', title: 'Публичная оферта · черновик · MLM Academy', members: 'public', noindex: true },
+  { id: 'requisites', file: 'requisites.html', url: '/requisites', page: 'requisites', title: 'Реквизиты · черновик · MLM Academy', members: 'public', noindex: true },
+  { id: 'purchases', file: 'my-purchases.html', url: '/my/purchases', page: 'purchases', title: 'Покупки и доступ · MLM Academy', members: 'member' },
   { id: 'preview', file: 'preview-catalog.html', url: '/preview/catalog', page: 'preview', title: 'Предпросмотр каталога · MLM Academy', members: 'editor' },
+  { id: 'preview-commerce', file: 'preview-commerce.html', url: '/preview/commerce', page: 'preview-commerce', title: 'Предпросмотр состояний покупки · MLM Academy', members: 'editor', noindex: true },
 ];
 
 function splitText(text, limit) {
@@ -298,6 +341,7 @@ const RERANK_PUBLIC_URL = process.env.MLMA_RERANK_PUBLIC_URL || 'https://mlma-se
 const ACCOUNT_PUBLIC_URL = process.env.MLMA_API_PUBLIC_URL || 'https://mlma-account.mlmacademy-search.workers.dev/api';
 
 function robotsForPage(page) {
+  if (page.noindex) return 'noindex, nofollow';
   if (page.members === 'member' || page.members === 'editor') return 'noindex, nofollow';
   if (page.page === 'track') return 'noindex, nofollow';
   return 'index, follow';
@@ -363,9 +407,14 @@ function seoHead(page, opts = {}) {
     library: 'Каталог треков и материалов по этапам A1–A6. Поиск понимает живой запрос, а не только название.',
     about: 'Как устроена MLM Academy: трек как маршрут изменения состояния, а не страница с видео.',
     track: 'Карточка трека: ситуация, действие, рабочий след и следующее лучшее действие.',
-    access: 'Сначала бесплатный кабинет. Реальные списания выключены.',
-    pricing: 'Бесплатный кабинет FREE и будущие пакеты. Оплата пока в тестовом режиме и не выдаёт права.',
-    privacy: 'Черновик места для политики конфиденциальности. Юридический текст не утверждён.',
+    access: 'FREE, будущие разовые покупки, командный и корпоративный формат. Платные продукты готовятся, кнопки покупки нет.',
+    pricing: 'Тарифы MLM Academy: демо, один трек от 590 ₽, мини-маршрут от 1 490 ₽, маршрут из шести от 2 990 ₽. Оплатить пока нельзя.',
+    'payment-and-access': 'Как будет устроена оплата и доступ. Сейчас эквайринг не подключён, деньги не принимаются.',
+    privacy: 'Черновик политики конфиденциальности. Юридический текст не утверждён.',
+    offer: 'Черновик структуры публичной оферты. Документ не действует.',
+    requisites: 'Черновик реквизитов. Фиктивные данные не вставляются.',
+    purchases: 'Покупки и доступ кабинета. Страница не индексируется.',
+    'preview-commerce': 'Служебный предпросмотр состояний покупки. Не публиковать.',
     my: 'Личный кабинет MLM Academy. Страница не индексируется.',
     route: 'Маршрут и сохранённые треки. Страница не индексируется.',
     results: 'Результаты прохождения. Страница не индексируется.',
@@ -486,6 +535,8 @@ write(path.join(v1, 'domain.js'), domainJs);
 write(path.join(v1, 'ui.js'), uiJs);
 write(path.join(v1, 'catalog.schema.json'), fs.readFileSync(path.join(ROOT, 'src/data/catalog.schema.json'), 'utf8'));
 write(path.join(DIST, 'shared/catalog.schema.json'), fs.readFileSync(path.join(ROOT, 'src/data/catalog.schema.json'), 'utf8'));
+write(path.join(v1, 'products.catalog.json'), JSON.stringify(productsFile, null, 2) + '\n');
+write(path.join(DIST, 'shared/products.catalog.json'), JSON.stringify(productsFile, null, 2) + '\n');
 
 function previewHtml(page) {
   const attrs = [`class="mlma"`, `data-mlma-page="${page.page}"`];
@@ -525,6 +576,11 @@ Rollback: вернуть блоки T123 01-css, 02-data-*, 03-domain-*, 04-ui-*
 <script src="ASSET_BASE/${ASSETS_VERSION}/ui.js?v=${catalogFile.version}"></script>
 `;
 write(path.join(DIST, 't123/external-loader-v1.html'), t123Wrap(loader, `Внешний loader assets ${ASSETS_VERSION}. Сначала одна тестовая страница.`));
+const ASSET_BASE_LIVE = 'https://mlma-account.mlmacademy-search.workers.dev';
+write(
+  path.join(DIST, 't123/external-loader-v1.live.html'),
+  t123Wrap(loader.replace(/ASSET_BASE/g, ASSET_BASE_LIVE), `Живой loader ${ASSETS_VERSION}. ASSET_BASE=${ASSET_BASE_LIVE}`),
+);
 
 const checklist = `# Сборка страниц Tilda · MLM Academy
 
@@ -594,12 +650,14 @@ ${pages.map((page) => `| ${page.title} | \`${page.url}\` | \`mounts/${page.id}.h
 | Группа | Страницы в группе |
 |---|---|
 | Guest | ничего из академии |
-| Member | \`/my\`, \`/my/route\`, \`/my/results\`, \`/profile\` |
-| FREE / START / FULL / PILOT | те же четыре; после входа главная группы — \`/my\` |
-| Editor / ADMIN | те же четыре + \`/preview/catalog\` |
+| Member | \`/my\`, \`/my/route\`, \`/my/results\`, \`/my/purchases\`, \`/profile\` |
+| FREE / START / FULL / PILOT | те же четыре + \`/my/purchases\`; после входа главная группы — \`/my\` |
+| Editor / ADMIN | те же кабинетные + \`/preview/catalog\` + \`/preview/commerce\` (commerce не публиковать на боевом сайте) |
 
 Публичные (не добавлять ни в одну группу): \`/academy\`, \`/start\`, \`/library\`,
-\`/library/a1\`…\`/library/a6\`, \`/track\`, \`/about\`, \`/access\`, \`/pricing\`, \`/privacy\`. Живую главную \`/\` и прочие
+\`/library/a1\`…\`/library/a6\`, \`/track\`, \`/about\`, \`/access\`, \`/pricing\`, \`/payment-and-access\`.
+Черновики \`/privacy\`, \`/offer\`, \`/requisites\` не публиковать как действующие документы.
+\`/preview/commerce\` не публиковать. Живую главную \`/\` и прочие
 маркетинговые страницы в группы не добавлять.
 
 Группы доступа: **Guest**, **Member**, **FREE**, **START**, **FULL**, **PILOT**, **ADMIN**, **Editor**.
@@ -654,7 +712,7 @@ write(path.join(DIST, 'sizes.json'), JSON.stringify(sizes, null, 2) + '\n');
 write(path.join(__dirname, 'pages.json'), JSON.stringify(pages, null, 2) + '\n');
 
 const publicUrls = pages
-  .filter((page) => page.members === 'public' && page.page !== 'track')
+  .filter((page) => page.members === 'public' && page.page !== 'track' && !page.noindex)
   .map((page) => `https://mlmacademy.ru${page.url}`);
 publicUrls.push('https://mlmacademy.ru/research/marketing-plan');
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -669,8 +727,11 @@ Allow: /start
 Allow: /about
 Allow: /access
 Allow: /pricing
-Allow: /privacy
+Allow: /payment-and-access
 Allow: /research
+Disallow: /privacy
+Disallow: /offer
+Disallow: /requisites
 Disallow: /my
 Disallow: /my/
 Disallow: /profile

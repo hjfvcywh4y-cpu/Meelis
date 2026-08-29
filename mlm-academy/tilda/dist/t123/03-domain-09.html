@@ -1,150 +1,241 @@
-<!-- Блок T123: доменная логика 9/10 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: доменная логика 9/11 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
-/**
- * Аналитика кабинета. Не отправляет пароли, карты, полный поисковый текст и артефакты.
- * Правило: одно пользовательское действие → одно каноническое событие.
- */
 (function (root) {
   'use strict';
   var api = root.MLMA;
   if (!api) return;
+  var SIT_FILTERS = api.SIT_FILTERS;
+  var FMT_FILTERS = api.FMT_FILTERS;
+  var CH_FILTERS = api.CH_FILTERS;
+  var LVL_FILTERS = api.LVL_FILTERS;
+  var AVAIL_FILTERS = api.AVAIL_FILTERS;
+  var LIBRARY_STATE_KEY = api.LIBRARY_STATE_KEY || 'mlma.library.v1';
+  var deriveMeta = api.deriveMeta;
+  var analyzeQuery = api.analyzeQuery;
+  var rankTracks = api.rankTracks;
 
-  var EVENTS = [
-    'signup_started',
-    'signup_completed',
-    'login_completed',
-    'profile_completed',
-    'search_submitted',
-    'search_results_shown',
-    'track_card_opened',
-    'track_saved',
-    'track_unsaved',
-    'route_opened',
-    'locked_track_opened',
-    'checkout_started',
-    'checkout_blocked',
-    'payment_succeeded',
-    'payment_failed',
-    'entitlement_granted',
-    'track_started',
-    'step_completed',
-    'artifact_created',
-    'track_paused',
-    'track_completed',
-    'next_track_opened',
-    'access_expired',
-    'subscription_renewed',
-    'sync_error',
-  ];
-
-  var ALIAS = {
-    search_query: 'search_submitted',
-    library_search: 'search_submitted',
-    academy_search: 'search_submitted',
-    track_start: 'track_started',
-    track_complete: 'track_completed',
-    track_next_open: 'next_track_opened',
-    track_action_submitted: 'artifact_created',
-    track_evidence_submitted: 'artifact_created',
-  };
-
-  var BLOCKED = /password|passwd|secret|token|card|pan|cvv|cvc|iban|artifact|answer|message_body|full_text/i;
-  var CHAIN_KEY = 'mlma.search.chain.v1';
-  var lastCanonical = { name: '', key: '', at: 0 };
-
-  function allowed(name) {
-    return EVENTS.indexOf(name) !== -1;
-  }
-
-  function canonicalName(name) {
-    return ALIAS[name] || name;
-  }
-
-  function hashQuery(value) {
-    var text = String(value || '').trim().toLowerCase();
-    var hash = 5381;
-    for (var i = 0; i < text.length; i += 1) hash = ((hash << 5) + hash + text.charCodeAt(i)) | 0;
-    return 'q' + (hash >>> 0).toString(16);
-  }
-
-  function sanitize(payload) {
-    var out = {};
-    if (!payload || typeof payload !== 'object') return out;
-    var keys = Object.keys(payload);
-    for (var i = 0; i < keys.length; i += 1) {
-      var key = keys[i];
-      if (BLOCKED.test(key)) continue;
-      var value = payload[key];
-      if (key === 'query' || key === 'q' || key === 'search_query') {
-        out.queryLength = String(value || '').length;
-        out.queryHash = hashQuery(value);
-        continue;
+  function uniqueFormats(tracks) {
+    var seen = {};
+    var out = [];
+    for (var i = 0; i < tracks.length; i += 1) {
+      var format = tracks[i].format;
+      if (format && !seen[format]) {
+        seen[format] = true;
+        out.push(format);
       }
-      if (typeof value === 'string' && value.length > 180) value = value.slice(0, 180);
-      if (key === 'email' && typeof value === 'string') {
-        var at = value.indexOf('@');
-        value = at > 1 ? value.slice(0, 1) + '***' + value.slice(at) : '***';
+    }
+    out.sort(function (a, b) {
+      return a.localeCompare(b, 'ru');
+    });
+    return out;
+  }
+
+  function facetOptions(tracks) {
+    var counts = { sit: {}, fmt: {}, ch: {}, lvl: {}, avail: { description: 0, playable: 0 } };
+    for (var i = 0; i < tracks.length; i += 1) {
+      var meta = deriveMeta(tracks[i]);
+      counts.sit[meta.sit] = (counts.sit[meta.sit] || 0) + 1;
+      counts.fmt[meta.fmt] = (counts.fmt[meta.fmt] || 0) + 1;
+      counts.ch[meta.ch] = (counts.ch[meta.ch] || 0) + 1;
+      counts.lvl[meta.lvl] = (counts.lvl[meta.lvl] || 0) + 1;
+      counts.avail.description += 1;
+      if (meta.playable) counts.avail.playable += 1;
+    }
+    function present(list, bag) {
+      var out = [];
+      for (var i = 0; i < list.length; i += 1) {
+        if (bag[list[i].id]) out.push({ id: list[i].id, title: list[i].title, count: bag[list[i].id] });
       }
-      out[key] = value;
+      return out;
+    }
+    return {
+      sit: present(SIT_FILTERS, counts.sit),
+      fmt: present(FMT_FILTERS, counts.fmt),
+      ch: present(CH_FILTERS, counts.ch),
+      lvl: present(LVL_FILTERS, counts.lvl),
+      avail: AVAIL_FILTERS.filter(function (item) { return counts.avail[item.id] > 0; }).map(function (item) {
+        return { id: item.id, title: item.title, count: counts.avail[item.id] };
+      }),
+    };
+  }
+
+  function relatedTracks(track, catalog, limit, context) {
+    limit = limit || 3;
+    context = context || {};
+    if (!track) return [];
+    var byId = {};
+    for (var i = 0; i < catalog.length; i += 1) byId[catalog[i].trackId] = catalog[i];
+    var out = [];
+    var seen = {};
+    seen[track.trackId] = true;
+    var ids = (track.nextTrackIds || []).concat(track.relatedTrackIds || []);
+    for (var n = 0; n < ids.length && out.length < limit; n += 1) {
+      if (byId[ids[n]] && !seen[ids[n]]) {
+        seen[ids[n]] = true;
+        out.push(byId[ids[n]]);
+      }
+    }
+    if (context.query) {
+      var ranked = rankTracks(catalog, analyzeQuery(context.query), null, 'soft');
+      for (var r = 0; r < ranked.length && out.length < limit; r += 1) {
+        if (seen[ranked[r].track.trackId]) continue;
+        seen[ranked[r].track.trackId] = true;
+        out.push(ranked[r].track);
+      }
+    }
+    for (var t = 0; t < catalog.length && out.length < limit; t += 1) {
+      var other = catalog[t];
+      if (seen[other.trackId]) continue;
+      if (other.module === track.module || other.sectionId === track.sectionId) {
+        seen[other.trackId] = true;
+        out.push(other);
+      }
     }
     return out;
   }
 
-  function chainId() {
-    try {
-      if (typeof window === 'undefined' || !window.sessionStorage) return '';
-      var current = window.sessionStorage.getItem(CHAIN_KEY);
-      if (current) return current;
-      var id = 'ch_' + Date.now().toString(36);
-      window.sessionStorage.setItem(CHAIN_KEY, id);
-      return id;
-    } catch (err) {
-      return '';
-    }
-  }
-
-  function shouldDedupe(name, data) {
-    var key = name + ':' + (data.itemId || data.queryHash || data.source || '');
-    var now = Date.now();
-    if (lastCanonical.name === name && lastCanonical.key === key && now - lastCanonical.at < 800) return true;
-    lastCanonical = { name: name, key: key, at: now };
-    return false;
-  }
-
-  var previous = api.trackEvent;
-  function trackEvent(name, payload) {
-    var canonical = canonicalName(name);
-    var data = sanitize(payload || {});
-    if (canonical === 'search_submitted' || canonical === 'search_results_shown') {
-      data.chainId = chainId();
-    } else if (data && (canonical === 'track_card_opened' || canonical === 'track_saved' || canonical === 'checkout_started' || canonical === 'track_started' || canonical === 'track_completed')) {
-      data.chainId = data.chainId || chainId();
-    }
-    if (shouldDedupe(canonical, data)) return data;
-    if (typeof previous === 'function' && previous !== trackEvent) previous(canonical, data);
-    else {
-      try {
-        if (typeof window !== 'undefined') {
-          window.dataLayer = window.dataLayer || [];
-          window.dataLayer.push(Object.assign({ event: canonical }, data));
+  function nextTrackBundle(track, catalog, context) {
+    context = context || {};
+    var runtime = context.runtime || (api.getRuntime ? api.getRuntime(track.trackId) : null);
+    var nba = api.nextBestAction ? api.nextBestAction(track, catalog, runtime, context.profile) : null;
+    var primary = nba && nba.track ? nba.track : null;
+    if (!primary && track.nextTrackIds && track.nextTrackIds[0]) {
+      for (var i = 0; i < catalog.length; i += 1) {
+        if (catalog[i].trackId === track.nextTrackIds[0]) {
+          primary = catalog[i];
+          break;
         }
-      } catch (err) {
-        /* ignore */
       }
     }
-    if (api.enqueueOutbox && allowed(canonical)) {
-      api.enqueueOutbox('analytics_event', { name: canonical, data: data });
+    var variants = (api.relatedContent ? api.relatedContent(track, catalog, 3) : relatedTracks(track, catalog, 4, context)).filter(function (item) {
+      return !primary || item.trackId !== primary.trackId;
+    }).slice(0, 3);
+    return { primary: primary, variants: variants, nba: nba };
+  }
+
+  function startPicks(sectionId, level, catalog) {
+    var map = {
+      A1: { start: ['A1-001', 'A1-004', 'A1-010'], later: ['A1-011', 'A1-012'], other: ['A2-008'] },
+      A2: { start: ['A2-008', 'A2-006', 'A2-010'], later: ['A2-001', 'A2-011'], other: ['A3-002'] },
+      A3: { start: ['A3-002', 'A3-001', 'A3-016'], later: ['A3-008', 'A3-005'], other: ['A2-008'] },
+      A4: { start: ['A4-001', 'A1-012', 'A1-011'], later: ['A1-013', 'A1-014'], other: ['A5-001'] },
+      A5: { start: ['A5-001', 'A5-010', 'A5-009'], later: ['A5-011', 'A5-014'], other: ['A3-008'] },
+      A6: { start: ['A6-001', 'A6-010', 'A6-006'], later: ['A6-011', 'A6-013'], other: ['A1-016'] },
+    };
+    if (level === 'mentor') {
+      map.A6 = { start: ['A6-013', 'A6-011', 'A1-016'], later: ['A6-012', 'A6-010'], other: ['A1-010'] };
+    }
+    if (level === 'beginner' && sectionId === 'A1') {
+      map.A1 = { start: ['A1-004', 'A1-006', 'A1-010'], later: ['A1-011', 'A2-008'], other: ['A1-001'] };
+    }
+    var spec = map[sectionId] || map.A1;
+    var byId = {};
+    for (var i = 0; i < catalog.length; i += 1) byId[catalog[i].trackId] = catalog[i];
+    function pick(ids) {
+      for (var k = 0; k < ids.length; k += 1) if (byId[ids[k]]) return byId[ids[k]];
+      return null;
+    }
+    return {
+      start: pick(spec.start),
+      later: pick(spec.later),
+      other: pick(spec.other),
+    };
+  }
+
+  function sectionEntryTracks(sectionId, catalog) {
+    var preferred = {
+      A1: ['A1-001', 'A1-004', 'A1-010'],
+      A2: ['A2-008', 'A2-006', 'A2-010'],
+      A3: ['A3-002', 'A3-001', 'A3-016'],
+      A4: ['A4-001', 'A1-012', 'A1-011'],
+      A5: ['A5-001', 'A5-010', 'A5-009'],
+      A6: ['A6-001', 'A6-010', 'A6-013'],
+    };
+    var ids = preferred[sectionId] || [];
+    var byId = {};
+    for (var i = 0; i < catalog.length; i += 1) byId[catalog[i].trackId] = catalog[i];
+    var out = [];
+    for (var n = 0; n < ids.length; n += 1) {
+      if (byId[ids[n]] && (byId[ids[n]].sectionId === sectionId || sectionId === 'A4')) out.push(byId[ids[n]]);
+    }
+    if (out.length < 3) {
+      for (var t = 0; t < catalog.length && out.length < 3; t += 1) {
+        if (catalog[t].sectionId === sectionId && ids.indexOf(catalog[t].trackId) === -1) out.push(catalog[t]);
+      }
+    }
+    return out.slice(0, 3);
+  }
+
+  function exampleQueries() {
+    return [
+      'Боюсь первым написать знакомому',
+      'Не понимаю, с кем начать',
+      'Человек сказал, что подумает',
+      'Клиент купил и пропал',
+      'Хочу получить первый результат',
+    ];
+  }
+
+  function saveLibraryRestore(payload) {
+    try {
+      if (typeof window === 'undefined' || !window.sessionStorage) return;
+      window.sessionStorage.setItem(LIBRARY_STATE_KEY, JSON.stringify(payload));
+    } catch (err) {
+      /* ignore */
+    }
+  }
+
+  function readLibraryRestore() {
+    try {
+      if (typeof window === 'undefined' || !window.sessionStorage) return null;
+      var raw = window.sessionStorage.getItem(LIBRARY_STATE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function trackEvent(name, payload) {
+    var data = { event: name };
+    if (payload) {
+      var keys = Object.keys(payload);
+      for (var i = 0; i < keys.length; i += 1) {
+        if (payload[keys[i]] != null && payload[keys[i]] !== '') data[keys[i]] = payload[keys[i]];
+      }
+    }
+    try {
+      if (typeof window !== 'undefined') {
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push(data);
+      }
+    } catch (err) {
+      /* ignore */
     }
     return data;
   }
 
-  api.ANALYTICS_EVENTS = EVENTS;
-  api.ANALYTICS_ALIASES = ALIAS;
-  api.sanitizeAnalytics = sanitize;
-  api.hashSearchQuery = hashQuery;
-  api.canonicalEventName = canonicalName;
+  function itemType(track) {
+    return api.itemKind ? api.itemKind(track) : 'track';
+  }
+
+  function stagesForState(state) {
+    if (state.stages && state.stages.length) return state.stages.slice();
+    if (state.stage) return [state.stage];
+    return [];
+  }
+
+  api.uniqueFormats = uniqueFormats;
+  api.facetOptions = facetOptions;
+  api.relatedTracks = relatedTracks;
+  api.nextTrackBundle = nextTrackBundle;
+  api.startPicks = startPicks;
+  api.sectionEntryTracks = sectionEntryTracks;
+  api.exampleQueries = exampleQueries;
   api.trackEvent = trackEvent;
-  api.searchChainId = chainId;
+  api.itemType = itemType;
+  api.stagesForState = stagesForState;
+  api.saveLibraryRestore = saveLibraryRestore;
+  api.readLibraryRestore = readLibraryRestore;
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);

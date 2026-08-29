@@ -8,7 +8,17 @@ account_id = "1097bdc74e5788fb297506389defcfea"
 
 [vars]
 PAYMENTS_ENABLED = "false"
+COMMERCE_PREVIEW_ENABLED = "false"
 TEST_MODE = "true"
+
+# Публичные Tilda assets v1. /api/* остаётся на Worker.
+# ASSET_BASE=https://mlma-account.mlmacademy-search.workers.dev
+[assets]
+directory = "../tilda/dist/shared"
+binding = "ASSETS"
+html_handling = "none"
+not_found_handling = "none"
+run_worker_first = ["/api/*", "/health"]
 
 [[kv_namespaces]]
 binding = "MLMA_ACCOUNT"
