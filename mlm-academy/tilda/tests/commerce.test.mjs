@@ -10,6 +10,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const productsFile = JSON.parse(fs.readFileSync(path.join(__dirname, '../src/data/products.catalog.json'), 'utf8'));
 const tracksFile = JSON.parse(fs.readFileSync(path.join(__dirname, '../../src/data/tracks.catalog.json'), 'utf8'));
 
+global.MLMA_PRODUCTS = productsFile;
+if (global.window) global.window.MLMA_PRODUCTS = productsFile;
+
 require('../src/domain.js');
 require('../src/access.js');
 require('../src/storage.js');
@@ -97,5 +100,13 @@ describe('продуктовый справочник и commercial gate', () =>
     const row = MLMA.classifyAccessRow(track, { loggedIn: true, groups: ['FREE'] }, [track.trackId]);
     assert.equal(row.key, 'saved');
     assert.notEqual(row.key, 'purchased');
+  });
+
+  it('нет кнопки «Сообщить о запуске» и нет сбора заявок в localStorage', () => {
+    const view = MLMA.productCardView(MLMA.getProductByCode('B2C-TRACK-001'));
+    assert.equal(view.cta, 'preparing');
+    assert.equal(view.buy_enabled, false);
+    assert.equal(typeof MLMA.writeLaunchNotify, 'undefined');
+    assert.equal(typeof MLMA.readLaunchNotify, 'undefined');
   });
 });

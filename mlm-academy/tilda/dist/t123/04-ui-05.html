@@ -23,11 +23,6 @@
     return '<span class="mlma-h3">' + esc(launch || regular) + '</span>';
   }
 
-  function preparingCta(product) {
-    if (product.sale_channel === 'negotiation') return '';
-    return '<button type="button" class="mlma-btn" data-mlma-notify="' + esc(product.product_code) + '">Сообщить о запуске</button>';
-  }
-
   function renderAccess(state) {
     var R = state.R;
     var logged = !!(state.account && state.account.loggedIn);
@@ -76,7 +71,6 @@
         (p.access_days ? ' · ' + p.access_days + ' дней доступа' : '') +
         '</p><div class="mlma-actions" style="margin-top:20px">' +
         '<span class="mlma-btn mlma-btn-primary" aria-disabled="true">Готовится к запуску</span>' +
-        preparingCta(p) +
         '</div></article>';
     }
     return (

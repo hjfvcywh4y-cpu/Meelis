@@ -114,6 +114,12 @@ async function main() {
     throw new Error('pricing must not promise 112 ready tracks');
   }
   if (!/Готовится к запуску/.test(pricingText)) throw new Error('pricing missing gated status');
+  if (/Сообщить о запуске|заявка отправлена|мы сообщим/i.test(pricingText)) {
+    throw new Error('pricing must not pretend a launch request was submitted');
+  }
+  if (!/от 590/.test(pricingText) || !/от 1 490/.test(pricingText) || !/от 2 990/.test(pricingText)) {
+    throw new Error('pricing missing launch prices');
+  }
   if (!/Обсудить командный запуск/.test(pricingText) || !/Обсудить корпоративный пилот/.test(pricingText)) {
     throw new Error('pricing missing B2B discuss CTAs');
   }

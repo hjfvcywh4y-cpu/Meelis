@@ -1,8 +1,15 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import { createRequire } from 'node:module';
 import { describe, it, before } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import worker from '../../account-proxy/worker.js';
 import { resetRateLimitForTests } from '../../account-proxy/account-core.js';
+
+const productsCatalog = JSON.parse(
+  fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../src/data/products.catalog.json'), 'utf8'),
+);
 
 function memoryStore() {
   const map = new Map();
@@ -31,9 +38,12 @@ function installBrowserGlobals() {
     MLMA_PAYLOAD: {
       version: '0.2',
       tracks: [{ id: 'A3-002' }, { id: 'A1-010' }, { id: 'A2-008' }],
+      products: productsCatalog,
     },
+    MLMA_PRODUCTS: productsCatalog,
     dataLayer: [],
   };
+  global.MLMA_PRODUCTS = productsCatalog;
   global.localStorage = local;
   global.sessionStorage = session;
 }

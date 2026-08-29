@@ -200,6 +200,7 @@
     var items = [
       { href: R.home(), label: 'Academy' },
       { href: R.library(), label: 'Библиотека' },
+      { href: R.pricing ? R.pricing() : '/pricing', label: 'Тарифы' },
       { href: R.start(), label: 'С чего начать' },
       { href: R.about(), label: 'Как создаётся' },
       { href: R.research ? R.research() : '/research/marketing-plan', label: 'Исследование' },
@@ -261,13 +262,14 @@
   function footer(state) {
     var R = state.R;
     var links = [
-      { href: R.start(), label: 'С чего начать' },
+      { href: R.home(), label: 'Academy' },
       { href: R.library(), label: 'Библиотека' },
+      { href: R.start(), label: 'С чего начать' },
       { href: R.about(), label: 'Как создаётся библиотека' },
       { href: R.access(), label: 'Доступ' },
       { href: R.pricing ? R.pricing() : '/pricing', label: 'Тарифы' },
       { href: (R.paymentAndAccess && R.paymentAndAccess()) || '/payment-and-access', label: 'Оплата и доступ' },
-      { href: R.privacy ? R.privacy() : '/privacy', label: 'Черновик политики' },
+      { href: R.my(), label: 'Кабинет' },
       { href: R.research ? R.research() : '/research/marketing-plan', label: 'Исследование' },
       { href: D.siteHomeUrl(), label: 'Решения для компаний' },
     ];

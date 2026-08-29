@@ -2117,7 +2117,7 @@
     return { ok: true, duplicate: false, account: account, payment: payment };
   }
 
-  function checkoutHref(productId, trackId) {
+  function checkoutHref() {
     return '/pricing';
   }
 
@@ -2152,7 +2152,6 @@
   var PAYMENTS_ENABLED = false;
   var COMMERCE_PREVIEW_ENABLED = false;
   var LEGAL_PLACEHOLDER = '[ЗАПОЛНИТЬ ВЛАДЕЛЬЦУ ПЕРЕД ПУБЛИКАЦИЕЙ]';
-  var NOTIFY_KEY = 'mlma.launchNotify.v1';
   var REQUIRED_CODES = [
     'B2C-FREE-001',
     'B2C-TRACK-001',
@@ -2166,13 +2165,6 @@
   ];
 
   var FALLBACK_CATALOG = root.MLMA_PRODUCTS || { schema: 'mlma.products.v1', products: [] };
-  try {
-    if (typeof require === 'function') {
-      FALLBACK_CATALOG = require('./data/products.catalog.json');
-    }
-  } catch (err) {
-    /* browser */
-  }
 
   function readCatalog() {
     if (root.MLMA_PAYLOAD && root.MLMA_PAYLOAD.products && root.MLMA_PAYLOAD.products.products) {
@@ -2449,7 +2441,7 @@
       status_label: storefrontStatusLabel(product),
       composition: product.grant_scope,
       buy_enabled: false,
-      cta: product.sale_channel === 'negotiation' ? 'discuss' : 'notify',
+      cta: product.sale_channel === 'negotiation' ? 'discuss' : 'preparing',
     };
   }
 
@@ -2467,29 +2459,6 @@
       { key: 'expired', title: 'Право истекло', note: 'Срок разового доступа — 365 дней.' },
       { key: 'revoked', title: 'Право отозвано', note: 'История платежа сохраняется.' },
     ];
-  }
-
-  function readNotify() {
-    try {
-      var raw = root.localStorage && root.localStorage.getItem(NOTIFY_KEY);
-      if (!raw) return { product_codes: [] };
-      var parsed = JSON.parse(raw);
-      return { product_codes: Array.isArray(parsed.product_codes) ? parsed.product_codes : [] };
-    } catch (err) {
-      return { product_codes: [] };
-    }
-  }
-
-  function writeNotify(code) {
-    var data = readNotify();
-    if (data.product_codes.indexOf(code) === -1) data.product_codes.push(code);
-    data.updatedAt = new Date().toISOString();
-    try {
-      if (root.localStorage) root.localStorage.setItem(NOTIFY_KEY, JSON.stringify(data));
-    } catch (err) {
-      /* ignore */
-    }
-    return data;
   }
 
   function classifyAccessRow(track, account, savedIds) {
@@ -2543,8 +2512,6 @@
   api.purchaseUiStates = purchaseUiStates;
   api.commercePreviewAllowed = commercePreviewAllowed;
   api.isLocalPreviewHost = isLocalPreviewHost;
-  api.readLaunchNotify = readNotify;
-  api.writeLaunchNotify = writeNotify;
   api.classifyAccessRow = classifyAccessRow;
   api.paymentsSafeState = paymentsSafeState;
   api.trackContentReady = trackContentReady;

@@ -476,23 +476,6 @@
         mount(rootEl);
       });
     });
-    rootEl.querySelectorAll('[data-mlma-notify]').forEach(function (el) {
-      el.addEventListener('click', function (event) {
-        event.preventDefault();
-        var code = el.getAttribute('data-mlma-notify') || '';
-        if (D.writeLaunchNotify) D.writeLaunchNotify(code);
-        D.trackEvent('checkout_blocked', { itemId: code, reason: 'launch_notify_local' });
-        var msg = el.parentNode.querySelector('[data-mlma-notify-msg]');
-        if (!msg) {
-          msg = document.createElement('p');
-          msg.setAttribute('data-mlma-notify-msg', '1');
-          msg.className = 'mlma-muted';
-          msg.style.marginTop = '12px';
-          el.parentNode.appendChild(msg);
-        }
-        msg.textContent = 'Отметили на этом устройстве. Это не заявка, не оплата и не доступ.';
-      });
-    });
     rootEl.querySelectorAll('[data-mlma-checkout]').forEach(function (el) {
       el.addEventListener('click', function (event) {
         event.preventDefault();

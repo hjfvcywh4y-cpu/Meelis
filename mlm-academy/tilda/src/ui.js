@@ -198,6 +198,7 @@
     var items = [
       { href: R.home(), label: 'Academy' },
       { href: R.library(), label: 'Библиотека' },
+      { href: R.pricing ? R.pricing() : '/pricing', label: 'Тарифы' },
       { href: R.start(), label: 'С чего начать' },
       { href: R.about(), label: 'Как создаётся' },
       { href: R.research ? R.research() : '/research/marketing-plan', label: 'Исследование' },
@@ -259,13 +260,14 @@
   function footer(state) {
     var R = state.R;
     var links = [
-      { href: R.start(), label: 'С чего начать' },
+      { href: R.home(), label: 'Academy' },
       { href: R.library(), label: 'Библиотека' },
+      { href: R.start(), label: 'С чего начать' },
       { href: R.about(), label: 'Как создаётся библиотека' },
       { href: R.access(), label: 'Доступ' },
       { href: R.pricing ? R.pricing() : '/pricing', label: 'Тарифы' },
       { href: (R.paymentAndAccess && R.paymentAndAccess()) || '/payment-and-access', label: 'Оплата и доступ' },
-      { href: R.privacy ? R.privacy() : '/privacy', label: 'Черновик политики' },
+      { href: R.my(), label: 'Кабинет' },
       { href: R.research ? R.research() : '/research/marketing-plan', label: 'Исследование' },
       { href: D.siteHomeUrl(), label: 'Решения для компаний' },
     ];
@@ -2019,11 +2021,6 @@
     return '<span class="mlma-h3">' + esc(launch || regular) + '</span>';
   }
 
-  function preparingCta(product) {
-    if (product.sale_channel === 'negotiation') return '';
-    return '<button type="button" class="mlma-btn" data-mlma-notify="' + esc(product.product_code) + '">Сообщить о запуске</button>';
-  }
-
   function renderAccess(state) {
     var R = state.R;
     var logged = !!(state.account && state.account.loggedIn);
@@ -2072,7 +2069,6 @@
         (p.access_days ? ' · ' + p.access_days + ' дней доступа' : '') +
         '</p><div class="mlma-actions" style="margin-top:20px">' +
         '<span class="mlma-btn mlma-btn-primary" aria-disabled="true">Готовится к запуску</span>' +
-        preparingCta(p) +
         '</div></article>';
     }
     return (
@@ -2962,23 +2958,6 @@
         state.profile = D.saveProfile({ onboardingSkipped: true, onboardingComplete: !!(state.profile.displayName && state.profile.partnerRole && state.profile.consentAt) });
         if (state.account && D.getRepo) D.getRepo().saveProfile(state.account, state.profile);
         mount(rootEl);
-      });
-    });
-    rootEl.querySelectorAll('[data-mlma-notify]').forEach(function (el) {
-      el.addEventListener('click', function (event) {
-        event.preventDefault();
-        var code = el.getAttribute('data-mlma-notify') || '';
-        if (D.writeLaunchNotify) D.writeLaunchNotify(code);
-        D.trackEvent('checkout_blocked', { itemId: code, reason: 'launch_notify_local' });
-        var msg = el.parentNode.querySelector('[data-mlma-notify-msg]');
-        if (!msg) {
-          msg = document.createElement('p');
-          msg.setAttribute('data-mlma-notify-msg', '1');
-          msg.className = 'mlma-muted';
-          msg.style.marginTop = '12px';
-          el.parentNode.appendChild(msg);
-        }
-        msg.textContent = 'Отметили на этом устройстве. Это не заявка, не оплата и не доступ.';
       });
     });
     rootEl.querySelectorAll('[data-mlma-checkout]').forEach(function (el) {

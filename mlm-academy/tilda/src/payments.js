@@ -162,7 +162,7 @@
     return { ok: true, duplicate: false, account: account, payment: payment };
   }
 
-  function checkoutHref(productId, trackId) {
+  function checkoutHref() {
     return '/pricing';
   }
 
