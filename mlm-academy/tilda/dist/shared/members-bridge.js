@@ -40,6 +40,65 @@
     return false;
   }
 
+  var RU = {
+    'Log In To Your Account': 'Войти в кабинет',
+    'Log in to your account': 'Войти в кабинет',
+    'Sign Up': 'Создать кабинет',
+    'Sign up': 'Создать кабинет',
+    'Create Account': 'Создать кабинет',
+    'Create an account': 'Создать кабинет',
+    Password: 'Пароль',
+    'Confirm Password': 'Повторите пароль',
+    'Confirm password': 'Повторите пароль',
+    'Forgot password?': 'Забыли пароль?',
+    'Forgot Password?': 'Забыли пароль?',
+    'Remember me': 'Запомнить меня',
+    'Remember Me': 'Запомнить меня',
+    'Log In': 'Войти',
+    'Log in': 'Войти',
+    'Sign In': 'Войти',
+    "Don't have an account?": 'Ещё нет кабинета?',
+    'Already have an account?': 'Уже есть кабинет?',
+    'Reset Password': 'Восстановить пароль',
+    Send: 'Отправить',
+    Submit: 'Отправить',
+    Name: 'Имя',
+    'First Name': 'Имя',
+    'Last Name': 'Фамилия',
+  };
+
+  function translateNode(root) {
+    if (!root) return;
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    var node;
+    while ((node = walker.nextNode())) {
+      var raw = String(node.nodeValue || '');
+      var key = raw.replace(/\s+/g, ' ').trim();
+      if (RU[key]) node.nodeValue = raw.replace(key, RU[key]);
+    }
+    var placeholders = root.querySelectorAll ? root.querySelectorAll('input[placeholder], textarea[placeholder]') : [];
+    for (var i = 0; i < placeholders.length; i += 1) {
+      var ph = placeholders[i].getAttribute('placeholder') || '';
+      if (RU[ph]) placeholders[i].setAttribute('placeholder', RU[ph]);
+    }
+  }
+
+  function translateAll() {
+    translateNode(document.getElementById('allrecords') || document.body);
+  }
+
+  translateAll();
+  setTimeout(translateAll, 400);
+  setTimeout(translateAll, 1200);
+  try {
+    var obs = new MutationObserver(function () {
+      translateAll();
+    });
+    obs.observe(document.body, { childList: true, subtree: true, characterData: true });
+  } catch (err) {
+    /* ignore */
+  }
+
   if (hasRecoverFlag()) {
     if (!clickRecover()) {
       setTimeout(clickRecover, 400);

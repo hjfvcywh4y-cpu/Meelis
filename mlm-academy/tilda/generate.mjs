@@ -576,6 +576,11 @@ Rollback: вернуть блоки T123 01-css, 02-data-*, 03-domain-*, 04-ui-*
 <script src="ASSET_BASE/${ASSETS_VERSION}/ui.js?v=${catalogFile.version}"></script>
 `;
 write(path.join(DIST, 't123/external-loader-v1.html'), t123Wrap(loader, `Внешний loader assets ${ASSETS_VERSION}. Сначала одна тестовая страница.`));
+const ASSET_BASE_LIVE = 'https://mlma-account.mlmacademy-search.workers.dev';
+write(
+  path.join(DIST, 't123/external-loader-v1.live.html'),
+  t123Wrap(loader.replace(/ASSET_BASE/g, ASSET_BASE_LIVE), `Живой loader ${ASSETS_VERSION}. ASSET_BASE=${ASSET_BASE_LIVE}`),
+);
 
 const checklist = `# Сборка страниц Tilda · MLM Academy
 

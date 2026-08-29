@@ -39,6 +39,12 @@
     color: #ffffff;
     opacity: .88;
   }
+  .mlm-research-proof__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 218px;
+  }
   .mlm-research-proof__button {
     min-width: 218px;
     min-height: 50px;
@@ -59,6 +65,12 @@
     box-shadow: none;
   }
   .mlm-research-proof__button:hover { background: #e8ff7a; color: #283944 !important; }
+  .mlm-research-proof__button--academy {
+    background: transparent;
+    color: #d5ff43 !important;
+    border: 1px solid #d5ff43;
+  }
+  .mlm-research-proof__button--academy:hover { background: #d5ff43; color: #283944 !important; }
   @media (max-width: 768px) {
     .mlm-research-proof__inner {
       width: calc(100% - 24px);
@@ -67,6 +79,7 @@
       gap: 20px;
     }
     .mlm-research-proof__title { font-size: 22px; }
+    .mlm-research-proof__actions,
     .mlm-research-proof__button { width: 100%; min-width: 0; }
   }
   @media (max-width: 360px) {
@@ -81,7 +94,10 @@
       <h2 class="mlm-research-proof__title">Как маркетинг-план превращается в систему ежедневных действий</h2>
       <p class="mlm-research-proof__text">Мы изучили международные MLM-платформы и выделили общий исполнительный контур: стадия партнёра, следующая задача, инструмент, событие, прогресс и вмешательство наставника.</p>
     </div>
-    <a class="mlm-research-proof__button" href="/research/marketing-plan" data-mlr-funnel="research_open_from_b2b" data-source-page="/" data-cta-position="b2b_home_after_tech" data-article-slug="marketing-plan">Читать исследование</a>
+    <div class="mlm-research-proof__actions">
+      <a class="mlm-research-proof__button" href="/research/marketing-plan" data-mlr-funnel="research_open_from_b2b" data-source-page="/" data-cta-position="b2b_home_after_tech" data-article-slug="marketing-plan">Читать исследование</a>
+      <a class="mlm-research-proof__button mlm-research-proof__button--academy" href="/academy" data-mlr-funnel="academy_open_from_b2b" data-source-page="/" data-cta-position="b2b_home_after_tech">Открыть MLM Academy</a>
+    </div>
   </div>
 </div>
 <script>

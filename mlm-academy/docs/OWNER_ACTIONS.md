@@ -9,9 +9,9 @@
 
 Живой сайт сейчас на блоках T123. Не переключать все страницы сразу.
 
-1. Tilda → Настройки сайта / Файлы (или свой CDN без секретов) → загрузить `mlm-academy/tilda/dist/shared/v1/mlma.css`, `catalog-data.js`, `domain.js`, `ui.js`, `products.catalog.json`.
-2. Tilda → страница `/about` → блоки T123 `01-css`, `02-data-*`, `03-domain-*`, `04-ui-*` → скрыть.
-3. Та же страница → новый T123 → вставить `tilda/dist/t123/external-loader-v1.html`, заменить `ASSET_BASE` на URL папки файлов → Сохранить → Опубликовать страницу.
+1. Assets уже на Account Worker: `ASSET_BASE=https://mlma-account.mlmacademy-search.workers.dev` (`/v1/mlma.css`, `catalog-data.js`, `domain.js`, `ui.js`).
+2. Tilda → страница `/about` → блоки T123 `01-css`, `02-data-*`, `03-domain-*`, `04-ui-*` → скрыть, не удалять (rollback).
+3. Та же страница → новый T123 → вставить `tilda/dist/t123/external-loader-v1.live.html` → Сохранить → Опубликовать страницу.
 4. HEAD и mount `mounts/about.html` не менять.
 5. Проверка: https://mlmacademy.ru/about открывается, стили `.mlma` на месте, в консоли нет 404 по assets.
 6. Rollback: показать обратно скрытые T123 `01-css` / `02-data-*` / `03-domain-*` / `04-ui-*` → Сохранить → Опубликовать.
