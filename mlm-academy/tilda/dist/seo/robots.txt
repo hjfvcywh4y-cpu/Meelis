@@ -4,6 +4,8 @@ Allow: /library
 Allow: /start
 Allow: /about
 Allow: /access
+Allow: /pricing
+Allow: /privacy
 Allow: /research
 Disallow: /my
 Disallow: /my/

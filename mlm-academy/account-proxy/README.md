@@ -22,6 +22,10 @@
 
 Tilda Members не даёт документированного server-side verify member-token. Первый bind доверяет клиентской сессии Members на Origin Академии. Это не защита оплаты. Платные права не выдаются этим bind и не защищаются только JS.
 
+`PAYMENTS_ENABLED=false`, `TEST_MODE=true`. Маршруты checkout / yookassa / entitlements / refunds отвечают `403 payments_disabled`.
+
+`POST /api/account/run` принимает только мета прохождения (status, step, trackVersion, timestamps). Текст артефакта отбрасывается.
+
 Следующий этап: отдельная серверная авторизация платформы (magic link / свой JWT) или webhook оплаты, который пишет entitlements в KV/Supabase.
 
 ## Переменные
@@ -30,6 +34,8 @@ Tilda Members не даёт документированного server-side ver
 
 ```
 MLMA_SESSION_SECRET=
+PAYMENTS_ENABLED=false
+TEST_MODE=true
 ```
 
 Клиенту в HEAD:

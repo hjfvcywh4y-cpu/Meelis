@@ -149,8 +149,8 @@ export function publicAccount(row) {
     payments: verified && Array.isArray(row.payments) ? row.payments : [],
     savedTrackIds: Array.isArray(row.savedTrackIds) ? row.savedTrackIds.slice() : [],
     route: { trackIds: ((row.route && row.route.trackIds) || row.savedTrackIds || []).slice() },
-    runs: row.runs || {},
-    artifacts: Array.isArray(row.artifacts) ? row.artifacts.slice(0, 50) : [],
+    runs: publicRuns(row.runs),
+    artifacts: [],
     migratedLocalAt: row.migratedLocalAt || '',
     storageMode: 'server',
     updatedAt: row.updatedAt || '',
@@ -197,6 +197,27 @@ export function reorderTrackIds(current, ordered) {
   return next;
 }
 
+export function publicRuns(runs) {
+  const out = {};
+  if (!runs || typeof runs !== 'object') return out;
+  Object.keys(runs).forEach((id) => {
+    out[id] = sanitizeRunMeta(runs[id]);
+  });
+  return out;
+}
+
+export function sanitizeRunMeta(runtime) {
+  const src = runtime && typeof runtime === 'object' ? runtime : {};
+  return {
+    status: String(src.status || '').slice(0, 40),
+    step: String(src.step || '').slice(0, 40),
+    trackVersion: String(src.trackVersion || '').slice(0, 40),
+    startedAt: String(src.startedAt || '').slice(0, 40),
+    completedAt: String(src.completedAt || '').slice(0, 40),
+    updatedAt: String(src.updatedAt || '').slice(0, 40),
+  };
+}
+
 export function sanitizeProfile(profile) {
   const src = profile || {};
   return {
@@ -220,6 +241,15 @@ export function sanitizeAnalytics(name, payload) {
   Object.keys(payload).forEach((key) => {
     if (ANALYTICS_BLOCKED.test(key)) return;
     let value = payload[key];
+    if (key === 'query' || key === 'q' || key === 'search_query') {
+      const text = String(value || '');
+      out.queryLength = text.length;
+      let hash = 5381;
+      const lower = text.trim().toLowerCase();
+      for (let i = 0; i < lower.length; i += 1) hash = ((hash << 5) + hash + lower.charCodeAt(i)) | 0;
+      out.queryHash = 'q' + (hash >>> 0).toString(16);
+      return;
+    }
     if (typeof value === 'string' && value.length > 180) value = value.slice(0, 180);
     if (key === 'email' && typeof value === 'string') {
       const at = value.indexOf('@');
@@ -374,5 +404,24 @@ export function resetRateLimitForTests() {
 export function allowedMethod(path, method) {
   if (method === 'OPTIONS') return true;
   if (path === '/api/health' || path === '/health') return method === 'GET' || method === 'HEAD';
+  if (path === '/api/me/entitlements') return method === 'GET' || method === 'POST';
+  if (path === '/api/webhooks/yookassa') return method === 'POST';
   return method === 'POST';
+}
+
+export const PAYMENT_PATHS = [
+  '/api/checkout/create',
+  '/api/webhooks/yookassa',
+  '/api/me/entitlements',
+  '/api/refunds/process',
+];
+
+export function paymentsEnabled(env) {
+  return String((env && env.PAYMENTS_ENABLED) || '').toLowerCase() === 'true';
+}
+
+export function testMode(env) {
+  const raw = env && env.TEST_MODE;
+  if (raw == null || raw === '') return true;
+  return String(raw).toLowerCase() !== 'false';
 }

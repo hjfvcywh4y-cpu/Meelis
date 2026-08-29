@@ -19,6 +19,8 @@
   var renderResults = D._ui.renderResults;
   var renderProfile = D._ui.renderProfile;
   var renderAccess = D._ui.renderAccess;
+  var renderPricing = D._ui.renderPricing;
+  var renderPrivacy = D._ui.renderPrivacy;
 
   function renderAbout(state) {
     var R = state.R;
@@ -202,6 +204,10 @@
         return renderProfile(state);
       case 'access':
         return renderAccess(state);
+      case 'pricing':
+        return renderPricing(state);
+      case 'privacy':
+        return renderPrivacy(state);
       case 'about':
         return renderAbout(state);
       case 'preview':

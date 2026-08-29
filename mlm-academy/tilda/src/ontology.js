@@ -288,7 +288,27 @@
         /* entry tracks may be orphans by design; only flag if also no next */
       }
     }
-    return { ok: rows.length === 0, failures: rows, total: catalog.length };
+    var expected = { A1: 16, A2: 16, A3: 17, A4: 17, A5: 14, A6: 32 };
+    var counts = { A1: 0, A2: 0, A3: 0, A4: 0, A5: 0, A6: 0 };
+    for (var s = 0; s < catalog.length; s += 1) {
+      if (counts[catalog[s].sectionId] != null) counts[catalog[s].sectionId] += 1;
+    }
+    var countIssues = [];
+    if (catalog.length !== 112) countIssues.push('expected_112_got_' + catalog.length);
+    if (Object.keys(seen).length !== catalog.length) countIssues.push('duplicate_track_ids');
+    Object.keys(expected).forEach(function (sectionId) {
+      if (counts[sectionId] !== expected[sectionId]) {
+        countIssues.push('section_' + sectionId + '_' + counts[sectionId] + '_expected_' + expected[sectionId]);
+      }
+    });
+    return {
+      ok: rows.length === 0 && countIssues.length === 0,
+      failures: rows,
+      total: catalog.length,
+      unique: Object.keys(seen).length,
+      sectionCounts: counts,
+      countIssues: countIssues,
+    };
   }
 
   function emptyRuntime(trackId) {
@@ -302,6 +322,11 @@
       evidenceDone: false,
       branch: '',
       feedback: null,
+      trackVersion: '',
+      verificationStatus: '',
+      verificationLabel: '',
+      startedAt: '',
+      completedAt: '',
       updatedAt: '',
     };
   }
@@ -402,13 +427,38 @@
     };
   }
 
+  function persistRunMeta(state) {
+    var session = api.readMembersSession ? api.readMembersSession() : { loggedIn: false };
+    var repo = api.getRepo ? api.getRepo() : null;
+    if (repo && repo.saveRun) {
+      repo.saveRun(session, state.trackId, {
+        status: state.status,
+        step: state.step,
+        trackVersion: state.trackVersion || '',
+        startedAt: state.startedAt || '',
+        completedAt: state.status === 'complete' ? (state.updatedAt || '') : '',
+      });
+    }
+    return state;
+  }
+
   function startRuntime(track) {
     var state = getRuntime(track.trackId);
     state.status = 'active';
     state.step = 'action';
     state.branch = '';
     state.feedback = null;
-    return saveRuntime(state);
+    if (!state.startedAt) state.startedAt = new Date().toISOString();
+    if (!state.trackVersion) {
+      try {
+        state.trackVersion = String((root.MLMA_PAYLOAD && root.MLMA_PAYLOAD.version) || '');
+      } catch (err) {
+        state.trackVersion = '';
+      }
+    }
+    saveRuntime(state);
+    persistRunMeta(state);
+    return state;
   }
 
   function submitRuntime(track, payload) {
@@ -422,7 +472,10 @@
     state.feedback = buildFeedback(track, check);
     state.step = 'feedback';
     state.status = check.branch === 'success' || check.branch === 'highResult' ? 'complete' : 'retry';
+    state.verificationStatus = 'self_checked';
+    state.verificationLabel = 'Самопроверка по критериям';
     saveRuntime(state);
+    persistRunMeta(state);
     return { state: state, check: check };
   }
 
@@ -431,7 +484,9 @@
     state.status = 'active';
     state.step = 'action';
     state.branch = 'error';
-    return saveRuntime(state);
+    saveRuntime(state);
+    persistRunMeta(state);
+    return state;
   }
 
   function nextBestAction(track, catalog, runtime, profile) {
@@ -526,6 +581,7 @@
   api.validateTrack = validateTrack;
   api.validateCatalog = validateCatalog;
   api.getRuntime = getRuntime;
+  api.listRuntimes = function () { return readRuntimeAll(); };
   api.startRuntime = startRuntime;
   api.submitRuntime = submitRuntime;
   api.retryRuntime = retryRuntime;

@@ -41,6 +41,10 @@ import {
   clientIp,
   rateLimitHit,
   allowedMethod,
+  PAYMENT_PATHS,
+  paymentsEnabled,
+  testMode,
+  sanitizeRunMeta,
 } from './account-core.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' };
@@ -171,7 +175,32 @@ export default {
       if (method !== 'GET' && method !== 'HEAD') {
         return json({ ok: false, reason: 'method_not_allowed' }, 405, origin, { Allow: 'GET, HEAD, OPTIONS' });
       }
-      return json({ ok: true, service: 'mlma-account' }, 200, origin);
+      return json(
+        {
+          ok: true,
+          service: 'mlma-account',
+          PAYMENTS_ENABLED: paymentsEnabled(env),
+          TEST_MODE: testMode(env),
+        },
+        200,
+        origin,
+      );
+    }
+
+    if (PAYMENT_PATHS.indexOf(path) !== -1) {
+      if (!paymentsEnabled(env)) {
+        return json(
+          {
+            ok: false,
+            reason: 'payments_disabled',
+            PAYMENTS_ENABLED: false,
+            TEST_MODE: testMode(env),
+          },
+          403,
+          origin,
+        );
+      }
+      return json({ ok: false, reason: 'payments_not_configured' }, 503, origin);
     }
 
     if (!allowedMethod(path, method)) {
@@ -332,11 +361,14 @@ export default {
       if (!trackId) return json({ ok: false, reason: 'unknown_track' }, 400, origin);
       const runtime = body.runtime && typeof body.runtime === 'object' ? body.runtime : {};
       auth.row.runs = auth.row.runs || {};
-      auth.row.runs[trackId] = {
-        status: String(runtime.status || 'active').slice(0, 40),
-        step: String(runtime.step || '').slice(0, 40),
+      const prev = auth.row.runs[trackId] || {};
+      auth.row.runs[trackId] = Object.assign({}, sanitizeRunMeta(prev), sanitizeRunMeta(runtime), {
         updatedAt: nowIso(),
-      };
+      });
+      delete auth.row.runs[trackId].artifact;
+      delete auth.row.runs[trackId].content;
+      delete auth.row.runs[trackId].evidenceNote;
+      delete auth.row.runs[trackId].answer;
       await saveAccount(env, auth.session.userKey, auth.row);
       return json({ ok: true, account: publicAccount(auth.row) }, 200, origin);
     }

@@ -16,6 +16,9 @@ const ROOT = path.resolve(__dirname, '..');
 const SRC = path.join(__dirname, 'src');
 const DIST = path.join(__dirname, 'dist');
 const T123_LIMIT = 45000;
+const ASSETS_VERSION = 'v1';
+const CATALOG_SCHEMA = 'mlma.catalog.public.v1';
+const EXPECTED_SECTION_COUNTS = { A1: 16, A2: 16, A3: 17, A4: 17, A5: 14, A6: 32 };
 
 const FORBIDDEN = [
   'adaptationDecision',
@@ -45,8 +48,24 @@ const tracks = catalogFile.tracks
 if (tracks.length !== 112) {
   throw new Error('Ожидалось 112 публичных треков, получено ' + tracks.length);
 }
+const uniqueIds = new Set(tracks.map((row) => row.id));
+if (uniqueIds.size !== 112) {
+  throw new Error('Каталог должен содержать 112 уникальных Track ID, получено ' + uniqueIds.size);
+}
+const sectionCounts = { A1: 0, A2: 0, A3: 0, A4: 0, A5: 0, A6: 0 };
+for (const row of tracks) {
+  if (sectionCounts[row.s] == null) throw new Error('Неизвестный раздел ' + row.s);
+  sectionCounts[row.s] += 1;
+}
+for (const [sectionId, expected] of Object.entries(EXPECTED_SECTION_COUNTS)) {
+  if (sectionCounts[sectionId] !== expected) {
+    throw new Error('Раздел ' + sectionId + ': ' + sectionCounts[sectionId] + ' вместо ' + expected);
+  }
+}
 
 const payload = {
+  schema: CATALOG_SCHEMA,
+  assetsVersion: ASSETS_VERSION,
   version: catalogFile.version,
   config: {
     dedicatedTrackPages: [],
@@ -120,6 +139,8 @@ const pages = [
   { id: 'results', file: 'my-results.html', url: '/my/results', page: 'results', title: 'Мои результаты · MLM Academy', members: 'member' },
   { id: 'profile', file: 'profile.html', url: '/profile', page: 'profile', title: 'Профиль · MLM Academy', members: 'member' },
   { id: 'access', file: 'access.html', url: '/access', page: 'access', title: 'Доступ · MLM Academy', members: 'public' },
+  { id: 'pricing', file: 'pricing.html', url: '/pricing', page: 'pricing', title: 'Условия доступа · MLM Academy', members: 'public' },
+  { id: 'privacy', file: 'privacy.html', url: '/privacy', page: 'privacy', title: 'Политика конфиденциальности · черновик · MLM Academy', members: 'public' },
   { id: 'preview', file: 'preview-catalog.html', url: '/preview/catalog', page: 'preview', title: 'Предпросмотр каталога · MLM Academy', members: 'editor' },
 ];
 
@@ -342,7 +363,9 @@ function seoHead(page, opts = {}) {
     library: 'Каталог треков и материалов по этапам A1–A6. Поиск понимает живой запрос, а не только название.',
     about: 'Как устроена MLM Academy: трек как маршрут изменения состояния, а не страница с видео.',
     track: 'Карточка трека: ситуация, действие, рабочий след и следующее лучшее действие.',
-    access: 'Сначала бесплатный кабинет, затем пакет START или FULL. Реальные списания пока выключены.',
+    access: 'Сначала бесплатный кабинет. Реальные списания выключены.',
+    pricing: 'Бесплатный кабинет FREE и будущие пакеты. Оплата пока в тестовом режиме и не выдаёт права.',
+    privacy: 'Черновик места для политики конфиденциальности. Юридический текст не утверждён.',
     my: 'Личный кабинет MLM Academy. Страница не индексируется.',
     route: 'Маршрут и сохранённые треки. Страница не индексируется.',
     results: 'Результаты прохождения. Страница не индексируется.',
@@ -365,7 +388,7 @@ function seoHead(page, opts = {}) {
     : '<!-- window.MLMA_RERANK_URL задаётся после деплоя search-proxy. Ключ модели в Tilda не класть. -->';
   const accountUrl = opts.preview ? '/api' : ACCOUNT_PUBLIC_URL;
   const accountScript = accountUrl
-    ? `<script>window.MLMA_API_URL = ${JSON.stringify(accountUrl)};</script>`
+    ? `<script>window.MLMA_API_URL = ${JSON.stringify(accountUrl)};window.MLMA_ASSETS_VERSION = ${JSON.stringify(ASSETS_VERSION)};</script>`
     : '<!-- window.MLMA_API_URL задаётся после деплоя account-proxy. Секреты в Tilda не класть. -->';
   return `<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -407,6 +430,9 @@ write(path.join(DIST, 't123/01-css.html'), t123Wrap(cssBlock, 'Блок T123 №
 const membersCss = fs.readFileSync(path.join(SRC, 'members-bridge.css'), 'utf8');
 write(path.join(DIST, 't123/members-bridge.css'), membersCss);
 write(path.join(DIST, 'shared/members-bridge.css'), membersCss);
+const membersJs = fs.readFileSync(path.join(SRC, 'members-bridge.js'), 'utf8');
+write(path.join(DIST, 't123/members-bridge.js'), membersJs);
+write(path.join(DIST, 'shared/members-bridge.js'), membersJs);
 
 const dataChunks = splitText(json, 40000);
 dataChunks.forEach((chunk, index) => {
@@ -458,10 +484,13 @@ write(path.join(v1, 'catalog-data.js'), 'window.MLMA_PAYLOAD = ' + json + ';\n')
 write(path.join(v1, 'mlma.css'), css);
 write(path.join(v1, 'domain.js'), domainJs);
 write(path.join(v1, 'ui.js'), uiJs);
+write(path.join(v1, 'catalog.schema.json'), fs.readFileSync(path.join(ROOT, 'src/data/catalog.schema.json'), 'utf8'));
+write(path.join(DIST, 'shared/catalog.schema.json'), fs.readFileSync(path.join(ROOT, 'src/data/catalog.schema.json'), 'utf8'));
 
 function previewHtml(page) {
   const attrs = [`class="mlma"`, `data-mlma-page="${page.page}"`];
   if (page.section) attrs.push(`data-mlma-section="${page.section}"`);
+  const bust = encodeURIComponent(ASSETS_VERSION + '-' + catalogFile.version);
   return `<!doctype html>
 <html lang="ru">
 <head>
@@ -469,15 +498,15 @@ function previewHtml(page) {
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>${page.title}</title>
   ${seoHead(page, { preview: true })}
-  <link rel="stylesheet" href="/shared/mlma.css">
+  <link rel="stylesheet" href="/shared/${ASSETS_VERSION}/mlma.css?v=${bust}">
 </head>
 <body>
   <div ${attrs.join(' ')}>
     ${noscriptFor(page)}
   </div>
-  <script src="/shared/catalog-data.js"></script>
-  <script src="/shared/domain.js"></script>
-  <script src="/shared/ui.js"></script>
+  <script src="/shared/${ASSETS_VERSION}/catalog-data.js?v=${bust}"></script>
+  <script src="/shared/${ASSETS_VERSION}/domain.js?v=${bust}"></script>
+  <script src="/shared/${ASSETS_VERSION}/ui.js?v=${bust}"></script>
 </body>
 </html>
 `;
@@ -486,6 +515,16 @@ function previewHtml(page) {
 for (const page of pages) {
   write(path.join(DIST, 'preview', page.file), previewHtml(page));
 }
+
+const loader = `<!-- Внешние assets ${ASSETS_VERSION}. Не публиковать все страницы сразу.
+Rollback: вернуть блоки T123 01-css, 02-data-*, 03-domain-*, 04-ui-*.
+Замените ASSET_BASE на URL файлов. Секреты сюда не класть. -->
+<link rel="stylesheet" href="ASSET_BASE/${ASSETS_VERSION}/mlma.css?v=${catalogFile.version}">
+<script src="ASSET_BASE/${ASSETS_VERSION}/catalog-data.js?v=${catalogFile.version}"></script>
+<script src="ASSET_BASE/${ASSETS_VERSION}/domain.js?v=${catalogFile.version}"></script>
+<script src="ASSET_BASE/${ASSETS_VERSION}/ui.js?v=${catalogFile.version}"></script>
+`;
+write(path.join(DIST, 't123/external-loader-v1.html'), t123Wrap(loader, `Внешний loader assets ${ASSETS_VERSION}. Сначала одна тестовая страница.`));
 
 const checklist = `# Сборка страниц Tilda · MLM Academy
 
@@ -506,7 +545,20 @@ const checklist = `# Сборка страниц Tilda · MLM Academy
 
 После деплоя search-proxy задайте в HEAD \`window.MLMA_RERANK_URL\` на \`https://<домен>/api/rerank\`. API-ключ в Tilda не класть.
 
-Версионируемые файлы лежат в \`shared/v1/\`. Живые страницы Tilda пока грузят каталог из T123 — так публикация уже проверена. Переход на внешние файлы делать только после отдельной проверки Tilda.
+Версионируемые файлы лежат в \`shared/${ASSETS_VERSION}/\`. Живые страницы Tilda пока
+остаются на проверенных блоках T123. Не переключать все 18+ страниц сразу.
+
+Порядок внешнего переключения:
+
+1. Локальный preview (\`pnpm tilda:serve\`)
+2. Одна тестовая страница Tilda: вместо блоков 01–04 вставить \`t123/external-loader-v1.html\`,
+   заменив \`ASSET_BASE\` на URL файлов. Mount и HEAD оставить.
+3. Проверить каталог 112, поиск только по кнопке/Enter, кабинет, rollback.
+4. Группами публиковать остальные страницы той же версии.
+5. Rollback: вернуть предыдущие T123 01-css / 02-data / 03-domain / 04-ui
+   или сменить \`v1\` на предыдущую папку assets.
+
+Нельзя оставлять часть страниц на несовместимой версии каталога.
 
 Можно собрать одну страницу-мастер, затем дублировать и менять URL, title и mount.
 
@@ -547,7 +599,7 @@ ${pages.map((page) => `| ${page.title} | \`${page.url}\` | \`mounts/${page.id}.h
 | Editor / ADMIN | те же четыре + \`/preview/catalog\` |
 
 Публичные (не добавлять ни в одну группу): \`/academy\`, \`/start\`, \`/library\`,
-\`/library/a1\`…\`/library/a6\`, \`/track\`, \`/about\`, \`/access\`. Живую главную \`/\` и прочие
+\`/library/a1\`…\`/library/a6\`, \`/track\`, \`/about\`, \`/access\`, \`/pricing\`, \`/privacy\`. Живую главную \`/\` и прочие
 маркетинговые страницы в группы не добавлять.
 
 Группы доступа: **Guest**, **Member**, **FREE**, **START**, **FULL**, **PILOT**, **ADMIN**, **Editor**.
@@ -579,13 +631,23 @@ sitemap — HTTPS, без кабинета. Автокарта Tilda сейча�
 
 write(path.join(DIST, 'TILDA_CHECKLIST.md'), checklist);
 
+const sizesPath = path.join(DIST, 'sizes.json');
+let previousSizes = null;
+if (fs.existsSync(sizesPath)) {
+  try { previousSizes = JSON.parse(fs.readFileSync(sizesPath, 'utf8')); } catch (err) { previousSizes = null; }
+}
 const sizes = {
+  assetsVersion: ASSETS_VERSION,
+  schema: CATALOG_SCHEMA,
   css: cssBlock.length,
   json: json.length,
   dataChunks: dataChunks.length,
   domain: domainJs.length,
   ui: uiJs.length,
   tracks: tracks.length,
+  uniqueTrackIds: uniqueIds.size,
+  sectionCounts,
+  previous: previousSizes,
 };
 
 write(path.join(DIST, 'sizes.json'), JSON.stringify(sizes, null, 2) + '\n');
@@ -606,6 +668,8 @@ Allow: /library
 Allow: /start
 Allow: /about
 Allow: /access
+Allow: /pricing
+Allow: /privacy
 Allow: /research
 Disallow: /my
 Disallow: /my/

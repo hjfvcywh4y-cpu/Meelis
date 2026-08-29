@@ -134,6 +134,22 @@
     "members": "public"
   },
   {
+    "id": "pricing",
+    "file": "pricing.html",
+    "url": "/pricing",
+    "page": "pricing",
+    "title": "Условия доступа · MLM Academy",
+    "members": "public"
+  },
+  {
+    "id": "privacy",
+    "file": "privacy.html",
+    "url": "/privacy",
+    "page": "privacy",
+    "title": "Политика конфиденциальности · черновик · MLM Academy",
+    "members": "public"
+  },
+  {
     "id": "preview",
     "file": "preview-catalog.html",
     "url": "/preview/catalog",
