@@ -262,6 +262,8 @@
       { href: R.library(), label: 'Библиотека' },
       { href: R.about(), label: 'Как создаётся библиотека' },
       { href: R.access(), label: 'Доступ' },
+      { href: R.pricing ? R.pricing() : '/pricing', label: 'Условия' },
+      { href: R.privacy ? R.privacy() : '/privacy', label: 'Политика' },
       { href: R.research ? R.research() : '/research/marketing-plan', label: 'Исследование' },
       { href: D.siteHomeUrl(), label: 'Решения для компаний' },
     ];
@@ -503,6 +505,7 @@
       '<label class="mlma-sr" for="mlma-home-q">Что у тебя сейчас происходит?</label>' +
       '<input id="mlma-home-q" class="mlma-field" type="search" name="q" placeholder="Что у тебя сейчас происходит?" autocomplete="off">' +
       '<button class="mlma-btn mlma-btn-primary" type="submit">Найти решение</button></form>' +
+      '<p class="mlma-muted" style="margin-top:10px;font-size:13px;max-width:54ch">Не указывайте имена, телефоны и другие персональные данные третьих лиц.</p>' +
       '<p class="mlma-meta" style="margin-top:18px">Живые примеры</p>' +
       '<div class="mlma-examples">' +
       exHtml +
@@ -904,7 +907,8 @@
       '<form id="mlma-lib-form" action="/library" method="get" role="search"><label class="mlma-meta" style="display:block;margin-bottom:8px" for="mlma-search">Что у тебя сейчас происходит?</label>' +
       '<div class="mlma-search"><input id="mlma-search" class="mlma-field" type="search" name="q" placeholder="Например: боюсь написать знакомому" value="' +
       esc(filters.q || '') +
-      '" autocomplete="off"><button class="mlma-btn mlma-btn-primary" type="submit">Найти решение</button></div></form>' +
+      '" autocomplete="off"><button class="mlma-btn mlma-btn-primary" type="submit">Найти решение</button></div>' +
+      '<p class="mlma-muted" style="margin-top:8px;font-size:13px">Не указывайте имена, телефоны и другие персональные данные третьих лиц.</p></form>' +
       (chipsHtml ? '<div class="mlma-chip-row" id="mlma-active-chips">' + chipsHtml + '</div>' : '') +
       '<div class="mlma-filterbar"><button type="button" class="mlma-btn mlma-btn-small" id="mlma-open-filters" aria-haspopup="dialog" aria-expanded="false">Фильтры</button>' +
       '<button type="button" class="mlma-btn mlma-btn-small mlma-btn-ghost" id="mlma-share" data-mlma-share="' +
@@ -1277,7 +1281,8 @@
         '<textarea id="mlma-evidence" class="mlma-field" name="evidenceNote" rows="3" required placeholder="Какой след остался: текст сохранён, сообщение отправлено, план записан">' +
         esc(runtime.evidenceNote || '') +
         '</textarea>' +
-        '<p class="mlma-muted" style="font-size:13px">Просмотр страницы не завершает трек. Нужен объект работы и проверяемый след.</p>' +
+        '<p class="mlma-muted" style="font-size:13px">Не добавляйте в результат персональные данные других людей без их согласия.</p>' +
+        '<p class="mlma-muted" style="font-size:13px">Просмотр страницы не завершает трек. Нужен объект работы и проверяемый след. Оценка здесь — самопроверка по критериям, а не доказательство выполнения.</p>' +
         '<button class="mlma-btn mlma-btn-primary" type="submit" data-mlma-run-submit="' +
         esc(track.trackId) +
         '">Сдать результат</button></form>';
@@ -1772,27 +1777,48 @@
 
   function renderResults(state) {
     var R = state.R;
-    var types = [
-      ['text', 'Формулировка', 'Своя позиция, ответ, короткий текст'],
-      ['list', 'Список', 'База контактов, план действий, сегмент'],
-      ['message', 'Сообщение', 'Подготовленное или отправленное сообщение'],
-      ['audio', 'Запись', 'Аудио разговора или тренировки'],
-      ['image', 'Изображение', 'Скриншот переписки, фото документа'],
-      ['link', 'Ссылка', 'Опубликованный материал'],
-      ['fact', 'Отметка факта', 'Действие совершено'],
-      ['appointment', 'Договорённость', 'Следующий контакт и дата'],
-      ['reflection', 'Разбор', 'Факты разговора без самобичевания'],
-    ];
-    var typeHtml = '';
-    for (var i = 0; i < types.length; i += 1) {
-      typeHtml +=
-        '<li class="mlma-card-soft" style="padding:16px"><span class="mlma-meta">' +
-        esc(types[i][0]) +
-        '</span><p style="margin-top:8px;font-size:16px;font-weight:700">' +
-        esc(types[i][1]) +
-        '</p><p class="mlma-muted" style="margin-top:4px;font-size:15px">' +
-        esc(types[i][2]) +
-        '</p></li>';
+    var runs = D.listRuntimes ? D.listRuntimes() : {};
+    var items = [];
+    Object.keys(runs).forEach(function (id) {
+      var row = runs[id];
+      if (!row || row.status === 'preview') return;
+      var track = D.getById(state.allTracks, id, true);
+      items.push({
+        trackId: id,
+        title: track ? track.title : id,
+        status: row.status,
+        updatedAt: row.updatedAt || '',
+        verificationLabel: row.verificationLabel || 'Самопроверка по критериям',
+        storage: 'device',
+      });
+    });
+    items.sort(function (a, b) { return String(b.updatedAt).localeCompare(String(a.updatedAt)); });
+    var listHtml = '';
+    if (!items.length) {
+      listHtml = emptyState({
+        eyebrow: 'Пока пусто',
+        title: 'Здесь пока нет результатов',
+        description: 'Они появятся не после просмотра урока, а когда вы сделаете действие и сохраните то, что получилось. Пока содержание треков в контуре, результат остаётся на этом устройстве.',
+        actions: btn(R.library(), 'Открыть библиотеку', 'primary') + btn(R.my(), 'Личная главная'),
+      });
+    } else {
+      listHtml = '<ul style="display:grid;gap:16px">';
+      for (var i = 0; i < items.length; i += 1) {
+        var item = items[i];
+        listHtml +=
+          '<li class="mlma-card mlma-pad"><span class="mlma-meta">' +
+          esc(item.trackId) +
+          ' · ' +
+          esc(item.status === 'complete' ? 'завершён' : item.status) +
+          '</span><h2 class="mlma-h3" style="margin-top:10px">' +
+          esc(item.title) +
+          '</h2><p class="mlma-muted" style="margin-top:8px;font-size:14px">' +
+          esc(item.verificationLabel) +
+          '</p><p class="mlma-muted" style="margin-top:8px;font-size:14px">Сохранено на этом устройстве. Синхронизация между устройствами пока недоступна.</p><div class="mlma-actions" style="margin-top:16px">' +
+          btn(R.track(item.trackId), 'Открыть трек', 'primary') +
+          '</div></li>';
+      }
+      listHtml += '</ul>';
     }
     return (
       pageHead(
@@ -1809,16 +1835,9 @@
         R,
       ) +
       (cabinetNav ? cabinetNav(state) : '') +
-      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:40px">' +
-      emptyState({
-        eyebrow: 'Пока пусто',
-        title: 'Здесь пока нет результатов',
-        description: 'Они появятся не после просмотра урока, а когда вы сделаете действие и сохраните то, что получилось: список, сообщение, запись разговора или договорённость с датой.',
-        actions: btn(R.library(), 'Открыть библиотеку', 'primary') + btn(R.my(), 'Личная главная'),
-      }) +
-      '<section><span class="mlma-eyebrow">Типы результата</span><h2 class="mlma-h3" style="margin-top:16px">Что вообще может остаться после трека</h2><ul class="mlma-grid-3" style="margin-top:24px">' +
-      typeHtml +
-      '</ul><p class="mlma-muted" style="margin-top:24px;max-width:70ch;font-size:15px">Загрузка и хранение появятся вместе с содержанием треков. Сейчас интерфейс ничего не просит прикрепить и ничего не имитирует.</p></section></div>'
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:24px">' +
+      listHtml +
+      '</div>'
     );
   }
 
@@ -1934,7 +1953,9 @@
       '</select></div>' +
       '<label style="display:flex;gap:10px;align-items:flex-start;font-size:14px"><input type="checkbox" id="mlma-consent" name="consent"' +
       (state.profile.consentAt ? ' checked' : '') +
-      '> Согласен на обработку персональных данных для работы кабинета</label>' +
+      '> Согласен на обработку персональных данных для работы кабинета. <a href="' +
+      esc((R.privacy && R.privacy()) || '/privacy') +
+      '">Черновик политики</a></label>' +
       '<label style="display:flex;gap:10px;align-items:flex-start;font-size:14px"><input type="checkbox" id="mlma-notify" name="notifyEmail"' +
       (state.profile.notifyEmail !== false ? ' checked' : '') +
       '> Присылать письма о маршруте на email кабинета</label>' +
@@ -1950,7 +1971,7 @@
       '<aside style="display:grid;gap:16px"><section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Безопасность</span><h2 class="mlma-h3" style="margin-top:16px">Сессия Tilda</h2><p class="mlma-muted" style="margin-top:12px;font-size:15px">' +
       esc((state.account && state.account.email) || 'Email кабинета появится после входа') +
       '</p><div class="mlma-actions" style="margin-top:16px;flex-direction:column">' +
-      btn('/members/login', 'Сменить пароль', '', 'mlma-btn-small') +
+      btn((D.membersRecoverUrl && D.membersRecoverUrl()) || '/members/login?mlma=recover', 'Сменить пароль', '', 'mlma-btn-small') +
       '<a class="mlma-btn mlma-btn-small" href="/members/logout">Выйти</a>' +
       '</div></section><section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Сохранённое</span><h2 class="mlma-h3" style="margin-top:16px">' +
       (savedTracks.length === 0 ? 'Пока ничего не сохранено' : savedTracks.length + ' в маршруте') +
@@ -1979,8 +2000,8 @@
         esc(p.summary) +
         '</p><div class="mlma-actions" style="margin-top:20px">' +
         (logged
-          ? '<a class="mlma-btn mlma-btn-primary" href="' + esc(D.checkoutHref(p.id, queryParam('track'))) + '" data-mlma-checkout="' + esc(p.id) + '">Купить в тестовом режиме</a>'
-          : btn(D.membersSignupUrl('/access'), 'Сначала создать кабинет', 'primary')) +
+        ? '<a class="mlma-btn mlma-btn-primary" href="' + esc(D.checkoutHref(p.id, queryParam('track'))) + '" data-mlma-checkout="' + esc(p.id) + '">Запросить тестовый пакет</a>'
+        : btn((R.pricing && R.pricing()) || '/pricing', 'Смотреть условия', 'primary')) +
         '</div></article>';
     }
     var orders = (state.account && state.account.orders) || [];
@@ -2030,11 +2051,75 @@
       '</div>' +
       (logged
         ? '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Покупки</span><h2 class="mlma-h3" style="margin-top:12px">Заказы и сроки</h2>' + orderHtml + '</section>'
-        : '<section class="mlma-card mlma-pad"><p>Гость видит каталог и описания. Чтобы сохранить маршрут, создайте кабинет.</p><div class="mlma-actions" style="margin-top:16px">' +
-          btn(D.membersSignupUrl('/my'), 'Регистрация', 'primary') +
+        : '<section class="mlma-card mlma-pad"><p>Гость видит только публичные условия. История покупок скрыта. Чтобы сохранить бесплатный маршрут, создайте кабинет.</p><div class="mlma-actions" style="margin-top:16px">' +
+          btn((R.pricing && R.pricing()) || '/pricing', 'Условия доступа', 'primary') +
+          btn(D.membersSignupUrl('/my'), 'Регистрация') +
           btn(D.membersLoginUrl('/access'), 'Войти') +
           '</div></section>') +
-      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Как будет устроена оплата</span><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Сервис ещё не выбран. Сравнение встроенных в Tilda вариантов и внешнего вебхука лежит в документации. Рекуррентные списания не включаем без отдельного решения владельца.</p></section></div>'
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Как будет устроена оплата</span><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Реальные списания выключены: PAYMENTS_ENABLED=false, TEST_MODE=true. Разовая оплата и подписка не запущены. Кнопка в кабинете не выдаёт FULL.</p></section></div>'
+    );
+  }
+
+  function renderPricing(state) {
+    var R = state.R;
+    var logged = !!(state.account && state.account.loggedIn);
+    return (
+      pageHead(
+        {
+          eyebrow: 'Доступ',
+          title: 'Какие варианты доступа планируются',
+          lead: 'Сейчас можно пользоваться публичной библиотекой и бесплатным кабинетом FREE. Оплата работает только как заготовка в тестовом режиме: деньги не списываются, платные права не выдаются.',
+          crumbs: [
+            { label: 'Academy', href: R.home() },
+            { label: 'Условия доступа' },
+          ],
+        },
+        R,
+      ) +
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:20px">' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">FREE</span><h2 class="mlma-h3" style="margin-top:12px">Бесплатный кабинет</h2><ul class="mlma-muted" style="margin-top:12px;display:grid;gap:8px;font-size:15px;line-height:1.45"><li>Публичный каталог 112 треков и поиск.</li><li>Сохранение бесплатного маршрута после входа.</li><li>Локальные результаты на этом устройстве.</li><li>Без платного содержания и без истории покупок у гостя.</li></ul></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Позже</span><h2 class="mlma-h3" style="margin-top:12px">Пакеты START и FULL</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Состав и цена определяются сервером, не кнопкой в браузере. Пакеты появятся после подтверждённой авторизации, тестового магазина ЮKassa и отдельного решения владельца. Рекуррентная подписка не подключается.</p></section>' +
+      '<section class="mlma-card mlma-pad" style="border-color:var(--mlma-danger,#8b2e1f)"><span class="mlma-eyebrow">Тестовый режим</span><p style="margin-top:12px;max-width:70ch">PAYMENTS_ENABLED=false. TEST_MODE=true. Вход Tilda Members не является доказательством личности и не открывает FULL.</p></section>' +
+      '<div class="mlma-actions">' +
+      (logged ? btn(R.access(), 'История доступа в кабинете', 'primary') : btn(D.membersSignupUrl('/my'), 'Создать бесплатный кабинет', 'primary')) +
+      btn(R.library(), 'Открыть библиотеку') +
+      btn((R.privacy && R.privacy()) || '/privacy', 'Политика') +
+      '</div></div>'
+    );
+  }
+
+  function renderPrivacy(state) {
+    var R = state.R;
+    var missing = [
+      'Реквизиты оператора персональных данных',
+      'Юридический адрес и контакт для запросов субъекта',
+      'Сроки хранения',
+      'Перечень внешних обработчиков (Cloudflare, Tilda, будущие Supabase и ЮKassa)',
+      'Утверждённый текст политики и дата вступления в силу',
+    ];
+    var list = '';
+    for (var i = 0; i < missing.length; i += 1) {
+      list += '<li>' + esc(missing[i]) + '</li>';
+    }
+    return (
+      pageHead(
+        {
+          eyebrow: 'Черновик · не утверждено',
+          title: 'Политика конфиденциальности',
+          lead: 'Это техническое место для политики, а не опубликованный юридический документ. Текста оператора пока нет — его нельзя выдумать.',
+          crumbs: [
+            { label: 'Academy', href: R.home() },
+            { label: 'Политика' },
+          ],
+        },
+        R,
+      ) +
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:20px">' +
+      '<section class="mlma-card mlma-pad"><p>Пока политика не утверждена владельцем, согласие в профиле отмечает только факт интерфейсного подтверждения в этом браузере. Это не замена договора и не основание передавать чувствительные артефакты на сервер.</p></section>' +
+      '<section class="mlma-card mlma-pad"><h2 class="mlma-h3">Чего не хватает для публикации</h2><ul style="margin-top:12px;display:grid;gap:8px">' +
+      list +
+      '</ul></section>' +
+      '<section class="mlma-card mlma-pad"><h2 class="mlma-h3">Что уже можно сделать технически</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Выгрузить данные этого устройства. Запросить удаление — после того, как владелец укажет контакт оператора.</p><div class="mlma-actions" style="margin-top:16px"><button type="button" class="mlma-btn mlma-btn-primary" data-mlma-export-local="1">Выгрузить данные этого устройства</button></div><p id="mlma-export-msg" class="mlma-muted" style="margin-top:12px;font-size:14px" aria-live="polite"></p></section></div>'
     );
   }
 
@@ -2043,6 +2128,8 @@
   D._ui.renderResults = renderResults;
   D._ui.renderProfile = renderProfile;
   D._ui.renderAccess = renderAccess;
+  D._ui.renderPricing = renderPricing;
+  D._ui.renderPrivacy = renderPrivacy;
 })(typeof window !== 'undefined' ? window : globalThis);
 
 /* __MLMA_UI_SPLIT__ */
@@ -2065,6 +2152,8 @@
   var renderResults = D._ui.renderResults;
   var renderProfile = D._ui.renderProfile;
   var renderAccess = D._ui.renderAccess;
+  var renderPricing = D._ui.renderPricing;
+  var renderPrivacy = D._ui.renderPrivacy;
 
   function renderAbout(state) {
     var R = state.R;
@@ -2248,6 +2337,10 @@
         return renderProfile(state);
       case 'access':
         return renderAccess(state);
+      case 'pricing':
+        return renderPricing(state);
+      case 'privacy':
+        return renderPrivacy(state);
       case 'about':
         return renderAbout(state);
       case 'preview':
@@ -2327,18 +2420,9 @@
     }
 
     function emitSearch() {
+      if (!filters.q) return;
       var result = D.searchCatalog(state.tracks, filters);
-      if (result.kind === 'zero' || result.kind === 'need_more') {
-        D.trackEvent('library_zero_results', { query: filters.q || '', filters: D.serializeLibraryState(filters), source: 'library' });
-      } else if (filters.q) {
-        D.trackEvent('search_submitted', { query: filters.q, source: 'library' });
-        D.trackEvent('search_query', { query: filters.q, filters: D.serializeLibraryState(filters), source: 'library' });
-        D.trackEvent('library_search', { query: filters.q, filters: D.serializeLibraryState(filters), source: 'library' });
-        D.trackEvent('search_results_shown', { query: filters.q, source: 'library' });
-      } else {
-        D.trackEvent('filter_change', { filters: D.serializeLibraryState(filters), source: 'library' });
-        D.trackEvent('library_filter_change', { filters: D.serializeLibraryState(filters), source: 'library' });
-      }
+      D.trackEvent('search_submitted', { query: filters.q, source: 'library', kind: result.kind || '' });
     }
 
     function placeDrawer() {
@@ -2509,7 +2593,7 @@
       if (opts.url === 'push') syncUrl('push');
       else if (opts.url === 'replace') syncUrl('replace');
       persist();
-      emitSearch();
+      if (!opts.skipRerank) emitSearch();
       if (!opts.skipRerank) requestRerank();
     }
 
@@ -2602,7 +2686,7 @@
         var id = D.normalizeTrackId(el.getAttribute('data-mlma-run-start'));
         var track = id ? D.getById(state.allTracks, id, true) : null;
         if (track && D.startRuntime) D.startRuntime(track);
-        D.trackEvent('track_start', { itemId: id || '', source_page: '/track', article_slug: id || '' });
+        D.trackEvent('track_started', { itemId: id || '', source_page: '/track', article_slug: id || '' });
       });
     });
     var runForm = rootEl.querySelector('#mlma-runtime-form');
@@ -2614,22 +2698,10 @@
         if (!track || !D.submitRuntime) return;
         var artifact = (runForm.querySelector('#mlma-artifact') || {}).value || '';
         var evidenceNote = (runForm.querySelector('#mlma-evidence') || {}).value || '';
-        D.trackEvent('track_action_submitted', { itemId: id, source_page: '/track' });
-        D.trackEvent('track_evidence_submitted', { itemId: id, source_page: '/track' });
+        D.trackEvent('artifact_created', { itemId: id, source_page: '/track' });
         var result = D.submitRuntime(track, { artifact: artifact, evidenceNote: evidenceNote });
         var branch = result && result.check ? result.check.branch : '';
-        D.trackEvent(branch === 'success' || branch === 'highResult' ? 'track_evidence_verified' : 'track_evidence_rejected', {
-          itemId: id,
-          cta_position: branch,
-        });
-        D.trackEvent('track_branch_selected', { itemId: id, cta_position: branch });
-        D.trackEvent('track_feedback_shown', { itemId: id, cta_position: branch });
-        if (branch === 'success' || branch === 'highResult') D.trackEvent('track_complete', { itemId: id });
-        if (branch === 'error' || branch === 'risk') D.trackEvent('track_retry', { itemId: id });
-        if (branch === 'risk') D.trackEvent('leader_escalation', { itemId: id, cta_position: 'risk' });
-        if (result && result.state && result.state.attempts >= 2 && (branch === 'error' || branch === 'risk')) {
-          D.trackEvent('corrective_track_assigned', { itemId: id, cta_position: branch });
-        }
+        if (branch === 'success' || branch === 'highResult') D.trackEvent('track_completed', { itemId: id });
         mount(rootEl);
       });
     }
@@ -2644,8 +2716,7 @@
     });
     rootEl.querySelectorAll('[data-mlma-nba]').forEach(function (el) {
       el.addEventListener('click', function () {
-        D.trackEvent('track_next_open', { itemId: el.getAttribute('data-mlma-nba') || '', source_page: '/track' });
-        D.trackEvent('track_next_recommended', { itemId: el.getAttribute('data-mlma-nba') || '', source_page: '/track' });
+        D.trackEvent('next_track_opened', { itemId: el.getAttribute('data-mlma-nba') || '', source_page: '/track' });
       });
     });
     rootEl.querySelectorAll('[data-mlma-save]').forEach(function (el) {
@@ -2770,7 +2841,7 @@
           return;
         }
         var productId = el.getAttribute('data-mlma-checkout') || 'start';
-        D.trackEvent('checkout_blocked', { itemId: productId, reason: 'identity_unverified' });
+        D.trackEvent('checkout_blocked', { itemId: productId, reason: D.PAYMENTS_ENABLED ? 'identity_unverified' : 'payments_disabled' });
         var msg = el.parentNode.querySelector('[data-mlma-checkout-msg]');
         if (!msg) {
           msg = document.createElement('p');
@@ -2779,7 +2850,7 @@
           msg.style.marginTop = '12px';
           el.parentNode.appendChild(msg);
         }
-        msg.textContent = 'Оплата ещё не подключена. Эта кнопка не выдаёт платный доступ.';
+        msg.textContent = 'Оплата выключена. PAYMENTS_ENABLED=false. Эта кнопка не выдаёт платный доступ.';
       });
     });
     rootEl.querySelectorAll('[data-mlma-reset-profile]').forEach(function (el) {
@@ -2810,10 +2881,23 @@
     if (homeForm && state.page === 'home') {
       homeForm.addEventListener('submit', function () {
         var field = homeForm.querySelector('#mlma-home-q');
-        D.trackEvent('search_query', { query: field ? field.value : '', source: 'home' });
-        D.trackEvent('academy_search', { query: field ? field.value : '', source: 'home' });
+        D.trackEvent('search_submitted', { query: field ? field.value : '', source: 'home' });
       });
     }
+    rootEl.querySelectorAll('[data-mlma-export-local]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var payload = D.exportLocalUserData ? D.exportLocalUserData() : { error: 'export_unavailable' };
+        var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'mlma-local-export.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        var msg = rootEl.querySelector('#mlma-export-msg');
+        if (msg) msg.textContent = 'Файл скачан. Это данные этого устройства, не серверная копия.';
+      });
+    });
     rootEl.querySelectorAll('[data-mlma-result-open]').forEach(function (el) {
       el.addEventListener('click', function () {
         D.trackEvent('search_result_open', { itemId: el.getAttribute('data-mlma-result-open') || '', source: state.page });

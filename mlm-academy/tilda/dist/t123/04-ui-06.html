@@ -63,18 +63,9 @@
     }
 
     function emitSearch() {
+      if (!filters.q) return;
       var result = D.searchCatalog(state.tracks, filters);
-      if (result.kind === 'zero' || result.kind === 'need_more') {
-        D.trackEvent('library_zero_results', { query: filters.q || '', filters: D.serializeLibraryState(filters), source: 'library' });
-      } else if (filters.q) {
-        D.trackEvent('search_submitted', { query: filters.q, source: 'library' });
-        D.trackEvent('search_query', { query: filters.q, filters: D.serializeLibraryState(filters), source: 'library' });
-        D.trackEvent('library_search', { query: filters.q, filters: D.serializeLibraryState(filters), source: 'library' });
-        D.trackEvent('search_results_shown', { query: filters.q, source: 'library' });
-      } else {
-        D.trackEvent('filter_change', { filters: D.serializeLibraryState(filters), source: 'library' });
-        D.trackEvent('library_filter_change', { filters: D.serializeLibraryState(filters), source: 'library' });
-      }
+      D.trackEvent('search_submitted', { query: filters.q, source: 'library', kind: result.kind || '' });
     }
 
     function placeDrawer() {
@@ -245,7 +236,7 @@
       if (opts.url === 'push') syncUrl('push');
       else if (opts.url === 'replace') syncUrl('replace');
       persist();
-      emitSearch();
+      if (!opts.skipRerank) emitSearch();
       if (!opts.skipRerank) requestRerank();
     }
 
@@ -338,7 +329,7 @@
         var id = D.normalizeTrackId(el.getAttribute('data-mlma-run-start'));
         var track = id ? D.getById(state.allTracks, id, true) : null;
         if (track && D.startRuntime) D.startRuntime(track);
-        D.trackEvent('track_start', { itemId: id || '', source_page: '/track', article_slug: id || '' });
+        D.trackEvent('track_started', { itemId: id || '', source_page: '/track', article_slug: id || '' });
       });
     });
     var runForm = rootEl.querySelector('#mlma-runtime-form');
@@ -350,22 +341,10 @@
         if (!track || !D.submitRuntime) return;
         var artifact = (runForm.querySelector('#mlma-artifact') || {}).value || '';
         var evidenceNote = (runForm.querySelector('#mlma-evidence') || {}).value || '';
-        D.trackEvent('track_action_submitted', { itemId: id, source_page: '/track' });
-        D.trackEvent('track_evidence_submitted', { itemId: id, source_page: '/track' });
+        D.trackEvent('artifact_created', { itemId: id, source_page: '/track' });
         var result = D.submitRuntime(track, { artifact: artifact, evidenceNote: evidenceNote });
         var branch = result && result.check ? result.check.branch : '';
-        D.trackEvent(branch === 'success' || branch === 'highResult' ? 'track_evidence_verified' : 'track_evidence_rejected', {
-          itemId: id,
-          cta_position: branch,
-        });
-        D.trackEvent('track_branch_selected', { itemId: id, cta_position: branch });
-        D.trackEvent('track_feedback_shown', { itemId: id, cta_position: branch });
-        if (branch === 'success' || branch === 'highResult') D.trackEvent('track_complete', { itemId: id });
-        if (branch === 'error' || branch === 'risk') D.trackEvent('track_retry', { itemId: id });
-        if (branch === 'risk') D.trackEvent('leader_escalation', { itemId: id, cta_position: 'risk' });
-        if (result && result.state && result.state.attempts >= 2 && (branch === 'error' || branch === 'risk')) {
-          D.trackEvent('corrective_track_assigned', { itemId: id, cta_position: branch });
-        }
+        if (branch === 'success' || branch === 'highResult') D.trackEvent('track_completed', { itemId: id });
         mount(rootEl);
       });
     }
@@ -380,8 +359,7 @@
     });
     rootEl.querySelectorAll('[data-mlma-nba]').forEach(function (el) {
       el.addEventListener('click', function () {
-        D.trackEvent('track_next_open', { itemId: el.getAttribute('data-mlma-nba') || '', source_page: '/track' });
-        D.trackEvent('track_next_recommended', { itemId: el.getAttribute('data-mlma-nba') || '', source_page: '/track' });
+        D.trackEvent('next_track_opened', { itemId: el.getAttribute('data-mlma-nba') || '', source_page: '/track' });
       });
     });
     rootEl.querySelectorAll('[data-mlma-save]').forEach(function (el) {
@@ -506,7 +484,7 @@
           return;
         }
         var productId = el.getAttribute('data-mlma-checkout') || 'start';
-        D.trackEvent('checkout_blocked', { itemId: productId, reason: 'identity_unverified' });
+        D.trackEvent('checkout_blocked', { itemId: productId, reason: D.PAYMENTS_ENABLED ? 'identity_unverified' : 'payments_disabled' });
         var msg = el.parentNode.querySelector('[data-mlma-checkout-msg]');
         if (!msg) {
           msg = document.createElement('p');
@@ -515,7 +493,7 @@
           msg.style.marginTop = '12px';
           el.parentNode.appendChild(msg);
         }
-        msg.textContent = 'Оплата ещё не подключена. Эта кнопка не выдаёт платный доступ.';
+        msg.textContent = 'Оплата выключена. PAYMENTS_ENABLED=false. Эта кнопка не выдаёт платный доступ.';
       });
     });
     rootEl.querySelectorAll('[data-mlma-reset-profile]').forEach(function (el) {
@@ -546,10 +524,23 @@
     if (homeForm && state.page === 'home') {
       homeForm.addEventListener('submit', function () {
         var field = homeForm.querySelector('#mlma-home-q');
-        D.trackEvent('search_query', { query: field ? field.value : '', source: 'home' });
-        D.trackEvent('academy_search', { query: field ? field.value : '', source: 'home' });
+        D.trackEvent('search_submitted', { query: field ? field.value : '', source: 'home' });
       });
     }
+    rootEl.querySelectorAll('[data-mlma-export-local]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var payload = D.exportLocalUserData ? D.exportLocalUserData() : { error: 'export_unavailable' };
+        var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'mlma-local-export.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        var msg = rootEl.querySelector('#mlma-export-msg');
+        if (msg) msg.textContent = 'Файл скачан. Это данные этого устройства, не серверная копия.';
+      });
+    });
     rootEl.querySelectorAll('[data-mlma-result-open]').forEach(function (el) {
       el.addEventListener('click', function () {
         D.trackEvent('search_result_open', { itemId: el.getAttribute('data-mlma-result-open') || '', source: state.page });

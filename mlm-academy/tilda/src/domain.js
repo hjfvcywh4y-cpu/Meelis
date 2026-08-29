@@ -570,6 +570,12 @@
       access: function () {
         return '/access';
       },
+      pricing: function () {
+        return '/pricing';
+      },
+      privacy: function () {
+        return '/privacy';
+      },
       login: function (returnPath) {
         return membersLoginUrl(returnPath || '/my');
       },
@@ -807,6 +813,7 @@
     normalizeAccess: normalizeAccess,
     deriveSeoStatus: deriveSeoStatus,
     membersLoginUrl: membersLoginUrl,
+    membersRecoverUrl: membersRecoverUrl,
     siteHomeUrl: siteHomeUrl,
     b2bFromResearchUrl: b2bFromResearchUrl,
     academyFromResearchUrl: academyFromResearchUrl,
@@ -816,6 +823,11 @@
   function membersLoginUrl(returnPath) {
     var path = String(returnPath || '/my').replace(/^\//, '');
     return '/members/login?redirecturl=' + encodeURIComponent(path);
+  }
+
+  function membersRecoverUrl(returnPath) {
+    var path = String(returnPath || '/profile').replace(/^\//, '');
+    return '/members/login?mlma=recover&redirecturl=' + encodeURIComponent(path);
   }
 
   function siteHomeUrl() {

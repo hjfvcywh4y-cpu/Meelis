@@ -332,6 +332,8 @@ describe('онтология и runtime', () => {
   it('validateCatalog проходит по 112 объектам без критичных дыр', () => {
     const report = MLMA.validateCatalog(tracks);
     assert.equal(report.total, 112);
+    assert.equal(report.unique, 112);
+    assert.deepEqual(report.sectionCounts, { A1: 16, A2: 16, A3: 17, A4: 17, A5: 14, A6: 32 });
     assert.equal(report.ok, true, JSON.stringify(report.failures.slice(0, 5)));
   });
 

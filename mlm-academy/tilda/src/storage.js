@@ -14,6 +14,8 @@
   var OUTBOX_KEY = 'mlma.outbox.v1';
   var MIGRATED_KEY = 'mlma.migrated.v1';
   var PENDING_KEY = 'mlma.pendingTrackId';
+  var PENDING_LIST_KEY = 'mlma.pendingTracks.v1';
+  var PENDING_TTL_MS = 14 * 24 * 60 * 60 * 1000;
   var MODE_LOCAL = 'local_fallback';
   var MODE_SERVER = 'server';
   var MODE_RESTORING = 'restoring';
@@ -139,6 +141,25 @@
     return api.normalizeTrackId(trackId);
   }
 
+  function knownCatalogTrackId(trackId) {
+    var id = catalogTrackId(trackId);
+    if (!id) return '';
+    try {
+      var payload = root.MLMA_PAYLOAD;
+      var list = payload && payload.tracks;
+      if (Array.isArray(list) && list.length) {
+        for (var i = 0; i < list.length; i += 1) {
+          var row = list[i] || {};
+          if (row.id === id || row.trackId === id) return id;
+        }
+        return '';
+      }
+    } catch (err) {
+      /* catalog not mounted yet */
+    }
+    return id;
+  }
+
   function uniqueTrackIds(ids) {
     var out = [];
     var seen = {};
@@ -170,8 +191,8 @@
       row.payments = [];
       if (row.user) row.user.groups = ['FREE'];
     }
-    if (account.runs) row.runs = account.runs;
-    if (account.artifacts) row.artifacts = account.artifacts;
+    if (account.runs) row.runs = Object.assign({}, row.runs || {}, sanitizeRunMap(account.runs));
+    if (account.artifacts && account.artifacts.length) row.artifacts = account.artifacts;
     saveRecord(session, row);
     if (session && session.loggedIn && api.saveProfile) {
       api.saveProfile(Object.assign({}, row.profile, { savedTrackIds: row.savedTrackIds.slice() }));
@@ -200,30 +221,84 @@
     return null;
   }
 
-  function readPendingTrackId() {
+  function sanitizeRunMap(runs) {
+    var out = {};
+    if (!runs || typeof runs !== 'object') return out;
+    Object.keys(runs).forEach(function (id) {
+      var row = runs[id] || {};
+      out[id] = {
+        status: String(row.status || '').slice(0, 40),
+        step: String(row.step || '').slice(0, 40),
+        trackVersion: String(row.trackVersion || '').slice(0, 40),
+        startedAt: String(row.startedAt || '').slice(0, 40),
+        completedAt: String(row.completedAt || '').slice(0, 40),
+        updatedAt: String(row.updatedAt || '').slice(0, 40),
+      };
+    });
+    return out;
+  }
+
+  function pendingExpiry(fromIso) {
+    var start = Date.parse(fromIso || '') || Date.now();
+    return new Date(start + PENDING_TTL_MS).toISOString();
+  }
+
+  function readPendingTracks() {
+    var now = Date.now();
+    var list = readJson(PENDING_LIST_KEY, []);
+    if (!Array.isArray(list)) list = [];
     var store = sessionStore();
-    if (!store) return '';
-    try {
-      return catalogTrackId(store.getItem(PENDING_KEY) || '') || '';
-    } catch (err) {
-      return '';
+    if (store) {
+      try {
+        var legacy = catalogTrackId(store.getItem(PENDING_KEY) || '');
+        if (legacy) list = list.concat([{ trackId: legacy, createdAt: nowIso(), expiresAt: pendingExpiry() }]);
+      } catch (err) {
+        /* ignore */
+      }
     }
+    var out = [];
+    var seen = {};
+    list.forEach(function (item) {
+      var id = knownCatalogTrackId(item && item.trackId ? item.trackId : item);
+      if (!id || seen[id]) return;
+      var createdAt = item && item.createdAt ? item.createdAt : nowIso();
+      var expiresAt = item && item.expiresAt ? item.expiresAt : pendingExpiry(createdAt);
+      if (Date.parse(expiresAt) && Date.parse(expiresAt) < now) return;
+      seen[id] = true;
+      out.push({ trackId: id, createdAt: createdAt, expiresAt: expiresAt });
+    });
+    writeJson(PENDING_LIST_KEY, out);
+    return out;
+  }
+
+  function writePendingTracks(list) {
+    writeJson(PENDING_LIST_KEY, Array.isArray(list) ? list : []);
+  }
+
+  function readPendingTrackId() {
+    var list = readPendingTracks();
+    return list.length ? list[list.length - 1].trackId : '';
   }
 
   function writePendingTrackId(trackId) {
+    var id = knownCatalogTrackId(trackId);
+    if (!id) return readPendingTracks();
+    var list = readPendingTracks().filter(function (item) { return item.trackId !== id; });
+    list.push({ trackId: id, createdAt: nowIso(), expiresAt: pendingExpiry() });
+    writePendingTracks(list);
     var store = sessionStore();
-    if (!store) return;
-    try {
-      var id = catalogTrackId(trackId);
-      if (id) store.setItem(PENDING_KEY, id);
-      else store.removeItem(PENDING_KEY);
-    } catch (err) {
-      /* ignore */
+    if (store) {
+      try { store.setItem(PENDING_KEY, id); } catch (err) { /* ignore */ }
     }
+    return list;
   }
 
   function clearPendingTrackId() {
-    writePendingTrackId('');
+    writePendingTracks([]);
+    var store = sessionStore();
+    if (store) {
+      try { store.removeItem(PENDING_KEY); } catch (err) { /* ignore */ }
+    }
   }
 
   var lastSync = { mode: MODE_LOCAL, error: '', at: '' };
@@ -444,8 +519,23 @@
   HttpRepo.prototype.saveArtifact = LocalRepo.saveArtifact;
   HttpRepo.prototype.saveRun = function (session, trackId, runtime) {
     LocalRepo.saveRun(session, trackId, runtime);
-    this.request('/account/run', { trackId: trackId, runtime: { status: runtime && runtime.status, step: runtime && runtime.step } }).catch(function () {});
-    return LocalRepo.loadAccount(session);
+    var meta = {
+      status: String((runtime && runtime.status) || '').slice(0, 40),
+      step: String((runtime && runtime.step) || '').slice(0, 40),
+      trackVersion: String((runtime && runtime.trackVersion) || '').slice(0, 40),
+      startedAt: String((runtime && runtime.startedAt) || '').slice(0, 40),
+      completedAt: String((runtime && runtime.completedAt) || '').slice(0, 40),
+    };
+    return this.request('/account/run', { trackId: trackId, runtime: meta })
+      .then(function (data) {
+        if (data && data.account) applyAccountToLocal(session, data.account);
+        setSync(MODE_SERVER);
+        return LocalRepo.loadAccount(session);
+      })
+      .catch(function (err) {
+        setSync(MODE_ERROR, err && err.message);
+        return LocalRepo.loadAccount(session);
+      });
   };
 
   function getRepo() {
@@ -536,11 +626,22 @@
         return hydrateAccount(session);
       })
       .then(function (view) {
-        var pending = readPendingTrackId();
-        if (pending && session.loggedIn && repo.saveTrack) {
-          return repo.saveTrack(session, pending).then(function () {
+        var pending = readPendingTracks();
+        if (pending.length && session.loggedIn && repo.saveTrack) {
+          var chain = Promise.resolve({ ok: true });
+          pending.forEach(function (item) {
+            chain = chain.then(function (prev) {
+              if (!prev || prev.ok === false) return prev;
+              return repo.saveTrack(session, item.trackId).then(function (result) {
+                if (!result || result.ok !== true) return { ok: false };
+                if (api.trackEvent) api.trackEvent('track_saved', { itemId: item.trackId, source: 'pending_after_login' });
+                return { ok: true };
+              });
+            });
+          });
+          return chain.then(function (result) {
+            if (result && result.ok === false) return hydrateAccount(session);
             clearPendingTrackId();
-            if (api.trackEvent) api.trackEvent('track_saved', { itemId: pending, source: 'pending_after_login' });
             return hydrateAccount(session);
           });
         }
@@ -620,8 +721,32 @@
   api.readPendingTrackId = readPendingTrackId;
   api.writePendingTrackId = writePendingTrackId;
   api.clearPendingTrackId = clearPendingTrackId;
+  api.readPendingTracks = readPendingTracks;
   api.lastAccountSync = function () { return lastSync; };
   api.uniqueTrackIds = uniqueTrackIds;
+  api.PENDING_LIST_KEY = PENDING_LIST_KEY;
+  api.exportLocalUserData = function () {
+    var session = api.readMembersSession ? api.readMembersSession() : { loggedIn: false };
+    var row = loadRecord(session);
+    var runs = {};
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        runs = JSON.parse(window.localStorage.getItem('mlma.runtime.v1') || '{}') || {};
+      }
+    } catch (err) {
+      runs = {};
+    }
+    return {
+      exportedAt: nowIso(),
+      format: 'mlma.local-export.v1',
+      identityLevel: session.loggedIn ? 'tilda_unverified' : 'guest',
+      warning: 'Это выгрузка с этого устройства. Это не подтверждённая серверная копия и не доказательство личности.',
+      profile: row.profile || {},
+      savedTrackIds: (row.savedTrackIds || []).slice(),
+      pendingTracks: readPendingTracks(),
+      runs: sanitizeRunMap(runs),
+    };
+  };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);

@@ -1,8 +1,27 @@
 {
+  "assetsVersion": "v1",
+  "schema": "mlma.catalog.public.v1",
   "css": 29207,
-  "json": 47211,
+  "json": 47266,
   "dataChunks": 2,
-  "domain": 194163,
-  "ui": 146792,
-  "tracks": 112
+  "domain": 203174,
+  "ui": 151418,
+  "tracks": 112,
+  "uniqueTrackIds": 112,
+  "sectionCounts": {
+    "A1": 16,
+    "A2": 16,
+    "A3": 17,
+    "A4": 17,
+    "A5": 14,
+    "A6": 32
+  },
+  "previous": {
+    "css": 29207,
+    "json": 47211,
+    "dataChunks": 2,
+    "domain": 194163,
+    "ui": 146792,
+    "tracks": 112
+  }
 }

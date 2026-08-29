@@ -11,6 +11,7 @@
 
   var PAYMENT_STATUSES = ['created', 'pending', 'paid', 'failed', 'cancelled', 'refunded', 'expired'];
   var TEST_MODE = true;
+  var PAYMENTS_ENABLED = false;
 
   var TILDA_PAYMENT_OPTIONS = [
     { id: 'tilda', name: 'Tilda Payments / ЮKassa через Tilda', members: 'Да, встроенная выдача группы', recurrences: 'Подписка Tilda — отдельно согласовывать', note: 'Проще всего для Members. Вебхук и идемпотентность ограничены кабинетом Tilda.' },
@@ -166,6 +167,7 @@
   api.PAYMENT_STATUSES = PAYMENT_STATUSES;
   api.TILDA_PAYMENT_OPTIONS = TILDA_PAYMENT_OPTIONS;
   api.PAYMENT_TEST_MODE = TEST_MODE;
+  api.PAYMENTS_ENABLED = PAYMENTS_ENABLED;
   api.createOrder = createOrder;
   api.TestGateway = TestGateway;
   api.createPaymentGateway = function () {

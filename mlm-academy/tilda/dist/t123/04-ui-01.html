@@ -264,6 +264,8 @@
       { href: R.library(), label: 'Библиотека' },
       { href: R.about(), label: 'Как создаётся библиотека' },
       { href: R.access(), label: 'Доступ' },
+      { href: R.pricing ? R.pricing() : '/pricing', label: 'Условия' },
+      { href: R.privacy ? R.privacy() : '/privacy', label: 'Политика' },
       { href: R.research ? R.research() : '/research/marketing-plan', label: 'Исследование' },
       { href: D.siteHomeUrl(), label: 'Решения для компаний' },
     ];
@@ -505,6 +507,7 @@
       '<label class="mlma-sr" for="mlma-home-q">Что у тебя сейчас происходит?</label>' +
       '<input id="mlma-home-q" class="mlma-field" type="search" name="q" placeholder="Что у тебя сейчас происходит?" autocomplete="off">' +
       '<button class="mlma-btn mlma-btn-primary" type="submit">Найти решение</button></form>' +
+      '<p class="mlma-muted" style="margin-top:10px;font-size:13px;max-width:54ch">Не указывайте имена, телефоны и другие персональные данные третьих лиц.</p>' +
       '<p class="mlma-meta" style="margin-top:18px">Живые примеры</p>' +
       '<div class="mlma-examples">' +
       exHtml +

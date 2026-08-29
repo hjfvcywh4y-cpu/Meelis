@@ -17,7 +17,20 @@
 
 После деплоя search-proxy задайте в HEAD `window.MLMA_RERANK_URL` на `https://<домен>/api/rerank`. API-ключ в Tilda не класть.
 
-Версионируемые файлы лежат в `shared/v1/`. Живые страницы Tilda пока грузят каталог из T123 — так публикация уже проверена. Переход на внешние файлы делать только после отдельной проверки Tilda.
+Версионируемые файлы лежат в `shared/v1/`. Живые страницы Tilda пока
+остаются на проверенных блоках T123. Не переключать все 18+ страниц сразу.
+
+Порядок внешнего переключения:
+
+1. Локальный preview (`pnpm tilda:serve`)
+2. Одна тестовая страница Tilda: вместо блоков 01–04 вставить `t123/external-loader-v1.html`,
+   заменив `ASSET_BASE` на URL файлов. Mount и HEAD оставить.
+3. Проверить каталог 112, поиск только по кнопке/Enter, кабинет, rollback.
+4. Группами публиковать остальные страницы той же версии.
+5. Rollback: вернуть предыдущие T123 01-css / 02-data / 03-domain / 04-ui
+   или сменить `v1` на предыдущую папку assets.
+
+Нельзя оставлять часть страниц на несовместимой версии каталога.
 
 Можно собрать одну страницу-мастер, затем дублировать и менять URL, title и mount.
 
@@ -46,6 +59,8 @@
 | Мои результаты · MLM Academy | `/my/results` | `mounts/results.html` | member |
 | Профиль · MLM Academy | `/profile` | `mounts/profile.html` | member |
 | Доступ · MLM Academy | `/access` | `mounts/access.html` | public |
+| Условия доступа · MLM Academy | `/pricing` | `mounts/pricing.html` | public |
+| Политика конфиденциальности · черновик · MLM Academy | `/privacy` | `mounts/privacy.html` | public |
 | Предпросмотр каталога · MLM Academy | `/preview/catalog` | `mounts/preview.html` | editor |
 
 - `public` — без ограничения Members
@@ -74,7 +89,7 @@
 | Editor / ADMIN | те же четыре + `/preview/catalog` |
 
 Публичные (не добавлять ни в одну группу): `/academy`, `/start`, `/library`,
-`/library/a1`…`/library/a6`, `/track`, `/about`, `/access`. Живую главную `/` и прочие
+`/library/a1`…`/library/a6`, `/track`, `/about`, `/access`, `/pricing`, `/privacy`. Живую главную `/` и прочие
 маркетинговые страницы в группы не добавлять.
 
 Группы доступа: **Guest**, **Member**, **FREE**, **START**, **FULL**, **PILOT**, **ADMIN**, **Editor**.

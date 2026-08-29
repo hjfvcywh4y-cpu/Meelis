@@ -570,6 +570,12 @@
       access: function () {
         return '/access';
       },
+      pricing: function () {
+        return '/pricing';
+      },
+      privacy: function () {
+        return '/privacy';
+      },
       login: function (returnPath) {
         return membersLoginUrl(returnPath || '/my');
       },
@@ -807,6 +813,7 @@
     normalizeAccess: normalizeAccess,
     deriveSeoStatus: deriveSeoStatus,
     membersLoginUrl: membersLoginUrl,
+    membersRecoverUrl: membersRecoverUrl,
     siteHomeUrl: siteHomeUrl,
     b2bFromResearchUrl: b2bFromResearchUrl,
     academyFromResearchUrl: academyFromResearchUrl,
@@ -816,6 +823,11 @@
   function membersLoginUrl(returnPath) {
     var path = String(returnPath || '/my').replace(/^\//, '');
     return '/members/login?redirecturl=' + encodeURIComponent(path);
+  }
+
+  function membersRecoverUrl(returnPath) {
+    var path = String(returnPath || '/profile').replace(/^\//, '');
+    return '/members/login?mlma=recover&redirecturl=' + encodeURIComponent(path);
   }
 
   function siteHomeUrl() {
@@ -1190,6 +1202,8 @@
   var OUTBOX_KEY = 'mlma.outbox.v1';
   var MIGRATED_KEY = 'mlma.migrated.v1';
   var PENDING_KEY = 'mlma.pendingTrackId';
+  var PENDING_LIST_KEY = 'mlma.pendingTracks.v1';
+  var PENDING_TTL_MS = 14 * 24 * 60 * 60 * 1000;
   var MODE_LOCAL = 'local_fallback';
   var MODE_SERVER = 'server';
   var MODE_RESTORING = 'restoring';
@@ -1315,6 +1329,25 @@
     return api.normalizeTrackId(trackId);
   }
 
+  function knownCatalogTrackId(trackId) {
+    var id = catalogTrackId(trackId);
+    if (!id) return '';
+    try {
+      var payload = root.MLMA_PAYLOAD;
+      var list = payload && payload.tracks;
+      if (Array.isArray(list) && list.length) {
+        for (var i = 0; i < list.length; i += 1) {
+          var row = list[i] || {};
+          if (row.id === id || row.trackId === id) return id;
+        }
+        return '';
+      }
+    } catch (err) {
+      /* catalog not mounted yet */
+    }
+    return id;
+  }
+
   function uniqueTrackIds(ids) {
     var out = [];
     var seen = {};
@@ -1346,8 +1379,8 @@
       row.payments = [];
       if (row.user) row.user.groups = ['FREE'];
     }
-    if (account.runs) row.runs = account.runs;
-    if (account.artifacts) row.artifacts = account.artifacts;
+    if (account.runs) row.runs = Object.assign({}, row.runs || {}, sanitizeRunMap(account.runs));
+    if (account.artifacts && account.artifacts.length) row.artifacts = account.artifacts;
     saveRecord(session, row);
     if (session && session.loggedIn && api.saveProfile) {
       api.saveProfile(Object.assign({}, row.profile, { savedTrackIds: row.savedTrackIds.slice() }));
@@ -1376,30 +1409,84 @@
     return null;
   }
 
-  function readPendingTrackId() {
+  function sanitizeRunMap(runs) {
+    var out = {};
+    if (!runs || typeof runs !== 'object') return out;
+    Object.keys(runs).forEach(function (id) {
+      var row = runs[id] || {};
+      out[id] = {
+        status: String(row.status || '').slice(0, 40),
+        step: String(row.step || '').slice(0, 40),
+        trackVersion: String(row.trackVersion || '').slice(0, 40),
+        startedAt: String(row.startedAt || '').slice(0, 40),
+        completedAt: String(row.completedAt || '').slice(0, 40),
+        updatedAt: String(row.updatedAt || '').slice(0, 40),
+      };
+    });
+    return out;
+  }
+
+  function pendingExpiry(fromIso) {
+    var start = Date.parse(fromIso || '') || Date.now();
+    return new Date(start + PENDING_TTL_MS).toISOString();
+  }
+
+  function readPendingTracks() {
+    var now = Date.now();
+    var list = readJson(PENDING_LIST_KEY, []);
+    if (!Array.isArray(list)) list = [];
     var store = sessionStore();
-    if (!store) return '';
-    try {
-      return catalogTrackId(store.getItem(PENDING_KEY) || '') || '';
-    } catch (err) {
-      return '';
+    if (store) {
+      try {
+        var legacy = catalogTrackId(store.getItem(PENDING_KEY) || '');
+        if (legacy) list = list.concat([{ trackId: legacy, createdAt: nowIso(), expiresAt: pendingExpiry() }]);
+      } catch (err) {
+        /* ignore */
+      }
     }
+    var out = [];
+    var seen = {};
+    list.forEach(function (item) {
+      var id = knownCatalogTrackId(item && item.trackId ? item.trackId : item);
+      if (!id || seen[id]) return;
+      var createdAt = item && item.createdAt ? item.createdAt : nowIso();
+      var expiresAt = item && item.expiresAt ? item.expiresAt : pendingExpiry(createdAt);
+      if (Date.parse(expiresAt) && Date.parse(expiresAt) < now) return;
+      seen[id] = true;
+      out.push({ trackId: id, createdAt: createdAt, expiresAt: expiresAt });
+    });
+    writeJson(PENDING_LIST_KEY, out);
+    return out;
+  }
+
+  function writePendingTracks(list) {
+    writeJson(PENDING_LIST_KEY, Array.isArray(list) ? list : []);
+  }
+
+  function readPendingTrackId() {
+    var list = readPendingTracks();
+    return list.length ? list[list.length - 1].trackId : '';
   }
 
   function writePendingTrackId(trackId) {
+    var id = knownCatalogTrackId(trackId);
+    if (!id) return readPendingTracks();
+    var list = readPendingTracks().filter(function (item) { return item.trackId !== id; });
+    list.push({ trackId: id, createdAt: nowIso(), expiresAt: pendingExpiry() });
+    writePendingTracks(list);
     var store = sessionStore();
-    if (!store) return;
-    try {
-      var id = catalogTrackId(trackId);
-      if (id) store.setItem(PENDING_KEY, id);
-      else store.removeItem(PENDING_KEY);
-    } catch (err) {
-      /* ignore */
+    if (store) {
+      try { store.setItem(PENDING_KEY, id); } catch (err) { /* ignore */ }
     }
+    return list;
   }
 
   function clearPendingTrackId() {
-    writePendingTrackId('');
+    writePendingTracks([]);
+    var store = sessionStore();
+    if (store) {
+      try { store.removeItem(PENDING_KEY); } catch (err) { /* ignore */ }
+    }
   }
 
   var lastSync = { mode: MODE_LOCAL, error: '', at: '' };
@@ -1620,8 +1707,23 @@
   HttpRepo.prototype.saveArtifact = LocalRepo.saveArtifact;
   HttpRepo.prototype.saveRun = function (session, trackId, runtime) {
     LocalRepo.saveRun(session, trackId, runtime);
-    this.request('/account/run', { trackId: trackId, runtime: { status: runtime && runtime.status, step: runtime && runtime.step } }).catch(function () {});
-    return LocalRepo.loadAccount(session);
+    var meta = {
+      status: String((runtime && runtime.status) || '').slice(0, 40),
+      step: String((runtime && runtime.step) || '').slice(0, 40),
+      trackVersion: String((runtime && runtime.trackVersion) || '').slice(0, 40),
+      startedAt: String((runtime && runtime.startedAt) || '').slice(0, 40),
+      completedAt: String((runtime && runtime.completedAt) || '').slice(0, 40),
+    };
+    return this.request('/account/run', { trackId: trackId, runtime: meta })
+      .then(function (data) {
+        if (data && data.account) applyAccountToLocal(session, data.account);
+        setSync(MODE_SERVER);
+        return LocalRepo.loadAccount(session);
+      })
+      .catch(function (err) {
+        setSync(MODE_ERROR, err && err.message);
+        return LocalRepo.loadAccount(session);
+      });
   };
 
   function getRepo() {
@@ -1712,11 +1814,22 @@
         return hydrateAccount(session);
       })
       .then(function (view) {
-        var pending = readPendingTrackId();
-        if (pending && session.loggedIn && repo.saveTrack) {
-          return repo.saveTrack(session, pending).then(function () {
+        var pending = readPendingTracks();
+        if (pending.length && session.loggedIn && repo.saveTrack) {
+          var chain = Promise.resolve({ ok: true });
+          pending.forEach(function (item) {
+            chain = chain.then(function (prev) {
+              if (!prev || prev.ok === false) return prev;
+              return repo.saveTrack(session, item.trackId).then(function (result) {
+                if (!result || result.ok !== true) return { ok: false };
+                if (api.trackEvent) api.trackEvent('track_saved', { itemId: item.trackId, source: 'pending_after_login' });
+                return { ok: true };
+              });
+            });
+          });
+          return chain.then(function (result) {
+            if (result && result.ok === false) return hydrateAccount(session);
             clearPendingTrackId();
-            if (api.trackEvent) api.trackEvent('track_saved', { itemId: pending, source: 'pending_after_login' });
             return hydrateAccount(session);
           });
         }
@@ -1796,8 +1909,32 @@
   api.readPendingTrackId = readPendingTrackId;
   api.writePendingTrackId = writePendingTrackId;
   api.clearPendingTrackId = clearPendingTrackId;
+  api.readPendingTracks = readPendingTracks;
   api.lastAccountSync = function () { return lastSync; };
   api.uniqueTrackIds = uniqueTrackIds;
+  api.PENDING_LIST_KEY = PENDING_LIST_KEY;
+  api.exportLocalUserData = function () {
+    var session = api.readMembersSession ? api.readMembersSession() : { loggedIn: false };
+    var row = loadRecord(session);
+    var runs = {};
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        runs = JSON.parse(window.localStorage.getItem('mlma.runtime.v1') || '{}') || {};
+      }
+    } catch (err) {
+      runs = {};
+    }
+    return {
+      exportedAt: nowIso(),
+      format: 'mlma.local-export.v1',
+      identityLevel: session.loggedIn ? 'tilda_unverified' : 'guest',
+      warning: 'Это выгрузка с этого устройства. Это не подтверждённая серверная копия и не доказательство личности.',
+      profile: row.profile || {},
+      savedTrackIds: (row.savedTrackIds || []).slice(),
+      pendingTracks: readPendingTracks(),
+      runs: sanitizeRunMap(runs),
+    };
+  };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
@@ -1815,6 +1952,7 @@
 
   var PAYMENT_STATUSES = ['created', 'pending', 'paid', 'failed', 'cancelled', 'refunded', 'expired'];
   var TEST_MODE = true;
+  var PAYMENTS_ENABLED = false;
 
   var TILDA_PAYMENT_OPTIONS = [
     { id: 'tilda', name: 'Tilda Payments / ЮKassa через Tilda', members: 'Да, встроенная выдача группы', recurrences: 'Подписка Tilda — отдельно согласовывать', note: 'Проще всего для Members. Вебхук и идемпотентность ограничены кабинетом Tilda.' },
@@ -1970,6 +2108,7 @@
   api.PAYMENT_STATUSES = PAYMENT_STATUSES;
   api.TILDA_PAYMENT_OPTIONS = TILDA_PAYMENT_OPTIONS;
   api.PAYMENT_TEST_MODE = TEST_MODE;
+  api.PAYMENTS_ENABLED = PAYMENTS_ENABLED;
   api.createOrder = createOrder;
   api.TestGateway = TestGateway;
   api.createPaymentGateway = function () {
@@ -4298,7 +4437,8 @@
 /* __MLMA_UI_SPLIT__ */
 
 /**
- * Аналитика кабинета. Не отправляет пароли, карты и полные ответы.
+ * Аналитика кабинета. Не отправляет пароли, карты, полный поисковый текст и артефакты.
+ * Правило: одно пользовательское действие → одно каноническое событие.
  */
 (function (root) {
   'use strict';
@@ -4318,6 +4458,7 @@
     'route_opened',
     'locked_track_opened',
     'checkout_started',
+    'checkout_blocked',
     'payment_succeeded',
     'payment_failed',
     'entitlement_granted',
@@ -4332,11 +4473,34 @@
     'sync_error',
   ];
 
+  var ALIAS = {
+    search_query: 'search_submitted',
+    library_search: 'search_submitted',
+    academy_search: 'search_submitted',
+    track_start: 'track_started',
+    track_complete: 'track_completed',
+    track_next_open: 'next_track_opened',
+    track_action_submitted: 'artifact_created',
+    track_evidence_submitted: 'artifact_created',
+  };
+
   var BLOCKED = /password|passwd|secret|token|card|pan|cvv|cvc|iban|artifact|answer|message_body|full_text/i;
   var CHAIN_KEY = 'mlma.search.chain.v1';
+  var lastCanonical = { name: '', key: '', at: 0 };
 
   function allowed(name) {
     return EVENTS.indexOf(name) !== -1;
+  }
+
+  function canonicalName(name) {
+    return ALIAS[name] || name;
+  }
+
+  function hashQuery(value) {
+    var text = String(value || '').trim().toLowerCase();
+    var hash = 5381;
+    for (var i = 0; i < text.length; i += 1) hash = ((hash << 5) + hash + text.charCodeAt(i)) | 0;
+    return 'q' + (hash >>> 0).toString(16);
   }
 
   function sanitize(payload) {
@@ -4347,6 +4511,11 @@
       var key = keys[i];
       if (BLOCKED.test(key)) continue;
       var value = payload[key];
+      if (key === 'query' || key === 'q' || key === 'search_query') {
+        out.queryLength = String(value || '').length;
+        out.queryHash = hashQuery(value);
+        continue;
+      }
       if (typeof value === 'string' && value.length > 180) value = value.slice(0, 180);
       if (key === 'email' && typeof value === 'string') {
         var at = value.indexOf('@');
@@ -4370,33 +4539,46 @@
     }
   }
 
+  function shouldDedupe(name, data) {
+    var key = name + ':' + (data.itemId || data.queryHash || data.source || '');
+    var now = Date.now();
+    if (lastCanonical.name === name && lastCanonical.key === key && now - lastCanonical.at < 800) return true;
+    lastCanonical = { name: name, key: key, at: now };
+    return false;
+  }
+
   var previous = api.trackEvent;
   function trackEvent(name, payload) {
+    var canonical = canonicalName(name);
     var data = sanitize(payload || {});
-    if (name === 'search_submitted' || name === 'search_query' || name === 'library_search') {
+    if (canonical === 'search_submitted' || canonical === 'search_results_shown') {
       data.chainId = chainId();
-    } else if (data && (name === 'search_results_shown' || name === 'track_card_opened' || name === 'track_saved' || name === 'checkout_started' || name === 'track_started' || name === 'track_completed')) {
+    } else if (data && (canonical === 'track_card_opened' || canonical === 'track_saved' || canonical === 'checkout_started' || canonical === 'track_started' || canonical === 'track_completed')) {
       data.chainId = data.chainId || chainId();
     }
-    if (typeof previous === 'function') previous(name, data);
+    if (shouldDedupe(canonical, data)) return data;
+    if (typeof previous === 'function' && previous !== trackEvent) previous(canonical, data);
     else {
       try {
         if (typeof window !== 'undefined') {
           window.dataLayer = window.dataLayer || [];
-          window.dataLayer.push(Object.assign({ event: name }, data));
+          window.dataLayer.push(Object.assign({ event: canonical }, data));
         }
       } catch (err) {
         /* ignore */
       }
     }
-    if (api.enqueueOutbox && allowed(name)) {
-      api.enqueueOutbox('analytics_event', { name: name, data: data });
+    if (api.enqueueOutbox && allowed(canonical)) {
+      api.enqueueOutbox('analytics_event', { name: canonical, data: data });
     }
     return data;
   }
 
   api.ANALYTICS_EVENTS = EVENTS;
+  api.ANALYTICS_ALIASES = ALIAS;
   api.sanitizeAnalytics = sanitize;
+  api.hashSearchQuery = hashQuery;
+  api.canonicalEventName = canonicalName;
   api.trackEvent = trackEvent;
   api.searchChainId = chainId;
 
@@ -4693,7 +4875,27 @@
         /* entry tracks may be orphans by design; only flag if also no next */
       }
     }
-    return { ok: rows.length === 0, failures: rows, total: catalog.length };
+    var expected = { A1: 16, A2: 16, A3: 17, A4: 17, A5: 14, A6: 32 };
+    var counts = { A1: 0, A2: 0, A3: 0, A4: 0, A5: 0, A6: 0 };
+    for (var s = 0; s < catalog.length; s += 1) {
+      if (counts[catalog[s].sectionId] != null) counts[catalog[s].sectionId] += 1;
+    }
+    var countIssues = [];
+    if (catalog.length !== 112) countIssues.push('expected_112_got_' + catalog.length);
+    if (Object.keys(seen).length !== catalog.length) countIssues.push('duplicate_track_ids');
+    Object.keys(expected).forEach(function (sectionId) {
+      if (counts[sectionId] !== expected[sectionId]) {
+        countIssues.push('section_' + sectionId + '_' + counts[sectionId] + '_expected_' + expected[sectionId]);
+      }
+    });
+    return {
+      ok: rows.length === 0 && countIssues.length === 0,
+      failures: rows,
+      total: catalog.length,
+      unique: Object.keys(seen).length,
+      sectionCounts: counts,
+      countIssues: countIssues,
+    };
   }
 
   function emptyRuntime(trackId) {
@@ -4707,6 +4909,11 @@
       evidenceDone: false,
       branch: '',
       feedback: null,
+      trackVersion: '',
+      verificationStatus: '',
+      verificationLabel: '',
+      startedAt: '',
+      completedAt: '',
       updatedAt: '',
     };
   }
@@ -4807,13 +5014,38 @@
     };
   }
 
+  function persistRunMeta(state) {
+    var session = api.readMembersSession ? api.readMembersSession() : { loggedIn: false };
+    var repo = api.getRepo ? api.getRepo() : null;
+    if (repo && repo.saveRun) {
+      repo.saveRun(session, state.trackId, {
+        status: state.status,
+        step: state.step,
+        trackVersion: state.trackVersion || '',
+        startedAt: state.startedAt || '',
+        completedAt: state.status === 'complete' ? (state.updatedAt || '') : '',
+      });
+    }
+    return state;
+  }
+
   function startRuntime(track) {
     var state = getRuntime(track.trackId);
     state.status = 'active';
     state.step = 'action';
     state.branch = '';
     state.feedback = null;
-    return saveRuntime(state);
+    if (!state.startedAt) state.startedAt = new Date().toISOString();
+    if (!state.trackVersion) {
+      try {
+        state.trackVersion = String((root.MLMA_PAYLOAD && root.MLMA_PAYLOAD.version) || '');
+      } catch (err) {
+        state.trackVersion = '';
+      }
+    }
+    saveRuntime(state);
+    persistRunMeta(state);
+    return state;
   }
 
   function submitRuntime(track, payload) {
@@ -4827,7 +5059,10 @@
     state.feedback = buildFeedback(track, check);
     state.step = 'feedback';
     state.status = check.branch === 'success' || check.branch === 'highResult' ? 'complete' : 'retry';
+    state.verificationStatus = 'self_checked';
+    state.verificationLabel = 'Самопроверка по критериям';
     saveRuntime(state);
+    persistRunMeta(state);
     return { state: state, check: check };
   }
 
@@ -4836,7 +5071,9 @@
     state.status = 'active';
     state.step = 'action';
     state.branch = 'error';
-    return saveRuntime(state);
+    saveRuntime(state);
+    persistRunMeta(state);
+    return state;
   }
 
   function nextBestAction(track, catalog, runtime, profile) {
@@ -4931,6 +5168,7 @@
   api.validateTrack = validateTrack;
   api.validateCatalog = validateCatalog;
   api.getRuntime = getRuntime;
+  api.listRuntimes = function () { return readRuntimeAll(); };
   api.startRuntime = startRuntime;
   api.submitRuntime = submitRuntime;
   api.retryRuntime = retryRuntime;
