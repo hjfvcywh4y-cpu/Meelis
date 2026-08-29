@@ -5,8 +5,11 @@ Allow: /start
 Allow: /about
 Allow: /access
 Allow: /pricing
-Allow: /privacy
+Allow: /payment-and-access
 Allow: /research
+Disallow: /privacy
+Disallow: /offer
+Disallow: /requisites
 Disallow: /my
 Disallow: /my/
 Disallow: /profile

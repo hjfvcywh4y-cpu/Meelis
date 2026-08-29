@@ -101,7 +101,25 @@ async function main() {
 
   await page.goto(BASE + '/access', { waitUntil: 'networkidle' });
   const accessHtml = await page.locator('#mlma-main').innerText();
-  if (/entitlement|organization|тариф не выбран/i.test(accessHtml)) throw new Error('access jargon');
+  if (/entitlement|organization|тариф не выбран|Купить доступ|Запросить тестовый пакет/i.test(accessHtml)) {
+    throw new Error('access jargon or buy cta: ' + accessHtml.slice(0, 240));
+  }
+  if (!/Платные продукты готовятся|FREE/i.test(accessHtml)) throw new Error('access missing honest copy');
+
+  await page.goto(BASE + '/pricing', { waitUntil: 'networkidle' });
+  const pricingText = await page.locator('#mlma-main').innerText();
+  const buyLinks = await page.getByRole('link', { name: /Купить/ }).count();
+  if (buyLinks) throw new Error('pricing must not sell');
+  if (/112 готовых/.test(pricingText)) throw new Error('pricing must not promise 112 ready tracks');
+  if (!/Готовится к запуску/.test(pricingText)) throw new Error('pricing missing gated status');
+  if (!/Обсудить командный запуск/.test(pricingText) || !/Обсудить корпоративный пилот/.test(pricingText)) {
+    throw new Error('pricing missing B2B discuss CTAs');
+  }
+
+  await page.goto(BASE + '/my/purchases', { waitUntil: 'networkidle' });
+  const purchasesText = await page.locator('#mlma-main').innerText();
+  if (!/У вас пока нет покупок/.test(purchasesText)) throw new Error('purchases empty state');
+  if (/ORD-|оплачен/i.test(purchasesText)) throw new Error('fake orders on purchases');
 
   await page.goto(BASE + '/my', { waitUntil: 'networkidle' });
   await page.waitForSelector('text=Следующее действие');

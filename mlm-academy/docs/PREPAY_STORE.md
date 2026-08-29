@@ -1,0 +1,20 @@
+# Предплатёжная витрина MLM Academy
+
+Это не тестовый магазин ЮKassa и не приём денег.
+
+Каталог треков: `src/data/tracks.catalog.json` (112 Track ID).
+Справочник продуктов: `tilda/src/data/products.catalog.json`.
+
+| product_code | status | в витрине |
+|---|---|---|
+| B2C-FREE-001 | gated | да, 0 ₽, промотрек не опубликован |
+| B2C-TRACK-001 | gated | да, 590 / 790 ₽ |
+| B2C-PACK3-001 | gated | да, 1 490 / 1 990 ₽ |
+| B2C-ROUTE6-001 | gated | да, 2 990 / 3 990 ₽ |
+| B2C-LIB-M-001 | planned | нет |
+| B2C-LIB-Y-001 | planned | нет |
+| B2C-PRO-M-001 | planned | нет |
+| B2B-PILOT30-001 | planned | блок «Для компании», переговоры |
+| B2B-TEAM20-M-001 | planned | блок «Для команды», переговоры |
+
+Ни один продукт не `active`. Клиент не может переключить статус. 112 треков `planned` / `metadata_only` нельзя купить.

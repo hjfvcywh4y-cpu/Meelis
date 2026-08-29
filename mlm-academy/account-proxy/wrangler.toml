@@ -8,6 +8,7 @@ account_id = "1097bdc74e5788fb297506389defcfea"
 
 [vars]
 PAYMENTS_ENABLED = "false"
+COMMERCE_PREVIEW_ENABLED = "false"
 TEST_MODE = "true"
 
 [[kv_namespaces]]

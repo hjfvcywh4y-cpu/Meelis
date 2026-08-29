@@ -11,12 +11,13 @@
 | Tilda Members | Временный вход только для FREE | `ma_id`, email, cookies, `window.mauser` | Не доказывает личность, не выдаёт START/FULL/PILOT/ADMIN |
 | Cloudflare Worker `mlma-account` | Временный Account API | HMAC cookie `mlma_sid`, маршрут, мета прохождения | Не принимает артефакты, не выдаёт entitlements |
 | Cloudflare KV `MLMA_ACCOUNT` | Временное хранение | Неплатный маршрут, профиль, мета run | Не источник платного права |
-| `src/data/tracks.catalog.json` | Единый каталог | 112 стабильных Track ID | Не копировать по страницам |
+| `src/data/tracks.catalog.json` | Единый каталог треков | 112 стабильных Track ID | Не копировать по страницам |
+| `tilda/src/data/products.catalog.json` | Справочник продуктов | Коды B2C/B2B, цены, gate | Не смешивать с Track ID |
 | PostgreSQL/Supabase schema | Контракт будущей БД | Пользователи, прогресс, заказы, права | Не подключена |
 | ЮKassa webhook | Будущее основание платного права | — | Выключен |
 | Next.js `src/app/*` | Заготовка кабинета | Код в репозитории | Не прод |
 
-Флаги: `PAYMENTS_ENABLED=false`, `TEST_MODE=true`.
+Флаги: `PAYMENTS_ENABLED=false`, `COMMERCE_PREVIEW_ENABLED=false`, `TEST_MODE=true`.
 
 ## Не называть защищённой идентификацией
 

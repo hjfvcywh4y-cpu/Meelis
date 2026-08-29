@@ -405,6 +405,7 @@ export function allowedMethod(path, method) {
   if (method === 'OPTIONS') return true;
   if (path === '/api/health' || path === '/health') return method === 'GET' || method === 'HEAD';
   if (path === '/api/me/entitlements') return method === 'GET' || method === 'POST';
+  if (path === '/api/commerce/preview') return method === 'GET' || method === 'POST';
   if (path === '/api/webhooks/yookassa') return method === 'POST';
   return method === 'POST';
 }
@@ -414,10 +415,15 @@ export const PAYMENT_PATHS = [
   '/api/webhooks/yookassa',
   '/api/me/entitlements',
   '/api/refunds/process',
+  '/api/commerce/preview',
 ];
 
 export function paymentsEnabled(env) {
   return String((env && env.PAYMENTS_ENABLED) || '').toLowerCase() === 'true';
+}
+
+export function commercePreviewEnabled(env) {
+  return String((env && env.COMMERCE_PREVIEW_ENABLED) || '').toLowerCase() === 'true';
 }
 
 export function testMode(env) {

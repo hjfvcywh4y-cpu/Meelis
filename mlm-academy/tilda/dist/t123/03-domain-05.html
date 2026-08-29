@@ -1,536 +1,415 @@
-<!-- Блок T123: доменная логика 5/10 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: доменная логика 5/11 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
+/**
+ * Предплатёжная витрина. Не подключает ЮKассу, не выдаёт право, не включает подписку.
+ * Track ID и product_code — разные сущности.
+ */
 (function (root) {
   'use strict';
   var api = root.MLMA;
   if (!api) return;
 
-  var PAGE_SIZE = 15;
-  var LIBRARY_STATE_KEY = 'mlma.library.v1';
-
-  var STOP_WORDS = {
-    а: 1, и: 1, или: 1, но: 1, да: 1, нет: 1, не: 1, ни: 1, на: 1, в: 1, во: 1, с: 1, со: 1,
-    к: 1, ко: 1, от: 1, до: 1, по: 1, из: 1, у: 1, о: 1, об: 1, про: 1, для: 1, при: 1,
-    я: 1, ты: 1, он: 1, она: 1, мы: 1, вы: 1, они: 1, мне: 1, меня: 1, мой: 1, моя: 1,
-    это: 1, этот: 1, эта: 1, эти: 1, тот: 1, то: 1, как: 1, что: 1, чтобы: 1, чем: 1,
-    кто: 1, где: 1, когда: 1, куда: 1, зачем: 1, почему: 1, какой: 1, какая: 1, какие: 1,
-    делать: 1, сделать: 1, надо: 1, нужно: 1, можно: 1, есть: 1, быть: 1, вот: 1,
-    уже: 1, ещё: 1, еще: 1, же: 1, бы: 1, ли: 1, ведь: 1, там: 1, тут: 1, здесь: 1,
-    очень: 1, просто: 1, также: 1, если: 1, только: 1, себе: 1, себя: 1, свой: 1,
-    все: 1, всё: 1, всего: 1, ну: 1, под: 1, над: 1, без: 1, тебя: 1, происходит: 1,
-    сейчас: 1, хочу: 1, хотел: 1, хотела: 1, новый: 1, новая: 1, новое: 1,
-  };
-
-  var TYPOS = {
-    чилавек: 'человек', чилавека: 'человека', чалавек: 'человек',
-    сабщения: 'сообщения', сабщение: 'сообщение', саобщение: 'сообщение',
-    саощение: 'сообщение', сообшения: 'сообщения', смс: 'сообщение',
-    канект: 'контакт', кантакт: 'контакт', контактовв: 'контактов',
-    некаму: 'некому', некаво: 'некого', партнеры: 'партнёры', партнери: 'партнёры',
-    заработываеть: 'зарабатывать', заработывать: 'зарабатывать',
-    претензия: 'претензия', претензией: 'претензия', претензию: 'претензия',
-    паузаа: 'пауза', дораго: 'дорого', дараго: 'дорого',
-    адит: 'аудит', црм: 'crm', срм: 'crm',
-    настаяник: 'наставник', каманда: 'команда',
-    пазвонить: 'позвонить', пазвони: 'позвонить', незнакомам: 'незнакомому',
-    отклабываю: 'откладываю', откладаю: 'откладываю',
-  };
-
-  var SYNONYMS = {
-    покупатель: ['клиент', 'заказчик'],
-    клиент: ['покупатель', 'заказчик'],
-    страшно: ['боюсь', 'страх', 'неловко'],
-    боюсь: ['страшно', 'страх', 'тревога'],
-    страх: ['боюсь', 'страшно'],
-    неловко: ['стыдно', 'навязываться'],
-    стыдно: ['неловко', 'впаривание', 'навязываться'],
-    начало: ['старт', 'новичок', 'начать'],
-    старт: ['начало', 'новичок', 'начать'],
-    план: ['планирование', 'порядок', 'ритм', 'система'],
-    планирование: ['план', 'порядок', 'ритм'],
-    новичок: ['новичку', 'новичка', 'старт', 'начало'],
-    начать: ['старт', 'начало'],
-    продажа: ['продавать', 'сделка'],
-    понимаю: ['знаю'],
-    знаю: ['понимаю'],
-    разговор: ['диалог', 'беседа'],
-    диалог: ['разговор', 'беседа'],
-    навязываться: ['впаривать', 'давить', 'навязывать'],
-    впаривать: ['навязываться', 'впаривание'],
-    продукт: ['товар', 'каталог'],
-    отказ: ['сомнение', 'пауза'],
-    сомнение: ['пауза', 'возражение'],
-    пауза: ['сомнение', 'подумает'],
-    сообщение: ['текст', 'переписка', 'написать'],
-    написать: ['сообщение', 'текст', 'переписка'],
-    первый: ['первые', 'начало'],
-    рассказать: ['презентация', 'объяснить'],
-    наставник: ['спонсор', 'лидер', 'команда'],
-    пропал: ['молчит', 'не отвечает', 'followup'],
-    подумает: ['пауза', 'сомнение', 'не сейчас'],
-    зарабатывать: ['доход', 'деньги', 'цель'],
-    доход: ['зарабатывать', 'деньги'],
-    голова: ['базе', 'crm', 'учет'],
-    голове: ['база', 'crm', 'учет'],
-    crm: ['база', 'статусы', 'учет'],
-    база: ['crm', 'контакты', 'учет'],
-    устал: ['откладываю', 'ритм', 'страх'],
-    откладываю: ['устал', 'страх', 'ритм'],
-    незнакомому: ['холодный', 'звонок'],
-    позвонить: ['звонок', 'телефон', 'канал'],
-    звонок: ['позвонить', 'телефон'],
-    дорого: ['цена', 'стоимость'],
-    цена: ['дорого', 'стоимость'],
-    недоволен: ['претензия', 'опыт', 'обслуживание'],
-    претензия: ['недоволен', 'опыт'],
-    лидер: ['команда', 'наставник'],
-    команда: ['партнёры', 'наставник', 'лидер'],
-  };
-
-  var SECTION_ALIASES = {
-    A1: ['старт', 'система', 'новичок', 'роль', 'план', 'этика'],
-    A2: ['база', 'клиент', 'люди', 'контакты', 'круги'],
-    A3: ['диалог', 'разговор', 'сообщение', 'контакт', 'первый'],
-    A4: ['продукт', 'потребность', 'решение', 'предложить'],
-    A5: ['отказ', 'сомнение', 'пауза', 'возражение', 'подумает'],
-    A6: ['повтор', 'клиентский', 'ритм', 'followup', 'рост'],
-  };
-
-  var TRACK_ALIASES = {
-    'A1-001': ['стыдно продавать', 'навязываться', 'впаривание', 'этика'],
-    'A1-004': ['роль', 'кем быть', 'лидер', 'собрать команду', 'новичок теряется', 'с чего начать', 'после регистрации'],
-    'A1-006': ['зачем', 'личная причина', 'новичок теряется', 'запутался', 'много информации'],
-    'A1-007': ['больше зарабатывать', 'не понимаю что делать', 'наблюдаемая цель', 'желание в цель', 'планирование', 'нужен план'],
-    'A1-008': ['план жизни', 'личный план', 'планирование', 'без фантазий', 'навести порядок', 'нужна система'],
-    'A1-010': ['план действий', '30 дней', 'ритм', 'откладываю', 'планирование', 'план на месяц', 'план на неделю', 'распланировать', 'нет дисциплины', 'всё хаотично', 'не успеваю'],
-    'A1-011': ['продуктовый фокус', 'один продукт', 'новичок теряется', 'слишком много информации', 'первый фокус'],
-    'A1-012': ['честная карточка', 'карточка продукта'],
-    'A1-013': ['вопросы и ограничения', 'что можно обещать'],
-    'A1-014': ['не стыдно рекомендовать'],
-    'A1-016': ['стандарт рекомендации'],
-    'A2-001': ['профиль клиента', 'кому подходит', 'кому предложить', 'целевая аудитория'],
-    'A2-006': ['аудит базы', 'контактов много', 'в голове', 'держу в голове', 'crm'],
-    'A2-007': ['сегментация базы', 'разделить базу'],
-    'A2-008': ['пять контактов', 'пять людей', 'с кем начать', 'некому писать', 'новичок теряется', 'первые люди', 'кому написать'],
-    'A2-009': ['план поиска', 'недельный план', 'планирование поиска', 'поиск людей план'],
-    'A2-010': ['карта теплых кругов', 'теплые круги'],
-    'A2-011': ['реальные контексты', 'где искать'],
-    'A3-001': ['канал', 'написать или позвонить', 'как позвонить', 'выбрать канал'],
-    'A3-002': ['первое сообщение', 'написать знакомому', 'теплый контакт', 'боюсь написать', 'что написать', 'первый диалог', 'страшно написать'],
-    'A3-003': ['позвонить по рекомендации', 'звонок'],
-    'A3-004': ['первый звонок', 'структура звонка', 'позвонить незнакомому'],
-    'A3-007': ['подготовиться к звонку', 'холодный контакт'],
-    'A3-005': ['назначить разговор', 'пригласить на встречу', 'назначить встречу'],
-    'A3-008': ['зафиксировать результат', 'следующий контакт'],
-    'A3-016': ['открыть разговор', 'настоящий повод'],
-    'A4-001': ['от презентации к человеку', 'не рассказывать продукт сразу'],
-    'A4-013': ['перейти к цене', 'назвать цену', 'дорого'],
-    'A5-001': ['диагностика сомнения', 'подумает'],
-    'A5-005': ['дорого', 'ценовое возражение', 'стоит за репликой', 'сказал что дорого'],
-    'A5-008': ['посоветоваться'],
-    'A5-009': ['не срочно'],
-    'A5-010': ['follow-up', 'не отвечает'],
-    'A5-011': ['план после паузы'],
-    'A5-014': ['завершить отказ', 'мне отказали', 'после отказа'],
-    'A6-001': ['клиентский опыт', 'купил и пропал', 'недоволен', 'обслуживание', 'претензия'],
-    'A6-002': ['границы ответственности', 'претензия', 'недоволен продуктом'],
-    'A6-003': ['встроить продукт', 'клиентский опыт'],
-    'A6-006': ['дата повтора', 'вернуть клиента', 'повторные продажи'],
-    'A6-010': ['статусы', 'следующие действия', 'crm', 'мини-crm', 'в голове'],
-    'A6-011': ['рабочий ритм', 'рабочее время', 'устал', 'откладываю', 'нет системы', 'не успеваю', 'дисциплина', 'хаотично'],
-    'A6-012': ['план из действий', 'лидер', 'команда', 'планирование роста'],
-    'A6-021': ['личное изменение', 'дисциплина', 'одно изменение', 'нет дисциплины'],
-    'A6-013': ['разбор практики', 'наставничество', 'партнёры ничего не делают'],
-    'A6-020': ['страх действия', 'откладываю', 'устал'],
-    'A2-012': ['холодный поиск', 'незнакомым', 'холодный контакт'],
-  };
-
-  var INTENTS = [
-    {
-      id: 'first-write',
-      goal: 'начать разговор с знакомым без давления',
-      why: ['первое сообщение', 'тёплый контакт', 'страх навязаться'],
-      phrases: ['боюсь написать', 'написать знакомому', 'первое сообщение', 'что написать', 'написать человеку', 'не знаю что написать', 'первым написать', 'страшно написать', 'страшно написать человеку', 'первый диалог'],
-      boostIds: ['A3-002', 'A3-016'],
-      writeBias: true,
-      reason: 'Подходит, потому что вы хотите написать человеку, но боитесь показаться навязчивым.',
-    },
-    {
-      id: 'no-people',
-      goal: 'найти, с кем начать работу',
-      why: ['нет людей', 'база', 'пять контактов'],
-      phrases: ['некому писать', 'некому', 'с кем начать', 'нет людей', 'не знаю с кем', 'нет контактов', 'не понимаю с кем', 'кому написать', 'не знаю кому написать', 'кому писать', 'не понимаю кому писать'],
-      boostIds: ['A2-008', 'A2-010', 'A2-006', 'A2-011', 'A2-001'],
-      reason: 'Подходит, потому что вам нужно понять, с кем начать, а не сразу писать первое сообщение.',
-    },
-    {
-      id: 'ethics',
-      goal: 'предложить продукт без впаривания',
-      why: ['этика', 'без впаривания', 'стыд продавать'],
-      phrases: ['стыдно продавать', 'навязываться', 'впариван', 'стыдно предлагать', 'боюсь навязываться'],
-      boostIds: ['A1-001'],
-      reason: 'Подходит, потому что вам важно предложить продукт без давления и впаривания.',
-    },
-    {
-      id: 'first-result',
-      goal: 'получить первый рабочий результат',
-      why: ['первый результат', 'план действий', 'первые контакты'],
-      phrases: ['первый результат', 'получить первый результат', 'хочу первый результат', 'хочу первого клиента', 'первый клиент', 'хочу найти первых клиентов', 'первых клиентов', 'найти первых клиентов'],
-      boostIds: ['A1-010', 'A2-008', 'A3-002', 'A3-016'],
-      reason: 'Подходит, потому что вы хотите получить первый рабочий результат, а не просто посмотреть урок.',
-    },
-    {
-      id: 'just-started',
-      goal: 'понять роль и первые шаги',
-      why: ['старт', 'роль', 'план'],
-      phrases: ['только начал', 'я новичок', 'только начинаю', 'я только начал', 'как начать', 'что делать новичку', 'новичку'],
-      boostIds: ['A1-004', 'A1-006', 'A1-010'],
-      reason: 'Подходит, потому что вы только начинаете и сначала нужно понять роль и ближайшие шаги.',
-    },
-    {
-      id: 'planning',
-      goal: 'собрать рабочий план и навести порядок',
-      why: ['план', 'ритм', 'порядок'],
-      phrases: [
-        'планирование', 'план', 'распланировать', 'составить план', 'нужен порядок', 'нет системы',
-        'не понимаю что делать каждый день', 'не успеваю', 'нет рабочего ритма', 'всё хаотично', 'все хаотично',
-        'хочу организовать работу', 'план на месяц', 'план на неделю', 'нужна система', 'нет дисциплины',
-        'навести порядок', 'хочу навести порядок',
-      ],
-      boostIds: ['A1-010', 'A1-008', 'A1-004', 'A1-007', 'A2-009', 'A6-011', 'A6-012', 'A6-021'],
-      featuredIds: ['A1-010', 'A1-008', 'A1-004'],
-      matchType: 'strong',
-      reason: 'Подходит, потому что нужно превратить общую цель в конкретный план действий.',
-    },
-    {
-      id: 'lost-novice',
-      goal: 'дать новичку стартовый маршрут',
-      why: ['новичок', 'старт', 'первые шаги'],
-      phrases: [
-        'новичок теряется', 'только пришёл и не понимает', 'не знает с чего начать', 'много информации',
-        'всё непонятно', 'все непонятно', 'запутался', 'потерялся', 'новичку сложно', 'нет первых шагов',
-        'куда идти сначала', 'что делать после регистрации', 'нужен стартовый маршрут',
-        'я только зарегистрировался', 'слишком много информации', 'с чего начать новичку',
-      ],
-      boostIds: ['A1-004', 'A1-006', 'A1-010', 'A1-011', 'A2-008', 'A3-002'],
-      featuredIds: ['A1-004', 'A1-010', 'A1-011'],
-      matchType: 'adjacent',
-      wide: true,
-      clarification: 'Где именно человек теряется: не понимает свою роль, не знает, кому написать или не умеет рассказать о продукте?',
-      reason: 'Подходит как стартовый маршрут: сначала роль, затем план первых действий и фокус.',
-    },
-    {
-      id: 'claim',
-      goal: 'разобрать претензию клиента',
-      why: ['претензия', 'клиентский опыт', 'границы ответственности'],
-      phrases: ['претензия', 'претензией', 'работа с претензией', 'жалоба'],
-      boostIds: ['A6-001', 'A6-002', 'A6-003'],
-      reason: 'Подходит, потому что нужно разобрать претензию клиента и границы своей ответственности.',
-    },
-    {
-      id: 'earn-goal',
-      goal: 'перевести желание больше зарабатывать в понятные действия',
-      why: ['желание в цель', 'что делать дальше', 'наблюдаемый результат'],
-      phrases: ['больше зарабатывать', 'хочу больше зарабатывать', 'не понимаю что делать', 'не знаю что делать', 'хочу зарабатывать', 'не знаю что должно'],
-      boostIds: ['A1-007', 'A1-010', 'A1-006', 'A1-015'],
-      reason: 'Подходит, потому что желание больше зарабатывать нужно перевести в понятные действия.',
-    },
-    {
-      id: 'crm-head',
-      goal: 'навести порядок в контактах, статусах и следующих действиях',
-      why: ['аудит базы', 'crm', 'статусы и next action'],
-      phrases: ['держу в голове', 'в голове', 'контактов много', 'нет системы в базе', 'crm', 'аудит базы', 'все в голове', 'всё держу в голове', 'таблицу контактов', 'вести таблицу', 'работать с контактами', 'не успеваю работать с контактами'],
-      boostIds: ['A2-006', 'A2-007', 'A6-010'],
-      reason: 'Подходит, потому что контактов уже много, и их нельзя держать только в голове.',
-    },
-    {
-      id: 'postpone',
-      goal: 'вернуть рабочий ритм и перестать откладывать',
-      why: ['ритм', 'план на 30 дней', 'страх действия'],
-      phrases: ['все откладываю', 'всё откладываю', 'устал', 'нет сил', 'нет ритма', 'прокрастин', 'страшно начать'],
-      boostIds: ['A1-010', 'A6-011', 'A6-020', 'A3-014'],
-      reason: 'Подходит, потому что вам нужно вернуть ритм и перестать откладывать конкретное действие.',
-    },
-    {
-      id: 'cold-call',
-      goal: 'выбрать канал и сделать первый звонок незнакомому',
-      why: ['канал контакта', 'первый звонок', 'холодный вход'],
-      phrases: ['как позвонить', 'позвонить незнакомому', 'позвонить незнакомым', 'холодный звонок', 'первый звонок', 'звонить незнакомым', 'звонить холодн', 'страшно звонить'],
-      boostIds: ['A3-001', 'A3-004', 'A3-007', 'A2-012', 'A3-003'],
-      reason: 'Подходит, потому что вам нужно выбрать канал и спокойно сделать первый звонок.',
-    },
-    {
-      id: 'who-offer',
-      goal: 'понять, кому предлагать продукт',
-      why: ['профиль клиента', 'карта людей', 'продуктовый фокус'],
-      phrases: ['кому предложить', 'не понимаю кому', 'целевая аудитория', 'кому подходит продукт', 'кому предлагать'],
-      boostIds: ['A2-001', 'A2-010', 'A1-011', 'A2-008'],
-      reason: 'Подходит, потому что сначала нужно понять, кому продукт действительно подходит.',
-    },
-    {
-      id: 'unhappy-client',
-      goal: 'разобрать недовольство клиента и претензию',
-      why: ['клиентский опыт', 'обслуживание', 'границы ответственности'],
-      phrases: ['недоволен продуктом', 'недоволен', 'претензия', 'жалоба клиента', 'плохое обслуживание', 'клиент ругается', 'жалуется', 'клиент жалуется'],
-      boostIds: ['A6-001', 'A6-002', 'A6-003'],
-      reason: 'Подходит, потому что клиент недоволен, и нужно разобрать опыт, а не давить на повторную продажу.',
-    },
-    {
-      id: 'team',
-      goal: 'наставить партнёров и собрать рабочую команду',
-      why: ['наставничество', 'ритм', 'стандарт'],
-      phrases: ['партнеры ничего не делают', 'партнёры ничего не делают', 'команда не работает', 'развивать команду', 'наставлять', 'партнеры не делают', 'стать лидером', 'собрать команду', 'хочу стать лидером', 'как развивать команду', 'хочу выстроить команду', 'выстроить команду', 'партнеры стоят', 'партнёры стоят', 'команда стоит', 'стоят на месте'],
-      boostIds: ['A6-013', 'A6-012', 'A6-011', 'A1-016', 'A6-010', 'A1-010', 'A1-004'],
-      teamOnly: true,
-      reason: 'Подходит, потому что это задача про команду и наставничество, а не личный первый диалог.',
-    },
-    {
-      id: 'price',
-      goal: 'разобрать ценовое возражение, а не общее сомнение',
-      why: ['ценовое возражение', 'что стоит за «дорого»'],
-      phrases: ['сказал что дорого', 'что дорого', 'это дорого', 'слишком дорого', 'дорого для него', 'не по карману', 'цена смущает', 'сказали что дорого', 'мне сказали что дорого'],
-      boostIds: ['A5-005', 'A4-013', 'A5-001', 'A5-007'],
-      reason: 'Подходит, потому что человек упёрся в цену, и нужно понять, что стоит за этой репликой.',
-    },
-    {
-      id: 'pause',
-      goal: 'продолжить диалог после паузы и сомнения',
-      why: ['пауза', 'сомнение', 'подумает'],
-      phrases: ['подумает', 'не сейчас', 'сомневается', 'надо подумать', 'сказал что подумает', 'взял паузу', 'человек думает'],
-      boostIds: ['A5-001', 'A5-008', 'A5-009', 'A5-010', 'A5-011', 'A5-003'],
-      reason: 'Подходит, потому что человек взял паузу, и следующий шаг — продолжить без давления.',
-    },
-    {
-      id: 'lost-client',
-      goal: 'вернуть клиента после покупки или тишины',
-      why: ['follow-up', 'клиентский опыт', 'повторный контакт'],
-      phrases: ['купил и пропал', 'больше не отвечает', 'вернуть клиента', 'не отвечает', 'клиент купил', 'пропал', 'молчит после сообщения'],
-      boostIds: ['A6-001', 'A6-006', 'A5-010', 'A6-003', 'A6-010'],
-      reason: 'Подходит, потому что клиент уже купил и пропал — нужен аккуратный повторный контакт.',
-    },
-    {
-      id: 'product-talk',
-      goal: 'честно рассказать о продукте',
-      why: ['карточка продукта', 'продуктовый фокус', 'ограничения'],
-      phrases: ['рассказать о продукте', 'не знаю продукт', 'как рассказать', 'не знаю как рассказать', 'что можно обещать', 'презентация продукта', 'как рассказать о продукте'],
-      boostIds: ['A1-012', 'A1-011', 'A1-013', 'A4-001', 'A1-014'],
-      reason: 'Подходит, потому что нужно честно рассказать о продукте на языке человека, а не прочитать презентацию.',
-    },
-    {
-      id: 'silent-message',
-      goal: 'продолжить контакт, если человек молчит после сообщения',
-      why: ['follow-up после сообщения', 'человек молчит'],
-      phrases: ['молчит после', 'не отвечает на сообщение', 'прочитал и молчит', 'тишина после сообщения', 'человек молчит', 'люди молчат', 'он молчит'],
-      boostIds: ['A5-010', 'A3-008', 'A5-011'],
-      reason: 'Подходит, потому что человек молчит после сообщения, и нужен следующий контакт без преследования.',
-    },
-    {
-      id: 'invite-meeting',
-      goal: 'пригласить на разговор или встречу',
-      why: ['назначить встречу', 'конкретное время'],
-      phrases: ['пригласить на встречу', 'как пригласить', 'назначить встречу', 'назначить разговор'],
-      boostIds: ['A3-005', 'A3-013', 'A3-016'],
-      reason: 'Подходит, потому что вам нужно назначить конкретное время разговора или встречи.',
-    },
-    {
-      id: 'refused',
-      goal: 'сохранить движение после отказа',
-      why: ['отказ', 'завершить корректно'],
-      phrases: ['мне отказали', 'отказали', 'человек отказал', 'после отказа'],
-      boostIds: ['A5-014', 'A5-001', 'A5-011'],
-      reason: 'Подходит, потому что после отказа важно корректно завершить и сохранить движение.',
-    },
-    {
-      id: 'repeat-sales',
-      goal: 'вернуть повторную покупку без выдуманных цифр',
-      why: ['повтор', 'следующий контакт после покупки'],
-      phrases: ['повторные продажи', 'повторную продажу', 'хочу повторные продажи', 'повторная продажа'],
-      boostIds: ['A6-006', 'A6-003', 'A6-001'],
-      reason: 'Подходит, потому что речь о повторном контакте после покупки, а не о первом сообщении.',
-    },
+  var PAYMENTS_ENABLED = false;
+  var COMMERCE_PREVIEW_ENABLED = false;
+  var LEGAL_PLACEHOLDER = '[ЗАПОЛНИТЬ ВЛАДЕЛЬЦУ ПЕРЕД ПУБЛИКАЦИЕЙ]';
+  var NOTIFY_KEY = 'mlma.launchNotify.v1';
+  var REQUIRED_CODES = [
+    'B2C-FREE-001',
+    'B2C-TRACK-001',
+    'B2C-PACK3-001',
+    'B2C-ROUTE6-001',
+    'B2C-LIB-M-001',
+    'B2C-LIB-Y-001',
+    'B2C-PRO-M-001',
+    'B2B-PILOT30-001',
+    'B2B-TEAM20-M-001',
   ];
 
-  var CLARIFY_QUESTION = 'Вам нужно найти людей, начать разговор, продолжить после паузы или организовать команду?';
-  var CLARIFY_OPTIONS = [
-    { id: 'people', label: 'Найти, с кем начать', q: 'мне некому писать' },
-    { id: 'write', label: 'Начать разговор', q: 'боюсь написать знакомому' },
-    { id: 'team', label: 'Разобрать работу команды', q: 'партнёры ничего не делают' },
-  ];
-  var OUT_OF_SCOPE = [
-    {
-      test: /(ремонт\w*\s+(автомобил|машин)|починить\s+(машин|авто)|автомобил\w*\s+ремонт|как отремонтировать)/,
-      question: 'Этот запрос не относится к библиотеке MLM Academy. Опишите рабочую ситуацию в партнёрской работе.',
-      options: CLARIFY_OPTIONS.slice(),
-      trueOut: true,
-    },
-    {
-      test: /(погода на марсе|квантовый единорог|asdfgh|qwerty)/,
-      question: 'Этот запрос не относится к библиотеке. Напишите, что происходит в работе с людьми, продуктом или планом.',
-      options: CLARIFY_OPTIONS.slice(),
-      trueOut: true,
-    },
-  ];
-  var ADJACENT_SCOPE = [
-    {
-      test: /(нов(ый|ого|ом)\s+город|открыть\s+(новый\s+)?город|новый\s+(филиал|регион|рынок)|географи|запуск\s+города)/,
-      question: 'Отдельного трека про запуск нового города пока нет. Можно начать с ближайших шагов в текущем круге.',
-      trackIds: ['A2-008', 'A2-011', 'A1-010', 'A2-001'],
-      matchType: 'adjacent',
-      reason: 'Ближайший полезный шаг — найти людей и собрать план в текущем круге, пока нет трека про запуск региона.',
-    },
-    {
-      test: /(снять\s+видео|монтаж|риелс|reels|тикток)/,
-      question: 'Трека про съёмку видео пока нет. Какая рабочая задача ближе?',
-      trackIds: ['A3-002', 'A3-016', 'A1-012'],
-      matchType: 'adjacent',
-      reason: 'Ближайший полезный шаг — начать разговор или честно рассказать о продукте, а не снимать ролик.',
-    },
-  ];
+  var FALLBACK_CATALOG = root.MLMA_PRODUCTS || { schema: 'mlma.products.v1', products: [] };
+  try {
+    if (typeof require === 'function') {
+      FALLBACK_CATALOG = require('./data/products.catalog.json');
+    }
+  } catch (err) {
+    /* browser */
+  }
 
-  var PRESETS = [
-    { id: 'just-started', title: 'Я только начал', hint: 'Роль, причина, план и первые пять контактов', trackIds: ['A1-004', 'A1-006', 'A1-010', 'A1-011', 'A2-008'] },
-    { id: 'first-result', title: 'Хочу первый результат', hint: 'План, контакты, сообщение, разговор, фиксация', trackIds: ['A1-010', 'A2-008', 'A3-002', 'A3-016', 'A3-008'] },
-    { id: 'who-to-work', title: 'Не понимаю, с кем работать', hint: 'Профиль, база, круги и реальные контексты', trackIds: ['A2-001', 'A2-006', 'A2-007', 'A2-008', 'A2-010', 'A2-011'] },
-    { id: 'want-write', title: 'Хочу написать человеку', hint: 'Канал, первое сообщение, повод и фиксация', trackIds: ['A3-001', 'A3-002', 'A3-016', 'A3-005', 'A3-008'] },
-    { id: 'tell-product', title: 'Хочу нормально рассказать о продукте', hint: 'Фокус, честная карточка и переход к человеку', trackIds: ['A1-011', 'A1-012', 'A1-013', 'A1-014', 'A4-001'] },
-    { id: 'person-doubts', title: 'Человек сомневается', hint: 'Пауза, follow-up и корректное завершение', trackIds: ['A5-001', 'A5-009', 'A5-010', 'A5-011', 'A5-014'] },
-    { id: 'return-client', title: 'Хочу вернуть клиента', hint: 'Опыт, повтор и следующий контакт', trackIds: ['A6-001', 'A6-003', 'A6-006', 'A5-010', 'A6-010'] },
-    { id: 'grow-team', title: 'Хочу развивать команду', hint: 'Стандарт, ритм и разбор практики', trackIds: ['A1-010', 'A1-016', 'A6-010', 'A6-011', 'A6-012', 'A6-013'] },
-  ];
+  function readCatalog() {
+    if (root.MLMA_PAYLOAD && root.MLMA_PAYLOAD.products && root.MLMA_PAYLOAD.products.products) {
+      return root.MLMA_PAYLOAD.products;
+    }
+    if (root.MLMA_PAYLOAD && Array.isArray(root.MLMA_PAYLOAD.products)) {
+      return { products: root.MLMA_PAYLOAD.products, flags: root.MLMA_PAYLOAD.productFlags || {} };
+    }
+    return FALLBACK_CATALOG;
+  }
 
-  var GOALS = [
-    { id: 'first-result', title: 'Первый результат' },
-    { id: 'find-client', title: 'Найти клиента' },
-    { id: 'first-dialogue', title: 'Первый диалог' },
-    { id: 'understand-need', title: 'Понять потребность' },
-    { id: 'handle-doubt', title: 'Пройти сомнения' },
-    { id: 'grow-repeat', title: 'Повтор и рост' },
-  ];
+  function listProducts() {
+    var cat = readCatalog();
+    return (cat && cat.products) || [];
+  }
 
-  var SIT_FILTERS = [
-    { id: 'start', title: 'Старт', test: function (m) { return m.sectionId === 'A1' || m.sit === 'start'; } },
-    { id: 'people', title: 'Поиск людей', test: function (m) { return m.sit === 'people'; } },
-    { id: 'contact', title: 'Первый контакт', test: function (m) { return m.sit === 'contact'; } },
-    { id: 'talk', title: 'Разговор', test: function (m) { return m.sit === 'talk'; } },
-    { id: 'offer', title: 'Предложение', test: function (m) { return m.sit === 'offer'; } },
-    { id: 'doubt', title: 'Сомнение', test: function (m) { return m.sit === 'doubt'; } },
-    { id: 'refuse', title: 'Отказ', test: function (m) { return m.sit === 'refuse'; } },
-    { id: 'followup', title: 'Follow-up', test: function (m) { return m.sit === 'followup'; } },
-    { id: 'repeat', title: 'Повтор', test: function (m) { return m.sit === 'repeat'; } },
-    { id: 'base', title: 'Управление базой', test: function (m) { return m.sit === 'base'; } },
-    { id: 'team', title: 'Команда', test: function (m) { return m.sit === 'team'; } },
-  ];
+  function getProductByCode(code) {
+    var list = listProducts();
+    for (var i = 0; i < list.length; i += 1) {
+      if (list[i].product_code === code) return list[i];
+    }
+    return null;
+  }
 
-  var FMT_FILTERS = [
-    { id: 'message', title: 'Сообщение' },
-    { id: 'list', title: 'Список' },
-    { id: 'map', title: 'Карта' },
-    { id: 'plan', title: 'План' },
-    { id: 'checklist', title: 'Чек-лист' },
-    { id: 'conversation', title: 'Разговор' },
-    { id: 'calculator', title: 'Калькулятор' },
-    { id: 'decision', title: 'Решение' },
-    { id: 'result', title: 'Фиксация результата' },
-  ];
+  function formatPrice(value) {
+    if (value == null || value === '') return '';
+    var n = Number(value);
+    if (!isFinite(n)) return '';
+    var s = String(Math.round(n));
+    var out = '';
+    for (var i = 0; i < s.length; i += 1) {
+      var pos = s.length - i;
+      out = s.charAt(s.length - 1 - i) + out;
+      if (pos > 1 && pos % 3 === 1) out = ' ' + out;
+    }
+    return out + ' ₽';
+  }
 
-  var CH_FILTERS = [
-    { id: 'chat', title: 'Переписка' },
-    { id: 'call', title: 'Звонок' },
-    { id: 'meeting', title: 'Встреча' },
-    { id: 'content', title: 'Контент' },
-    { id: 'crm', title: 'CRM' },
-    { id: 'any', title: 'Универсальный' },
-  ];
+  function isLocalPreviewHost() {
+    try {
+      var h = String((root.location && root.location.hostname) || '');
+      return h === 'localhost' || h === '127.0.0.1' || h === '0.0.0.0' || /\.tilda\.ws$/.test(h);
+    } catch (err) {
+      return false;
+    }
+  }
 
-  var LVL_FILTERS = [
-    { id: 'beginner', title: 'Начинаю' },
-    { id: 'working', title: 'Уже работаю' },
-    { id: 'system', title: 'Развиваю систему' },
-    { id: 'mentor', title: 'Наставляю команду' },
-  ];
+  function isProductionHost() {
+    try {
+      var h = String((root.location && root.location.hostname) || '');
+      return h === 'mlmacademy.ru' || h === 'www.mlmacademy.ru';
+    } catch (err) {
+      return false;
+    }
+  }
 
-  var AVAIL_FILTERS = [
-    { id: 'description', title: 'Описание готово' },
-    { id: 'playable', title: 'Можно пройти' },
-  ];
+  function commercePreviewAllowed() {
+    if (COMMERCE_PREVIEW_ENABLED === true) return false;
+    if (isProductionHost()) return false;
+    return isLocalPreviewHost();
+  }
 
-  var EXPERIENCE = [
-    { id: 'start', title: 'Я только начинаю', level: 'beginner' },
-    { id: 'first-steps', title: 'Уже делал несколько попыток', level: 'working' },
-    { id: 'practice', title: 'У меня уже есть клиенты', level: 'system' },
-    { id: 'growth', title: 'Я развиваю команду', level: 'mentor' },
-  ];
+  function legalPagesReady(legal) {
+    legal = legal || {};
+    return !!(legal.offerPublished && legal.privacyApproved && legal.requisitesFilled);
+  }
 
-  var MATERIAL_TYPES = [
-    { id: 'track', title: 'Трек' },
-    { id: 'material', title: 'Материал' },
-  ];
-  var TIME_FILTERS = [
-    { id: '10', title: 'До 10 минут' },
-    { id: '20', title: 'До 20 минут' },
-    { id: '30', title: '20 минут и дольше' },
-  ];
-  var GOAL_SECTIONS = {
-    'first-result': ['A1', 'A3'],
-    'find-client': ['A2'],
-    'first-dialogue': ['A3'],
-    'understand-need': ['A4'],
-    'handle-doubt': ['A5'],
-    'grow-repeat': ['A6'],
-  };
-  var SITUATIONS = SIT_FILTERS.map(function (item) {
-    return { id: item.id, title: item.title };
-  });
+  function trackById(tracks, id) {
+    if (!id || !tracks) return null;
+    for (var i = 0; i < tracks.length; i += 1) {
+      if (tracks[i].trackId === id || tracks[i].id === id) return tracks[i];
+    }
+    return null;
+  }
 
-  var FIELD_WEIGHTS = {
-    titleExact: 400,
-    title: 45,
-    situation: 80,
-    aliases: 55,
-    outcome: 55,
-    trigger: 70,
-    inputState: 70,
-    targetState: 50,
-    mainTask: 40,
-    mechanic: 18,
-    artifact: 22,
-    evidence: 16,
-    tags: 25,
-    section: 16,
-    format: 10,
-    id: 16,
-    phrase: 90,
-    multi: 22,
-    intent: 240,
-    emotion: 24,
-  };
+  function hasText(value) {
+    return typeof value === 'string' && value.trim().length > 0;
+  }
 
+  function trackContentReady(track) {
+    if (!track) return { ok: false, missing: ['track'] };
+    var missing = [];
+    if (track.publicationStatus !== 'published') missing.push('publication_status');
+    if (track.contentStatus !== 'complete') missing.push('content_status');
+    if (!hasText(track.title)) missing.push('title');
+    if (!hasText(track.situation)) missing.push('situation');
+    if (!hasText(track.outcome)) missing.push('outcome');
+    var duration = track.duration || track.durationMin || track.format;
+    if (!hasText(duration)) missing.push('duration');
+    var action = track.action || track.actions || track.steps || track.practice;
+    var hasAction = Array.isArray(action) ? action.length > 0 : hasText(action);
+    if (!hasAction) missing.push('action');
+    if (!hasText(track.completionCriteria) && !hasText(track.completion_criteria) && !hasText(track.doneWhen)) {
+      missing.push('completion_criteria');
+    }
+    if (!hasText(track.composition) && !hasText(track.outline) && !hasText(track.contentOutline)) {
+      missing.push('content_outline');
+    }
+    return { ok: missing.length === 0, missing: missing };
+  }
 
-  api.STOP_WORDS = STOP_WORDS;
-  api.TYPOS = TYPOS;
-  api.SYNONYMS = SYNONYMS;
-  api.INTENTS = INTENTS;
-  api.CLARIFY_QUESTION = CLARIFY_QUESTION;
-  api.CLARIFY_OPTIONS = CLARIFY_OPTIONS;
-  api.OUT_OF_SCOPE = OUT_OF_SCOPE;
-  api.ADJACENT_SCOPE = ADJACENT_SCOPE;
-  api.TRACK_ALIASES = TRACK_ALIASES;
-  api.SECTION_ALIASES = SECTION_ALIASES;
-  api.GOALS = GOALS;
-  api.SITUATIONS = SITUATIONS;
-  api.SIT_FILTERS = SIT_FILTERS;
-  api.FMT_FILTERS = FMT_FILTERS;
-  api.CH_FILTERS = CH_FILTERS;
-  api.LVL_FILTERS = LVL_FILTERS;
-  api.AVAIL_FILTERS = AVAIL_FILTERS;
-  api.EXPERIENCE = EXPERIENCE;
-  api.MATERIAL_TYPES = MATERIAL_TYPES;
-  api.TIME_FILTERS = TIME_FILTERS;
-  api.GOAL_SECTIONS = GOAL_SECTIONS;
-  api.PRESETS = PRESETS;
-  api.FIELD_WEIGHTS = FIELD_WEIGHTS;
-  api.PAGE_SIZE = 15;
-  api.LIBRARY_STATE_KEY = LIBRARY_STATE_KEY;
+  function relatedComplete(tracks, ids, expected) {
+    if (!ids || ids.length !== expected) {
+      return { ok: false, missing: ['track_ids:' + expected] };
+    }
+    var missing = [];
+    for (var i = 0; i < ids.length; i += 1) {
+      var ready = trackContentReady(trackById(tracks, ids[i]));
+      if (!ready.ok) missing.push(ids[i] + ':' + ready.missing.join(','));
+    }
+    return { ok: missing.length === 0, missing: missing };
+  }
+
+  function evaluateLaunchGate(product, context) {
+    context = context || {};
+    var tracks = context.tracks || [];
+    var legal = context.legal || (readCatalog().legal || {});
+    var reasons = [];
+    if (!product) return { ok: false, can_activate: false, reasons: ['product_missing'] };
+    if (product.publication_status === 'planned') {
+      return { ok: false, can_activate: false, reasons: ['planned'], product_code: product.product_code, publication_status: product.publication_status };
+    }
+    if (product.billing_type === 'subscription_month' || product.billing_type === 'subscription_year') {
+      reasons.push('subscription_not_implemented');
+    }
+    if (product.sale_channel === 'negotiation' || product.sale_channel === 'hidden') {
+      reasons.push('not_card_checkout');
+    }
+    if (!legalPagesReady({
+      offerPublished: legal.offer_status === 'published' || legal.offerPublished,
+      privacyApproved: legal.privacy_status === 'approved' || legal.privacyApproved,
+      requisitesFilled: legal.requisites_status === 'filled' || legal.requisitesFilled,
+    })) {
+      reasons.push('legal_pages_unpublished');
+    }
+    if (context.paymentsBackendTestsPassed !== true) reasons.push('payments_backend_untested');
+    if (PAYMENTS_ENABLED !== true) reasons.push('PAYMENTS_ENABLED=false');
+
+    var gate = product.launch_gate;
+    if (gate === 'promo_track_published_complete') {
+      var promoId = product.bound_track_id || (product.track_ids && product.track_ids[0]);
+      var promo = trackContentReady(trackById(tracks, promoId));
+      if (!promo.ok) reasons.push('promo_track_not_complete');
+    }
+    if (gate === 'single_track_complete') {
+      var tid = product.bound_track_id || (product.track_ids && product.track_ids[0]);
+      if (!tid) reasons.push('bound_track_id_missing');
+      else {
+        if (!trackById(tracks, tid)) reasons.push('track_id_not_in_catalog');
+        var single = trackContentReady(trackById(tracks, tid));
+        if (!single.ok) reasons.push.apply(reasons, single.missing);
+      }
+      if (!(product.access_days > 0)) reasons.push('access_days');
+      if (product.launch_price == null || product.regular_price == null) reasons.push('price');
+    }
+    if (gate === 'pack3_related_complete') {
+      var pack = relatedComplete(tracks, product.track_ids, 3);
+      if (!pack.ok) reasons.push.apply(reasons, pack.missing);
+      if (!(product.access_days > 0)) reasons.push('access_days');
+      if (product.launch_price == null || product.regular_price == null) reasons.push('price');
+    }
+    if (gate === 'route6_related_complete') {
+      var route = relatedComplete(tracks, product.track_ids, 6);
+      if (!route.ok) reasons.push.apply(reasons, route.missing);
+      if (!(product.access_days > 0)) reasons.push('access_days');
+      if (product.launch_price == null || product.regular_price == null) reasons.push('price');
+    }
+    if (gate === 'leader_cockpit_required' && context.leaderCockpitReady !== true) {
+      reasons.push('leader_cockpit_missing');
+    }
+    if (gate === 'b2b_negotiation_only') reasons.push('negotiation_only');
+
+    var can = reasons.length === 0;
+    return {
+      ok: can,
+      can_activate: can,
+      reasons: reasons,
+      product_code: product.product_code,
+      publication_status: product.publication_status,
+    };
+  }
+
+  function isProductPurchasable(product, context) {
+    if (!product) return false;
+    if (PAYMENTS_ENABLED !== true) return false;
+    if (product.publication_status !== 'active') return false;
+    if (product.checkout_eligible !== true) return false;
+    if (product.sale_channel !== 'storefront') return false;
+    if (product.billing_type !== 'one_time' && product.billing_type !== 'free') return false;
+    var gate = evaluateLaunchGate(product, context);
+    return gate.ok === true && product.publication_status === 'active';
+  }
+
+  function canShowBuyButton(product, track, context) {
+    if (track) {
+      if (track.publicationStatus === 'planned') return false;
+      if (track.contentStatus === 'metadata_only') return false;
+      if (track.contentStatus !== 'complete') return false;
+      if (track.publicationStatus !== 'published') return false;
+    }
+    return isProductPurchasable(product, context);
+  }
+
+  function activateProductClient() {
+    return {
+      ok: false,
+      reason: 'client_cannot_activate',
+      publication_status: 'unchanged',
+    };
+  }
+
+  function grantFromQuery() {
+    return [];
+  }
+
+  function grantFromLocalStorage() {
+    return [];
+  }
+
+  function grantFromTildaGroup(groups) {
+    var out = [];
+    groups = groups || [];
+    for (var i = 0; i < groups.length; i += 1) {
+      if (groups[i] === 'START' || groups[i] === 'FULL' || groups[i] === 'PILOT') {
+        return [];
+      }
+    }
+    return out;
+  }
+
+  function listPricingProducts() {
+    var list = listProducts();
+    var out = [];
+    for (var i = 0; i < list.length; i += 1) {
+      if (!list[i].show_in_pricing) continue;
+      if (list[i].sale_channel === 'hidden') continue;
+      out.push(list[i]);
+    }
+    return out;
+  }
+
+  function publicB2CProducts() {
+    var codes = ['B2C-FREE-001', 'B2C-TRACK-001', 'B2C-PACK3-001', 'B2C-ROUTE6-001'];
+    var out = [];
+    for (var i = 0; i < codes.length; i += 1) {
+      var p = getProductByCode(codes[i]);
+      if (p) out.push(p);
+    }
+    return out;
+  }
+
+  function storefrontStatusLabel(product) {
+    if (!product) return 'Недоступно';
+    if (product.publication_status === 'active' && isProductPurchasable(product)) return 'Можно купить';
+    if (product.publication_status === 'gated') return 'Готовится к запуску';
+    if (product.publication_status === 'planned') return 'Пока не предлагается';
+    return 'Готовится к запуску';
+  }
+
+  function productCardView(product) {
+    product = product || {};
+    var launch = formatPrice(product.launch_price);
+    var regular = formatPrice(product.regular_price);
+    return {
+      product_code: product.product_code,
+      display_name: product.display_name,
+      short_description: product.short_description,
+      buyer_segment: product.buyer_segment,
+      billing_type: product.billing_type,
+      launch_price_label: launch,
+      regular_price_label: regular,
+      access_days: product.access_days || 0,
+      status: product.publication_status,
+      status_label: storefrontStatusLabel(product),
+      composition: product.grant_scope,
+      buy_enabled: false,
+      cta: product.sale_channel === 'negotiation' ? 'discuss' : 'notify',
+    };
+  }
+
+  function purchaseUiStates() {
+    return [
+      { key: 'card', title: 'Карточка продукта', note: 'Цена, состав, статус. Кнопки «Купить» нет.' },
+      { key: 'composition', title: 'Состав продукта', note: 'Track ID задаёт сервер. Карточка трека — не продукт.' },
+      { key: 'confirm', title: 'Подтверждение', note: 'Будущий шаг до оплаты. Сейчас недоступен.' },
+      { key: 'waiting', title: 'Ожидание оплаты', note: 'Форма провайдера ещё не подключена.' },
+      { key: 'success', title: 'Успешная оплата', note: 'Redirect не является оплатой. Право появится только после webhook.' },
+      { key: 'cancelled', title: 'Оплата отменена', note: 'Заказ не создаёт доступ.' },
+      { key: 'error', title: 'Ошибка оплаты', note: 'Деньги не списаны, право не выдано.' },
+      { key: 'refund', title: 'Возврат', note: 'Возврат не удаляет платёж. Право отзывается отдельно.' },
+      { key: 'granted', title: 'Право выдано', note: 'Только после verified user и проверенного webhook.' },
+      { key: 'expired', title: 'Право истекло', note: 'Срок разового доступа — 365 дней.' },
+      { key: 'revoked', title: 'Право отозвано', note: 'История платежа сохраняется.' },
+    ];
+  }
+
+  function readNotify() {
+    try {
+      var raw = root.localStorage && root.localStorage.getItem(NOTIFY_KEY);
+      if (!raw) return { product_codes: [] };
+      var parsed = JSON.parse(raw);
+      return { product_codes: Array.isArray(parsed.product_codes) ? parsed.product_codes : [] };
+    } catch (err) {
+      return { product_codes: [] };
+    }
+  }
+
+  function writeNotify(code) {
+    var data = readNotify();
+    if (data.product_codes.indexOf(code) === -1) data.product_codes.push(code);
+    data.updatedAt = new Date().toISOString();
+    try {
+      if (root.localStorage) root.localStorage.setItem(NOTIFY_KEY, JSON.stringify(data));
+    } catch (err) {
+      /* ignore */
+    }
+    return data;
+  }
+
+  function classifyAccessRow(track, account, savedIds) {
+    savedIds = savedIds || [];
+    var saved = savedIds.indexOf(track && track.trackId) !== -1;
+    var access = api.normalizeAccess ? api.normalizeAccess(track && track.access) : 'paid';
+    var entitled = api.isEntitledToTrack ? api.isEntitledToTrack(track, account) : false;
+    if (entitled && access === 'paid') return { key: 'purchased', label: 'куплено' };
+    if (access === 'public' || access === 'promo') return { key: 'free', label: 'доступно бесплатно' };
+    if (track && (track.publicationStatus === 'planned' || track.contentStatus === 'metadata_only')) {
+      if (saved) return { key: 'saved', label: 'сохранено' };
+      return { key: 'preparing', label: 'готовится' };
+    }
+    if (!entitled && access === 'paid') {
+      if (saved) return { key: 'saved', label: 'сохранено' };
+      return { key: 'closed', label: 'закрыто' };
+    }
+    if (saved) return { key: 'saved', label: 'сохранено' };
+    return { key: 'preparing', label: 'готовится' };
+  }
+
+  function paymentsSafeState() {
+    return {
+      ok: false,
+      reason: 'payments_disabled',
+      message: 'Оплата ещё не запущена',
+      PAYMENTS_ENABLED: false,
+      COMMERCE_PREVIEW_ENABLED: false,
+    };
+  }
+
+  api.PAYMENTS_ENABLED = PAYMENTS_ENABLED;
+  api.COMMERCE_PREVIEW_ENABLED = COMMERCE_PREVIEW_ENABLED;
+  api.LEGAL_PLACEHOLDER = LEGAL_PLACEHOLDER;
+  api.PRODUCT_CODES = REQUIRED_CODES;
+  api.readProductCatalog = readCatalog;
+  api.listProducts = listProducts;
+  api.getProductByCode = getProductByCode;
+  api.formatPrice = formatPrice;
+  api.evaluateLaunchGate = evaluateLaunchGate;
+  api.isProductPurchasable = isProductPurchasable;
+  api.canShowBuyButton = canShowBuyButton;
+  api.activateProductClient = activateProductClient;
+  api.grantFromQuery = grantFromQuery;
+  api.grantFromLocalStorage = grantFromLocalStorage;
+  api.grantFromTildaGroup = grantFromTildaGroup;
+  api.listPricingProducts = listPricingProducts;
+  api.publicB2CProducts = publicB2CProducts;
+  api.productCardView = productCardView;
+  api.storefrontStatusLabel = storefrontStatusLabel;
+  api.purchaseUiStates = purchaseUiStates;
+  api.commercePreviewAllowed = commercePreviewAllowed;
+  api.isLocalPreviewHost = isLocalPreviewHost;
+  api.readLaunchNotify = readNotify;
+  api.writeLaunchNotify = writeNotify;
+  api.classifyAccessRow = classifyAccessRow;
+  api.paymentsSafeState = paymentsSafeState;
+  api.trackContentReady = trackContentReady;
+  api.PRODUCTS = publicB2CProducts();
+
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
 </script>

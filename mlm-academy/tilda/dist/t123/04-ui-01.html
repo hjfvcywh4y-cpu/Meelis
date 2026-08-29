@@ -1,4 +1,4 @@
-<!-- Блок T123: рендер оболочки 1/6 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: рендер оболочки 1/7 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
 /**
  * Оболочка MLM Academy: рендер страниц Tilda из очищенного каталога.
@@ -53,6 +53,7 @@
       rules: payload.rules || null,
       pilot: payload.pilot || null,
       config: payload.config || {},
+      products: payload.products || null,
     };
   }
 
@@ -151,7 +152,7 @@
   }
 
   function isCabinetPage(page) {
-    return page === 'my' || page === 'route' || page === 'results' || page === 'profile';
+    return page === 'my' || page === 'route' || page === 'results' || page === 'profile' || page === 'purchases';
   }
 
   function accountOf(state) {
@@ -177,7 +178,7 @@
         '<div class="mlma-account-drop">' +
         '<a href="' + esc(state.R.my()) + '">Кабинет</a>' +
         '<a href="' + esc(state.R.profile()) + '">Профиль</a>' +
-        '<a href="' + esc(state.R.access()) + '">Доступ</a>' +
+        '<a href="' + esc((state.R.purchases && state.R.purchases()) || '/my/purchases') + '">Покупки и доступ</a>' +
         '<a href="/members/logout">Выход</a>' +
         '</div></details></div>'
       );
@@ -209,7 +210,7 @@
         { href: R.home(), label: 'Academy' },
         { href: R.library(), label: 'Библиотека' },
         { href: R.my(), label: 'Кабинет' },
-        { href: R.access(), label: 'Доступ' },
+        { href: (R.purchases && R.purchases()) || '/my/purchases', label: 'Покупки' },
       ];
     }
     return items;
@@ -264,8 +265,9 @@
       { href: R.library(), label: 'Библиотека' },
       { href: R.about(), label: 'Как создаётся библиотека' },
       { href: R.access(), label: 'Доступ' },
-      { href: R.pricing ? R.pricing() : '/pricing', label: 'Условия' },
-      { href: R.privacy ? R.privacy() : '/privacy', label: 'Политика' },
+      { href: R.pricing ? R.pricing() : '/pricing', label: 'Тарифы' },
+      { href: (R.paymentAndAccess && R.paymentAndAccess()) || '/payment-and-access', label: 'Оплата и доступ' },
+      { href: R.privacy ? R.privacy() : '/privacy', label: 'Черновик политики' },
       { href: R.research ? R.research() : '/research/marketing-plan', label: 'Исследование' },
       { href: D.siteHomeUrl(), label: 'Решения для компаний' },
     ];

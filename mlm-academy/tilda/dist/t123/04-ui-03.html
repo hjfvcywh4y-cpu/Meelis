@@ -1,4 +1,4 @@
-<!-- Блок T123: рендер оболочки 3/6 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: рендер оболочки 3/7 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
 (function (root) {
   'use strict';
@@ -32,7 +32,7 @@
       { href: R.myTracks ? R.myTracks() : '/my/route?tab=tracks', label: 'Мои треки', id: 'tracks' },
       { href: R.myResults(), label: 'Результаты', id: 'results' },
       { href: R.mySaved ? R.mySaved() : '/my/route?tab=saved', label: 'Сохранённое', id: 'saved' },
-      { href: R.access(), label: 'Покупки и доступ', id: 'access' },
+      { href: (R.purchases && R.purchases()) || '/my/purchases', label: 'Покупки и доступ', id: 'purchases' },
       { href: R.profile(), label: 'Профиль', id: 'profile' },
     ];
     var tab = '';
@@ -48,6 +48,7 @@
       else if (items[i].id === 'saved') current = state.page === 'route' && tab === 'saved';
       else if (items[i].id === 'route') current = state.page === 'route' && !tab;
       else if (items[i].id === 'access') current = state.page === 'access';
+      else if (items[i].id === 'purchases') current = state.page === 'purchases';
       else current = state.page === items[i].id;
       html +=
         '<li><a href="' +
@@ -114,14 +115,14 @@
     var wouldStart = D.getTrackStatusView(track, { entitled: true }).canStart;
     if (!entitled && D.normalizeAccess && D.normalizeAccess(track.access) === 'paid' && wouldStart) {
       runtimeHtml =
-        '<section class="mlma-card mlma-pad-lg" style="padding:28px"><span class="mlma-eyebrow">Доступ к треку</span><h2 class="mlma-h3" style="margin-top:12px">Полный маршрут открывается после доступа</h2>' +
+        '<section class="mlma-card mlma-pad-lg" style="padding:28px"><span class="mlma-eyebrow">Доступ к треку</span><h2 class="mlma-h3" style="margin-top:12px">Платный полный маршрут ещё готовится</h2>' +
         '<p class="mlma-lead" style="margin-top:12px">' + esc(track.situation) + '</p>' +
         '<p style="margin-top:8px">Результат: ' + esc(track.outcome) + '</p>' +
-        '<p class="mlma-muted" style="margin-top:12px">Внутренние шаги и полный текст сюда не выводятся.</p>' +
+        '<p class="mlma-muted" style="margin-top:12px">Карточка трека — не готовый продукт. Metadata-only и planned нельзя купить. Внутренние шаги сюда не выводятся.</p>' +
         '<div class="mlma-actions" style="margin-top:20px">' +
         (state.account && state.account.loggedIn
-          ? btn(R.access() + '?product=start&track=' + encodeURIComponent(track.trackId), 'Купить доступ', 'primary')
-          : btn(D.membersLoginUrl(pathName()), 'Войти, чтобы сохранить', 'primary') + btn(R.access(), 'Смотреть доступ')) +
+          ? btn((R.pricing && R.pricing()) || '/pricing', 'Готовится к запуску', 'primary')
+          : btn(D.membersLoginUrl(pathName()), 'Войти, чтобы сохранить', 'primary') + btn((R.pricing && R.pricing()) || '/pricing', 'Смотреть тарифы')) +
         '</div></section>';
     }
     var nbaHtml = '';

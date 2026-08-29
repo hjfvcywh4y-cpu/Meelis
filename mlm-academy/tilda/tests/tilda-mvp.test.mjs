@@ -44,6 +44,7 @@ require('../src/domain.js');
 require('../src/access.js');
 require('../src/storage.js');
 require('../src/payments.js');
+require('../src/commerce.js');
 require('../src/search.js');
 require('../src/analytics.js');
 const MLMA = require('../src/ontology.js');
@@ -70,6 +71,7 @@ function memoryEnv(secret) {
   return {
     MLMA_SESSION_SECRET: secret || 'test-secret',
     PAYMENTS_ENABLED: 'false',
+    COMMERCE_PREVIEW_ENABLED: 'false',
     TEST_MODE: 'true',
     MLMA_ACCOUNT: {
       get: async (key) => store.get(key) || null,
@@ -161,6 +163,7 @@ describe('Tilda-MVP: pending, runtime, analytics, payments', () => {
     const health = await worker.fetch(new Request('https://mlma-account.test/api/health', { method: 'GET' }), env);
     const healthData = await health.json();
     assert.equal(healthData.PAYMENTS_ENABLED, false);
+    assert.equal(healthData.COMMERCE_PREVIEW_ENABLED, false);
     assert.equal(healthData.TEST_MODE, true);
 
     const checkout = await call(env, '/api/checkout/create', { productId: 'full' });
@@ -264,8 +267,13 @@ describe('Tilda-MVP: pending, runtime, analytics, payments', () => {
     const R = MLMA.routes();
     assert.equal(R.pricing(), '/pricing');
     assert.equal(R.privacy(), '/privacy');
+    assert.equal(R.purchases(), '/my/purchases');
+    assert.equal(R.offer(), '/offer');
+    assert.equal(R.requisites(), '/requisites');
+    assert.equal(R.paymentAndAccess(), '/payment-and-access');
     assert.equal(MLMA.membersRecoverUrl('/profile'), '/members/login?mlma=recover&redirecturl=profile');
     assert.equal(MLMA.PAYMENTS_ENABLED, false);
+    assert.equal(MLMA.COMMERCE_PREVIEW_ENABLED, false);
     assert.equal(MLMA.PAYMENT_TEST_MODE, true);
   });
 });

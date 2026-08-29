@@ -1,4 +1,4 @@
-<!-- Блок T123: доменная логика 1/10 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: доменная логика 1/11 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
 /**
  * Доменная логика MLM Academy для Tilda.
@@ -572,11 +572,26 @@
       access: function () {
         return '/access';
       },
+      purchases: function () {
+        return '/my/purchases';
+      },
       pricing: function () {
         return '/pricing';
       },
       privacy: function () {
         return '/privacy';
+      },
+      offer: function () {
+        return '/offer';
+      },
+      requisites: function () {
+        return '/requisites';
+      },
+      paymentAndAccess: function () {
+        return '/payment-and-access';
+      },
+      previewCommerce: function () {
+        return '/preview/commerce';
       },
       login: function (returnPath) {
         return membersLoginUrl(returnPath || '/my');

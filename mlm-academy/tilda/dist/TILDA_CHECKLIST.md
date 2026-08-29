@@ -10,8 +10,8 @@
 2. Скрыть стандартные header/footer Tilda на этой странице
 3. T123: `01-css.html`
 4. T123: все `02-data-*.html` по порядку
-5. T123: все `03-domain-*.html` по порядку (сейчас 10)
-6. T123: все `04-ui-*.html` по порядку (сейчас 6)
+5. T123: все `03-domain-*.html` по порядку (сейчас 11)
+6. T123: все `04-ui-*.html` по порядку (сейчас 7)
 7. T123: `mounts/<id>.html` этой страницы
 8. Отступы блока = 0
 
@@ -59,9 +59,14 @@
 | Мои результаты · MLM Academy | `/my/results` | `mounts/results.html` | member |
 | Профиль · MLM Academy | `/profile` | `mounts/profile.html` | member |
 | Доступ · MLM Academy | `/access` | `mounts/access.html` | public |
-| Условия доступа · MLM Academy | `/pricing` | `mounts/pricing.html` | public |
+| Тарифы · MLM Academy | `/pricing` | `mounts/pricing.html` | public |
+| Оплата и доступ · MLM Academy | `/payment-and-access` | `mounts/payment-and-access.html` | public |
 | Политика конфиденциальности · черновик · MLM Academy | `/privacy` | `mounts/privacy.html` | public |
+| Публичная оферта · черновик · MLM Academy | `/offer` | `mounts/offer.html` | public |
+| Реквизиты · черновик · MLM Academy | `/requisites` | `mounts/requisites.html` | public |
+| Покупки и доступ · MLM Academy | `/my/purchases` | `mounts/purchases.html` | member |
 | Предпросмотр каталога · MLM Academy | `/preview/catalog` | `mounts/preview.html` | editor |
+| Предпросмотр состояний покупки · MLM Academy | `/preview/commerce` | `mounts/preview-commerce.html` | editor |
 
 - `public` — без ограничения Members
 - `member` — группы Member и Editor
@@ -84,12 +89,14 @@
 | Группа | Страницы в группе |
 |---|---|
 | Guest | ничего из академии |
-| Member | `/my`, `/my/route`, `/my/results`, `/profile` |
-| FREE / START / FULL / PILOT | те же четыре; после входа главная группы — `/my` |
-| Editor / ADMIN | те же четыре + `/preview/catalog` |
+| Member | `/my`, `/my/route`, `/my/results`, `/my/purchases`, `/profile` |
+| FREE / START / FULL / PILOT | те же четыре + `/my/purchases`; после входа главная группы — `/my` |
+| Editor / ADMIN | те же кабинетные + `/preview/catalog` + `/preview/commerce` (commerce не публиковать на боевом сайте) |
 
 Публичные (не добавлять ни в одну группу): `/academy`, `/start`, `/library`,
-`/library/a1`…`/library/a6`, `/track`, `/about`, `/access`, `/pricing`, `/privacy`. Живую главную `/` и прочие
+`/library/a1`…`/library/a6`, `/track`, `/about`, `/access`, `/pricing`, `/payment-and-access`.
+Черновики `/privacy`, `/offer`, `/requisites` не публиковать как действующие документы.
+`/preview/commerce` не публиковать. Живую главную `/` и прочие
 маркетинговые страницы в группы не добавлять.
 
 Группы доступа: **Guest**, **Member**, **FREE**, **START**, **FULL**, **PILOT**, **ADMIN**, **Editor**.
