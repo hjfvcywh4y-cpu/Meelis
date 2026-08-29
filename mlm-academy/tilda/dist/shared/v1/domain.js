@@ -809,6 +809,7 @@
     membersLoginUrl: membersLoginUrl,
     siteHomeUrl: siteHomeUrl,
     b2bFromResearchUrl: b2bFromResearchUrl,
+    academyFromResearchUrl: academyFromResearchUrl,
     funnelEvent: funnelEvent,
   };
 
@@ -823,6 +824,10 @@
 
   function b2bFromResearchUrl() {
     return '/?utm_source=mlm_academy&utm_medium=research&utm_campaign=marketing_plan';
+  }
+
+  function academyFromResearchUrl() {
+    return '/academy?utm_source=research&utm_medium=article&utm_campaign=marketing_plan';
   }
 
   function funnelEvent(name, extra) {

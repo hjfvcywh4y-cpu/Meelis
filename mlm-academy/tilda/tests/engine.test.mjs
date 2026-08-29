@@ -385,18 +385,24 @@ describe('статический fallback', () => {
 });
 
 describe('статья-мост research/marketing-plan', () => {
-  it('ведёт в исследование и в B2B с UTM', () => {
+  it('ведёт в исследование, в Академию и в B2B с UTM', () => {
     const R = MLMA.routes();
     assert.equal(R.research(), '/research/marketing-plan');
     assert.equal(MLMA.siteHomeUrl(), '/');
     assert.match(MLMA.b2bFromResearchUrl(), /utm_source=mlm_academy/);
     assert.match(MLMA.b2bFromResearchUrl(), /utm_campaign=marketing_plan/);
+    assert.match(MLMA.academyFromResearchUrl(), /^\/academy\?/);
+    assert.match(MLMA.academyFromResearchUrl(), /utm_source=research/);
+    assert.match(MLMA.academyFromResearchUrl(), /utm_campaign=marketing_plan/);
   });
 
-  it('не содержит B2C-навигации и запрещённых ссылок', () => {
+  it('не содержит B2C-навигации библиотеки и даёт возврат в Академию', () => {
     const body = fs.readFileSync(path.join(__dirname, '../research/article.body.html'), 'utf8');
     assert.match(body, /Посмотреть решение для компании/);
     assert.match(body, /b2b_open_from_research/);
+    assert.match(body, /Вернуться в Академию/);
+    assert.match(body, /academy_open_from_research/);
+    assert.match(body, /href="\/academy\?utm_source=research/);
     assert.equal(/href="\/library/.test(body), false);
     assert.equal(/href="\/start/.test(body), false);
     assert.equal(/href="\/my/.test(body), false);
@@ -405,18 +411,36 @@ describe('статья-мост research/marketing-plan', () => {
     assert.match(body, /utm_source=mlm_academy/);
   });
 
+  it('на главной Academy исследование стоит сразу после героя', () => {
+    const ui = fs.readFileSync(path.join(__dirname, '../src/ui.js'), 'utf8');
+    const heroAt = ui.indexOf('class="mlma-hero"');
+    const researchAt = ui.indexOf('id="mlma-research-entry"');
+    const routeAt = ui.indexOf('mlma-route-demo');
+    assert.ok(heroAt >= 0 && researchAt > heroAt);
+    assert.ok(routeAt > researchAt);
+    assert.match(ui, /academy_home_after_hero/);
+    assert.equal(/academy_home_after_route/.test(ui), false);
+  });
+
   it('передаёт поля воронки в событие', () => {
     const sent = MLMA.funnelEvent('research_open_from_b2c', {
       source_page: '/academy',
       target_page: '/research/marketing-plan',
-      cta_position: 'academy_home_after_route',
+      cta_position: 'academy_home_after_hero',
     });
     assert.equal(sent.event, 'research_open_from_b2c');
     assert.equal(sent.source_page, '/academy');
     assert.equal(sent.target_page, '/research/marketing-plan');
-    assert.equal(sent.cta_position, 'academy_home_after_route');
+    assert.equal(sent.cta_position, 'academy_home_after_hero');
     assert.equal(sent.article_slug, 'marketing-plan');
     assert.ok(sent.timestamp);
+    const back = MLMA.funnelEvent('academy_open_from_research', {
+      source_page: '/research/marketing-plan',
+      target_page: '/academy',
+      cta_position: 'article_footer',
+    });
+    assert.equal(back.event, 'academy_open_from_research');
+    assert.equal(back.target_page, '/academy');
   });
 
   it('индексируется и сохраняет один canonical на оригинал', () => {
