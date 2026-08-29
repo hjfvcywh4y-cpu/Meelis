@@ -33,7 +33,7 @@ async function main() {
   await page.getByRole('button', { name: 'Фильтры' }).click();
   await page.waitForSelector('#mlma-drawer:not([hidden])');
   await page.locator('#mlma-drawer [data-mlma-drawer-close]').first().click();
-  await page.waitForSelector('#mlma-drawer[hidden]');
+  await page.waitForFunction(() => document.querySelector('#mlma-drawer')?.hidden === true);
 
   await page.fill('#mlma-search', 'боюсь написать знакомому');
   await page.waitForTimeout(400);
