@@ -25,6 +25,9 @@
   var renderPurchases = D._ui.renderPurchases;
   var renderOffer = D._ui.renderOffer;
   var renderRequisites = D._ui.renderRequisites;
+  var renderCookies = D._ui.renderCookies;
+  var renderMarketingConsent = D._ui.renderMarketingConsent;
+  var renderDocuments = D._ui.renderDocuments;
   var renderPaymentAndAccess = D._ui.renderPaymentAndAccess;
   var renderPreviewCommerce = D._ui.renderPreviewCommerce;
 
@@ -222,6 +225,12 @@
         return renderOffer ? renderOffer(state) : renderPrivacy(state);
       case 'requisites':
         return renderRequisites ? renderRequisites(state) : renderPrivacy(state);
+      case 'cookies':
+        return renderCookies ? renderCookies(state) : renderPrivacy(state);
+      case 'marketing-consent':
+        return renderMarketingConsent ? renderMarketingConsent(state) : renderPrivacy(state);
+      case 'documents':
+        return renderDocuments ? renderDocuments(state) : renderPrivacy(state);
       case 'payment-and-access':
         return renderPaymentAndAccess ? renderPaymentAndAccess(state) : renderAccess(state);
       case 'preview-commerce':

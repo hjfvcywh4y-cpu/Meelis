@@ -166,6 +166,16 @@
     return '/pricing';
   }
 
+  var YUKASSA_PUBLIC_REQUISITES_URL = 'https://mlmacademy.ru/requisites';
+
+  function yookassaPublicUrls() {
+    return {
+      sellerInfo: YUKASSA_PUBLIC_REQUISITES_URL,
+      offer: 'https://mlmacademy.ru/offer',
+      paymentAndAccess: 'https://mlmacademy.ru/payment-and-access',
+    };
+  }
+
   api.PAYMENT_STATUSES = PAYMENT_STATUSES;
   api.TILDA_PAYMENT_OPTIONS = TILDA_PAYMENT_OPTIONS;
   api.PAYMENT_TEST_MODE = TEST_MODE;
@@ -179,6 +189,8 @@
   api.applyWebhook = applyWebhook;
   api.checkoutHref = checkoutHref;
   api.productById = productById;
+  api.YUKASSA_PUBLIC_REQUISITES_URL = YUKASSA_PUBLIC_REQUISITES_URL;
+  api.yookassaPublicUrls = yookassaPublicUrls;
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);

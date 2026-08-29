@@ -526,8 +526,10 @@
       esc((R.privacy && R.privacy()) || '/privacy') +
       '" target="_blank" rel="noopener">политика</a></label>' +
       '<label style="display:flex;gap:10px;align-items:flex-start;font-size:14px"><input type="checkbox" id="mlma-notify" name="notifyEmail"' +
-      (state.profile.notifyEmail !== false ? ' checked' : '') +
-      '> Присылать письма о маршруте на email кабинета</label>' +
+      (state.profile.notifyEmail === true ? ' checked' : '') +
+      '> Присылать письма о маршруте на email кабинета. <a href="' +
+      esc((R.marketingConsent && R.marketingConsent()) || '/marketing-consent') +
+      '" target="_blank" rel="noopener">Согласие на рекламные сообщения</a></label>' +
       '</div>' +
       '<div class="mlma-actions" style="margin-top:32px"><button type="submit" class="mlma-btn mlma-btn-primary">Сохранить</button>' +
       '<button type="button" class="mlma-btn" data-mlma-skip-onboarding="1">Пропустить необязательное</button></div>' +

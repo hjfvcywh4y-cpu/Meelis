@@ -283,6 +283,9 @@ describe('Tilda-MVP: pending, runtime, analytics, payments', () => {
     assert.equal(R.offer(), '/offer');
     assert.equal(R.requisites(), '/requisites');
     assert.equal(R.paymentAndAccess(), '/payment-and-access');
+    assert.equal(R.documents(), '/documents');
+    assert.equal(R.cookies(), '/cookies');
+    assert.equal(R.marketingConsent(), '/marketing-consent');
     assert.equal(R.logout(), '/members/login?exit=y');
     assert.equal(MLMA.membersLogoutUrl(), '/members/login?exit=y');
     assert.equal(MLMA.membersRecoverUrl('/profile'), '/members/login?mlma=recover&redirecturl=profile');
@@ -298,5 +301,9 @@ describe('Tilda-MVP: pending, runtime, analytics, payments', () => {
     assert.match(ui, /performMembersLogout/);
     assert.match(bridge, /pdn_consent/);
     assert.match(bridge, /mlmacademy\.ru\/consent/);
+    assert.match(bridge, /mlmacademy\.ru\/privacy/);
+    assert.match(bridge, /mlmacademy\.ru\/marketing-consent/);
+    assert.match(bridge, /name="marketing_consent"/);
+    assert.doesNotMatch(bridge, /name="marketing_consent" required/);
   });
 });

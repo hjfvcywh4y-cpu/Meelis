@@ -94,10 +94,19 @@
   var CONSENT_LABEL =
     '<label class="mlma-pdn-consent" style="display:flex;gap:8px;align-items:flex-start;text-align:left;font-size:13px;line-height:1.45;margin:12px 0">' +
     '<input type="checkbox" name="pdn_consent" required>' +
-    '<span>Я даю согласие на обработку и передачу персональных данных согласно ' +
-    '<a href="https://mlmacademy.ru/consent" target="_blank" rel="noopener">документу</a> ' +
-    'и подтверждаю, что ознакомился с ' +
-    '<a href="https://mlmacademy.ru/privacy" target="_blank" rel="noopener">политикой конфиденциальности</a>.</span></label>';
+    '<span>Я даю согласие на обработку персональных данных на условиях ' +
+    '<a href="https://mlmacademy.ru/consent" target="_blank" rel="noopener">Согласия</a> ' +
+    'и ознакомлен(а) с ' +
+    '<a href="https://mlmacademy.ru/privacy" target="_blank" rel="noopener">Политикой</a>.</span></label>';
+
+  var MARKETING_LABEL =
+    '<label class="mlma-marketing-consent" style="display:flex;gap:8px;align-items:flex-start;text-align:left;font-size:13px;line-height:1.45;margin:12px 0">' +
+    '<input type="checkbox" name="marketing_consent">' +
+    '<span>Я хочу получать новости и специальные предложения MLM Academy и принимаю ' +
+    '<a href="https://mlmacademy.ru/marketing-consent" target="_blank" rel="noopener">Согласие на рекламные сообщения</a>.</span></label>';
+
+  var SIGNUP_NOTE =
+    '<p class="mlma-signup-note" style="font-size:12px;line-height:1.45;margin:8px 0 16px;text-align:left">Создавая аккаунт, я принимаю правила использования бесплатных функций MLM Academy. При покупке продукта применяется редакция публичной оферты, которую я отдельно приму перед оплатой.</p>';
 
   function isSignupPath() {
     try {
@@ -129,12 +138,19 @@
     if (!form.querySelector('input[name="pdn_consent"]')) {
       var wrap = document.createElement('div');
       wrap.className = 'mlma-pdn-consent-wrap';
-      wrap.innerHTML = CONSENT_LABEL;
+      wrap.innerHTML = CONSENT_LABEL + MARKETING_LABEL + SIGNUP_NOTE;
       var holder = form.querySelector('.tlk-form__sub-text');
       var submit = form.querySelector('button[type="submit"], input[type="submit"], .t-submit, [data-tilda-submit]');
       if (holder) holder.appendChild(wrap);
       else if (submit && submit.parentNode) submit.parentNode.insertBefore(wrap, submit);
       else form.appendChild(wrap);
+    } else if (!form.querySelector('input[name="marketing_consent"]')) {
+      var extra = document.createElement('div');
+      extra.className = 'mlma-marketing-consent-wrap';
+      extra.innerHTML = MARKETING_LABEL + SIGNUP_NOTE;
+      var pdn = form.querySelector('.mlma-pdn-consent-wrap') || form.querySelector('input[name="pdn_consent"]').parentNode;
+      if (pdn && pdn.parentNode) pdn.parentNode.insertBefore(extra, pdn.nextSibling);
+      else form.appendChild(extra);
     }
     if (form.getAttribute('data-mlma-pdn-bound') === '1') return;
     form.setAttribute('data-mlma-pdn-bound', '1');

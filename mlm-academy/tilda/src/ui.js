@@ -266,33 +266,77 @@
 
   function footer(state) {
     var R = state.R;
-    var links = [
-      { href: R.home(), label: 'Academy' },
-      { href: R.library(), label: 'Библиотека' },
-      { href: R.start(), label: 'С чего начать' },
-      { href: R.about(), label: 'Как создаётся библиотека' },
-      { href: R.access(), label: 'Доступ' },
-      { href: R.pricing ? R.pricing() : '/pricing', label: 'Тарифы' },
-      { href: R.paymentAndAccess && R.paymentAndAccess() ? R.paymentAndAccess() : '/payment-and-access', label: 'Оплата и доступ' },
-      { href: R.my(), label: 'Кабинет' },
-      { href: R.research ? R.research() : '/research/marketing-plan', label: 'Исследование' },
-      { href: R.privacy ? R.privacy() : '/privacy', label: 'Политика' },
-      { href: R.consent ? R.consent() : '/consent', label: 'Согласие' },
-      { href: R.offer ? R.offer() : '/offer', label: 'Оферта' },
-      { href: R.requisites ? R.requisites() : '/requisites', label: 'Реквизиты' },
-      { href: D.siteHomeUrl(), label: 'Решения для компаний' },
+    var groups = [
+      {
+        title: 'Платформа',
+        links: [
+          { href: R.home(), label: 'Academy' },
+          { href: R.library(), label: 'Библиотека' },
+          { href: R.start(), label: 'С чего начать' },
+        ],
+      },
+      {
+        title: 'О проекте',
+        links: [
+          { href: R.research ? R.research() : '/research/marketing-plan', label: 'Исследование' },
+          { href: R.about(), label: 'Как создаётся библиотека' },
+          { href: D.siteHomeUrl(), label: 'Решения для компаний' },
+        ],
+      },
+      {
+        title: 'Доступ',
+        links: [
+          { href: R.pricing ? R.pricing() : '/pricing', label: 'Тарифы' },
+          { href: (R.paymentAndAccess && R.paymentAndAccess()) || '/payment-and-access', label: 'Оплата и доступ' },
+          { href: R.my(), label: 'Кабинет' },
+        ],
+      },
+      {
+        title: 'Документы',
+        links: [
+          { href: (R.documents && R.documents()) || '/documents', label: 'Все документы' },
+          { href: (R.requisites && R.requisites()) || '/requisites', label: 'Реквизиты' },
+          { href: (R.offer && R.offer()) || '/offer', label: 'Оферта' },
+        ],
+      },
     ];
-    var nav = '';
-    for (var i = 0; i < links.length; i += 1) {
-      nav += '<li><a href="' + esc(links[i].href) + '">' + esc(links[i].label) + '</a></li>';
+    var cols = '';
+    for (var i = 0; i < groups.length; i += 1) {
+      var items = '';
+      for (var j = 0; j < groups[i].links.length; j += 1) {
+        items += '<li><a href="' + esc(groups[i].links[j].href) + '">' + esc(groups[i].links[j].label) + '</a></li>';
+      }
+      cols +=
+        '<details class="mlma-footer-col" open>' +
+        '<summary>' +
+        esc(groups[i].title) +
+        '</summary><ul>' +
+        items +
+        '</ul></details>';
     }
     return (
-      '<footer class="mlma-footer"><div class="mlma-wrap" style="display:flex;flex-direction:column;gap:24px;padding-top:32px;padding-bottom:32px">' +
-      '<div><p style="font-size:17px;font-weight:800;letter-spacing:-0.03em">MLM Academy</p>' +
-      '<p class="mlma-footer-muted" style="margin-top:8px;max-width:460px;font-size:14px;line-height:1.5">Рабочий навигатор партнёра: ситуация → действие → результат → следующий шаг.</p></div>' +
-      '<nav aria-label="Навигация в подвале"><ul style="display:flex;flex-wrap:wrap;gap:8px 24px;font-size:14px;font-weight:700">' +
-      nav +
-      '</ul></nav></div></footer>'
+      '<footer class="mlma-footer"><div class="mlma-wrap mlma-footer-inner">' +
+      '<div class="mlma-footer-brand"><p class="mlma-footer-name">MLM Academy</p>' +
+      '<p class="mlma-footer-muted">Рабочий навигатор партнёра: ситуация → действие → результат → следующий шаг.</p></div>' +
+      '<nav class="mlma-footer-cols" aria-label="Навигация в подвале">' +
+      cols +
+      '</nav></div></footer>' +
+      cookieBannerHtml(state)
+    );
+  }
+
+  function cookieBannerHtml(state) {
+    var href = (state.R.cookies && state.R.cookies()) || '/cookies';
+    return (
+      '<div class="mlma-cookie" id="mlma-cookie" hidden role="dialog" aria-label="Cookies">' +
+      '<p>Мы используем необходимые cookies для входа, безопасности и сохранения маршрута. Необязательная аналитика включается только с вашего разрешения.</p>' +
+      '<div class="mlma-cookie-actions">' +
+      '<button type="button" class="mlma-btn mlma-btn-small mlma-btn-primary" data-mlma-cookie="necessary">Только необходимые</button>' +
+      '<button type="button" class="mlma-btn mlma-btn-small" data-mlma-cookie="analytics">Разрешить аналитику</button>' +
+      '<a class="mlma-btn mlma-btn-small" href="' +
+      esc(href) +
+      '">Настроить</a>' +
+      '</div></div>'
     );
   }
 
@@ -1991,8 +2035,10 @@
       esc((R.privacy && R.privacy()) || '/privacy') +
       '" target="_blank" rel="noopener">политика</a></label>' +
       '<label style="display:flex;gap:10px;align-items:flex-start;font-size:14px"><input type="checkbox" id="mlma-notify" name="notifyEmail"' +
-      (state.profile.notifyEmail !== false ? ' checked' : '') +
-      '> Присылать письма о маршруте на email кабинета</label>' +
+      (state.profile.notifyEmail === true ? ' checked' : '') +
+      '> Присылать письма о маршруте на email кабинета. <a href="' +
+      esc((R.marketingConsent && R.marketingConsent()) || '/marketing-consent') +
+      '" target="_blank" rel="noopener">Согласие на рекламные сообщения</a></label>' +
       '</div>' +
       '<div class="mlma-actions" style="margin-top:32px"><button type="submit" class="mlma-btn mlma-btn-primary">Сохранить</button>' +
       '<button type="button" class="mlma-btn" data-mlma-skip-onboarding="1">Пропустить необязательное</button></div>' +
@@ -2046,10 +2092,8 @@
     if (Number(product.launch_price) === 0 && Number(product.regular_price) === 0) return '0 ₽';
     var launch = D.formatPrice ? D.formatPrice(product.launch_price) : product.launch_price + ' ₽';
     var regular = D.formatPrice ? D.formatPrice(product.regular_price) : product.regular_price + ' ₽';
-    if (product.launch_price != null && product.regular_price != null && product.launch_price !== product.regular_price) {
-      return '<span class="mlma-h3 mlma-price">' + esc(launch) + '</span> <s class="mlma-muted mlma-price" style="margin-left:8px">' + esc(regular) + '</s>';
-    }
-    return '<span class="mlma-h3 mlma-price">' + esc(launch || regular) + '</span>';
+    var current = product.launch_price != null ? launch : regular;
+    return '<span class="mlma-h3 mlma-price">' + esc(current) + '</span>';
   }
 
   function renderAccess(state) {
@@ -2107,7 +2151,7 @@
         {
           eyebrow: 'Тарифы',
           title: 'Что можно будет получить и для кого',
-          lead: 'Ориентиры цены уже есть. Оплатить пока нельзя: продукты gated, юридические страницы не утверждены, эквайринг не подключён. Это не 112 готовых треков.',
+          lead: 'Ориентиры цены уже есть. Оплатить пока нельзя: продукты gated, эквайринг не подключён. Это не 112 готовых треков. Правила оплаты, доступа и возврата — отдельным документом.',
           crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Тарифы' }],
         },
         R,
@@ -2122,12 +2166,88 @@
       '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Для компании</span><h2 class="mlma-h3" style="margin-top:12px">Корпоративный пилот</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Маршруты для сегментов сети, контроль активации, управленческая аналитика, связь действий с коммерческими результатами. До 30 участников, 8 недель. Ориентир 99 000–149 000 ₽. Только переговоры, без карточного checkout.</p><div class="mlma-actions" style="margin-top:20px">' +
       btn(D.siteHomeUrl(), 'Обсудить корпоративный пилот', 'primary') +
       '</div></section>' +
-      '<p class="mlma-muted" style="font-size:14px">Подписка на всю библиотеку и PRO в интерфейс не выводятся. B2C и B2B не смешиваются в одну кнопку покупки. PAYMENTS_ENABLED=false.</p>' +
+      '<p class="mlma-muted" style="font-size:14px">Оплата разовая. Автоматических повторных списаний нет. Подписка на всю библиотеку и PRO в интерфейс не выводятся. B2C и B2B не смешиваются в одну кнопку покупки. PAYMENTS_ENABLED=false. Правила: <a href="' +
+      esc((R.paymentAndAccess && R.paymentAndAccess()) || '/payment-and-access') +
+      '">оплата, доступ и возврат</a>.</p>' +
       '<div class="mlma-actions">' +
       btn(R.library(), 'Открыть библиотеку') +
       btn(R.access(), 'Состояния доступа') +
       btn((R.paymentAndAccess && R.paymentAndAccess()) || '/payment-and-access', 'Оплата и доступ') +
       '</div></div>'
+    );
+  }
+
+  function linkifyEscaped(text) {
+    var s = String(text || '');
+    s = s.replace(/\bhttps:\/\/[a-zA-Z0-9._~:/?#@!$&'()*+,;=%-]+/g, function (url) {
+      return '<a href="' + url + '">' + url + '</a>';
+    });
+    s = s.replace(/\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g, function (email) {
+      return '<a href="mailto:' + email + '">' + email + '</a>';
+    });
+    s = s.replace(/\+7[\d\s()-]{10,}/g, function (phone) {
+      var tel = phone.replace(/[^\d+]/g, '');
+      return '<a href="tel:' + tel + '">' + phone.trim() + '</a>';
+    });
+    return s;
+  }
+
+  function legalBody(section) {
+    var html = '';
+    var title = Array.isArray(section) ? section[0] : section.title;
+    var text = Array.isArray(section) ? section[1] : section.text;
+    var i;
+    var j;
+    if (text) {
+      html += '<p class="mlma-muted" style="margin-top:12px;max-width:72ch">' + linkifyEscaped(esc(text)) + '</p>';
+    }
+    if (section && section.paragraphs) {
+      for (i = 0; i < section.paragraphs.length; i += 1) {
+        html += '<p class="mlma-muted" style="margin-top:12px;max-width:72ch">' + linkifyEscaped(esc(section.paragraphs[i])) + '</p>';
+      }
+    }
+    if (section && section.items) {
+      html += '<ul class="mlma-legal-list">';
+      for (i = 0; i < section.items.length; i += 1) {
+        html += '<li>' + linkifyEscaped(esc(section.items[i])) + '</li>';
+      }
+      html += '</ul>';
+    }
+    if (section && section.ordered) {
+      html += '<ol class="mlma-legal-list">';
+      for (i = 0; i < section.ordered.length; i += 1) {
+        html += '<li>' + linkifyEscaped(esc(section.ordered[i])) + '</li>';
+      }
+      html += '</ol>';
+    }
+    if (section && section.rows) {
+      html += '<dl class="mlma-legal-dl">';
+      for (i = 0; i < section.rows.length; i += 1) {
+        html += '<dt>' + esc(section.rows[i][0]) + '</dt><dd>' + linkifyEscaped(esc(section.rows[i][1])) + '</dd>';
+      }
+      html += '</dl>';
+    }
+    if (section && section.table && section.table.headers && section.table.rows) {
+      html += '<div class="mlma-table-wrap"><table class="mlma-legal-table"><thead><tr>';
+      for (i = 0; i < section.table.headers.length; i += 1) {
+        html += '<th>' + esc(section.table.headers[i]) + '</th>';
+      }
+      html += '</tr></thead><tbody>';
+      for (i = 0; i < section.table.rows.length; i += 1) {
+        html += '<tr>';
+        for (j = 0; j < section.table.rows[i].length; j += 1) {
+          html += '<td>' + linkifyEscaped(esc(section.table.rows[i][j])) + '</td>';
+        }
+        html += '</tr>';
+      }
+      html += '</tbody></table></div>';
+    }
+    return (
+      '<section class="mlma-card mlma-pad mlma-legal"><h2 class="mlma-h3">' +
+      esc(title) +
+      '</h2>' +
+      html +
+      '</section>'
     );
   }
 
@@ -2139,18 +2259,14 @@
     }
     var html = '';
     for (var i = 0; i < doc.sections.length; i += 1) {
-      html +=
-        '<section class="mlma-card mlma-pad mlma-legal"><h2 class="mlma-h3">' +
-        esc(doc.sections[i][0]) +
-        '</h2><p class="mlma-muted" style="margin-top:12px;max-width:72ch">' +
-        esc(doc.sections[i][1]) +
-        '</p></section>';
+      html += legalBody(doc.sections[i]);
     }
     var extra = '';
     if (kind === 'privacy') {
       extra =
         '<div class="mlma-actions"><button type="button" class="mlma-btn mlma-btn-primary" data-mlma-export-local="1">Выгрузить данные этого устройства</button>' +
         btn((R.consent && R.consent()) || '/consent', 'Согласие на обработку') +
+        btn((R.cookies && R.cookies()) || '/cookies', 'Cookies') +
         btn((R.offer && R.offer()) || '/offer', 'Оферта') +
         '</div><p id="mlma-export-msg" class="mlma-muted" style="font-size:14px" aria-live="polite"></p>';
     } else if (kind === 'consent') {
@@ -2163,6 +2279,7 @@
       extra =
         '<div class="mlma-actions">' +
         btn((R.requisites && R.requisites()) || '/requisites', 'Реквизиты') +
+        btn((R.paymentAndAccess && R.paymentAndAccess()) || '/payment-and-access', 'Оплата и доступ') +
         btn((R.pricing && R.pricing()) || '/pricing', 'Тарифы') +
         '</div>';
     } else if (kind === 'requisites') {
@@ -2170,6 +2287,25 @@
         '<div class="mlma-actions">' +
         btn((R.offer && R.offer()) || '/offer', 'Оферта') +
         btn((R.privacy && R.privacy()) || '/privacy', 'Политика') +
+        btn((R.documents && R.documents()) || '/documents', 'Все документы') +
+        '</div>';
+    } else if (kind === 'cookies') {
+      extra =
+        '<div class="mlma-actions">' +
+        btn((R.privacy && R.privacy()) || '/privacy', 'Политика конфиденциальности') +
+        '</div>';
+    } else if (kind === 'marketing-consent') {
+      extra =
+        '<div class="mlma-actions">' +
+        btn((R.privacy && R.privacy()) || '/privacy', 'Политика конфиденциальности') +
+        btn((R.profile && R.profile()) || '/profile', 'Профиль') +
+        '</div>';
+    } else if (kind === 'payment-and-access') {
+      extra =
+        '<div class="mlma-actions">' +
+        btn((R.offer && R.offer()) || '/offer', 'Оферта') +
+        btn((R.requisites && R.requisites()) || '/requisites', 'Реквизиты') +
+        btn((R.pricing && R.pricing()) || '/pricing', 'Тарифы', 'primary') +
         '</div>';
     }
     return (
@@ -2178,7 +2314,11 @@
           eyebrow: doc.eyebrow,
           title: doc.title,
           lead: doc.lead,
-          crumbs: [{ label: 'Academy', href: R.home() }, { label: doc.crumb }],
+          crumbs: [
+            { label: 'Academy', href: R.home() },
+            { label: 'Документы', href: (R.documents && R.documents()) || '/documents' },
+            { label: doc.crumb },
+          ],
         },
         R,
       ) +
@@ -2203,6 +2343,50 @@
 
   function renderRequisites(state) {
     return renderLegalPage(state, 'requisites');
+  }
+
+  function renderCookies(state) {
+    return renderLegalPage(state, 'cookies');
+  }
+
+  function renderMarketingConsent(state) {
+    return renderLegalPage(state, 'marketing-consent');
+  }
+
+  function renderDocuments(state) {
+    var R = state.R;
+    var docs = D.publicDocuments ? D.publicDocuments() : [];
+    var cards = '';
+    for (var i = 0; i < docs.length; i += 1) {
+      cards +=
+        '<a class="mlma-card mlma-card-hover mlma-pad mlma-doc-card" href="' +
+        esc(docs[i].path) +
+        '"><span class="mlma-eyebrow">' +
+        esc(docs[i].path) +
+        '</span><h2 class="mlma-h3" style="margin-top:12px">' +
+        esc(docs[i].title) +
+        '</h2><p class="mlma-muted" style="margin-top:8px">' +
+        esc(docs[i].lead) +
+        '</p></a>';
+    }
+    return (
+      pageHead(
+        {
+          eyebrow: 'Документы',
+          title: 'Центр документов MLM Academy',
+          lead: 'Отдельные публичные страницы. Тексты не объединены: каждый документ открывается по своему адресу без регистрации.',
+          crumbs: [
+            { label: 'Academy', href: R.home() },
+            { label: 'Документы' },
+          ],
+        },
+        R,
+      ) +
+      '<div class="mlma-wrap mlma-docs" style="padding-top:24px;padding-bottom:56px">' +
+      '<div class="mlma-docs-grid">' +
+      cards +
+      '</div></div>'
+    );
   }
 
   function renderPurchases(state) {
@@ -2247,23 +2431,7 @@
   }
 
   function renderPaymentAndAccess(state) {
-    var R = state.R;
-    var steps = [
-      'Пользователь выбирает опубликованный продукт.',
-      'Проходит подтверждение личности.',
-      'Оплачивает через защищённую форму платёжного провайдера.',
-      'Доступ появляется только после серверного подтверждения.',
-      'Купленные треки отображаются в «Моих треках».',
-      'Срок разового доступа — 365 дней.',
-      'Результаты и прогресс сохраняются.',
-      'Правила возврата будут определены офертой.',
-    ];
-    var list = '';
-    for (var i = 0; i < steps.length; i += 1) list += '<li>' + esc(steps[i]) + '</li>';
-    return pageHead({ eyebrow: 'Как будет работать', title: 'Оплата и доступ', lead: 'Это описание будущей механики. Оплата сейчас не работает. Деньги не принимаются. Право нельзя выдать через localStorage, query-параметр или группу Tilda Members.', crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Оплата и доступ' }] }, R) +
-      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:20px"><section class="mlma-card mlma-pad"><ol style="margin-top:8px;display:grid;gap:10px;font-size:16px;line-height:1.45">' + list + '</ol></section>' +
-      '<p class="mlma-muted">PAYMENTS_ENABLED=false. COMMERCE_PREVIEW_ENABLED=false. ЮKassa и Supabase не подключены.</p>' +
-      '<div class="mlma-actions">' + btn((R.pricing && R.pricing()) || '/pricing', 'К тарифам', 'primary') + btn(R.access(), 'Состояния доступа') + '</div></div>';
+    return renderLegalPage(state, 'payment-and-access');
   }
 
   function renderPreviewCommerce(state) {
@@ -2288,6 +2456,9 @@
   D._ui.renderPurchases = renderPurchases;
   D._ui.renderOffer = renderOffer;
   D._ui.renderRequisites = renderRequisites;
+  D._ui.renderCookies = renderCookies;
+  D._ui.renderMarketingConsent = renderMarketingConsent;
+  D._ui.renderDocuments = renderDocuments;
   D._ui.renderPaymentAndAccess = renderPaymentAndAccess;
   D._ui.renderPreviewCommerce = renderPreviewCommerce;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -2318,6 +2489,9 @@
   var renderPurchases = D._ui.renderPurchases;
   var renderOffer = D._ui.renderOffer;
   var renderRequisites = D._ui.renderRequisites;
+  var renderCookies = D._ui.renderCookies;
+  var renderMarketingConsent = D._ui.renderMarketingConsent;
+  var renderDocuments = D._ui.renderDocuments;
   var renderPaymentAndAccess = D._ui.renderPaymentAndAccess;
   var renderPreviewCommerce = D._ui.renderPreviewCommerce;
 
@@ -2515,6 +2689,12 @@
         return renderOffer ? renderOffer(state) : renderPrivacy(state);
       case 'requisites':
         return renderRequisites ? renderRequisites(state) : renderPrivacy(state);
+      case 'cookies':
+        return renderCookies ? renderCookies(state) : renderPrivacy(state);
+      case 'marketing-consent':
+        return renderMarketingConsent ? renderMarketingConsent(state) : renderPrivacy(state);
+      case 'documents':
+        return renderDocuments ? renderDocuments(state) : renderPrivacy(state);
       case 'payment-and-access':
         return renderPaymentAndAccess ? renderPaymentAndAccess(state) : renderAccess(state);
       case 'preview-commerce':
@@ -2864,6 +3044,40 @@
         if (D.performMembersLogout) D.performMembersLogout(event);
       });
     });
+    var cookieBox = rootEl.querySelector('#mlma-cookie');
+    var cookieChoice = '';
+    try {
+      cookieChoice = window.localStorage.getItem('mlma.cookieChoice.v1') || '';
+    } catch (err) {
+      cookieChoice = '';
+    }
+    if (cookieBox && !cookieChoice) cookieBox.hidden = false;
+    try {
+      if (window.matchMedia && window.matchMedia('(max-width: 767px)').matches) {
+        rootEl.querySelectorAll('.mlma-footer-col').forEach(function (el) {
+          el.removeAttribute('open');
+        });
+      }
+    } catch (err2) {
+      /* ignore */
+    }
+    var cookieChoice = '';
+    try {
+      cookieChoice = window.localStorage.getItem('mlma.cookieChoice.v1') || '';
+    } catch (err) {
+      cookieChoice = '';
+    }
+    if (cookieBox && !cookieChoice) cookieBox.hidden = false;
+    rootEl.querySelectorAll('[data-mlma-cookie]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        try {
+          window.localStorage.setItem('mlma.cookieChoice.v1', el.getAttribute('data-mlma-cookie') || 'necessary');
+        } catch (err) {
+          /* ignore */
+        }
+        if (cookieBox) cookieBox.hidden = true;
+      });
+    });
     rootEl.querySelectorAll('[data-mlma-run-start]').forEach(function (el) {
       el.addEventListener('click', function () {
         var id = D.normalizeTrackId(el.getAttribute('data-mlma-run-start'));
@@ -3186,20 +3400,36 @@
         results: { title: 'Результаты · MLM Academy', desc: 'Результаты кабинета. Страница не индексируется.' },
         profile: { title: 'Профиль · MLM Academy', desc: 'Профиль кабинета. Страница не индексируется.' },
         privacy: {
-          title: 'Политика конфиденциальности · MLM Academy',
-          desc: 'Политика конфиденциальности MLM Academy: какие данные обрабатываются, кому передаются и как отозвать согласие.',
+          title: 'Политика обработки персональных данных — MLM Academy',
+          desc: 'Как MLM Academy собирает, использует, хранит и защищает персональные данные.',
         },
         consent: {
-          title: 'Согласие на обработку и передачу персональных данных · MLM Academy',
-          desc: 'Согласие на обработку и передачу персональных данных при регистрации кабинета MLM Academy.',
+          title: 'Согласие на обработку персональных данных — MLM Academy',
+          desc: 'Отдельное согласие на обработку персональных данных при регистрации кабинета MLM Academy.',
         },
         offer: {
-          title: 'Публичная оферта · MLM Academy',
-          desc: 'Публичная оферта на бесплатный кабинет MLM Academy. Платные услуги пока не оказываются.',
+          title: 'Публичная оферта — MLM Academy',
+          desc: 'Условия оказания дистанционных информационно-консультационных услуг MLM Academy.',
         },
         requisites: {
-          title: 'Реквизиты · MLM Academy',
-          desc: 'Реквизиты ИП Борисенко Татьяна Анатольевна: ИНН, ОГРНИП, адрес, контакты.',
+          title: 'Реквизиты исполнителя — MLM Academy',
+          desc: 'Сведения об исполнителе и контакты MLM Academy.',
+        },
+        documents: {
+          title: 'Документы — MLM Academy',
+          desc: 'Центр публичных документов MLM Academy: реквизиты, оферта, политика, согласия, cookies, оплата и возврат.',
+        },
+        cookies: {
+          title: 'Cookies и локальное хранилище — MLM Academy',
+          desc: 'Какие cookies и ключи браузера использует MLM Academy для входа, сессии и маршрута.',
+        },
+        'marketing-consent': {
+          title: 'Согласие на получение информационных и рекламных сообщений — MLM Academy',
+          desc: 'Необязательное согласие на новости и специальные предложения MLM Academy.',
+        },
+        'payment-and-access': {
+          title: 'Оплата, доступ и возврат — MLM Academy',
+          desc: 'Как оплачиваются продукты MLM Academy, когда открывается доступ и как обратиться за возвратом.',
         },
       };
       var sectionSeo = {

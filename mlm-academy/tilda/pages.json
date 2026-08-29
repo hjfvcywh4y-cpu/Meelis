@@ -146,7 +146,7 @@
     "file": "payment-and-access.html",
     "url": "/payment-and-access",
     "page": "payment-and-access",
-    "title": "Оплата и доступ · MLM Academy",
+    "title": "Оплата, доступ и возврат — MLM Academy",
     "members": "public"
   },
   {
@@ -154,7 +154,7 @@
     "file": "privacy.html",
     "url": "/privacy",
     "page": "privacy",
-    "title": "Политика конфиденциальности · MLM Academy",
+    "title": "Политика обработки персональных данных — MLM Academy",
     "members": "public"
   },
   {
@@ -162,7 +162,7 @@
     "file": "consent.html",
     "url": "/consent",
     "page": "consent",
-    "title": "Согласие на обработку и передачу персональных данных · MLM Academy",
+    "title": "Согласие на обработку персональных данных — MLM Academy",
     "members": "public"
   },
   {
@@ -170,7 +170,7 @@
     "file": "offer.html",
     "url": "/offer",
     "page": "offer",
-    "title": "Публичная оферта · MLM Academy",
+    "title": "Публичная оферта — MLM Academy",
     "members": "public"
   },
   {
@@ -178,7 +178,31 @@
     "file": "requisites.html",
     "url": "/requisites",
     "page": "requisites",
-    "title": "Реквизиты · MLM Academy",
+    "title": "Реквизиты исполнителя — MLM Academy",
+    "members": "public"
+  },
+  {
+    "id": "documents",
+    "file": "documents.html",
+    "url": "/documents",
+    "page": "documents",
+    "title": "Документы — MLM Academy",
+    "members": "public"
+  },
+  {
+    "id": "cookies",
+    "file": "cookies.html",
+    "url": "/cookies",
+    "page": "cookies",
+    "title": "Cookies и локальное хранилище — MLM Academy",
+    "members": "public"
+  },
+  {
+    "id": "marketing-consent",
+    "file": "marketing-consent.html",
+    "url": "/marketing-consent",
+    "page": "marketing-consent",
+    "title": "Согласие на получение информационных и рекламных сообщений — MLM Academy",
     "members": "public"
   },
   {
