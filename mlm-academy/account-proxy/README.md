@@ -7,6 +7,8 @@
 ## Что умеет Worker
 
 - `POST /api/session/bind` — первый вход: принимает `maId` / `email` с страницы Members, выдаёт HttpOnly cookie `mlma_sid`.
+  Ответ всегда с `identityLevel: tilda_unverified`. Origin обязателен. Это не платёжная авторизация.
+- `POST /api/session/verified` — зарезервировано под Supabase JWT. Сейчас `501`.
 - `POST /api/account/get` — чтение только по cookie.
 - `POST /api/account/route/save|delete|reorder`
 - `POST /api/account/migrate` — перенос Track ID из localStorage.
@@ -14,6 +16,7 @@
 - `POST /api/analytics`
 
 Клиентский `userId` после bind **игнорируется**.
+`entitlements`, покупки и группы START/FULL/PILOT/ADMIN через этот API не выдаются.
 
 ## Ограничение Tilda
 

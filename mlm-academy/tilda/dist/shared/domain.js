@@ -940,7 +940,8 @@
     out.name = out.name || readCookie('ma_name') || '';
     out.maId = out.maId || readCookie('ma_id') || '';
     out.loggedIn = !!(out.email || out.maId);
-    if (out.loggedIn && !out.groups.length) out.groups = ['FREE'];
+    out.identityLevel = 'tilda_unverified';
+    if (out.loggedIn) out.groups = ['FREE'];
     return out;
   }
 
@@ -989,7 +990,12 @@
     return account.maId || account.email || '';
   }
 
+  function isVerifiedAccount(account) {
+    return !!(account && account.identityLevel === 'verified');
+  }
+
   function activeEntitlements(account, now) {
+    if (!isVerifiedAccount(account)) return [];
     now = now || Date.now();
     var list = (account && account.entitlements) || [];
     var out = [];
@@ -1004,6 +1010,7 @@
 
   function resolveUserState(account, now) {
     if (!account || !account.loggedIn) return 'guest';
+    if (!isVerifiedAccount(account)) return 'registered';
     var active = activeEntitlements(account, now);
     if (active.length) return 'paid';
     var all = (account.entitlements || []).slice();
@@ -1016,6 +1023,9 @@
   }
 
   function hasGroup(account, group) {
+    if (group === 'START' || group === 'FULL' || group === 'PILOT' || group === 'ADMIN') {
+      if (!isVerifiedAccount(account)) return false;
+    }
     var groups = (account && account.groups) || [];
     var alias = MEMBER_ALIAS[group] || group;
     for (var i = 0; i < groups.length; i += 1) {
@@ -1034,6 +1044,7 @@
       return hasGroup(account, 'ADMIN') || hasGroup(account, 'PILOT');
     }
     if (!account || !account.loggedIn) return false;
+    if (!isVerifiedAccount(account)) return false;
     if (hasGroup(account, 'ADMIN') || hasGroup(account, 'FULL') || hasGroup(account, 'PILOT')) return true;
     var active = activeEntitlements(account, now);
     for (var i = 0; i < active.length; i += 1) {
@@ -1136,6 +1147,7 @@
   }
 
   api.GROUPS = GROUPS;
+  api.isVerifiedAccount = isVerifiedAccount;
   api.PRODUCTS = PRODUCTS;
   api.PARTNER_ROLES = PARTNER_ROLES;
   api.PARTNER_ROLE_LABELS = PARTNER_ROLE_LABELS;
@@ -1206,6 +1218,7 @@
       route: { trackIds: [] },
       runs: {},
       artifacts: [],
+      identityLevel: 'tilda_unverified',
       updatedAt: '',
     };
   }
@@ -1322,8 +1335,17 @@
     if (account.savedTrackIds) row.savedTrackIds = uniqueTrackIds(account.savedTrackIds);
     else if (account.route && account.route.trackIds) row.savedTrackIds = uniqueTrackIds(account.route.trackIds);
     row.route = { trackIds: row.savedTrackIds.slice() };
-    if (account.entitlements) row.entitlements = account.entitlements;
-    if (account.orders) row.orders = account.orders;
+    row.identityLevel = account.identityLevel === 'verified' ? 'verified' : 'tilda_unverified';
+    if (row.identityLevel === 'verified') {
+      if (account.entitlements) row.entitlements = account.entitlements;
+      if (account.orders) row.orders = account.orders;
+      if (account.payments) row.payments = account.payments;
+    } else {
+      row.entitlements = [];
+      row.orders = [];
+      row.payments = [];
+      if (row.user) row.user.groups = ['FREE'];
+    }
     if (account.runs) row.runs = account.runs;
     if (account.artifacts) row.artifacts = account.artifacts;
     saveRecord(session, row);
@@ -1410,6 +1432,11 @@
     },
     saveEntitlements: function (session, list) {
       var row = loadRecord(session);
+      if (!session || session.identityLevel !== 'verified') {
+        row.entitlements = [];
+        saveRecord(session, row);
+        return row;
+      }
       row.entitlements = list.slice();
       saveRecord(session, row);
       return row;
@@ -1428,6 +1455,9 @@
       return row;
     },
     savePayment: function (session, payment) {
+      if (!session || session.identityLevel !== 'verified') {
+        return loadRecord(session);
+      }
       var row = loadRecord(session);
       var found = false;
       for (var i = 0; i < row.payments.length; i += 1) {
@@ -1603,20 +1633,24 @@
   }
 
   function toAccountView(session, row, mode) {
+    var verified = row.identityLevel === 'verified';
     var profile = api.sanitizeProfile(Object.assign({}, row.profile || {}, {
       savedTrackIds: row.savedTrackIds && row.savedTrackIds.length ? row.savedTrackIds : (row.profile && row.profile.savedTrackIds) || [],
       displayName: (row.profile && row.profile.displayName) || session.name || '',
     }));
     return {
       loggedIn: !!session.loggedIn,
+      identityLevel: verified ? 'verified' : 'tilda_unverified',
       maId: session.maId || row.user.maId || '',
       email: session.email || row.user.email || '',
       name: session.name || row.user.name || profile.displayName || '',
       phone: session.phone || row.user.phone || '',
-      groups: (row.user.groups && row.user.groups.length ? row.user.groups : session.groups) || [],
-      entitlements: row.entitlements || [],
-      orders: row.orders || [],
-      payments: row.payments || [],
+      groups: verified
+        ? ((row.user.groups && row.user.groups.length ? row.user.groups : session.groups) || [])
+        : (session.loggedIn ? ['FREE'] : []),
+      entitlements: verified ? (row.entitlements || []) : [],
+      orders: verified ? (row.orders || []) : [],
+      payments: verified ? (row.payments || []) : [],
       artifacts: row.artifacts || [],
       runs: row.runs || {},
       profile: profile,
@@ -1624,9 +1658,7 @@
       storageMode: mode || lastSync.mode || storageMode(),
       syncError: lastSync.error || '',
       source: session.source,
-      identityLimit: apiBase()
-        ? 'tilda_client_bind'
-        : 'local_fallback',
+      identityLimit: verified ? 'server_verified' : (apiBase() ? 'tilda_client_bind' : 'local_fallback'),
     };
   }
 
@@ -1859,6 +1891,9 @@
     event = event || {};
     if (!event.signatureValid) {
       return { ok: false, reason: 'invalid_signature', account: account };
+    }
+    if (event.status === 'paid' && (!account || account.identityLevel !== 'verified')) {
+      return { ok: false, reason: 'verified_required', account: account };
     }
     var payments = (account.payments || []).slice();
     var existing = findById(payments, 'idempotencyKey', event.idempotencyKey) || findById(payments, 'paymentId', event.paymentId);

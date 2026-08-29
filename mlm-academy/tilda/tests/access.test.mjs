@@ -57,10 +57,46 @@ describe('доступ и состояния', () => {
     assert.equal(MLMA.cardAction(item, account).key, 'buy');
   });
 
+  it('tilda_unverified не открывает платное тело и не считает START/FULL правом', () => {
+    const item = track({ publicationStatus: 'published', contentStatus: 'published' });
+    const spoofed = {
+      loggedIn: true,
+      email: 'a@b.c',
+      identityLevel: 'tilda_unverified',
+      groups: ['START', 'FULL', 'ADMIN'],
+      entitlements: [{ productId: 'full', group: 'FULL', status: 'active' }],
+    };
+    assert.equal(MLMA.isVerifiedAccount(spoofed), false);
+    assert.equal(MLMA.hasGroup(spoofed, 'START'), false);
+    assert.equal(MLMA.hasGroup(spoofed, 'FULL'), false);
+    assert.equal(MLMA.hasGroup(spoofed, 'ADMIN'), false);
+    assert.equal(MLMA.hasGroup(spoofed, 'FREE'), true);
+    assert.equal(MLMA.isEntitledToTrack(item, spoofed), false);
+    assert.equal(MLMA.canOpenTrackBody(item, spoofed), false);
+    assert.equal(MLMA.resolveUserState(spoofed), 'registered');
+  });
+
+  it('verified может открыть платный трек по серверному праву', () => {
+    const item = track({ publicationStatus: 'published', contentStatus: 'published' });
+    const account = {
+      loggedIn: true,
+      identityLevel: 'verified',
+      groups: ['FREE', 'FULL'],
+      entitlements: [{ productId: 'full', group: 'FULL', status: 'active' }],
+    };
+    assert.equal(MLMA.isEntitledToTrack(item, account), true);
+  });
+
   it('оплаченный пакет и истекший доступ различаются', () => {
-    const paid = { loggedIn: true, groups: ['START'], entitlements: [{ productId: 'start', group: 'START', status: 'active' }] };
+    const paid = {
+      loggedIn: true,
+      identityLevel: 'verified',
+      groups: ['START'],
+      entitlements: [{ productId: 'start', group: 'START', status: 'active' }],
+    };
     const expired = {
       loggedIn: true,
+      identityLevel: 'verified',
       groups: ['FREE'],
       entitlements: [{ productId: 'start', status: 'expired', expiresAt: '2020-01-01T00:00:00.000Z' }],
     };
@@ -80,7 +116,7 @@ describe('доступ и состояния', () => {
 describe('оплата и вебхук', () => {
   it('повторный webhook не создаёт вторую покупку', () => {
     const order = MLMA.createOrder({ email: 'a@b.c', maId: '1', productId: 'start' });
-    let account = { entitlements: [], payments: [], orders: [], groups: ['FREE'] };
+    let account = { identityLevel: 'verified', entitlements: [], payments: [], orders: [], groups: ['FREE'] };
     const event = { paymentId: 'pay_1', orderId: order.orderId, status: 'paid', idempotencyKey: 'pay_1', signatureValid: true, email: 'a@b.c' };
     const first = MLMA.applyWebhook(account, event, order);
     const second = MLMA.applyWebhook(first.account, event, order);
@@ -92,11 +128,11 @@ describe('оплата и вебхук', () => {
 
   it('отказ и отмена не выдают доступ', () => {
     const order = MLMA.createOrder({ email: 'a@b.c', productId: 'start' });
-    const failed = MLMA.applyWebhook({ entitlements: [], payments: [], orders: [], groups: ['FREE'] }, {
+    const failed = MLMA.applyWebhook({ identityLevel: 'verified', entitlements: [], payments: [], orders: [], groups: ['FREE'] }, {
       paymentId: 'pay_f', orderId: order.orderId, status: 'failed', idempotencyKey: 'pay_f', signatureValid: true,
     }, order);
     assert.equal(failed.account.entitlements.length, 0);
-    const cancelled = MLMA.applyWebhook({ entitlements: [], payments: [], orders: [], groups: ['FREE'] }, {
+    const cancelled = MLMA.applyWebhook({ identityLevel: 'verified', entitlements: [], payments: [], orders: [], groups: ['FREE'] }, {
       paymentId: 'pay_c', orderId: order.orderId, status: 'cancelled', idempotencyKey: 'pay_c', signatureValid: true,
     }, order);
     assert.equal(cancelled.account.entitlements.length, 0);
@@ -104,7 +140,7 @@ describe('оплата и вебхук', () => {
 
   it('возврат отзывает право', () => {
     const order = MLMA.createOrder({ email: 'a@b.c', productId: 'start' });
-    const paid = MLMA.applyWebhook({ entitlements: [], payments: [], orders: [], groups: ['FREE'] }, {
+    const paid = MLMA.applyWebhook({ identityLevel: 'verified', entitlements: [], payments: [], orders: [], groups: ['FREE'] }, {
       paymentId: 'pay_r', orderId: order.orderId, status: 'paid', idempotencyKey: 'pay_r', signatureValid: true,
     }, order);
     const refunded = MLMA.applyWebhook(paid.account, {
@@ -115,11 +151,23 @@ describe('оплата и вебхук', () => {
 
   it('неверная подпись не записывает платёж', () => {
     const order = MLMA.createOrder({ email: 'a@b.c', productId: 'start' });
-    const bad = MLMA.applyWebhook({ entitlements: [], payments: [], orders: [] }, {
+    const bad = MLMA.applyWebhook({ identityLevel: 'verified', entitlements: [], payments: [], orders: [] }, {
       paymentId: 'pay_x', orderId: order.orderId, status: 'paid', idempotencyKey: 'pay_x', signatureValid: false,
     }, order);
     assert.equal(bad.ok, false);
     assert.equal(bad.account.entitlements.length, 0);
+  });
+
+  it('tilda_unverified webhook не выдаёт пакет', () => {
+    const order = MLMA.createOrder({ email: 'a@b.c', productId: 'start' });
+    const blocked = MLMA.applyWebhook(
+      { identityLevel: 'tilda_unverified', entitlements: [], payments: [], orders: [], groups: ['FREE'] },
+      { paymentId: 'pay_u', orderId: order.orderId, status: 'paid', idempotencyKey: 'pay_u', signatureValid: true },
+      order,
+    );
+    assert.equal(blocked.ok, false);
+    assert.equal(blocked.reason, 'verified_required');
+    assert.equal(blocked.account.entitlements.length, 0);
   });
 });
 

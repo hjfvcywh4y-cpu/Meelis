@@ -81,7 +81,8 @@
     out.name = out.name || readCookie('ma_name') || '';
     out.maId = out.maId || readCookie('ma_id') || '';
     out.loggedIn = !!(out.email || out.maId);
-    if (out.loggedIn && !out.groups.length) out.groups = ['FREE'];
+    out.identityLevel = 'tilda_unverified';
+    if (out.loggedIn) out.groups = ['FREE'];
     return out;
   }
 
@@ -130,7 +131,12 @@
     return account.maId || account.email || '';
   }
 
+  function isVerifiedAccount(account) {
+    return !!(account && account.identityLevel === 'verified');
+  }
+
   function activeEntitlements(account, now) {
+    if (!isVerifiedAccount(account)) return [];
     now = now || Date.now();
     var list = (account && account.entitlements) || [];
     var out = [];
@@ -145,6 +151,7 @@
 
   function resolveUserState(account, now) {
     if (!account || !account.loggedIn) return 'guest';
+    if (!isVerifiedAccount(account)) return 'registered';
     var active = activeEntitlements(account, now);
     if (active.length) return 'paid';
     var all = (account.entitlements || []).slice();
@@ -157,6 +164,9 @@
   }
 
   function hasGroup(account, group) {
+    if (group === 'START' || group === 'FULL' || group === 'PILOT' || group === 'ADMIN') {
+      if (!isVerifiedAccount(account)) return false;
+    }
     var groups = (account && account.groups) || [];
     var alias = MEMBER_ALIAS[group] || group;
     for (var i = 0; i < groups.length; i += 1) {
@@ -175,6 +185,7 @@
       return hasGroup(account, 'ADMIN') || hasGroup(account, 'PILOT');
     }
     if (!account || !account.loggedIn) return false;
+    if (!isVerifiedAccount(account)) return false;
     if (hasGroup(account, 'ADMIN') || hasGroup(account, 'FULL') || hasGroup(account, 'PILOT')) return true;
     var active = activeEntitlements(account, now);
     for (var i = 0; i < active.length; i += 1) {
@@ -277,6 +288,7 @@
   }
 
   api.GROUPS = GROUPS;
+  api.isVerifiedAccount = isVerifiedAccount;
   api.PRODUCTS = PRODUCTS;
   api.PARTNER_ROLES = PARTNER_ROLES;
   api.PARTNER_ROLE_LABELS = PARTNER_ROLE_LABELS;

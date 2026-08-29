@@ -1,13 +1,29 @@
 /**
  * Серверная логика кабинета: сессия HMAC, маршрут, миграция.
  * Платные права здесь не выдаются клиентским userId.
+ *
+ * identityLevel:
+ * - tilda_unverified — временная сессия после bind maId/email с Origin Академии.
+ *   Разрешено: Track ID маршрута, порядок, неплатный профиль, миграция localStorage.
+ * - verified — будущая серверно подтверждённая личность (Supabase / webhook).
+ *   Только она может читать и менять entitlements, покупки и платное содержание.
+ *
+ * Уровень из cookie не является доказательством verified.
  */
 import { TRACK_IDS } from './track-ids.js';
 
 export const TRACK_ID_SET = new Set(TRACK_IDS);
 export const ALLOWED_GROUPS = ['FREE', 'START', 'FULL', 'PILOT', 'ADMIN'];
+export const PAID_GROUPS = ['START', 'FULL', 'PILOT', 'ADMIN'];
+export const IDENTITY_TILDA_UNVERIFIED = 'tilda_unverified';
+export const IDENTITY_VERIFIED = 'verified';
 export const COOKIE_NAME = 'mlma_sid';
-export const SESSION_TTL_SEC = 60 * 60 * 24 * 30;
+export const SESSION_TTL_SEC = 60 * 60 * 24 * 7;
+export const MAX_BODY_BYTES = 16 * 1024;
+export const RATE_BIND_LIMIT = 20;
+export const RATE_BIND_WINDOW_MS = 10 * 60 * 1000;
+export const RATE_API_LIMIT = 90;
+export const RATE_API_WINDOW_MS = 60 * 1000;
 const ANALYTICS_BLOCKED = /password|passwd|secret|token|card|pan|cvv|cvc|iban|artifact|answer|message_body|full_text/i;
 
 export function nowIso(date = new Date()) {
@@ -35,10 +51,34 @@ export function userKeyFromIdentity(identity) {
   return '';
 }
 
+export function isVerifiedIdentity(level) {
+  return level === IDENTITY_VERIFIED;
+}
+
+export function newSessionId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+}
+
+export function publicGroups(row) {
+  if (isVerifiedIdentity(row && row.identityLevel)) {
+    const groups = Array.isArray(row.user && row.user.groups) ? row.user.groups : [];
+    const out = [];
+    groups.forEach((name) => {
+      if (ALLOWED_GROUPS.indexOf(name) >= 0 && out.indexOf(name) < 0) out.push(name);
+    });
+    if (out.indexOf('FREE') < 0) out.unshift('FREE');
+    return out;
+  }
+  return ['FREE'];
+}
+
 export function emptyAccount(identity) {
   const email = normalizeEmail(identity && identity.email);
   const maId = normalizeMaId(identity && identity.maId);
   return {
+    identityLevel: IDENTITY_TILDA_UNVERIFIED,
+    sessionSid: '',
     user: {
       maId,
       email,
@@ -74,18 +114,21 @@ export function emptyAccount(identity) {
 
 export function publicAccount(row) {
   if (!row) return null;
+  const verified = isVerifiedIdentity(row.identityLevel);
   return {
+    identityLevel: verified ? IDENTITY_VERIFIED : IDENTITY_TILDA_UNVERIFIED,
+    identityBridge: verified ? 'server_verified' : 'tilda_client_bind',
     user: {
       maId: row.user.maId,
       email: row.user.email,
       name: row.user.name,
       phone: row.user.phone,
-      groups: Array.isArray(row.user.groups) && row.user.groups.length ? row.user.groups.slice() : ['FREE'],
+      groups: publicGroups(row),
     },
     profile: row.profile || {},
-    entitlements: Array.isArray(row.entitlements) ? row.entitlements : [],
-    orders: Array.isArray(row.orders) ? row.orders : [],
-    payments: Array.isArray(row.payments) ? row.payments : [],
+    entitlements: verified && Array.isArray(row.entitlements) ? row.entitlements : [],
+    orders: verified && Array.isArray(row.orders) ? row.orders : [],
+    payments: verified && Array.isArray(row.payments) ? row.payments : [],
     savedTrackIds: Array.isArray(row.savedTrackIds) ? row.savedTrackIds.slice() : [],
     route: { trackIds: ((row.route && row.route.trackIds) || row.savedTrackIds || []).slice() },
     runs: row.runs || {},
@@ -187,27 +230,45 @@ export async function hmacHex(secret, message) {
   return toHex(sig);
 }
 
-export async function signSession(secret, userKey, exp) {
-  const payload = userKey + '.' + exp;
+function macEqual(expected, actual) {
+  if (!expected || !actual || expected.length !== actual.length) return false;
+  let diff = 0;
+  for (let i = 0; i < expected.length; i += 1) diff |= expected.charCodeAt(i) ^ actual.charCodeAt(i);
+  return diff === 0;
+}
+
+export async function signSession(secret, userKey, exp, extra = {}) {
+  const sid = extra.sid || newSessionId();
+  const payload = sid + '.' + userKey + '.' + exp;
   const mac = await hmacHex(secret, payload);
-  return 'v1.' + encodeURIComponent(userKey) + '.' + exp + '.' + mac;
+  return 'v2.' + encodeURIComponent(sid) + '.' + encodeURIComponent(userKey) + '.' + exp + '.' + mac;
 }
 
 export async function verifySession(secret, token) {
   if (!secret || !token) return null;
   const parts = String(token).split('.');
-  if (parts.length !== 4 || parts[0] !== 'v1') return null;
-  const userKey = decodeURIComponent(parts[1] || '');
-  const exp = Number(parts[2]);
-  const mac = parts[3];
-  if (!userKey || !exp || !mac) return null;
-  if (exp * 1000 < Date.now()) return null;
-  const expected = await hmacHex(secret, userKey + '.' + exp);
-  if (expected.length !== mac.length) return null;
-  let diff = 0;
-  for (let i = 0; i < expected.length; i += 1) diff |= expected.charCodeAt(i) ^ mac.charCodeAt(i);
-  if (diff !== 0) return null;
-  return { userKey, exp };
+  if (parts[0] === 'v2' && parts.length === 5) {
+    const sid = decodeURIComponent(parts[1] || '');
+    const userKey = decodeURIComponent(parts[2] || '');
+    const exp = Number(parts[3]);
+    const mac = parts[4];
+    if (!sid || !userKey || !exp || !mac) return null;
+    if (exp * 1000 < Date.now()) return null;
+    const expected = await hmacHex(secret, sid + '.' + userKey + '.' + exp);
+    if (!macEqual(expected, mac)) return null;
+    return { userKey, exp, sid };
+  }
+  if (parts.length === 4 && parts[0] === 'v1') {
+    const userKey = decodeURIComponent(parts[1] || '');
+    const exp = Number(parts[2]);
+    const mac = parts[3];
+    if (!userKey || !exp || !mac) return null;
+    if (exp * 1000 < Date.now()) return null;
+    const expected = await hmacHex(secret, userKey + '.' + exp);
+    if (!macEqual(expected, mac)) return null;
+    return { userKey, exp, sid: '' };
+  }
+  return null;
 }
 
 export function parseCookie(header, name) {
@@ -238,7 +299,7 @@ export function allowedOrigin(origin, extra = []) {
 export function corsHeaders(origin) {
   const allow = allowedOrigin(origin);
   const headers = {
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
     'Access-Control-Allow-Headers': 'Content-Type, Accept',
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Max-Age': '86400',
@@ -256,4 +317,40 @@ export function identityFromBindBody(body) {
   if (!email && !maId) return null;
   if (email && !email.includes('@')) return null;
   return { email, maId, name, phone };
+}
+
+export function clientIp(request) {
+  const cf = request && request.headers && request.headers.get('CF-Connecting-IP');
+  if (cf) return String(cf).slice(0, 64);
+  const fwd = request && request.headers && request.headers.get('X-Forwarded-For');
+  if (fwd) return String(fwd).split(',')[0].trim().slice(0, 64);
+  return 'unknown';
+}
+
+const rateBuckets = new Map();
+
+export function rateLimitHit(key, limit, windowMs) {
+  const now = Date.now();
+  let bucket = rateBuckets.get(key);
+  if (!bucket || now - bucket.start > windowMs) {
+    bucket = { start: now, n: 0 };
+    rateBuckets.set(key, bucket);
+  }
+  bucket.n += 1;
+  if (rateBuckets.size > 4000) {
+    for (const [id, item] of rateBuckets) {
+      if (now - item.start > windowMs) rateBuckets.delete(id);
+    }
+  }
+  return bucket.n > limit;
+}
+
+export function resetRateLimitForTests() {
+  rateBuckets.clear();
+}
+
+export function allowedMethod(path, method) {
+  if (method === 'OPTIONS') return true;
+  if (path === '/api/health' || path === '/health') return method === 'GET' || method === 'HEAD';
+  return method === 'POST';
 }

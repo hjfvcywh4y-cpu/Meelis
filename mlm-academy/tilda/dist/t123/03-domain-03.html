@@ -44,6 +44,7 @@
       route: { trackIds: [] },
       runs: {},
       artifacts: [],
+      identityLevel: 'tilda_unverified',
       updatedAt: '',
     };
   }
@@ -160,8 +161,17 @@
     if (account.savedTrackIds) row.savedTrackIds = uniqueTrackIds(account.savedTrackIds);
     else if (account.route && account.route.trackIds) row.savedTrackIds = uniqueTrackIds(account.route.trackIds);
     row.route = { trackIds: row.savedTrackIds.slice() };
-    if (account.entitlements) row.entitlements = account.entitlements;
-    if (account.orders) row.orders = account.orders;
+    row.identityLevel = account.identityLevel === 'verified' ? 'verified' : 'tilda_unverified';
+    if (row.identityLevel === 'verified') {
+      if (account.entitlements) row.entitlements = account.entitlements;
+      if (account.orders) row.orders = account.orders;
+      if (account.payments) row.payments = account.payments;
+    } else {
+      row.entitlements = [];
+      row.orders = [];
+      row.payments = [];
+      if (row.user) row.user.groups = ['FREE'];
+    }
     if (account.runs) row.runs = account.runs;
     if (account.artifacts) row.artifacts = account.artifacts;
     saveRecord(session, row);
@@ -248,6 +258,11 @@
     },
     saveEntitlements: function (session, list) {
       var row = loadRecord(session);
+      if (!session || session.identityLevel !== 'verified') {
+        row.entitlements = [];
+        saveRecord(session, row);
+        return row;
+      }
       row.entitlements = list.slice();
       saveRecord(session, row);
       return row;
@@ -266,6 +281,9 @@
       return row;
     },
     savePayment: function (session, payment) {
+      if (!session || session.identityLevel !== 'verified') {
+        return loadRecord(session);
+      }
       var row = loadRecord(session);
       var found = false;
       for (var i = 0; i < row.payments.length; i += 1) {
@@ -441,20 +459,24 @@
   }
 
   function toAccountView(session, row, mode) {
+    var verified = row.identityLevel === 'verified';
     var profile = api.sanitizeProfile(Object.assign({}, row.profile || {}, {
       savedTrackIds: row.savedTrackIds && row.savedTrackIds.length ? row.savedTrackIds : (row.profile && row.profile.savedTrackIds) || [],
       displayName: (row.profile && row.profile.displayName) || session.name || '',
     }));
     return {
       loggedIn: !!session.loggedIn,
+      identityLevel: verified ? 'verified' : 'tilda_unverified',
       maId: session.maId || row.user.maId || '',
       email: session.email || row.user.email || '',
       name: session.name || row.user.name || profile.displayName || '',
       phone: session.phone || row.user.phone || '',
-      groups: (row.user.groups && row.user.groups.length ? row.user.groups : session.groups) || [],
-      entitlements: row.entitlements || [],
-      orders: row.orders || [],
-      payments: row.payments || [],
+      groups: verified
+        ? ((row.user.groups && row.user.groups.length ? row.user.groups : session.groups) || [])
+        : (session.loggedIn ? ['FREE'] : []),
+      entitlements: verified ? (row.entitlements || []) : [],
+      orders: verified ? (row.orders || []) : [],
+      payments: verified ? (row.payments || []) : [],
       artifacts: row.artifacts || [],
       runs: row.runs || {},
       profile: profile,
@@ -462,9 +484,7 @@
       storageMode: mode || lastSync.mode || storageMode(),
       syncError: lastSync.error || '',
       source: session.source,
-      identityLimit: apiBase()
-        ? 'tilda_client_bind'
-        : 'local_fallback',
+      identityLimit: verified ? 'server_verified' : (apiBase() ? 'tilda_client_bind' : 'local_fallback'),
     };
   }
 

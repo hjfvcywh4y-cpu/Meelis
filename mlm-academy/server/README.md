@@ -18,9 +18,8 @@ SQL в `schema.sql` — контракт на случай Supabase. RLS: пол
 
 Tilda не даёт server-side verify member-token. Первый `POST /api/session/bind` принимает maId/email с Origin Академии и выдаёт свою cookie. Дальше чтение и запись идут только по cookie. Клиентский `userId` не авторизует.
 
-Это **не** защита оплаты. Платные права не выдаются bind-ом.
-
-Следующий этап оплаты: вебхук пишет entitlements в KV/Supabase; отдельная серверная авторизация платформы (magic link) снимет зависимость от клиентского bind.
+Это **не** защита оплаты. Сессия bind имеет `identityLevel: tilda_unverified`.
+Платные права требуют `identityLevel: verified` (Supabase Auth + webhook). См. `server/supabase-auth.md`.
 
 ## Переменные (только сервер Worker)
 

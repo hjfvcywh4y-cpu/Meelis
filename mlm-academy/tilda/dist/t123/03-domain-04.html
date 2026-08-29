@@ -85,6 +85,9 @@
     if (!event.signatureValid) {
       return { ok: false, reason: 'invalid_signature', account: account };
     }
+    if (event.status === 'paid' && (!account || account.identityLevel !== 'verified')) {
+      return { ok: false, reason: 'verified_required', account: account };
+    }
     var payments = (account.payments || []).slice();
     var existing = findById(payments, 'idempotencyKey', event.idempotencyKey) || findById(payments, 'paymentId', event.paymentId);
     if (existing && (existing.status === 'paid' || existing.status === event.status)) {

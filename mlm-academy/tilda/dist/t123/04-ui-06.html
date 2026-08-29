@@ -506,38 +506,16 @@
           return;
         }
         var productId = el.getAttribute('data-mlma-checkout') || 'start';
-        var order = D.createOrder({
-          productId: productId,
-          email: state.account.email,
-          maId: state.account.maId,
-          trackId: queryParam('track'),
-        });
-        var gateway = D.createPaymentGateway();
-        var payment = gateway.createPayment(order);
-        order.status = 'pending';
-        D.getRepo().saveOrder(state.account, order);
-        D.trackEvent('checkout_started', { itemId: productId, orderId: order.orderId });
-        var simulated = queryParam('fail') === '1' ? 'failed' : queryParam('cancel') === '1' ? 'cancelled' : 'paid';
-        var result = D.applyWebhook(state.account, {
-          paymentId: payment.paymentId,
-          orderId: order.orderId,
-          status: simulated,
-          idempotencyKey: payment.paymentId,
-          email: state.account.email,
-          signatureValid: true,
-        }, order);
-        if (result.ok && result.account) {
-          D.getRepo().savePayment(state.account, result.payment);
-          D.getRepo().saveEntitlements(state.account, result.account.entitlements || []);
-          D.getRepo().saveOrder(state.account, order);
-          if (simulated === 'paid') {
-            D.trackEvent('payment_succeeded', { orderId: order.orderId, itemId: productId });
-            D.trackEvent('entitlement_granted', { itemId: productId, orderId: order.orderId });
-          } else {
-            D.trackEvent('payment_failed', { orderId: order.orderId, itemId: productId });
-          }
+        D.trackEvent('checkout_blocked', { itemId: productId, reason: 'identity_unverified' });
+        var msg = el.parentNode.querySelector('[data-mlma-checkout-msg]');
+        if (!msg) {
+          msg = document.createElement('p');
+          msg.setAttribute('data-mlma-checkout-msg', '1');
+          msg.className = 'mlma-muted';
+          msg.style.marginTop = '12px';
+          el.parentNode.appendChild(msg);
         }
-        window.location.href = '/my';
+        msg.textContent = 'Оплата ещё не подключена. Эта кнопка не выдаёт платный доступ.';
       });
     });
     rootEl.querySelectorAll('[data-mlma-reset-profile]').forEach(function (el) {

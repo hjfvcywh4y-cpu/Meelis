@@ -558,7 +558,7 @@
     var orders = (state.account && state.account.orders) || [];
     var orderHtml = '';
     if (logged) {
-      if (!orders.length) orderHtml = '<p class="mlma-muted" style="margin-top:12px">Покупок пока нет. Реальные списания выключены.</p>';
+      if (!orders.length) orderHtml = '<p class="mlma-muted" style="margin-top:12px">Покупок пока нет. Реальные списания выключены. Тестовая кнопка не выдаёт платный доступ.</p>';
       else {
         orderHtml = '<ul style="margin-top:12px;display:grid;gap:8px">';
         for (var o = 0; o < orders.length; o += 1) {
