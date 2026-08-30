@@ -217,6 +217,16 @@
     return items;
   }
 
+  function logoMark() {
+    return (
+      '<span class="mlma-mark" aria-hidden="true">' +
+      '<svg class="mlma-mark-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+      '<path d="M6.8 25.2V8.4Q6.8 6.4 9 6.4L16 19.2 23 6.4Q25.2 6.4 25.2 8.8V25.2" stroke="currentColor" stroke-width="2.35" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<circle cx="25.2" cy="25.2" r="2.15" fill="#C45F42"/>' +
+      '</svg></span>'
+    );
+  }
+
   function header(state) {
     var R = state.R;
     var path = pathName();
@@ -239,8 +249,10 @@
         : '') +
       '<header class="mlma-header"><div class="mlma-header-inner">' +
       '<a class="mlma-logo" href="' +
-      esc(R.home()) +
-      '" aria-label="MLM Academy — на главную"><span class="mlma-mark" aria-hidden="true"></span><span>MLM Academy</span></a>' +
+      esc((R.home && R.home()) || '/academy') +
+      '" aria-label="MLM Academy — на главную">' +
+      logoMark() +
+      '<span class="mlma-logo-text">MLM Academy</span></a>' +
       '<nav class="mlma-nav" aria-label="Основная навигация">' +
       nav +
       '</nav>' +
@@ -3045,6 +3057,22 @@
       });
     });
     var cookieBox = rootEl.querySelector('#mlma-cookie');
+    var cookieChoice = '';
+    try {
+      cookieChoice = window.localStorage.getItem('mlma.cookieChoice.v1') || '';
+    } catch (err) {
+      cookieChoice = '';
+    }
+    if (cookieBox && !cookieChoice) cookieBox.hidden = false;
+    try {
+      if (window.matchMedia && window.matchMedia('(max-width: 767px)').matches) {
+        rootEl.querySelectorAll('.mlma-footer-col').forEach(function (el) {
+          el.removeAttribute('open');
+        });
+      }
+    } catch (err2) {
+      /* ignore */
+    }
     var cookieChoice = '';
     try {
       cookieChoice = window.localStorage.getItem('mlma.cookieChoice.v1') || '';

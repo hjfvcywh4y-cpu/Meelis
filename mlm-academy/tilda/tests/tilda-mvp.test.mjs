@@ -294,6 +294,19 @@ describe('Tilda-MVP: pending, runtime, analytics, payments', () => {
     assert.equal(MLMA.PAYMENT_TEST_MODE, true);
   });
 
+  it('логотип в шапке ведёт на /academy и рисует знак из макета', () => {
+    const ui = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../src/ui.js'), 'utf8');
+    const css = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../src/mlma.css'), 'utf8');
+    assert.match(ui, /class="mlma-logo"/);
+    assert.match(ui, /esc\(\(R\.home && R\.home\(\)\) \|\| '\/academy'\)/);
+    assert.match(ui, /class="mlma-mark-svg"/);
+    assert.match(ui, /fill="#C45F42"/);
+    assert.match(ui, /class="mlma-logo-text">MLM Academy/);
+    assert.match(css, /\.mlma-mark-svg/);
+    assert.match(css, /\.mlma-logo-text/);
+    assert.equal(/\.mlma-mark \{[^}]*background:\s*var\(--academy-accent\)/.test(css), false);
+  });
+
   it('выход идёт на Tilda exit=y, в UI есть обработчик, в регистрации — галочка согласия', () => {
     const ui = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../src/ui.js'), 'utf8');
     const bridge = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../src/members-bridge.js'), 'utf8');
