@@ -515,11 +515,39 @@
         mount(rootEl);
       });
     });
+    rootEl.querySelectorAll('#mlma-offer-accept, #mlma-autorenew-accept').forEach(function (box) {
+      box.checked = false;
+      box.removeAttribute('checked');
+    });
     rootEl.querySelectorAll('[data-mlma-checkout]').forEach(function (el) {
       el.addEventListener('click', function (event) {
         event.preventDefault();
         D.trackEvent('checkout_blocked', { itemId: el.getAttribute('data-mlma-checkout') || '', reason: 'payments_disabled' });
         window.location.href = (D.routes().pricing && D.routes().pricing()) || '/pricing';
+      });
+    });
+    rootEl.querySelectorAll('[data-mlma-cancel-autorenew]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var msg = rootEl.querySelector('#mlma-autorenew-msg');
+        var repo = D.getRepo && D.getRepo();
+        var session = D.readMembersSession ? D.readMembersSession() : state.account;
+        function done(text) {
+          if (msg) msg.textContent = text;
+        }
+        if (!repo || !repo.cancelAutoRenewal) {
+          done('Напишите на o_053@mail.ru с темой «Отмена автопродления». После отказа платёжные реквизиты не используются повторно.');
+          return;
+        }
+        Promise.resolve(repo.cancelAutoRenewal(session, { via: 'cabinet' })).then(function (res) {
+          var result = (res && res.result) || res || {};
+          if (result.changed === 0 || result.reason === 'no_auto_renewal') {
+            done('Автопродления нет. Если оно появится, отмена будет здесь и по письму. Доступ до конца оплаченного периода сохранится.');
+            return;
+          }
+          done('Автопродление отменено. Доступ сохраняется до конца оплаченного периода. Платёжные реквизиты больше не используются для списания.');
+        }).catch(function () {
+          done('Не удалось отменить в кабинете. Напишите на o_053@mail.ru с темой «Отмена автопродления».');
+        });
       });
     });
     rootEl.querySelectorAll('[data-mlma-reset-profile]').forEach(function (el) {

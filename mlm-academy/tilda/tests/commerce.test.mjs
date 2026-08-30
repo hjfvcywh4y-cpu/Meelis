@@ -140,6 +140,8 @@ describe('продуктовый справочник и commercial gate', () =>
     const blob = JSON.stringify([privacy, consent, offer, requisites]);
     assert.match(privacy.title, /Политика/);
     assert.match(consent.title, /Согласие на обработку персональных данных/);
+    assert.match(offer.title, /абонентск/);
+    assert.doesNotMatch(blob, /возвратов нет|полностью оказана в момент|плата за активацию не возвращается/);
     assert.match(blob, /Осипов Роман Георгиевич/);
     assert.match(blob, /532013301192/);
     assert.doesNotMatch(blob, new RegExp('Бор' + 'исенко' + '|Бале' + 'шенко' + '|532000' + '135580'));
