@@ -294,17 +294,18 @@ describe('Tilda-MVP: pending, runtime, analytics, payments', () => {
     assert.equal(MLMA.PAYMENT_TEST_MODE, true);
   });
 
-  it('логотип в шапке ведёт на /academy и рисует знак из макета', () => {
+  it('логотип в шапке — файл с макета, ссылка на /academy', () => {
     const ui = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../src/ui.js'), 'utf8');
     const css = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../src/mlma.css'), 'utf8');
+    const logo = path.join(path.dirname(fileURLToPath(import.meta.url)), '../src/assets/mlma-logo.jpg');
     assert.match(ui, /class="mlma-logo"/);
     assert.match(ui, /esc\(\(R\.home && R\.home\(\)\) \|\| '\/academy'\)/);
-    assert.match(ui, /class="mlma-mark-svg"/);
-    assert.match(ui, /fill="#C45F42"/);
-    assert.match(ui, /class="mlma-logo-text">MLM Academy/);
-    assert.match(css, /\.mlma-mark-svg/);
-    assert.match(css, /\.mlma-logo-text/);
-    assert.equal(/\.mlma-mark \{[^}]*background:\s*var\(--academy-accent\)/.test(css), false);
+    assert.match(ui, /assetUrl\('mlma-logo\.jpg'\)/);
+    assert.match(ui, /class="mlma-logo-img"/);
+    assert.doesNotMatch(ui, /mlma-mark-svg/);
+    assert.match(css, /\.mlma-logo-img/);
+    assert.equal(fs.existsSync(logo), true);
+    assert.equal(fs.readFileSync(logo).subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff])), true);
   });
 
   it('выход идёт на Tilda exit=y, в UI есть обработчик, в регистрации — галочка согласия', () => {

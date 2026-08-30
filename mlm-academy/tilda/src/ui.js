@@ -217,13 +217,22 @@
     return items;
   }
 
-  function logoMark() {
+  function assetUrl(fileName) {
+    var scripts = document.getElementsByTagName('script');
+    for (var i = 0; i < scripts.length; i += 1) {
+      var src = scripts[i] && scripts[i].src ? String(scripts[i].src) : '';
+      var at = src.indexOf('ui.js');
+      if (at === -1) continue;
+      return src.slice(0, at) + fileName;
+    }
+    return 'https://mlma-account.mlmacademy-search.workers.dev/v1/' + fileName;
+  }
+
+  function logoHtml() {
     return (
-      '<span class="mlma-mark" aria-hidden="true">' +
-      '<svg class="mlma-mark-svg" viewBox="0 0 34 32" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-      '<path d="M6.5 7.4V21.4Q6.5 26 11.3 26V8.7L16.2 19.6 21.2 8.7Q24.4 8.7 24.4 12.2V18.6Q24.4 21.1 27.4 21.1" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
-      '<circle cx="30.1" cy="21.1" r="2.15" fill="#C45F42"/>' +
-      '</svg></span>'
+      '<img class="mlma-logo-img" src="' +
+      esc(assetUrl('mlma-logo.jpg')) +
+      '" alt="MLM Academy" width="580" height="183">'
     );
   }
 
@@ -251,8 +260,8 @@
       '<a class="mlma-logo" href="' +
       esc((R.home && R.home()) || '/academy') +
       '" aria-label="MLM Academy — на главную">' +
-      logoMark() +
-      '<span class="mlma-logo-text">MLM Academy</span></a>' +
+      logoHtml() +
+      '</a>' +
       '<nav class="mlma-nav" aria-label="Основная навигация">' +
       nav +
       '</nav>' +
