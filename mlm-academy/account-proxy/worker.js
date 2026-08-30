@@ -46,6 +46,7 @@ import {
   commercePreviewEnabled,
   testMode,
   sanitizeRunMeta,
+  cancelAutoRenewal,
 } from './account-core.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' };
@@ -375,6 +376,14 @@ export default {
       delete auth.row.runs[trackId].answer;
       await saveAccount(env, auth.session.userKey, auth.row);
       return json({ ok: true, account: publicAccount(auth.row) }, 200, origin);
+    }
+
+    if (path === '/api/account/auto-renewal/cancel') {
+      const auth = await requireUser(request, env, origin);
+      if (auth.error) return auth.error;
+      const result = cancelAutoRenewal(auth.row, { via: body.via || 'cabinet', orderId: body.orderId || '' });
+      await saveAccount(env, auth.session.userKey, auth.row);
+      return json({ ok: true, result, account: publicAccount(auth.row) }, 200, origin);
     }
 
     if (path === '/api/analytics') {

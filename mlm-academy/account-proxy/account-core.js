@@ -124,6 +124,9 @@ export function emptyAccount(identity) {
     route: { trackIds: [] },
     runs: {},
     artifacts: [],
+    legalAcceptances: [],
+    autoRenewal: { enabled: false, cancelledAt: '', cancelVia: '' },
+    paymentMethodReuseBlocked: false,
     migratedLocalAt: '',
     createdAt: nowIso(),
     updatedAt: nowIso(),
@@ -151,6 +154,9 @@ export function publicAccount(row) {
     route: { trackIds: ((row.route && row.route.trackIds) || row.savedTrackIds || []).slice() },
     runs: publicRuns(row.runs),
     artifacts: [],
+    legalAcceptances: verified && Array.isArray(row.legalAcceptances) ? row.legalAcceptances : [],
+    autoRenewal: verified ? (row.autoRenewal || { enabled: false }) : { enabled: false },
+    paymentMethodReuseBlocked: verified ? !!row.paymentMethodReuseBlocked : false,
     migratedLocalAt: row.migratedLocalAt || '',
     storageMode: 'server',
     updatedAt: row.updatedAt || '',
@@ -432,4 +438,143 @@ export function testMode(env) {
   const raw = env && env.TEST_MODE;
   if (raw == null || raw === '') return true;
   return String(raw).toLowerCase() !== 'false';
+}
+
+export const OFFER_URL = 'https://mlmacademy.ru/offer';
+export const OFFER_VERSION = '1.2';
+
+function roundMoney(value) {
+  return Math.round(Number(value) * 100) / 100;
+}
+
+export function validateCheckoutConsents(input) {
+  const src = input || {};
+  if (src.offerPreChecked === true) return { ok: false, reason: 'offer_prechecked' };
+  if (src.offerAccepted !== true) return { ok: false, reason: 'offer_required' };
+  if (src.autoRenewalUsed === true) {
+    if (src.autoRenewalPreChecked === true) return { ok: false, reason: 'autorenew_prechecked' };
+    if (src.autoRenewalAccepted !== true) return { ok: false, reason: 'autorenew_required' };
+  }
+  return { ok: true };
+}
+
+export function buildOfferAcceptanceRecord(input, at = nowIso()) {
+  const src = input || {};
+  const consents = validateCheckoutConsents(src);
+  if (!consents.ok) return consents;
+  const email = normalizeEmail(src.email);
+  const orderId = String(src.orderId || '').trim().slice(0, 80);
+  const tariff = String(src.tariff || src.product_code || src.productId || '').trim().slice(0, 80);
+  const termDays = Number(src.termDays || src.access_days || 0);
+  const amount = Number(src.amount);
+  if (!email || !email.includes('@')) return { ok: false, reason: 'email_required' };
+  if (!orderId) return { ok: false, reason: 'order_required' };
+  if (!tariff) return { ok: false, reason: 'tariff_required' };
+  if (!(termDays > 0)) return { ok: false, reason: 'term_required' };
+  if (!isFinite(amount) || amount < 0) return { ok: false, reason: 'amount_required' };
+  const autoUsed = src.autoRenewalUsed === true;
+  return {
+    ok: true,
+    record: {
+      offerVersion: String(src.offerVersion || OFFER_VERSION).slice(0, 20),
+      acceptedAt: String(src.acceptedAt || at).slice(0, 40),
+      email,
+      userKey: String(src.userKey || '').slice(0, 80),
+      orderId,
+      tariff,
+      termDays,
+      amount,
+      currency: String(src.currency || 'RUB').slice(0, 8),
+      offerUrl: String(src.offerUrl || OFFER_URL).slice(0, 120),
+      autoRenewalConsent: {
+        accepted: autoUsed && src.autoRenewalAccepted === true,
+        amount: autoUsed ? amount : 0,
+        periodDays: autoUsed ? termDays : 0,
+        acceptedAt: autoUsed ? String(src.acceptedAt || at).slice(0, 40) : '',
+      },
+    },
+  };
+}
+
+export function recordOfferAcceptance(row, input) {
+  if (!row) return { ok: false, reason: 'account_missing' };
+  const built = buildOfferAcceptanceRecord(input);
+  if (!built.ok) return built;
+  row.legalAcceptances = Array.isArray(row.legalAcceptances) ? row.legalAcceptances : [];
+  row.legalAcceptances.push(built.record);
+  row.orders = Array.isArray(row.orders) ? row.orders : [];
+  for (let i = 0; i < row.orders.length; i += 1) {
+    if (row.orders[i] && row.orders[i].orderId === built.record.orderId) {
+      row.orders[i].legalAcceptance = built.record;
+    }
+  }
+  row.updatedAt = nowIso();
+  return { ok: true, record: built.record };
+}
+
+export function cancelAutoRenewal(row, input) {
+  if (!row) return { ok: false, reason: 'account_missing' };
+  const via = input && input.via === 'email' ? 'email' : 'cabinet';
+  const at = nowIso();
+  const orderId = String((input && input.orderId) || '').trim();
+  let changed = 0;
+  row.orders = Array.isArray(row.orders) ? row.orders : [];
+  row.orders.forEach((order) => {
+    if (!order) return;
+    if (orderId && order.orderId !== orderId) return;
+    if (order.autoRenewal && order.autoRenewal.enabled !== false) {
+      order.autoRenewal.enabled = false;
+      order.autoRenewal.cancelledAt = at;
+      order.autoRenewal.cancelVia = via;
+      changed += 1;
+    }
+  });
+  row.entitlements = Array.isArray(row.entitlements) ? row.entitlements : [];
+  row.entitlements.forEach((ent) => {
+    if (!ent) return;
+    if (orderId && ent.orderId !== orderId) return;
+    if (ent.autoRenewalEnabled) {
+      ent.autoRenewalEnabled = false;
+      ent.autoRenewalCancelledAt = at;
+      changed += 1;
+    }
+  });
+  if (row.autoRenewal && row.autoRenewal.enabled) {
+    changed += 1;
+  }
+  if (changed === 0 && !(row.autoRenewal && row.autoRenewal.enabled)) {
+    return {
+      ok: true,
+      changed: 0,
+      reason: 'no_auto_renewal',
+      accessContinuesUntilPaidPeriodEnd: true,
+      paymentMethodReuseBlocked: !!row.paymentMethodReuseBlocked,
+    };
+  }
+  row.autoRenewal = { enabled: false, cancelledAt: at, cancelVia: via };
+  row.paymentMethodReuseBlocked = true;
+  row.updatedAt = at;
+  return {
+    ok: true,
+    changed,
+    accessContinuesUntilPaidPeriodEnd: true,
+    paymentMethodReuseBlocked: true,
+    via,
+  };
+}
+
+export function canReusePaymentMethod(row) {
+  return !(row && row.paymentMethodReuseBlocked);
+}
+
+export function proportionalRefundAmount(input) {
+  const src = input || {};
+  const paid = Number(src.paidAmount);
+  const periodDays = Number(src.periodDays);
+  const usedDays = Math.max(0, Number(src.usedDays || 0));
+  const expenses = Math.max(0, Number(src.documentedExpenses || 0));
+  if (!isFinite(paid) || paid < 0 || !(periodDays > 0)) return { ok: false, reason: 'invalid_period' };
+  const remaining = Math.max(0, periodDays - usedDays);
+  const unused = paid * (remaining / periodDays);
+  return { ok: true, amount: roundMoney(Math.max(0, unused - expenses)), remainingDays: remaining };
 }

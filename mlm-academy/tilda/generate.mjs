@@ -186,6 +186,11 @@ for (const needle of oldSeller) {
 if (/\b\d{20}\b/.test(legalJs) || /БИК\s*\d{9}/.test(legalJs)) {
   throw new Error('В публичных юридических текстах найдены банковские реквизиты');
 }
+for (const phrase of ['возвра' + 'тов нет', 'полностью оказана ' + 'в момент', 'плата за активацию ' + 'не возвращается']) {
+  if (legalJs.includes(phrase)) {
+    throw new Error('Запрещённая формулировка в оферте: ' + phrase);
+  }
+}
 
 function listTrackModuleFiles() {
   const dir = path.join(SRC, 'tracks');

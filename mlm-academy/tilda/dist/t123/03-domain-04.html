@@ -1,4 +1,4 @@
-<!-- Блок T123: доменная логика 4/13 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: доменная логика 4/14 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
 /**
  * Абстракция оплаты. Реальные списания выключены.
@@ -54,6 +54,7 @@
       test: true,
       reason: 'payments_disabled',
       createdAt: new Date().toISOString(),
+      legalAcceptance: input.legalAcceptance || null,
     };
   }
 

@@ -191,8 +191,11 @@
       row.payments = [];
       if (row.user) row.user.groups = ['FREE'];
     }
-    if (account.runs) row.runs = Object.assign({}, row.runs || {}, sanitizeRunMap(account.runs));
+    row.runs = Object.assign({}, row.runs || {}, sanitizeRunMap(account.runs));
     if (account.artifacts && account.artifacts.length) row.artifacts = account.artifacts;
+    if (account.legalAcceptances) row.legalAcceptances = account.legalAcceptances;
+    if (account.autoRenewal) row.autoRenewal = account.autoRenewal;
+    if (typeof account.paymentMethodReuseBlocked === 'boolean') row.paymentMethodReuseBlocked = account.paymentMethodReuseBlocked;
     saveRecord(session, row);
     if (session && session.loggedIn && api.saveProfile) {
       api.saveProfile(Object.assign({}, row.profile, { savedTrackIds: row.savedTrackIds.slice() }));
@@ -386,6 +389,22 @@
       saveRecord(session, row);
       return row;
     },
+    cancelAutoRenewal: function (session, input) {
+      var row = loadRecord(session);
+      row.autoRenewal = { enabled: false, cancelledAt: nowIso(), cancelVia: (input && input.via) || 'cabinet' };
+      row.paymentMethodReuseBlocked = true;
+      if (row.orders) {
+        for (var i = 0; i < row.orders.length; i += 1) {
+          if (row.orders[i].autoRenewal) {
+            row.orders[i].autoRenewal.enabled = false;
+            row.orders[i].autoRenewal.cancelledAt = row.autoRenewal.cancelledAt;
+            row.orders[i].autoRenewal.cancelVia = row.autoRenewal.cancelVia;
+          }
+        }
+      }
+      saveRecord(session, row);
+      return { ok: true, account: row, result: { ok: true, paymentMethodReuseBlocked: true, accessContinuesUntilPaidPeriodEnd: true } };
+    },
   };
 
   function HttpRepo(base) {
@@ -519,6 +538,19 @@
   HttpRepo.prototype.saveOrder = LocalRepo.saveOrder;
   HttpRepo.prototype.savePayment = LocalRepo.savePayment;
   HttpRepo.prototype.saveArtifact = LocalRepo.saveArtifact;
+  HttpRepo.prototype.cancelAutoRenewal = function (session, input) {
+    LocalRepo.cancelAutoRenewal(session, input);
+    return this.request('/account/auto-renewal/cancel', { via: (input && input.via) || 'cabinet', orderId: (input && input.orderId) || '' })
+      .then(function (data) {
+        if (data && data.account) applyAccountToLocal(session, data.account);
+        setSync(MODE_SERVER);
+        return { ok: true, result: data.result, account: LocalRepo.loadAccount(session) };
+      })
+      .catch(function (err) {
+        setSync(MODE_ERROR, err && err.message);
+        return { ok: false, fallback: true, account: LocalRepo.loadAccount(session) };
+      });
+  };
   HttpRepo.prototype.saveRun = function (session, trackId, runtime) {
     LocalRepo.saveRun(session, trackId, runtime);
     var meta = {

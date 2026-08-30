@@ -2125,14 +2125,14 @@
         {
           eyebrow: 'Доступ',
           title: 'Какие форматы доступа будут',
-          lead: 'Сейчас работает бесплатный кабинет FREE. Платные продукты готовятся: купить их нельзя, пока не опубликован первый complete-трек и не подключена оплата.',
+          lead: 'Сейчас работает бесплатный кабинет. Платный продукт — абонентский доступ к информационно-аналитической платформе на выбранный период, не покупка отдельных треков и не образовательная услуга. Оплатить пока нельзя.',
           crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Доступ' }],
         },
         R,
       ) +
       '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:20px">' +
-      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">FREE</span><h2 class="mlma-h3" style="margin-top:12px">Бесплатный кабинет</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Вход, сохранение маршрута, локальные результаты. Это не полный промотрек и не FULL. Карточка трека в каталоге — описание, а не купленный продукт.</p></section>' +
-      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Разовые покупки</span><h2 class="mlma-h3" style="margin-top:12px">Один трек, мини-маршрут, маршрут из шести</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Будущие разовые покупки на 365 дней. Сейчас статус gated. Metadata-only и planned нельзя продавать. 112 карточек каталога не означают 112 готовых треков.</p></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">FREE</span><h2 class="mlma-h3" style="margin-top:12px">Бесплатный кабинет</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Вход, сохранение маршрута, локальные результаты. Это не полный доступ к платформе. Карточка трека в каталоге — описание материала, а не купленный товар.</p></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Абонентский доступ</span><h2 class="mlma-h3" style="margin-top:12px">Платформа на оплаченный период</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Платный продукт — техническая возможность пользоваться кабинетом, библиотекой, материалами и функциями в течение оплаченного периода. Отдельные треки не продаются. Образовательной услугой это не является. Сейчас тарифы gated, эквайринг не подключён.</p></section>' +
       '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Команда</span><h2 class="mlma-h3" style="margin-top:12px">Маршруты для новичков и партнёров</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Лидер запускает маршруты и снижает ручное сопровождение. Командный формат готовится. Автоматической оплаты нет.</p></section>' +
       '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Компания</span><h2 class="mlma-h3" style="margin-top:12px">Корпоративный пилот</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Активация, удержание, аналитика и связь прохождения с коммерческим результатом. Только переговоры, без карточного checkout.</p></section>' +
       '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Состояния</span><ul class="mlma-muted" style="margin-top:12px;display:grid;gap:8px;font-size:15px"><li>сохранено — трек в маршруте, это не покупка;</li><li>доступно бесплатно — публичный или промо контур;</li><li>куплено — появится после серверного права;</li><li>закрыто — платное содержание без права;</li><li>готовится — metadata-only, planned или gated.</li></ul></section>' +
@@ -2172,13 +2172,13 @@
         {
           eyebrow: 'Тарифы',
           title: 'Что можно будет получить и для кого',
-          lead: 'Ориентиры цены уже есть. Оплатить пока нельзя: продукты gated, эквайринг не подключён. Это не 112 готовых треков. Правила оплаты, доступа и возврата — отдельным документом.',
+          lead: 'Платный продукт — абонентский доступ к информационно-аналитической платформе на выбранный период. Это не покупка отдельных треков и не образовательная услуга. Оплатить пока нельзя: тарифы gated, эквайринг не подключён.',
           crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Тарифы' }],
         },
         R,
       ) +
       '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:28px">' +
-      '<section><span class="mlma-eyebrow">Для себя</span><h2 class="mlma-h2" style="margin-top:12px">Новичок и партнёр</h2><p class="mlma-muted" style="margin-top:8px;max-width:70ch">Конкретная задача, один следующий шаг, отдельный трек или короткий маршрут. Понятный результат. Оплатить пока нельзя.</p><div class="mlma-grid-2" style="margin-top:16px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">' +
+      '<section><span class="mlma-eyebrow">Для себя</span><h2 class="mlma-h2" style="margin-top:12px">Новичок и партнёр</h2><p class="mlma-muted" style="margin-top:8px;max-width:70ch">Конкретная задача и следующий шаг. Платный доступ открывает платформу на период, а не отдельный трек. Оплатить пока нельзя.</p><div class="mlma-grid-2" style="margin-top:16px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">' +
       cards +
       '</div></section>' +
       '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Для команды</span><h2 class="mlma-h3" style="margin-top:12px">Лидер запускает маршруты</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Лидер — ранний покупатель командного решения: запуск новичков, меньше ручного сопровождения, контроль прохождения. Наставник видит точки остановки, но не считается автоматически плательщиком. Командный формат готовится. Подписка не продаётся.</p><div class="mlma-actions" style="margin-top:20px">' +
@@ -2187,7 +2187,7 @@
       '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Для компании</span><h2 class="mlma-h3" style="margin-top:12px">Корпоративный пилот</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Маршруты для сегментов сети, контроль активации, управленческая аналитика, связь действий с коммерческими результатами. До 30 участников, 8 недель. Ориентир 99 000–149 000 ₽. Только переговоры, без карточного checkout.</p><div class="mlma-actions" style="margin-top:20px">' +
       btn(D.siteHomeUrl(), 'Обсудить корпоративный пилот', 'primary') +
       '</div></section>' +
-      '<p class="mlma-muted" style="font-size:14px">Оплата разовая. Автоматических повторных списаний нет. Подписка на всю библиотеку и PRO в интерфейс не выводятся. B2C и B2B не смешиваются в одну кнопку покупки. PAYMENTS_ENABLED=false. Правила: <a href="' +
+      '<p class="mlma-muted" style="font-size:14px">Перед оплатой потребуется обязательная изначально пустая галочка принятия пользовательского соглашения и оферты. Автопродление — только после отдельной пустой галочки с суммой, периодичностью и способом отключения. PAYMENTS_ENABLED=false. Правила: <a href="' +
       esc((R.paymentAndAccess && R.paymentAndAccess()) || '/payment-and-access') +
       '">оплата, доступ и возврат</a>.</p>' +
       '<div class="mlma-actions">' +
@@ -2430,7 +2430,7 @@
         {
           eyebrow: 'Кабинет',
           title: 'Покупки и доступ',
-          lead: 'У вас пока нет покупок. Платные треки готовятся к запуску. Уже сейчас вы можете сохранять интересные треки в маршрут.',
+          lead: 'Платных заказов пока нет. Когда оплата заработает, здесь будут период доступа, отмена автопродления и запрос возврата.',
           crumbs: [{ label: 'Кабинет', href: R.my() }, { label: 'Покупки' }],
         },
         R,
@@ -2439,11 +2439,23 @@
       '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:20px">' +
       '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">FREE</span><h2 class="mlma-h3" style="margin-top:12px">' +
       esc(userStatusLabel(state.account)) +
-      '</h2><p class="mlma-muted" style="margin-top:12px">Бесплатный кабинет не выдаёт FULL. Tilda Members не является источником платного права. Срок будущего разового доступа — 365 дней.</p></section>' +
+      '</h2><p class="mlma-muted" style="margin-top:12px">Бесплатный кабинет не открывает платный период доступа. Tilda Members не является источником права. Неиспользование платформы при исправном доступе само по себе не считается неоказанием услуги.</p></section>' +
       '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Сохранённые маршруты</span>' +
-      (rows ? '<ul style="margin-top:12px;display:grid;gap:8px">' + rows + '</ul>' : '<p class="mlma-muted" style="margin-top:12px">Пока ничего не сохранено. Сохранённый трек не считается купленным.</p>') +
+      (rows ? '<ul style="margin-top:12px;display:grid;gap:8px">' + rows + '</ul>' : '<p class="mlma-muted" style="margin-top:12px">Пока ничего не сохранено. Сохранённый трек не считается оплаченным доступом.</p>') +
       '</section>' +
-      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Будущие доступы</span><p class="mlma-muted" style="margin-top:12px">Куплено / закрыто / готовится появятся после серверного подтверждения оплаты. В пилоте исполняется бесплатный трек A2-008; остальные 111 карточек — planned / metadata_only.</p></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Два разных действия</span><h2 class="mlma-h3" style="margin-top:12px">Отмена автопродления и возврат</h2><p class="mlma-muted" style="margin-top:12px">Отмена автопродления прекращает будущие платежи. Доступ сохраняется до конца уже оплаченного периода. Отказ от договора с возвратом считается отдельно: сумма пропорциональна оставшемуся периоду за вычетом документально подтверждённых расходов.</p><div class="mlma-actions" style="margin-top:16px">' +
+      '<button type="button" class="mlma-btn mlma-btn-small" data-mlma-cancel-autorenew="1">Отменить автопродление</button>' +
+      '<a class="mlma-btn mlma-btn-small" href="mailto:' +
+      esc((D.LEGAL_OPERATOR && D.LEGAL_OPERATOR.email) || 'o_053@mail.ru') +
+      '?subject=' +
+      encodeURIComponent('Отмена автопродления') +
+      '">Отменить письмом</a>' +
+      '<a class="mlma-btn mlma-btn-small" href="mailto:' +
+      esc((D.LEGAL_OPERATOR && D.LEGAL_OPERATOR.email) || 'o_053@mail.ru') +
+      '?subject=' +
+      encodeURIComponent('Отказ от договора и возврат') +
+      '">Запросить возврат</a>' +
+      '</div><p id="mlma-autorenew-msg" class="mlma-muted" style="margin-top:12px;font-size:14px" aria-live="polite"></p></section>' +
       '<div class="mlma-actions">' +
       btn(R.library(), 'В библиотеку', 'primary') +
       btn((R.pricing && R.pricing()) || '/pricing', 'Смотреть тарифы') +
@@ -2467,7 +2479,7 @@
       html += '<article class="mlma-card mlma-pad"><span class="mlma-eyebrow">' + esc(states[i].key) + '</span><h2 class="mlma-h3" style="margin-top:12px">' + esc(states[i].title) + '</h2><p class="mlma-muted" style="margin-top:8px">' + esc(states[i].note) + '</p></article>';
     }
     return pageHead({ eyebrow: 'Только локальный preview', title: 'Состояния будущей покупки', lead: 'Фикстуры интерфейса. Тестовая покупка не записывается в маршрут пользователя и не выдаёт право.', crumbs: [{ label: 'Academy', href: state.R.home() }, { label: 'Preview commerce' }] }, state.R) +
-      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:16px"><section class="mlma-card mlma-pad"><span class="mlma-eyebrow">' + esc(view.status_label || 'Готовится к запуску') + '</span><h2 class="mlma-h3" style="margin-top:12px">' + esc(view.display_name || 'Один трек') + '</h2><p style="margin-top:12px">' + esc(view.launch_price_label || '') + ' / ' + esc(view.regular_price_label || '') + '</p><p class="mlma-muted" style="margin-top:8px">Кнопка «Купить» скрыта. buy_enabled=' + (view.buy_enabled ? 'true' : 'false') + '</p></section>' + html + '</div>';
+      '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:16px"><section class="mlma-card mlma-pad"><span class="mlma-eyebrow">' + esc(view.status_label || 'Готовится к запуску') + '</span><h2 class="mlma-h3" style="margin-top:12px">' + esc(view.display_name || 'Доступ на период') + '</h2><p style="margin-top:12px">' + esc(view.launch_price_label || '') + ' / ' + esc(view.regular_price_label || '') + '</p><p class="mlma-muted" style="margin-top:8px">Кнопка оплаты скрыта. buy_enabled=' + (view.buy_enabled ? 'true' : 'false') + '</p>' + (D.checkoutConsentHtml ? D.checkoutConsentHtml(product, { autoRenewal: false }) : '') + '</section>' + html + '</div>';
   }
 
   D._ui.renderAccess = renderAccess;
@@ -3251,11 +3263,39 @@
         mount(rootEl);
       });
     });
+    rootEl.querySelectorAll('#mlma-offer-accept, #mlma-autorenew-accept').forEach(function (box) {
+      box.checked = false;
+      box.removeAttribute('checked');
+    });
     rootEl.querySelectorAll('[data-mlma-checkout]').forEach(function (el) {
       el.addEventListener('click', function (event) {
         event.preventDefault();
         D.trackEvent('checkout_blocked', { itemId: el.getAttribute('data-mlma-checkout') || '', reason: 'payments_disabled' });
         window.location.href = (D.routes().pricing && D.routes().pricing()) || '/pricing';
+      });
+    });
+    rootEl.querySelectorAll('[data-mlma-cancel-autorenew]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var msg = rootEl.querySelector('#mlma-autorenew-msg');
+        var repo = D.getRepo && D.getRepo();
+        var session = D.readMembersSession ? D.readMembersSession() : state.account;
+        function done(text) {
+          if (msg) msg.textContent = text;
+        }
+        if (!repo || !repo.cancelAutoRenewal) {
+          done('Напишите на o_053@mail.ru с темой «Отмена автопродления». После отказа платёжные реквизиты не используются повторно.');
+          return;
+        }
+        Promise.resolve(repo.cancelAutoRenewal(session, { via: 'cabinet' })).then(function (res) {
+          var result = (res && res.result) || res || {};
+          if (result.changed === 0 || result.reason === 'no_auto_renewal') {
+            done('Автопродления нет. Если оно появится, отмена будет здесь и по письму. Доступ до конца оплаченного периода сохранится.');
+            return;
+          }
+          done('Автопродление отменено. Доступ сохраняется до конца оплаченного периода. Платёжные реквизиты больше не используются для списания.');
+        }).catch(function () {
+          done('Не удалось отменить в кабинете. Напишите на o_053@mail.ru с темой «Отмена автопродления».');
+        });
       });
     });
     rootEl.querySelectorAll('[data-mlma-reset-profile]').forEach(function (el) {

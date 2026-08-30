@@ -275,10 +275,69 @@
 
   function storefrontStatusLabel(product) {
     if (!product) return 'Недоступно';
-    if (product.publication_status === 'active' && isProductPurchasable(product)) return 'Можно купить';
+    if (product.publication_status === 'active' && isProductPurchasable(product)) return 'Можно оформить доступ';
     if (product.publication_status === 'gated') return 'Готовится к запуску';
     if (product.publication_status === 'planned') return 'Пока не предлагается';
     return 'Готовится к запуску';
+  }
+
+  function checkoutConsentHtml(product, options) {
+    options = options || {};
+    var offerUrl = (api.OFFER_URL || 'https://mlmacademy.ru/offer');
+    var auto = options.autoRenewal === true || (product && (product.billing_type === 'subscription_month' || product.billing_type === 'subscription_year'));
+    var amount = api.formatPrice ? api.formatPrice(product && (product.launch_price != null ? product.launch_price : product.regular_price)) : '';
+    var period = autoRenewalPeriodLabel(product);
+    var html =
+      '<div class="mlma-checkout-consents">' +
+      '<label class="mlma-checkout-consent"><input type="checkbox" name="offer_accepted" id="mlma-offer-accept" required>' +
+      '<span>Я принимаю <a href="' + offerUrl + '" target="_blank" rel="noopener">пользовательское соглашение и публичную оферту</a>.</span></label>';
+    if (auto) {
+      html +=
+        '<label class="mlma-checkout-consent"><input type="checkbox" name="autorenew_accepted" id="mlma-autorenew-accept" required>' +
+        '<span>Я соглашаюсь на автопродление: ' +
+        (amount || 'сумма тарифа') +
+        ', ' +
+        period +
+        '. Отключить можно в кабинете («Покупки и доступ») и письмом на o_053@mail.ru с темой «Отмена автопродления». После отказа платёжные реквизиты не используются повторно.</span></label>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function autoRenewalPeriodLabel(product) {
+    if (!product) return 'каждый оплаченный период';
+    if (product.billing_type === 'subscription_month' || product.access_days === 30) return 'каждые 30 дней';
+    if (product.billing_type === 'subscription_year' || product.access_days === 365) return 'каждые 365 дней';
+    if (product.access_days) return 'каждые ' + product.access_days + ' дней';
+    return 'каждый оплаченный период';
+  }
+
+  function validateCheckoutConsents(input) {
+    input = input || {};
+    if (input.offerPreChecked === true) return { ok: false, reason: 'offer_prechecked' };
+    if (input.offerAccepted !== true) return { ok: false, reason: 'offer_required' };
+    if (input.autoRenewalUsed === true) {
+      if (input.autoRenewalPreChecked === true) return { ok: false, reason: 'autorenew_prechecked' };
+      if (input.autoRenewalAccepted !== true) return { ok: false, reason: 'autorenew_required' };
+    }
+    return { ok: true };
+  }
+
+  function purchaseUiStates() {
+    return [
+      { key: 'card', title: 'Карточка тарифа', note: 'Период доступа, цена, статус. Кнопки «Купить» нет.' },
+      { key: 'composition', title: 'Что входит', note: 'Доступ к платформе на период. Карточка трека — не отдельный товар.' },
+      { key: 'confirm', title: 'Подтверждение', note: 'Обязательная пустая галочка оферты. Автопродление — отдельная пустая галочка.' },
+      { key: 'waiting', title: 'Ожидание оплаты', note: 'Форма провайдера ещё не подключена.' },
+      { key: 'success', title: 'Успешная оплата', note: 'Redirect не является оплатой. Право появится только после webhook.' },
+      { key: 'cancelled', title: 'Оплата отменена', note: 'Заказ не создаёт доступ.' },
+      { key: 'error', title: 'Ошибка оплаты', note: 'Деньги не списаны, право не выдано.' },
+      { key: 'refund', title: 'Возврат', note: 'Пропорционально оставшемуся периоду минус подтверждённые расходы. Право отзывается отдельно.' },
+      { key: 'granted', title: 'Доступ выдан', note: 'Только после verified user и проверенного webhook.' },
+      { key: 'expired', title: 'Период истёк', note: 'Оплаченный период закончился.' },
+      { key: 'revoked', title: 'Доступ отозван', note: 'История платежа сохраняется.' },
+      { key: 'cancel_autorenew', title: 'Отмена автопродления', note: 'Будущие платежи прекращаются. Доступ до конца оплаченного периода.' },
+    ];
   }
 
   function productCardView(product) {
@@ -300,22 +359,6 @@
       buy_enabled: false,
       cta: product.sale_channel === 'negotiation' ? 'discuss' : 'preparing',
     };
-  }
-
-  function purchaseUiStates() {
-    return [
-      { key: 'card', title: 'Карточка продукта', note: 'Цена, состав, статус. Кнопки «Купить» нет.' },
-      { key: 'composition', title: 'Состав продукта', note: 'Track ID задаёт сервер. Карточка трека — не продукт.' },
-      { key: 'confirm', title: 'Подтверждение', note: 'Будущий шаг до оплаты. Сейчас недоступен.' },
-      { key: 'waiting', title: 'Ожидание оплаты', note: 'Форма провайдера ещё не подключена.' },
-      { key: 'success', title: 'Успешная оплата', note: 'Redirect не является оплатой. Право появится только после webhook.' },
-      { key: 'cancelled', title: 'Оплата отменена', note: 'Заказ не создаёт доступ.' },
-      { key: 'error', title: 'Ошибка оплаты', note: 'Деньги не списаны, право не выдано.' },
-      { key: 'refund', title: 'Возврат', note: 'Возврат не удаляет платёж. Право отзывается отдельно.' },
-      { key: 'granted', title: 'Право выдано', note: 'Только после verified user и проверенного webhook.' },
-      { key: 'expired', title: 'Право истекло', note: 'Срок разового доступа — 365 дней.' },
-      { key: 'revoked', title: 'Право отозвано', note: 'История платежа сохраняется.' },
-    ];
   }
 
   function classifyAccessRow(track, account, savedIds) {
@@ -367,6 +410,9 @@
   api.productCardView = productCardView;
   api.storefrontStatusLabel = storefrontStatusLabel;
   api.purchaseUiStates = purchaseUiStates;
+  api.checkoutConsentHtml = checkoutConsentHtml;
+  api.autoRenewalPeriodLabel = autoRenewalPeriodLabel;
+  api.validateCheckoutConsents = validateCheckoutConsents;
   api.commercePreviewAllowed = commercePreviewAllowed;
   api.isLocalPreviewHost = isLocalPreviewHost;
   api.classifyAccessRow = classifyAccessRow;

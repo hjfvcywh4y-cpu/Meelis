@@ -39,6 +39,7 @@ describe('центр документов и подвал', () => {
     );
     const offer = JSON.stringify(MLMA.legalDocument('offer'));
     const privacy = JSON.stringify(MLMA.legalDocument('privacy'));
+    assert.match(offer, /абонентск/);
     assert.match(offer, /Осипов Роман Георгиевич/);
     assert.match(privacy, /Осипов Роман Георгиевич/);
     assert.notEqual(MLMA.legalDocument('offer').title, MLMA.legalDocument('privacy').title);

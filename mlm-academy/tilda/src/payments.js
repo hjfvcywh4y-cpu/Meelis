@@ -52,6 +52,7 @@
       test: true,
       reason: 'payments_disabled',
       createdAt: new Date().toISOString(),
+      legalAcceptance: input.legalAcceptance || null,
     };
   }
 
