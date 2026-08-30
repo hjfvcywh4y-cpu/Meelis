@@ -220,9 +220,9 @@
   function logoMark() {
     return (
       '<span class="mlma-mark" aria-hidden="true">' +
-      '<svg class="mlma-mark-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-      '<path d="M6.8 25.2V8.4Q6.8 6.4 9 6.4L16 19.2 23 6.4Q25.2 6.4 25.2 8.8V25.2" stroke="currentColor" stroke-width="2.35" stroke-linecap="round" stroke-linejoin="round"/>' +
-      '<circle cx="25.2" cy="25.2" r="2.15" fill="#C45F42"/>' +
+      '<svg class="mlma-mark-svg" viewBox="0 0 34 32" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+      '<path d="M6.5 7.4V21.4Q6.5 26 11.3 26V8.7L16.2 19.6 21.2 8.7Q24.4 8.7 24.4 12.2V18.6Q24.4 21.1 27.4 21.1" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<circle cx="30.1" cy="21.1" r="2.15" fill="#C45F42"/>' +
       '</svg></span>'
     );
   }
