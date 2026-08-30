@@ -337,6 +337,22 @@
       cookieChoice = '';
     }
     if (cookieBox && !cookieChoice) cookieBox.hidden = false;
+    try {
+      if (window.matchMedia && window.matchMedia('(max-width: 767px)').matches) {
+        rootEl.querySelectorAll('.mlma-footer-col').forEach(function (el) {
+          el.removeAttribute('open');
+        });
+      }
+    } catch (err2) {
+      /* ignore */
+    }
+    var cookieChoice = '';
+    try {
+      cookieChoice = window.localStorage.getItem('mlma.cookieChoice.v1') || '';
+    } catch (err) {
+      cookieChoice = '';
+    }
+    if (cookieBox && !cookieChoice) cookieBox.hidden = false;
     rootEl.querySelectorAll('[data-mlma-cookie]').forEach(function (el) {
       el.addEventListener('click', function () {
         try {

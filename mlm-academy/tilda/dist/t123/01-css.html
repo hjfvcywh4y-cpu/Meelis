@@ -427,20 +427,16 @@ a.mlma-card:hover, a.mlma-card-soft:hover { text-decoration: none; color: inheri
 .mlma a.mlma-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: var(--academy-text);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  font-size: 15px;
+  flex-shrink: 0;
   text-decoration: none;
 }
-.mlma-mark {
-  display: inline-block;
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
-  border: 2px solid var(--academy-border);
-  background: var(--academy-accent);
+.mlma a.mlma-logo:hover { text-decoration: none; }
+.mlma-logo-img {
+  display: block;
+  height: 36px;
+  width: auto;
+  max-width: min(220px, 46vw);
+  object-fit: contain;
 }
 .mlma-nav { display: none; align-items: stretch; }
 @media (min-width: 1024px) { .mlma-nav { display: flex; } }
@@ -996,7 +992,7 @@ a.mlma-example {
   .mlma-header-actions #mlma-search-btn,
   .mlma-header-actions #mlma-login-btn { display: none; }
   .mlma-header-inner { padding-inline: 12px; gap: 8px; }
-  .mlma-logo span:last-child { font-size: 14px; }
+  .mlma-logo-img { height: 30px; }
 }
 .mlma-btn-on-ink,
 a.mlma-btn-on-ink {

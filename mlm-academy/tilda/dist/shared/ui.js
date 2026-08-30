@@ -217,6 +217,25 @@
     return items;
   }
 
+  function assetUrl(fileName) {
+    var scripts = document.getElementsByTagName('script');
+    for (var i = 0; i < scripts.length; i += 1) {
+      var src = scripts[i] && scripts[i].src ? String(scripts[i].src) : '';
+      var at = src.indexOf('ui.js');
+      if (at === -1) continue;
+      return src.slice(0, at) + fileName;
+    }
+    return 'https://mlma-account.mlmacademy-search.workers.dev/v1/' + fileName;
+  }
+
+  function logoHtml() {
+    return (
+      '<img class="mlma-logo-img" src="' +
+      esc(assetUrl('mlma-logo.jpg')) +
+      '" alt="MLM Academy" width="580" height="183">'
+    );
+  }
+
   function header(state) {
     var R = state.R;
     var path = pathName();
@@ -239,8 +258,10 @@
         : '') +
       '<header class="mlma-header"><div class="mlma-header-inner">' +
       '<a class="mlma-logo" href="' +
-      esc(R.home()) +
-      '" aria-label="MLM Academy — на главную"><span class="mlma-mark" aria-hidden="true"></span><span>MLM Academy</span></a>' +
+      esc((R.home && R.home()) || '/academy') +
+      '" aria-label="MLM Academy — на главную">' +
+      logoHtml() +
+      '</a>' +
       '<nav class="mlma-nav" aria-label="Основная навигация">' +
       nav +
       '</nav>' +
@@ -3045,6 +3066,22 @@
       });
     });
     var cookieBox = rootEl.querySelector('#mlma-cookie');
+    var cookieChoice = '';
+    try {
+      cookieChoice = window.localStorage.getItem('mlma.cookieChoice.v1') || '';
+    } catch (err) {
+      cookieChoice = '';
+    }
+    if (cookieBox && !cookieChoice) cookieBox.hidden = false;
+    try {
+      if (window.matchMedia && window.matchMedia('(max-width: 767px)').matches) {
+        rootEl.querySelectorAll('.mlma-footer-col').forEach(function (el) {
+          el.removeAttribute('open');
+        });
+      }
+    } catch (err2) {
+      /* ignore */
+    }
     var cookieChoice = '';
     try {
       cookieChoice = window.localStorage.getItem('mlma.cookieChoice.v1') || '';
