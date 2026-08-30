@@ -124,6 +124,9 @@
 
   function membersSignupUrl(returnPath) {
     var path = String(returnPath || '/my').replace(/^\//, '');
+    if (api.isSignupEnabled && api.isSignupEnabled() !== true) {
+      return api.membersLoginUrl(returnPath);
+    }
     return '/members/signup?redirecturl=' + encodeURIComponent(path);
   }
 
@@ -283,7 +286,17 @@
     var tracks = input.tracks || [];
     var state = resolveUserState(account);
     if (state === 'guest') {
-      return { kind: 'signup', title: 'Создайте бесплатный кабинет', why: 'Так можно сохранить маршрут и вернуться к нему с другого устройства.', href: membersSignupUrl('/my'), cta: 'Зарегистрироваться' };
+      if (api.isSignupEnabled && api.isSignupEnabled() === true) {
+        return { kind: 'signup', title: 'Создайте бесплатный кабинет', why: 'Так можно сохранить маршрут и вернуться к нему с другого устройства.', href: membersSignupUrl('/my'), cta: 'Зарегистрироваться' };
+      }
+      return {
+        kind: 'signup_paused',
+        title: 'Регистрация временно закрыта',
+        why: 'Новые кабинеты не создаём, пока не будет можно собирать персональные данные. Каталог, документы и вход в уже существующий кабинет работают как раньше.',
+        href: api.membersLoginUrl('/my'),
+        cta: 'Войти',
+        secondary: { href: '/academy', label: 'Смотреть каталог' },
+      };
     }
     if (!onboardingComplete(profile)) {
       return { kind: 'onboarding', title: 'Короткая настройка — две минуты', why: 'Имя, роль и текущая задача нужны, чтобы показать первый шаг. Необязательные вопросы можно пропустить.', href: '/profile?setup=1', cta: 'Заполнить профиль' };

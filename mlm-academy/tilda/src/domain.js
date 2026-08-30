@@ -688,6 +688,9 @@
         return membersLoginUrl(returnPath || '/my');
       },
       signup: function (returnPath) {
+        if (api.isSignupEnabled && api.isSignupEnabled() !== true) {
+          return membersLoginUrl(returnPath || '/my');
+        }
         var path = String(returnPath || '/my').replace(/^\//, '');
         return '/members/signup?redirecturl=' + encodeURIComponent(path);
       },

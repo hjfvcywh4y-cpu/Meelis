@@ -571,8 +571,22 @@ const membersCss = fs.readFileSync(path.join(SRC, 'members-bridge.css'), 'utf8')
 write(path.join(DIST, 't123/members-bridge.css'), membersCss);
 write(path.join(DIST, 'shared/members-bridge.css'), membersCss);
 const membersJs = fs.readFileSync(path.join(SRC, 'members-bridge.js'), 'utf8');
+function readSignupFlag(source, file) {
+  const match = source.match(/var SIGNUP_ENABLED = (true|false);/);
+  if (!match) throw new Error('Нет var SIGNUP_ENABLED в ' + file);
+  return match[1];
+}
+if (readSignupFlag(commerceJs, 'commerce.js') !== readSignupFlag(membersJs, 'members-bridge.js')) {
+  throw new Error('SIGNUP_ENABLED в commerce.js и members-bridge.js должен совпадать');
+}
 write(path.join(DIST, 't123/members-bridge.js'), membersJs);
 write(path.join(DIST, 'shared/members-bridge.js'), membersJs);
+const membersLoader =
+  '<!-- Загрузить актуальный members-bridge с Worker. Вставлять в Members extra JS один раз. -->\n' +
+  '<script src="' +
+  ASSET_BASE_LIVE +
+  '/members-bridge.js"></script>\n';
+write(path.join(DIST, 't123/members-bridge-loader.html'), t123Wrap(membersLoader, 'Members extra JS: актуальный bridge с Worker'));
 
 const dataChunks = splitText(json, 40000);
 dataChunks.forEach((chunk, index) => {
@@ -656,6 +670,8 @@ fs.copyFileSync(logoJpg, path.join(v1, 'mlma-logo.jpg'));
 write(path.join(DIST, 'shared/catalog.schema.json'), fs.readFileSync(path.join(ROOT, 'src/data/catalog.schema.json'), 'utf8'));
 write(path.join(v1, 'products.catalog.json'), JSON.stringify(productsFile, null, 2) + '\n');
 write(path.join(DIST, 'shared/products.catalog.json'), JSON.stringify(productsFile, null, 2) + '\n');
+write(path.join(v1, 'members-bridge.js'), membersJs);
+write(path.join(v1, 'members-bridge.css'), membersCss);
 for (const name of trackModuleFiles) {
   const contents = fs.readFileSync(path.join(SRC, 'tracks', name), 'utf8');
   write(path.join(DIST, 'shared/tracks', name), contents);

@@ -18,7 +18,7 @@
 | `/my`, `/my/route`, `/my/results`, `/profile` | кабинет, Member/FREE |
 | `/my/purchases` | опубликована, pageid `213078509`, группы Member/Editor/FREE |
 | `/` | корпоративная вёрстка не менялась; в proof-блоке есть «Открыть MLM Academy» → `/academy` |
-| Account Worker | `PAYMENTS_ENABLED=false`, `COMMERCE_PREVIEW_ENABLED=false`; `POST /api/checkout/create` → 403 |
+| Account Worker | `PAYMENTS_ENABLED=false`, `COMMERCE_PREVIEW_ENABLED=false`, `SIGNUP_ENABLED=false`; `POST /api/checkout/create` → 403 |
 
 Rollback на `/about` проверен: скрыть loader / показать старые T123 → живая страница без `/v1/domain.js`; вернуть loader → снова v1. Старые record id на about: `3424150101`–`0801`; loader `3426070101`; mount `3426070301`.
 
@@ -26,10 +26,11 @@ Rollback на `/about` проверен: скрыть loader / показать 
 
 1. **Members → язык и extra CSS/JS.** Живой `/members/login` и `/members/signup` остаются английскими («Log In To Your Account»). API `savecustomcss` / `savecustomjs` / `savelanguage` у этого кабинета отвечают HTML 404. Сделать вручную:
    - Members → Настройки личного кабинета → extra CSS: вставить `tilda/dist/t123/members-bridge.css` → Сохранить.
-   - Тот же раздел → extra HTML/JS: `tilda/dist/t123/members-bridge.js` → Сохранить.
+   - Тот же раздел → extra HTML/JS: лучше `tilda/dist/t123/members-bridge-loader.html` (скрипт с Worker) или целиком `tilda/dist/t123/members-bridge.js` → Сохранить.
    - Если есть переключатель языка интерфейса Members → русский.
    - Проверка: https://mlmacademy.ru/members/login показывает «Войти в кабинет», фон `#f4f0e8`.
    - Не заявлять, что вход на русском, пока это не видно на живых страницах.
+   - Регистрация сейчас выключена (`SIGNUP_ENABLED=false`). Чтобы снова открыть: `true` в `tilda/src/commerce.js` и `tilda/src/members-bridge.js`, `pnpm tilda:generate`, deploy Worker. Форма `/members/signup` блокируется members-bridge; если extra JS Members ещё не обновлён, в настройках Tilda Members лучше также закрыть регистрацию.
 2. **Настройки сайта Tilda → robots.txt и sitemap** из `tilda/dist/seo/`.
 3. **SQL** `003_product_catalog.sql` не применялся (Supabase в этой итерации не подключался).
 

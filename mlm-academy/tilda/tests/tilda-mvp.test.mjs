@@ -292,6 +292,7 @@ describe('Tilda-MVP: pending, runtime, analytics, payments', () => {
     assert.equal(MLMA.PAYMENTS_ENABLED, false);
     assert.equal(MLMA.COMMERCE_PREVIEW_ENABLED, false);
     assert.equal(MLMA.PAYMENT_TEST_MODE, true);
+    assert.equal(MLMA.SIGNUP_ENABLED, false);
   });
 
   it('логотип в шапке — файл с макета, ссылка на /academy', () => {
@@ -319,5 +320,6 @@ describe('Tilda-MVP: pending, runtime, analytics, payments', () => {
     assert.match(bridge, /mlmacademy\.ru\/marketing-consent/);
     assert.match(bridge, /name="marketing_consent"/);
     assert.doesNotMatch(bridge, /name="marketing_consent" required/);
+    assert.match(bridge, /var SIGNUP_ENABLED = false;/);
   });
 });

@@ -102,6 +102,7 @@ describe('продуктовый справочник и commercial gate', () =>
   it('платежи выключены на клиенте', () => {
     assert.equal(MLMA.PAYMENTS_ENABLED, false);
     assert.equal(MLMA.COMMERCE_PREVIEW_ENABLED, false);
+    assert.equal(MLMA.SIGNUP_ENABLED, false);
     assert.equal(MLMA.paymentsSafeState().reason, 'payments_disabled');
   });
 

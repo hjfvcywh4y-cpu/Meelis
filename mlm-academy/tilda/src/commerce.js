@@ -9,6 +9,8 @@
 
   var PAYMENTS_ENABLED = false;
   var COMMERCE_PREVIEW_ENABLED = false;
+  /* После уведомления в Роскомнадзор: true здесь и в members-bridge.js, затем generate + deploy. */
+  var SIGNUP_ENABLED = false;
   var LEGAL_PLACEHOLDER = '[ЗАПОЛНИТЬ ВЛАДЕЛЬЦУ ПЕРЕД ПУБЛИКАЦИЕЙ]';
   var REQUIRED_CODES = [
     'B2C-FREE-001',
@@ -387,11 +389,18 @@
       message: 'Оплата ещё не запущена',
       PAYMENTS_ENABLED: false,
       COMMERCE_PREVIEW_ENABLED: false,
+      SIGNUP_ENABLED: SIGNUP_ENABLED === true,
     };
+  }
+
+  function isSignupEnabled() {
+    return SIGNUP_ENABLED === true;
   }
 
   api.PAYMENTS_ENABLED = PAYMENTS_ENABLED;
   api.COMMERCE_PREVIEW_ENABLED = COMMERCE_PREVIEW_ENABLED;
+  api.SIGNUP_ENABLED = SIGNUP_ENABLED;
+  api.isSignupEnabled = isSignupEnabled;
   api.LEGAL_PLACEHOLDER = LEGAL_PLACEHOLDER;
   api.PRODUCT_CODES = REQUIRED_CODES;
   api.readProductCatalog = readCatalog;
