@@ -36,11 +36,23 @@ input[type="text"] {
   color: #1c1914;
   text-decoration: none;
 }
-.mlma-members-brand:before {
-  content: '';
-  width: 18px;
-  height: 18px;
-  border: 2px solid #1c1914;
-  background: #C45F42;
-  border-radius: 4px;
+.mlma-signup-paused {
+  max-width: 36rem;
+  margin: 24px auto;
+  padding: 24px;
+  background: #fffcf7;
+  border: 1px solid #1c1914;
+  border-radius: 12px;
+  color: #1c1914;
+  font-family: Onest, Arial, Helvetica, sans-serif;
+  line-height: 1.45;
 }
+.mlma-signup-paused-title {
+  font-weight: 800;
+  font-size: 22px;
+  margin: 0 0 12px;
+}
+.mlma-signup-paused-actions {
+  margin: 16px 0 0;
+}
+.mlma-signup-paused a { color: #C45F42 !important; }

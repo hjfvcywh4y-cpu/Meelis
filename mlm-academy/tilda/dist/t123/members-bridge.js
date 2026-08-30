@@ -2,9 +2,14 @@
  * Дополнительный скрипт страниц Tilda Members.
  * Вставлять только в настройки Members, не в общесайтовый HEAD B2B.
  * Не доказывает личность и не выдаёт платные права.
+ *
+ * SIGNUP_ENABLED держать синхронно с tilda/src/commerce.js.
+ * После уведомления в Роскомнадзор: true, generate, deploy Worker, обновить extra JS Members.
  */
 (function () {
   'use strict';
+  var SIGNUP_ENABLED = false;
+
   try {
     var link = document.createElement('link');
     link.rel = 'icon';
@@ -131,7 +136,69 @@
     return null;
   }
 
+  function hideSignupLinks() {
+    var links = document.querySelectorAll('a[href*="/members/signup"], a[href*="members/signup"]');
+    for (var i = 0; i < links.length; i += 1) {
+      links[i].style.display = 'none';
+      links[i].setAttribute('aria-hidden', 'true');
+      links[i].setAttribute('tabindex', '-1');
+    }
+    var nodes = document.querySelectorAll('a, button, p, span, div');
+    for (var j = 0; j < nodes.length; j += 1) {
+      var text = String(nodes[j].textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+      if (!text) continue;
+      if (/don't have an account|ещё нет кабинета|создать кабинет|sign up|create account/.test(text) && text.length < 80) {
+        if (nodes[j].tagName === 'A' || nodes[j].tagName === 'BUTTON') {
+          nodes[j].style.display = 'none';
+        }
+      }
+    }
+  }
+
+  function blockForm(form) {
+    if (!form || form.getAttribute('data-mlma-signup-blocked') === '1') return;
+    form.setAttribute('data-mlma-signup-blocked', '1');
+    form.setAttribute('aria-hidden', 'true');
+    form.style.display = 'none';
+    var fields = form.querySelectorAll('input, button, select, textarea');
+    for (var i = 0; i < fields.length; i += 1) {
+      fields[i].disabled = true;
+    }
+    form.addEventListener(
+      'submit',
+      function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      },
+      true,
+    );
+  }
+
+  function showSignupPaused() {
+    if (document.querySelector('.mlma-signup-paused')) return;
+    var box = document.createElement('div');
+    box.className = 'mlma-signup-paused';
+    box.innerHTML =
+      '<p class="mlma-signup-paused-title">Регистрация временно закрыта</p>' +
+      '<p>Новые кабинеты не создаём. Каталог, документы и вход в уже существующий кабинет работают как раньше.</p>' +
+      '<p class="mlma-signup-paused-actions"><a href="/members/login">Войти</a> · <a href="/academy">В Академию</a></p>';
+    var form = findSignupForm();
+    var host = (form && form.parentNode) || document.getElementById('allrecords') || document.body;
+    if (form && form.parentNode) host.insertBefore(box, form);
+    else host.appendChild(box);
+  }
+
+  function pauseSignup() {
+    if (SIGNUP_ENABLED === true) return;
+    hideSignupLinks();
+    if (!isSignupPath()) return;
+    var form = findSignupForm();
+    if (form) blockForm(form);
+    showSignupPaused();
+  }
+
   function injectSignupConsent() {
+    if (SIGNUP_ENABLED !== true) return;
     if (!isSignupPath()) return;
     var form = findSignupForm();
     if (!form) return;
@@ -188,11 +255,15 @@
   injectSignupConsent();
   setTimeout(injectSignupConsent, 400);
   setTimeout(injectSignupConsent, 1200);
+  pauseSignup();
+  setTimeout(pauseSignup, 400);
+  setTimeout(pauseSignup, 1200);
 
   try {
     var obs = new MutationObserver(function () {
       translateAll();
       injectSignupConsent();
+      pauseSignup();
     });
     obs.observe(document.body, { childList: true, subtree: true, characterData: true });
   } catch (err) {

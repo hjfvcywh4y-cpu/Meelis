@@ -434,7 +434,9 @@
         if (D.writePendingTrackId) D.writePendingTrackId(id);
         D.trackEvent('signup_started', { itemId: id, source: 'save_guest' });
         var returnPath = D.routes().track(id);
-        window.location.href = D.membersSignupUrl(returnPath);
+        window.location.href = D.isSignupEnabled && D.isSignupEnabled()
+          ? D.membersSignupUrl(returnPath)
+          : D.membersLoginUrl(returnPath);
       });
     });
     rootEl.querySelectorAll('[data-mlma-route-del]').forEach(function (el) {

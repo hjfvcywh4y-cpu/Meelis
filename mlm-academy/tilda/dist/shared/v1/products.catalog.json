@@ -7,6 +7,7 @@
   "flags": {
     "PAYMENTS_ENABLED": false,
     "COMMERCE_PREVIEW_ENABLED": false,
+    "SIGNUP_ENABLED": false,
     "subscriptions_offered": false,
     "card_checkout_enabled": false
   },

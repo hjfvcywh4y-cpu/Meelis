@@ -2138,7 +2138,11 @@
       '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Состояния</span><ul class="mlma-muted" style="margin-top:12px;display:grid;gap:8px;font-size:15px"><li>сохранено — трек в маршруте, это не покупка;</li><li>доступно бесплатно — публичный или промо контур;</li><li>куплено — появится после серверного права;</li><li>закрыто — платное содержание без права;</li><li>готовится — metadata-only, planned или gated.</li></ul></section>' +
       '<div class="mlma-actions">' +
       btn((R.pricing && R.pricing()) || '/pricing', 'Смотреть тарифы', 'primary') +
-      (logged ? btn((R.purchases && R.purchases()) || '/my/purchases', 'Покупки в кабинете') : btn(D.membersSignupUrl('/my'), 'Создать бесплатный кабинет')) +
+      (logged
+        ? btn((R.purchases && R.purchases()) || '/my/purchases', 'Покупки в кабинете')
+        : D.isSignupEnabled && D.isSignupEnabled()
+          ? btn(D.membersSignupUrl('/my'), 'Создать бесплатный кабинет')
+          : btn((D.membersLoginUrl && D.membersLoginUrl('/my')) || '/members/login', 'Войти в кабинет')) +
       btn((R.paymentAndAccess && R.paymentAndAccess()) || '/payment-and-access', 'Как будет устроена оплата') +
       '</div></div>'
     );
@@ -2294,8 +2298,13 @@
       extra =
         '<div class="mlma-actions">' +
         btn((R.privacy && R.privacy()) || '/privacy', 'Политика конфиденциальности') +
-        btn((R.signup && R.signup()) || '/members/signup', 'К регистрации', 'primary') +
-        '</div>';
+        (D.isSignupEnabled && D.isSignupEnabled()
+          ? btn((R.signup && R.signup()) || '/members/signup', 'К регистрации', 'primary')
+          : btn((R.login && R.login()) || '/members/login', 'Войти в кабинет', 'primary')) +
+        '</div>' +
+        (D.isSignupEnabled && D.isSignupEnabled()
+          ? ''
+          : '<p class="mlma-muted" style="margin-top:16px;font-size:14px">Регистрация новых кабинетов временно закрыта. Согласие понадобится, когда регистрация снова откроется. Вход в уже существующий кабинет работает.</p>');
     } else if (kind === 'offer') {
       extra =
         '<div class="mlma-actions">' +
@@ -3182,7 +3191,9 @@
         if (D.writePendingTrackId) D.writePendingTrackId(id);
         D.trackEvent('signup_started', { itemId: id, source: 'save_guest' });
         var returnPath = D.routes().track(id);
-        window.location.href = D.membersSignupUrl(returnPath);
+        window.location.href = D.isSignupEnabled && D.isSignupEnabled()
+          ? D.membersSignupUrl(returnPath)
+          : D.membersLoginUrl(returnPath);
       });
     });
     rootEl.querySelectorAll('[data-mlma-route-del]').forEach(function (el) {
