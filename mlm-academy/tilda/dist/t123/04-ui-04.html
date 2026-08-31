@@ -114,7 +114,7 @@
         '</p><div class="mlma-actions" style="margin-top:16px">' +
         btn(R.myResults(), 'Открыть результаты') +
         '</div></section>'
-      : '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Ближайший результат</span><p class="mlma-muted" style="margin-top:12px">Результат отсутствует. Он появится после рабочего следа, а не после просмотра.</p></section>';
+      : '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Ближайший результат</span><p class="mlma-muted" style="margin-top:12px">Результат появится после рабочего следа.</p></section>';
     var savedList = '<p class="mlma-muted" style="margin-top:12px">Сохранённых треков пока нет.</p>';
     if (savedTracks.length) {
       savedList = '<ul class="mlma-cabinet-list">';
@@ -365,7 +365,7 @@
       listHtml = emptyState({
         eyebrow: 'Пока пусто',
         title: 'Здесь пока нет результатов',
-        description: 'Они появятся не после просмотра урока, а когда вы сделаете действие и сохраните то, что получилось. Пока содержание треков в контуре, результат остаётся на этом устройстве.',
+        description: 'Они появятся, когда вы сделаете действие и сохраните то, что получилось. Пока содержание треков в контуре, результат остаётся на этом устройстве.',
         actions: btn(R.library(), 'Открыть библиотеку', 'primary') + btn(R.my(), 'Личная главная'),
       });
     } else {
@@ -392,7 +392,7 @@
         {
           eyebrow: 'Личный контур',
           title: 'Мои результаты',
-          lead: 'Единица прогресса здесь — не просмотр, а произведённый результат.',
+          lead: 'Единица прогресса — произведённый результат.',
           crumbs: [
             { label: 'Academy', href: R.home() },
             { label: 'Кабинет', href: R.my() },

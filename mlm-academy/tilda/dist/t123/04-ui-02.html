@@ -101,7 +101,7 @@
         title: result.clarifyingQuestion || (result.kind === 'need_more' ? 'Опишите ситуацию чуть конкретнее' : 'Точного трека пока нет'),
         description: result.kind === 'need_more'
           ? 'Слишком общий запрос. Напишите, что происходит, или выберите один из вариантов.'
-          : 'Уточните ситуацию — так проще найти рабочий трек, а не случайное совпадение по словам.',
+          : 'Уточните ситуацию — так проще найти рабочий трек.',
         actions: optionHtml,
       });
     } else {
@@ -275,7 +275,7 @@
         R,
       ) +
       '<div class="mlma-wrap" style="padding-top:40px;padding-bottom:56px">' +
-      '<section><span class="mlma-eyebrow">С чего начать в этом разделе</span><h2 class="mlma-h3" style="margin-top:16px">Три входных трека</h2><p class="mlma-muted" style="margin-top:8px;max-width:62ch">Не обязательно просматривать весь список. Начните с одного из этих действий.</p><div style="margin-top:20px">' +
+      '<section><span class="mlma-eyebrow">С чего начать в этом разделе</span><h2 class="mlma-h3" style="margin-top:16px">Три входных трека</h2><p class="mlma-muted" style="margin-top:8px;max-width:62ch">Начните с одного из этих действий.</p><div style="margin-top:20px">' +
       trackGrid(entries, state.sectionById, R, { featured: true }) +
       '</div></section>' +
       '<section style="margin-top:48px"><span class="mlma-eyebrow">Логика раздела</span><h2 class="mlma-h3" style="margin-top:16px">Как обычно идёт работа здесь</h2>' +

@@ -322,4 +322,15 @@ describe('Tilda-MVP: pending, runtime, analytics, payments', () => {
     assert.doesNotMatch(bridge, /name="marketing_consent" required/);
     assert.match(bridge, /var SIGNUP_ENABLED = false;/);
   });
+
+  it('в публичных заголовках нет схемы «не это, а то»', () => {
+    const ui = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../src/ui.js'), 'utf8');
+    assert.doesNotMatch(ui, /Не пересказ учебников/);
+    assert.doesNotMatch(ui, /Не глава учебника/);
+    assert.doesNotMatch(ui, /Не весь раздел, а/);
+    assert.doesNotMatch(ui, /не очередной курс, а/);
+    assert.doesNotMatch(ui, /не полка курсов/);
+    assert.doesNotMatch(ui, /Не «изучить продажи»/);
+    assert.match(ui, /Рабочая система от ситуации к действию/);
+  });
 });

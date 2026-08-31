@@ -121,7 +121,7 @@
         '<section class="mlma-card mlma-pad-lg" style="padding:28px"><span class="mlma-eyebrow">Доступ к треку</span><h2 class="mlma-h3" style="margin-top:12px">Платный полный маршрут ещё готовится</h2>' +
         '<p class="mlma-lead" style="margin-top:12px">' + esc(track.situation) + '</p>' +
         '<p style="margin-top:8px">Результат: ' + esc(track.outcome) + '</p>' +
-        '<p class="mlma-muted" style="margin-top:12px">Карточка трека — не готовый продукт. Metadata-only и planned нельзя купить. Внутренние шаги сюда не выводятся.</p>' +
+        '<p class="mlma-muted" style="margin-top:12px">Пока в карточке описание материала. Купить нельзя, пока содержание не наполнено.</p>' +
         '<div class="mlma-actions" style="margin-top:20px">' +
         (state.account && state.account.loggedIn
           ? btn((R.pricing && R.pricing()) || '/pricing', 'Готовится к запуску', 'primary')
@@ -142,7 +142,7 @@
     }
     var relatedHtml = '';
     if (related.length) {
-      relatedHtml = '<div style="margin-top:24px"><span class="mlma-meta">Связанные материалы</span><p class="mlma-muted" style="margin-top:6px;font-size:13px">Это соседняя тема, а не следующее обязательное действие.</p><ul style="margin-top:16px;display:grid;gap:12px">';
+      relatedHtml = '<div style="margin-top:24px"><span class="mlma-meta">Связанные материалы</span><p class="mlma-muted" style="margin-top:6px;font-size:13px">Соседняя тема по этому направлению.</p><ul style="margin-top:16px;display:grid;gap:12px">';
       for (var a = 0; a < related.length; a += 1) {
         relatedHtml += '<li>' + recBlock({ track: related[a], reason: 'same_section', available: false }, state, false) + '</li>';
       }
@@ -265,7 +265,7 @@
         '.</p>' +
         '<form id="mlma-runtime-form" style="margin-top:16px;display:grid;gap:12px">' +
         '<label class="mlma-meta" for="mlma-artifact">Рабочий артефакт</label>' +
-        '<textarea id="mlma-artifact" class="mlma-field" name="artifact" rows="7" required placeholder="Опишите конкретный результат работы, а не «готово»">' +
+        '<textarea id="mlma-artifact" class="mlma-field" name="artifact" rows="7" required placeholder="Опишите конкретный результат работы">' +
         esc(runtime.artifact || '') +
         '</textarea>' +
         '<label class="mlma-meta" for="mlma-evidence">Доказательство действия</label>' +
@@ -273,7 +273,7 @@
         esc(runtime.evidenceNote || '') +
         '</textarea>' +
         '<p class="mlma-muted" style="font-size:13px">Не добавляйте в результат персональные данные других людей без их согласия.</p>' +
-        '<p class="mlma-muted" style="font-size:13px">Просмотр страницы не завершает трек. Нужен объект работы и проверяемый след. Оценка здесь — самопроверка по критериям, а не доказательство выполнения.</p>' +
+        '<p class="mlma-muted" style="font-size:13px">Просмотр страницы не завершает трек. Нужен объект работы и проверяемый след. Оценка здесь — самопроверка по критериям.</p>' +
         '<button class="mlma-btn mlma-btn-primary" type="submit" data-mlma-run-submit="' +
         esc(track.trackId) +
         '">Сдать результат</button></form>';
