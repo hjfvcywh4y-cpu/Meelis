@@ -1,0 +1,46 @@
+{
+  "packageVersion": "1.0",
+  "track": {
+    "id": "A3-002",
+    "canonicalId": "A3-002",
+    "entityType": "TRACK",
+    "section": "A3",
+    "domain": "FIRST_CONTACT",
+    "title": "Написать первое личное сообщение",
+    "situation": "Есть уместный контакт, но нет отправленного сообщения",
+    "result": "Сообщение собрано и отправлено, либо зафиксирован блокер",
+    "audience": "Партнёр после выбора следующего действия в A2-008"
+  },
+  "content": {
+    "version": "0.1.0",
+    "status": "DRAFT",
+    "format": "json",
+    "serverOnly": true,
+    "sourcePath": "server/content/tracks/a3-002/0.1.0",
+    "checksum": "GENERATE_DURING_IMPORT",
+    "releaseNotes": "Тестовый пакет без учебного содержания и без публикации"
+  },
+  "access": {
+    "policy": "ENTITLED",
+    "productCodes": ["TBD"]
+  },
+  "outcomes": [
+    {
+      "code": "MESSAGE_SENT",
+      "label": "Сообщение отправлено",
+      "observableFact": "Пользователь подтвердил факт отправки без текста сообщения",
+      "requiredFacts": ["message.status"]
+    }
+  ],
+  "routeRules": [],
+  "privacy": {
+    "serverAllowedFields": ["message.status", "occurred_at", "outcome_code"],
+    "clientOnlyFields": ["contact_name", "phone", "email", "message_text", "free_text_note"],
+    "analyticsAllowedFields": ["track_id", "content_version", "outcome_code", "destination_type"]
+  },
+  "source": {
+    "files": ["tests/fixtures/track-packages/a3-002-test/package.json"],
+    "owner": "Architecture fixture",
+    "approvedAt": null
+  }
+}

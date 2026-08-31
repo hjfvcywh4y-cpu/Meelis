@@ -1,0 +1,47 @@
+{
+  "packageVersion": "1.0",
+  "track": {
+    "id": "A3-002",
+    "canonicalId": "A3-002",
+    "entityType": "TRACK",
+    "section": "A3",
+    "domain": "FIRST_CONTACT",
+    "title": "ЗАМЕНИТЬ ИЗ РЕЕСТРА",
+    "situation": "ЗАМЕНИТЬ ИЗ РЕЕСТРА",
+    "result": "ЗАМЕНИТЬ ИЗ РЕЕСТРА",
+    "audience": "ЗАМЕНИТЬ ИЗ РЕЕСТРА"
+  },
+  "content": {
+    "version": "0.1.0",
+    "status": "DRAFT",
+    "format": "module",
+    "serverOnly": true,
+    "sourcePath": "server/content/tracks/a3-002/0.1.0",
+    "checksum": "GENERATE_DURING_IMPORT",
+    "releaseNotes": "Initial draft"
+  },
+  "access": {
+    "policy": "ENTITLED",
+    "productCodes": ["TBD"]
+  },
+  "outcomes": [
+    {
+      "code": "FIELD_ACTION_COMPLETED",
+      "label": "Полевое действие выполнено",
+      "observableFact": "Пользователь подтвердил факт действия, не передавая персональные данные контакта",
+      "requiredFacts": ["action_type", "occurred_at"]
+    }
+  ],
+  "routeRules": [],
+  "privacy": {
+    "serverAllowedFields": ["action_type", "occurred_at", "outcome_code"],
+    "clientOnlyFields": ["contact_name", "phone", "email", "message_text", "free_text_note"],
+    "analyticsAllowedFields": ["track_id", "content_version", "outcome_code", "destination_type"]
+  },
+  "source": {
+    "files": [],
+    "owner": "Методолог / владелец трека",
+    "approvedAt": null
+  }
+}
+

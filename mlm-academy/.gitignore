@@ -52,3 +52,7 @@ next-env.d.ts
 
 # local Tilda QA dumps
 /tilda/dist/qa/
+
+# local architecture store (never production)
+/.local/
+

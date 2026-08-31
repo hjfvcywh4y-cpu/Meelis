@@ -601,6 +601,26 @@
     return SECTION_IDS.indexOf(candidate) === -1 ? null : candidate;
   }
 
+  function parseTrackLocation(pathname, search) {
+    var query = String(search || '');
+    if (query.charAt(0) === '?') query = query.slice(1);
+    var parts = query.split('&');
+    for (var i = 0; i < parts.length; i += 1) {
+      var pair = parts[i].split('=');
+      if (decodeURIComponent(pair[0] || '') === 'id') {
+        return normalizeTrackId(decodeURIComponent(pair[1] || ''));
+      }
+    }
+    var path = String(pathname || '');
+    var marker = '/track/';
+    var idx = path.indexOf(marker);
+    if (idx >= 0) {
+      var slug = path.slice(idx + marker.length).split('/')[0].split('?')[0];
+      return normalizeTrackId(slug);
+    }
+    return null;
+  }
+
   function routes(config) {
     config = config || {};
     var dedicated = config.dedicatedTrackPages || [];
@@ -905,6 +925,10 @@
     normalizeTrackId: normalizeTrackId,
     normalizeSectionId: normalizeSectionId,
     routes: routes,
+    trackUrl: function (trackId) {
+      return routes().track(trackId);
+    },
+    parseTrackLocation: parseTrackLocation,
     isListed: isListed,
     isReachable: isReachable,
     listVisible: listVisible,
@@ -2347,6 +2371,11 @@
 
   var PAYMENTS_ENABLED = false;
   var COMMERCE_PREVIEW_ENABLED = false;
+  var TRACK_REGISTRY_ENABLED = true;
+  var ROUTE_ENGINE_ENABLED = true;
+  var PAID_TRACK_NAVIGATION_ENABLED = false;
+  var ALLOW_DRAFT_RULES = false;
+  var ADMIN_PREVIEW_ENABLED = true;
   /* После уведомления в Роскомнадзор: true здесь и в members-bridge.js, затем generate + deploy. */
   var SIGNUP_ENABLED = false;
   var LEGAL_PLACEHOLDER = '[ЗАПОЛНИТЬ ВЛАДЕЛЬЦУ ПЕРЕД ПУБЛИКАЦИЕЙ]';
@@ -2737,8 +2766,23 @@
 
   api.PAYMENTS_ENABLED = PAYMENTS_ENABLED;
   api.COMMERCE_PREVIEW_ENABLED = COMMERCE_PREVIEW_ENABLED;
+  api.TRACK_REGISTRY_ENABLED = TRACK_REGISTRY_ENABLED;
+  api.ROUTE_ENGINE_ENABLED = ROUTE_ENGINE_ENABLED;
+  api.PAID_TRACK_NAVIGATION_ENABLED = PAID_TRACK_NAVIGATION_ENABLED;
+  api.ALLOW_DRAFT_RULES = ALLOW_DRAFT_RULES;
+  api.ADMIN_PREVIEW_ENABLED = ADMIN_PREVIEW_ENABLED;
+  api.ENTITLEMENT_BYPASS = false;
   api.SIGNUP_ENABLED = SIGNUP_ENABLED;
   api.isSignupEnabled = isSignupEnabled;
+  api.isPaidTrackNavigationEnabled = function () {
+    return PAID_TRACK_NAVIGATION_ENABLED === true;
+  };
+  api.routeNavigationLocked = function () {
+    return {
+      locked: PAID_TRACK_NAVIGATION_ENABLED !== true,
+      lockReason: 'FEATURE_DISABLED',
+    };
+  };
   api.LEGAL_PLACEHOLDER = LEGAL_PLACEHOLDER;
   api.PRODUCT_CODES = REQUIRED_CODES;
   api.readProductCatalog = readCatalog;

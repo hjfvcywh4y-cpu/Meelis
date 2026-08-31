@@ -8,6 +8,11 @@
     "PAYMENTS_ENABLED": false,
     "COMMERCE_PREVIEW_ENABLED": false,
     "SIGNUP_ENABLED": false,
+    "TRACK_REGISTRY_ENABLED": true,
+    "ROUTE_ENGINE_ENABLED": true,
+    "PAID_TRACK_NAVIGATION_ENABLED": false,
+    "ALLOW_DRAFT_RULES": false,
+    "ADMIN_PREVIEW_ENABLED": true,
     "subscriptions_offered": false,
     "card_checkout_enabled": false
   },

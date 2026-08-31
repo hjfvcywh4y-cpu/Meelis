@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlmacademy.ru/schemas/track-package.v1.json",
+  "title": "MLM Academy Track Package",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "packageVersion",
+    "track",
+    "content",
+    "access",
+    "outcomes",
+    "routeRules",
+    "privacy"
+  ],
+  "properties": {
+    "packageVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "track": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "canonicalId", "entityType", "section", "domain", "title"],
+      "properties": {
+        "id": { "$ref": "#/$defs/trackId" },
+        "canonicalId": { "$ref": "#/$defs/trackId" },
+        "entityType": {
+          "enum": [
+            "TRACK",
+            "CONDITIONAL_TRACK",
+            "REMEDIATION",
+            "GATE",
+            "EMBEDDED_TOOL",
+            "SYSTEM_ACTION",
+            "ALIAS"
+          ]
+        },
+        "section": { "pattern": "^A[1-6]$", "type": "string" },
+        "domain": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "situation": { "type": "string" },
+        "result": { "type": "string" },
+        "audience": { "type": "string" }
+      }
+    },
+    "content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "format", "serverOnly", "sourcePath"],
+      "properties": {
+        "version": { "type": "string", "minLength": 1 },
+        "status": {
+          "enum": ["PLANNED", "DRAFT", "REVIEW", "PUBLISHED", "PAUSED", "ARCHIVED"]
+        },
+        "format": { "enum": ["html", "markdown", "json", "module", "system-ui", "none"] },
+        "serverOnly": { "type": "boolean" },
+        "sourcePath": { "type": "string" },
+        "checksum": { "type": "string" },
+        "releaseNotes": { "type": "string" }
+      }
+    },
+    "access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy", "productCodes"],
+      "properties": {
+        "policy": { "enum": ["PUBLIC_META", "FREE_CONTENT", "ENTITLED", "ADMIN_PREVIEW", "UNAVAILABLE"] },
+        "productCodes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "outcomes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "label", "observableFact"],
+        "properties": {
+          "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+          "label": { "type": "string", "minLength": 1 },
+          "observableFact": { "type": "string", "minLength": 1 },
+          "requiredFacts": {
+            "type": "array",
+            "items": { "type": "string" },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "routeRules": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/routeRule" }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["serverAllowedFields", "clientOnlyFields", "analyticsAllowedFields"],
+      "properties": {
+        "serverAllowedFields": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "clientOnlyFields": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "analyticsAllowedFields": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "files": { "type": "array", "items": { "type": "string" } },
+        "owner": { "type": "string" },
+        "approvedAt": { "type": ["string", "null"], "format": "date-time" }
+      }
+    }
+  },
+  "$defs": {
+    "trackId": {
+      "type": "string",
+      "pattern": "^A[1-6]-[0-9]{3}$"
+    },
+    "destinationType": {
+      "enum": [
+        "TRACK",
+        "SYSTEM_ACTION",
+        "FIELD_ACTION",
+        "WAIT_UNTIL",
+        "DONE",
+        "EXPERT",
+        "PROCESS_OWNER",
+        "RETURN_TO_ROUTE"
+      ]
+    },
+    "routeRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ruleId",
+        "fromId",
+        "outcomeCode",
+        "field",
+        "operator",
+        "value",
+        "destinationType",
+        "priority",
+        "version",
+        "status"
+      ],
+      "properties": {
+        "ruleId": { "type": "string", "pattern": "^RR[0-9A-Z-]+$" },
+        "fromId": { "$ref": "#/$defs/trackId" },
+        "outcomeCode": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+        "field": { "type": "string", "minLength": 1 },
+        "operator": { "enum": ["=", "!=", ">", ">=", "<", "<=", "IN", "NOT_IN", "EXISTS"] },
+        "value": {},
+        "destinationType": { "$ref": "#/$defs/destinationType" },
+        "destinationId": {
+          "anyOf": [
+            { "$ref": "#/$defs/trackId" },
+            { "type": "string", "maxLength": 0 },
+            { "type": "null" }
+          ]
+        },
+        "reason": { "type": "string" },
+        "stopRule": { "type": "string" },
+        "recoveryRule": { "type": ["string", "null"] },
+        "priority": { "type": "integer", "minimum": 0 },
+        "owner": { "type": "string" },
+        "version": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["PILOT_DRAFT_TO_TEST", "VALIDATED_RULE", "DISABLED", "ARCHIVED"] }
+      }
+    }
+  }
+}
+

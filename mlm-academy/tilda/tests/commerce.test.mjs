@@ -103,6 +103,12 @@ describe('продуктовый справочник и commercial gate', () =>
     assert.equal(MLMA.PAYMENTS_ENABLED, false);
     assert.equal(MLMA.COMMERCE_PREVIEW_ENABLED, false);
     assert.equal(MLMA.SIGNUP_ENABLED, false);
+    assert.equal(MLMA.PAID_TRACK_NAVIGATION_ENABLED, false);
+    assert.equal(MLMA.ENTITLEMENT_BYPASS, false);
+    assert.equal(MLMA.TRACK_REGISTRY_ENABLED, true);
+    assert.equal(MLMA.ROUTE_ENGINE_ENABLED, true);
+    assert.equal(MLMA.isPaidTrackNavigationEnabled(), false);
+    assert.equal(MLMA.routeNavigationLocked().locked, true);
     assert.equal(MLMA.paymentsSafeState().reason, 'payments_disabled');
   });
 

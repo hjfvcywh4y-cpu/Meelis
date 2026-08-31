@@ -601,6 +601,26 @@
     return SECTION_IDS.indexOf(candidate) === -1 ? null : candidate;
   }
 
+  function parseTrackLocation(pathname, search) {
+    var query = String(search || '');
+    if (query.charAt(0) === '?') query = query.slice(1);
+    var parts = query.split('&');
+    for (var i = 0; i < parts.length; i += 1) {
+      var pair = parts[i].split('=');
+      if (decodeURIComponent(pair[0] || '') === 'id') {
+        return normalizeTrackId(decodeURIComponent(pair[1] || ''));
+      }
+    }
+    var path = String(pathname || '');
+    var marker = '/track/';
+    var idx = path.indexOf(marker);
+    if (idx >= 0) {
+      var slug = path.slice(idx + marker.length).split('/')[0].split('?')[0];
+      return normalizeTrackId(slug);
+    }
+    return null;
+  }
+
   function routes(config) {
     config = config || {};
     var dedicated = config.dedicatedTrackPages || [];
@@ -905,6 +925,10 @@
     normalizeTrackId: normalizeTrackId,
     normalizeSectionId: normalizeSectionId,
     routes: routes,
+    trackUrl: function (trackId) {
+      return routes().track(trackId);
+    },
+    parseTrackLocation: parseTrackLocation,
     isListed: isListed,
     isReachable: isReachable,
     listVisible: listVisible,

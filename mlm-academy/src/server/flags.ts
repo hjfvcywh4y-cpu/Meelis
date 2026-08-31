@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { DEFAULT_ARCHITECTURE_FLAGS, resolveArchitectureFlags } from '@/track-architecture/flags';
 import type { AppMode } from '@/domain/types';
 
 /**
@@ -18,7 +19,6 @@ export function isPreviewEnabled(): boolean {
 export function isAdminCatalogEnabled(): boolean {
   if (readFlag('ENABLE_ADMIN_CATALOG')) return true;
   if (isPreviewEnabled()) return true;
-  // Явное сравнение с development: при неизвестном окружении экран закрыт.
   return process.env.NODE_ENV === 'development';
 }
 
@@ -28,3 +28,9 @@ export function getAppMode(): AppMode {
     adminCatalog: isAdminCatalogEnabled(),
   };
 }
+
+export function getArchitectureFlags() {
+  return resolveArchitectureFlags(process.env);
+}
+
+export { DEFAULT_ARCHITECTURE_FLAGS };
