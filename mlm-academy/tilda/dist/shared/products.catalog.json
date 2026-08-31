@@ -22,7 +22,7 @@
       "product_code": "B2C-FREE-001",
       "price_version": "pv.2026-08.1",
       "display_name": "Демо-доступ",
-      "short_description": "Бесплатный просмотр каталога и кабинета. Платный продукт — абонентский доступ к платформе на период, не покупка отдельных треков.",
+      "short_description": "Каталог и кабинет без оплаты.",
       "buyer_segment": "self",
       "user_segment": [
         "novice",
@@ -47,7 +47,7 @@
       "product_code": "B2C-TRACK-001",
       "price_version": "pv.2026-08.1",
       "display_name": "Доступ на 365 дней",
-      "short_description": "Абонентский доступ к информационно-аналитической платформе MLM Academy на 365 дней. Не покупка отдельного трека и не образовательная услуга.",
+      "short_description": "Доступ к платформе на 365 дней.",
       "buyer_segment": "self",
       "user_segment": [
         "novice",
@@ -72,7 +72,7 @@
       "product_code": "B2C-PACK3-001",
       "price_version": "pv.2026-08.1",
       "display_name": "Доступ · расширенный период",
-      "short_description": "Абонентский доступ к платформе на оплаченный период с расширенным составом материалов. Не комплект отдельных треков и не образовательная услуга.",
+      "short_description": "Расширенный набор материалов, доступ на год.",
       "buyer_segment": "self",
       "user_segment": [
         "novice",
@@ -98,7 +98,7 @@
       "product_code": "B2C-ROUTE6-001",
       "price_version": "pv.2026-08.1",
       "display_name": "Доступ · маршрут «Старт»",
-      "short_description": "Абонентский доступ к платформе на 365 дней с материалами маршрута «Старт». Не продажа шести треков по отдельности.",
+      "short_description": "Маршрут «Старт» и доступ к платформе на год.",
       "buyer_segment": "self",
       "user_segment": [
         "novice",

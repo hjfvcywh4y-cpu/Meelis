@@ -130,6 +130,23 @@ describe('продуктовый справочник и commercial gate', () =>
     assert.equal(typeof MLMA.readLaunchNotify, 'undefined');
   });
 
+  it('на тарифах нет оговорок «не покупка трека» и «не образовательная услуга»', () => {
+    const ui = fs.readFileSync(path.join(__dirname, '../src/ui.js'), 'utf8');
+    const pricingStart = ui.indexOf('function renderPricing(');
+    const pricingEnd = ui.indexOf('function linkifyEscaped(');
+    const pricing = ui.slice(pricingStart, pricingEnd);
+    assert.match(pricing, /Оплатить ещё нельзя/);
+    assert.doesNotMatch(pricing, /не покупка/);
+    assert.doesNotMatch(pricing, /не образовательн/);
+    assert.doesNotMatch(pricing, /не продажа/);
+    assert.doesNotMatch(pricing, /абонентский доступ к информационно-аналитической/);
+    assert.doesNotMatch(pricing, /PAYMENTS_ENABLED/);
+    for (const row of productsFile.products) {
+      if (row.show_in_pricing !== true) continue;
+      assert.doesNotMatch(row.short_description, /не покупка|не образовательн|не продажа|не комплект отдельных/);
+    }
+  });
+
   it('юридические документы опубликованы с реквизитами оператора, без плейсхолдера', () => {
     assert.equal(productsFile.legal.offer_status, 'published');
     assert.equal(productsFile.legal.privacy_status, 'approved');
