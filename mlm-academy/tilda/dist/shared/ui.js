@@ -536,7 +536,7 @@
     ];
     var answers = [
       ['Ситуационная навигация', 'Сначала описываете, что происходит сейчас.'],
-      ['Действие в реальной работе', 'Трек заканчивается не просмотром, а сделанным шагом.'],
+      ['Действие в реальной работе', 'Трек заканчивается сделанным шагом.'],
       ['Продолжение маршрута', 'После результата видно, куда идти дальше.'],
     ];
     var diffHtml = '';
@@ -560,9 +560,9 @@
         '</p></li>';
     }
     var vs = [
-      ['Вход из реальной ситуации', 'Не «изучить продажи», а «не знаю, что написать этому человеку».'],
+      ['Вход из реальной ситуации', 'Начинаете с того, что происходит сейчас: например, не знаю, что написать этому человеку.'],
       ['Наблюдаемый результат', 'После трека остаётся сообщение, список, карта разговора, договорённость или другое выполненное действие.'],
-      ['Работа не заканчивается просмотром', 'Трек ведёт к действию вне экрана и возвращает человека для фиксации результата.'],
+      ['Действие вне экрана', 'Трек ведёт к действию вне экрана и возвращает человека для фиксации результата.'],
       ['После результата есть продолжение', 'Система рекомендует следующий трек на основании выполненного действия и ситуации.'],
     ];
     var vsHtml = '';
@@ -580,7 +580,7 @@
       '<section class="mlma-hero"><div class="mlma-wrap mlma-hero-grid">' +
       '<div><span class="mlma-eyebrow">Рабочий навигатор MLM-партнёра</span>' +
       '<h1 class="mlma-display" style="margin-top:20px;max-width:16ch">Сначала ситуация. Потом действие.</h1>' +
-      '<p class="mlma-lead mlma-muted" style="margin-top:20px;max-width:54ch">MLM Academy помогает понять, где вы сейчас, что сделать сегодня и куда идти после результата. Это не полка курсов и не обязательная лестница уроков — это библиотека рабочих маршрутов.</p>' +
+      '<p class="mlma-lead mlma-muted" style="margin-top:20px;max-width:54ch">MLM Academy помогает понять, где вы сейчас, что сделать сегодня и куда идти после результата. Это библиотека рабочих маршрутов.</p>' +
       '<form class="mlma-search" style="margin-top:28px" action="/library" method="get" role="search">' +
       '<label class="mlma-sr" for="mlma-home-q">Что у тебя сейчас происходит?</label>' +
       '<input id="mlma-home-q" class="mlma-field" type="search" name="q" placeholder="Что у тебя сейчас происходит?" autocomplete="off">' +
@@ -609,20 +609,20 @@
       '<span class="mlma-eyebrow mlma-eyebrow-dark">Почему появилась Academy</span>' +
       '<h2 class="mlma-h2" style="margin-top:16px;max-width:24ch">Маркетинг-план показывает, куда прийти. Но не всегда говорит, что сделать сегодня.</h2>' +
       '<p class="mlma-lead mlma-muted" style="margin-top:16px;max-width:70ch">В сетевом обычно хорошо объясняют, к какому результату нужно прийти: найти клиентов, сделать оборот, собрать команду. Но гораздо реже показывают, что конкретно сделать, если страшно написать человеку, непонятно, с кого начать или разговор остановился после первого сообщения.</p>' +
-      '<p style="margin-top:16px;max-width:70ch;font-size:17px;line-height:1.5">Поэтому мы собрали не очередной курс, а библиотеку рабочих ситуаций. Вы описываете, что происходит, получаете подходящее действие, фиксируете результат и видите следующий шаг.</p>' +
+      '<p style="margin-top:16px;max-width:70ch;font-size:17px;line-height:1.5">Поэтому мы собрали библиотеку рабочих ситуаций. Вы описываете, что происходит, получаете подходящее действие, фиксируете результат и видите следующий шаг.</p>' +
       '<div class="mlma-split" style="margin-top:28px"><ul class="mlma-grid">' +
       diffHtml +
       '</ul><ul class="mlma-grid">' +
       ansHtml +
       '</ul></div></div></section>' +
-      '<section class="mlma-band"><div class="mlma-wrap"><span class="mlma-eyebrow">Чем трек отличается от урока</span>' +
-      '<h2 class="mlma-h2" style="margin-top:16px;max-width:20ch">Не глава учебника, а рабочий ход</h2>' +
+      '<section class="mlma-band"><div class="mlma-wrap"><span class="mlma-eyebrow">Как устроен трек</span>' +
+      '<h2 class="mlma-h2" style="margin-top:16px;max-width:20ch">Рабочий ход в вашей ситуации</h2>' +
       '<ul class="mlma-grid-2" style="margin-top:24px">' +
       vsHtml +
       '</ul></div></section>' +
       '<section class="mlma-band"><div class="mlma-wrap"><span class="mlma-eyebrow mlma-eyebrow-dark">Быстрые входы</span>' +
-      '<h2 class="mlma-h2" style="margin-top:16px">Начните с подборки, а не с целого раздела</h2>' +
-      '<p class="mlma-muted" style="margin-top:12px;max-width:54ch">Каждая кнопка открывает несколько точных треков под задачу, а не все карточки направления сразу.</p>' +
+      '<h2 class="mlma-h2" style="margin-top:16px">Начните с подборки под задачу</h2>' +
+      '<p class="mlma-muted" style="margin-top:12px;max-width:54ch">Каждая кнопка открывает несколько точных треков под текущую задачу.</p>' +
       '<div class="mlma-presets" style="margin-top:20px">' +
       presets +
       '</div></div></section>' +
@@ -645,14 +645,14 @@
       '</ol></div></section>' +
       '<section class="mlma-band"><div class="mlma-wrap"><div class="mlma-card mlma-pad-lg" style="padding:32px">' +
       '<span class="mlma-eyebrow mlma-eyebrow-accent">Как создаётся библиотека</span>' +
-      '<h2 class="mlma-h2" style="margin-top:16px;max-width:22ch">Не пересказ учебников, а переработанная рабочая система</h2>' +
+      '<h2 class="mlma-h2" style="margin-top:16px;max-width:22ch">Рабочая система от ситуации к действию</h2>' +
       '<p class="mlma-lead mlma-muted" style="margin-top:16px;max-width:70ch">Библиотека создаётся на основе анализа практик прямых продаж, интервью с партнёрами, профессиональных методик и реальных рабочих ситуаций. Каждый материал проходит практическую и этическую пересборку: без давления, манипуляций и обещаний, которые нельзя подтвердить.</p>' +
       '<div class="mlma-actions" style="margin-top:24px">' +
       btn(R.about(), 'Как создаётся библиотека', 'primary') +
       '</div></div></div></section>' +
       '<section class="mlma-band"><div class="mlma-wrap"><div class="mlma-card mlma-ink-card mlma-pad-lg" style="padding:32px">' +
       '<span class="mlma-eyebrow">Финальный вход</span>' +
-      '<h2 class="mlma-h2" style="margin-top:16px;max-width:20ch;color:inherit">Не обязательно знать название нужного трека</h2>' +
+      '<h2 class="mlma-h2" style="margin-top:16px;max-width:20ch;color:inherit">Достаточно описать, что происходит сейчас</h2>' +
       '<p class="mlma-lead" style="margin-top:16px;max-width:62ch;color:var(--mlma-on-ink-muted)">Опишите, что происходит сейчас. Навигатор соберёт несколько подходящих действий и объяснит, с чего лучше начать.</p>' +
       '<div class="mlma-actions" style="margin-top:28px">' +
       btn(R.start(), 'Описать ситуацию', 'accent') +
@@ -673,7 +673,7 @@
         {
           eyebrow: 'Короткий навигатор',
           title: 'С чего начать',
-          lead: 'Три шага: ситуация, необязательное уточнение и точная подборка — не весь раздел целиком.',
+          lead: 'Три шага: ситуация, необязательное уточнение и точная подборка.',
           crumbs: [
             { label: 'Academy', href: R.home() },
             { label: 'С чего начать' },
@@ -682,7 +682,7 @@
         R,
       ) +
       '<div class="mlma-wrap" style="padding-top:40px;padding-bottom:56px"><fieldset><legend class="mlma-h2" style="max-width:22ch">Что сейчас больше всего мешает двигаться?</legend>' +
-      '<p class="mlma-lead mlma-muted" style="margin-top:16px;max-width:60ch">Выберите одно направление. Это не тест и не анкета.</p>' +
+      '<p class="mlma-lead mlma-muted" style="margin-top:16px;max-width:60ch">Выберите одно направление.</p>' +
       '<ul class="mlma-grid-3" style="margin-top:28px">';
     var selected = state.profile.selectedSectionId;
     for (var i = 0; i < sections.length; i += 1) {
@@ -737,7 +737,7 @@
     var picks = D.startPicks(selected, exp ? exp.level : '', state.tracks);
     var blocks = [
       { key: 'start', title: 'Начните с этого', why: 'Это ближайшее действие для выбранной ситуации.', track: picks.start },
-      { key: 'later', title: 'Может пригодиться дальше', why: 'Имеет смысл после первого действия, а не вместо него.', track: picks.later },
+      { key: 'later', title: 'Может пригодиться дальше', why: 'Имеет смысл после первого действия.', track: picks.later },
       { key: 'other', title: 'Если проблема немного другая', why: 'Соседний вход, если исходная формулировка чуть не попала.', track: picks.other },
     ];
     var html =
@@ -747,7 +747,7 @@
       esc(section.sectionId) +
       ' · ' +
       esc(section.shortTitle) +
-      '</span><h2 class="mlma-h2" style="margin-top:16px">Не весь раздел, а три точных входа</h2><p class="mlma-muted" style="margin-top:12px;max-width:62ch">' +
+      '</span><h2 class="mlma-h2" style="margin-top:16px">Три точных входа</h2><p class="mlma-muted" style="margin-top:12px;max-width:62ch">' +
       esc(section.promise) +
       '</p><ol class="mlma-start-picks">';
     for (var i = 0; i < blocks.length; i += 1) {
@@ -898,7 +898,7 @@
         title: result.clarifyingQuestion || (result.kind === 'need_more' ? 'Опишите ситуацию чуть конкретнее' : 'Точного трека пока нет'),
         description: result.kind === 'need_more'
           ? 'Слишком общий запрос. Напишите, что происходит, или выберите один из вариантов.'
-          : 'Уточните ситуацию — так проще найти рабочий трек, а не случайное совпадение по словам.',
+          : 'Уточните ситуацию — так проще найти рабочий трек.',
         actions: optionHtml,
       });
     } else {
@@ -1072,7 +1072,7 @@
         R,
       ) +
       '<div class="mlma-wrap" style="padding-top:40px;padding-bottom:56px">' +
-      '<section><span class="mlma-eyebrow">С чего начать в этом разделе</span><h2 class="mlma-h3" style="margin-top:16px">Три входных трека</h2><p class="mlma-muted" style="margin-top:8px;max-width:62ch">Не обязательно просматривать весь список. Начните с одного из этих действий.</p><div style="margin-top:20px">' +
+      '<section><span class="mlma-eyebrow">С чего начать в этом разделе</span><h2 class="mlma-h3" style="margin-top:16px">Три входных трека</h2><p class="mlma-muted" style="margin-top:8px;max-width:62ch">Начните с одного из этих действий.</p><div style="margin-top:20px">' +
       trackGrid(entries, state.sectionById, R, { featured: true }) +
       '</div></section>' +
       '<section style="margin-top:48px"><span class="mlma-eyebrow">Логика раздела</span><h2 class="mlma-h3" style="margin-top:16px">Как обычно идёт работа здесь</h2>' +
@@ -1227,7 +1227,7 @@
         '<section class="mlma-card mlma-pad-lg" style="padding:28px"><span class="mlma-eyebrow">Доступ к треку</span><h2 class="mlma-h3" style="margin-top:12px">Платный полный маршрут ещё готовится</h2>' +
         '<p class="mlma-lead" style="margin-top:12px">' + esc(track.situation) + '</p>' +
         '<p style="margin-top:8px">Результат: ' + esc(track.outcome) + '</p>' +
-        '<p class="mlma-muted" style="margin-top:12px">Карточка трека — не готовый продукт. Metadata-only и planned нельзя купить. Внутренние шаги сюда не выводятся.</p>' +
+        '<p class="mlma-muted" style="margin-top:12px">Пока в карточке описание материала. Купить нельзя, пока содержание не наполнено.</p>' +
         '<div class="mlma-actions" style="margin-top:20px">' +
         (state.account && state.account.loggedIn
           ? btn((R.pricing && R.pricing()) || '/pricing', 'Готовится к запуску', 'primary')
@@ -1248,7 +1248,7 @@
     }
     var relatedHtml = '';
     if (related.length) {
-      relatedHtml = '<div style="margin-top:24px"><span class="mlma-meta">Связанные материалы</span><p class="mlma-muted" style="margin-top:6px;font-size:13px">Это соседняя тема, а не следующее обязательное действие.</p><ul style="margin-top:16px;display:grid;gap:12px">';
+      relatedHtml = '<div style="margin-top:24px"><span class="mlma-meta">Связанные материалы</span><p class="mlma-muted" style="margin-top:6px;font-size:13px">Соседняя тема по этому направлению.</p><ul style="margin-top:16px;display:grid;gap:12px">';
       for (var a = 0; a < related.length; a += 1) {
         relatedHtml += '<li>' + recBlock({ track: related[a], reason: 'same_section', available: false }, state, false) + '</li>';
       }
@@ -1371,7 +1371,7 @@
         '.</p>' +
         '<form id="mlma-runtime-form" style="margin-top:16px;display:grid;gap:12px">' +
         '<label class="mlma-meta" for="mlma-artifact">Рабочий артефакт</label>' +
-        '<textarea id="mlma-artifact" class="mlma-field" name="artifact" rows="7" required placeholder="Опишите конкретный результат работы, а не «готово»">' +
+        '<textarea id="mlma-artifact" class="mlma-field" name="artifact" rows="7" required placeholder="Опишите конкретный результат работы">' +
         esc(runtime.artifact || '') +
         '</textarea>' +
         '<label class="mlma-meta" for="mlma-evidence">Доказательство действия</label>' +
@@ -1379,7 +1379,7 @@
         esc(runtime.evidenceNote || '') +
         '</textarea>' +
         '<p class="mlma-muted" style="font-size:13px">Не добавляйте в результат персональные данные других людей без их согласия.</p>' +
-        '<p class="mlma-muted" style="font-size:13px">Просмотр страницы не завершает трек. Нужен объект работы и проверяемый след. Оценка здесь — самопроверка по критериям, а не доказательство выполнения.</p>' +
+        '<p class="mlma-muted" style="font-size:13px">Просмотр страницы не завершает трек. Нужен объект работы и проверяемый след. Оценка здесь — самопроверка по критериям.</p>' +
         '<button class="mlma-btn mlma-btn-primary" type="submit" data-mlma-run-submit="' +
         esc(track.trackId) +
         '">Сдать результат</button></form>';
@@ -1644,7 +1644,7 @@
         '</p><div class="mlma-actions" style="margin-top:16px">' +
         btn(R.myResults(), 'Открыть результаты') +
         '</div></section>'
-      : '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Ближайший результат</span><p class="mlma-muted" style="margin-top:12px">Результат отсутствует. Он появится после рабочего следа, а не после просмотра.</p></section>';
+      : '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Ближайший результат</span><p class="mlma-muted" style="margin-top:12px">Результат появится после рабочего следа.</p></section>';
     var savedList = '<p class="mlma-muted" style="margin-top:12px">Сохранённых треков пока нет.</p>';
     if (savedTracks.length) {
       savedList = '<ul class="mlma-cabinet-list">';
@@ -1895,7 +1895,7 @@
       listHtml = emptyState({
         eyebrow: 'Пока пусто',
         title: 'Здесь пока нет результатов',
-        description: 'Они появятся не после просмотра урока, а когда вы сделаете действие и сохраните то, что получилось. Пока содержание треков в контуре, результат остаётся на этом устройстве.',
+        description: 'Они появятся, когда вы сделаете действие и сохраните то, что получилось. Пока содержание треков в контуре, результат остаётся на этом устройстве.',
         actions: btn(R.library(), 'Открыть библиотеку', 'primary') + btn(R.my(), 'Личная главная'),
       });
     } else {
@@ -1922,7 +1922,7 @@
         {
           eyebrow: 'Личный контур',
           title: 'Мои результаты',
-          lead: 'Единица прогресса здесь — не просмотр, а произведённый результат.',
+          lead: 'Единица прогресса — произведённый результат.',
           crumbs: [
             { label: 'Academy', href: R.home() },
             { label: 'Кабинет', href: R.my() },
@@ -2125,17 +2125,17 @@
         {
           eyebrow: 'Доступ',
           title: 'Какие форматы доступа будут',
-          lead: 'Сейчас работает бесплатный кабинет. Платный продукт — абонентский доступ к информационно-аналитической платформе на выбранный период, не покупка отдельных треков и не образовательная услуга. Оплатить пока нельзя.',
+          lead: 'Сейчас работает бесплатный кабинет. Платный доступ готовится. Оплатить пока нельзя.',
           crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Доступ' }],
         },
         R,
       ) +
       '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:20px">' +
-      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">FREE</span><h2 class="mlma-h3" style="margin-top:12px">Бесплатный кабинет</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Вход, сохранение маршрута, локальные результаты. Это не полный доступ к платформе. Карточка трека в каталоге — описание материала, а не купленный товар.</p></section>' +
-      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Абонентский доступ</span><h2 class="mlma-h3" style="margin-top:12px">Платформа на оплаченный период</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Платный продукт — техническая возможность пользоваться кабинетом, библиотекой, материалами и функциями в течение оплаченного периода. Отдельные треки не продаются. Образовательной услугой это не является. Сейчас тарифы gated, эквайринг не подключён.</p></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">FREE</span><h2 class="mlma-h3" style="margin-top:12px">Бесплатный кабинет</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Вход, сохранение маршрута, локальные результаты. Карточка трека в каталоге — описание материала.</p></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Доступ на период</span><h2 class="mlma-h3" style="margin-top:12px">Платформа на оплаченный период</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">После запуска оплаты откроется доступ к кабинету, библиотеке, материалам и функциям на выбранный срок. Сейчас тарифы готовятся.</p></section>' +
       '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Команда</span><h2 class="mlma-h3" style="margin-top:12px">Маршруты для новичков и партнёров</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Лидер запускает маршруты и снижает ручное сопровождение. Командный формат готовится. Автоматической оплаты нет.</p></section>' +
       '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Компания</span><h2 class="mlma-h3" style="margin-top:12px">Корпоративный пилот</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Активация, удержание, аналитика и связь прохождения с коммерческим результатом. Только переговоры, без карточного checkout.</p></section>' +
-      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Состояния</span><ul class="mlma-muted" style="margin-top:12px;display:grid;gap:8px;font-size:15px"><li>сохранено — трек в маршруте, это не покупка;</li><li>доступно бесплатно — публичный или промо контур;</li><li>куплено — появится после серверного права;</li><li>закрыто — платное содержание без права;</li><li>готовится — metadata-only, planned или gated.</li></ul></section>' +
+      '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Состояния</span><ul class="mlma-muted" style="margin-top:12px;display:grid;gap:8px;font-size:15px"><li>сохранено — трек в маршруте;</li><li>доступно бесплатно — публичный или промо контур;</li><li>куплено — появится после оплаты;</li><li>закрыто — платное содержание без права;</li><li>готовится — описание уже есть, содержание ещё наполняется.</li></ul></section>' +
       '<div class="mlma-actions">' +
       btn((R.pricing && R.pricing()) || '/pricing', 'Смотреть тарифы', 'primary') +
       (logged
@@ -2552,10 +2552,10 @@
       'этические и юридические ограничения',
     ];
     var produce = [
-      ['Исходная проблема', 'Конкретная рабочая ситуация, а не общая тема курса.'],
+      ['Исходная проблема', 'Конкретная рабочая ситуация.'],
       ['Ожидаемый результат', 'Что должно остаться после действия: сообщение, список, карта, договорённость.'],
       ['Действие', 'Один шаг вне экрана, который можно выполнить сегодня.'],
-      ['Артефакт', 'Наблюдаемый след работы, а не «я посмотрел урок».'],
+      ['Артефакт', 'Наблюдаемый след работы: сообщение, список, карта, договорённость.'],
       ['Проверка завершения', 'Понятный критерий: действие сделано, результат зафиксирован.'],
       ['Следующий шаг', 'Куда идти дальше в той же рабочей цепочке.'],
     ];
@@ -2601,8 +2601,8 @@
       pageHead(
         {
           eyebrow: 'Как создаётся библиотека',
-          title: 'Не пересказ учебников, а рабочая система',
-          lead: 'Страница для партнёра, который хочет понять происхождение Academy — без корпоративного отчёта и без чужих цитат.',
+          title: 'Рабочая система от ситуации к действию',
+          lead: 'Библиотека ведёт из текущей ситуации к действию и следующему шагу.',
           crumbs: [
             { label: 'Academy', href: R.home() },
             { label: 'Как создаётся' },
@@ -3457,11 +3457,11 @@
         },
         library: {
           title: 'Библиотека · MLM Academy',
-          desc: 'Каталог треков и материалов: этап, ситуация, цель, опыт, тип и время. Поиск понимает живой запрос, а не только название.',
+          desc: 'Каталог треков и материалов: этап, ситуация, цель, опыт, тип и время. Поиск понимает живой запрос.',
         },
         about: {
           title: 'Как создаётся библиотека · MLM Academy',
-          desc: 'Как устроена MLM Academy: трек как маршрут изменения состояния, а не страница с видео. Честные статусы и рабочие следы.',
+          desc: 'Как устроена MLM Academy: рабочая система от ситуации к действию и следующему шагу.',
         },
         access: {
           title: 'Доступ · MLM Academy',
@@ -3506,9 +3506,9 @@
       };
       var sectionSeo = {
         A1: { title: 'A1 · Старт и система · MLM Academy', desc: 'Понять роль, причину, продукт и рабочий план. Треки старта без выдуманных уроков.' },
-        A2: { title: 'A2 · Люди и база · MLM Academy', desc: 'Найти, с кем начать, собрать базу и сегменты. Треки про людей, а не про «набор контактов ради списка».' },
+        A2: { title: 'A2 · Люди и база · MLM Academy', desc: 'Найти, с кем начать, собрать базу и сегменты. Треки про людей и рабочие контакты.' },
         A3: { title: 'A3 · Первый контакт · MLM Academy', desc: 'Выбрать канал, написать, позвонить и договориться о разговоре без давления.' },
-        A4: { title: 'A4 · Потребность и решение · MLM Academy', desc: 'Услышать человека и собрать рекомендацию на его языке, а не прочитать презентацию.' },
+        A4: { title: 'A4 · Потребность и решение · MLM Academy', desc: 'Услышать человека и собрать рекомендацию на его языке.' },
         A5: { title: 'A5 · Сомнения и отказ · MLM Academy', desc: 'Разобрать паузу, возражение или отказ и зафиксировать следующий шаг.' },
         A6: { title: 'A6 · Повтор и рост · MLM Academy', desc: 'Вернуть клиента, выстроить ритм и работу с командой без ложных обещаний роста продаж.' },
       };

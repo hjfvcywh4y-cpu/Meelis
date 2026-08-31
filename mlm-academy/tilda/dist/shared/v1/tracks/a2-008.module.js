@@ -76,7 +76,7 @@
   ];
   var SCORE_FIELDS = [
     ['relationship', 'Есть реальный контекст', 'Вы не берёте человека из воздуха: есть знакомство, рекомендация или понятный повод.'],
-    ['reason', 'Есть причина действовать сейчас', 'Повод существует в реальности, а не придуман ради продажи.'],
+    ['reason', 'Есть причина действовать сейчас', 'Повод существует в реальности.'],
     ['respect', 'Контакт добровольный', 'Человеку легко отказаться; нет давления, маскировки и обещаний.'],
     ['clarity', 'Первый шаг понятен', 'Вы можете назвать одно конкретное действие на ближайшие семь дней.'],
   ];
@@ -320,7 +320,7 @@
     for (var i = 0; i < list.length; i += 1) rows += inputRow(list[i], i, list.length > MIN_CANDIDATES);
     return (
       '<div class="a2008-stage"><div class="a2008-stage-head"><span class="mlma-eyebrow">Шаг 1 из 4</span><h2>Соберите 5–10 вариантов</h2>' +
-      '<p>Записывайте не ФИО, а контекст: «коллега из проекта», «знакомая из бегового клуба». Так план останется рабочим и не превратится в базу чужих данных.</p></div>' +
+      '<p>Записывайте контекст: «коллега из проекта», «знакомая из бегового клуба». Так план останется рабочим и не превратится в базу чужих данных.</p></div>' +
       '<div class="a2008-alert"><strong>Мы не оцениваем людей.</strong> На следующем шаге вы оцените только уместность вашего первого действия — без баллов за доход, статус или «прибыльность» человека.</div>' +
       messageHtml(state) + '<div class="a2008-stack">' + rows + '</div>' +
       '<div class="a2008-actions"><button type="button" class="mlma-btn" data-a2008-action="add"' + (list.length >= MAX_CANDIDATES ? ' disabled' : '') + '>+ Добавить вариант</button>' +
@@ -354,10 +354,10 @@
       rows += '</div></article>';
     }
     var fitCount = list.filter(isActionFit).length;
-    var fitHint = '<p class="a2008-footnote">Уместных для первого действия сейчас: <strong>' + fitCount + ' из ' + list.length + '</strong>. Нужны пять. «Частично» считается: это честная оценка, а не отсев.</p>';
+    var fitHint = '<p class="a2008-footnote">Уместных для первого действия сейчас: <strong>' + fitCount + ' из ' + list.length + '</strong>. Нужны пять. «Частично» считается: это честная оценка.</p>';
     return (
       '<div class="a2008-stage"><div class="a2008-stage-head"><span class="mlma-eyebrow">Шаг 2 из 4</span><h2>Оцените уместность действия</h2>' +
-      '<p>Не «насколько ценен человек», а «есть ли у меня честный и понятный следующий шаг».</p></div>' +
+      '<p>Смотрите, есть ли честный и понятный следующий шаг.</p></div>' +
       messageHtml(state) +
       fitHint +
       (state.branch === 'not_enough_candidates' ? '<div class="a2008-actions"><a class="mlma-btn" href="/track?id=A2-010">Открыть A2-010 · Карта тёплых кругов</a></div>' : '') +
@@ -415,7 +415,7 @@
     var c = state.moduleData.confirmations;
     return (
       '<div class="a2008-stage"><div class="a2008-stage-head"><span class="mlma-eyebrow">Шаг 4 из 4</span><h2>Примите план «Мои пять»</h2>' +
-      '<p>Проверьте не красоту списка, а готовность выполнить первое действие.</p></div>' +
+      '<p>Проверьте готовность выполнить первое действие.</p></div>' +
       messageHtml(state) + planSummary(state, true) +
       '<fieldset class="a2008-checks"><legend>Критерии принятия</legend>' +
       '<label><input type="checkbox" data-confirmation="noWorthScore"' + (c.noWorthScore ? ' checked' : '') + '> Я не оценивал доход, статус или «стоимость» людей.</label>' +
