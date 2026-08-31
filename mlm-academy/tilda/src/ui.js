@@ -2176,13 +2176,13 @@
         {
           eyebrow: 'Тарифы',
           title: 'Что можно будет получить и для кого',
-          lead: 'Платный продукт — абонентский доступ к информационно-аналитической платформе на выбранный период. Это не покупка отдельных треков и не образовательная услуга. Оплатить пока нельзя: тарифы gated, эквайринг не подключён.',
+          lead: 'Пока можно посмотреть, какие форматы доступа будут. Оплатить ещё нельзя.',
           crumbs: [{ label: 'Academy', href: R.home() }, { label: 'Тарифы' }],
         },
         R,
       ) +
       '<div class="mlma-wrap" style="padding-top:24px;padding-bottom:56px;display:grid;gap:28px">' +
-      '<section><span class="mlma-eyebrow">Для себя</span><h2 class="mlma-h2" style="margin-top:12px">Новичок и партнёр</h2><p class="mlma-muted" style="margin-top:8px;max-width:70ch">Конкретная задача и следующий шаг. Платный доступ открывает платформу на период, а не отдельный трек. Оплатить пока нельзя.</p><div class="mlma-grid-2" style="margin-top:16px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">' +
+      '<section><span class="mlma-eyebrow">Для себя</span><h2 class="mlma-h2" style="margin-top:12px">Новичок и партнёр</h2><p class="mlma-muted" style="margin-top:8px;max-width:70ch">Конкретная задача и следующий шаг. Оплатить пока нельзя.</p><div class="mlma-grid-2" style="margin-top:16px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">' +
       cards +
       '</div></section>' +
       '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Для команды</span><h2 class="mlma-h3" style="margin-top:12px">Лидер запускает маршруты</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Лидер — ранний покупатель командного решения: запуск новичков, меньше ручного сопровождения, контроль прохождения. Наставник видит точки остановки, но не считается автоматически плательщиком. Командный формат готовится. Подписка не продаётся.</p><div class="mlma-actions" style="margin-top:20px">' +
@@ -2191,7 +2191,7 @@
       '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Для компании</span><h2 class="mlma-h3" style="margin-top:12px">Корпоративный пилот</h2><p class="mlma-muted" style="margin-top:12px;max-width:70ch">Маршруты для сегментов сети, контроль активации, управленческая аналитика, связь действий с коммерческими результатами. До 30 участников, 8 недель. Ориентир 99 000–149 000 ₽. Только переговоры, без карточного checkout.</p><div class="mlma-actions" style="margin-top:20px">' +
       btn(D.siteHomeUrl(), 'Обсудить корпоративный пилот', 'primary') +
       '</div></section>' +
-      '<p class="mlma-muted" style="font-size:14px">Перед оплатой потребуется обязательная изначально пустая галочка принятия пользовательского соглашения и оферты. Автопродление — только после отдельной пустой галочки с суммой, периодичностью и способом отключения. PAYMENTS_ENABLED=false. Правила: <a href="' +
+      '<p class="mlma-muted" style="font-size:14px">Перед оплатой нужно будет принять пользовательское соглашение и оферту. Автопродление — только после отдельного согласия. Сейчас оплата не принимается. Правила: <a href="' +
       esc((R.paymentAndAccess && R.paymentAndAccess()) || '/payment-and-access') +
       '">оплата, доступ и возврат</a>.</p>' +
       '<div class="mlma-actions">' +
