@@ -11,6 +11,12 @@
     "result": "ЗАМЕНИТЬ ИЗ РЕЕСТРА",
     "audience": "ЗАМЕНИТЬ ИЗ РЕЕСТРА"
   },
+  "graphBinding": {
+    "mode": "AUTO_BY_TRACK_ID",
+    "graphVersion": "3.0",
+    "editNeighborPages": false,
+    "unboundConnectionPolicy": "KEEP_AS_LOCKED_NEXT_ACTION_SLOT"
+  },
   "content": {
     "version": "0.1.0",
     "status": "DRAFT",

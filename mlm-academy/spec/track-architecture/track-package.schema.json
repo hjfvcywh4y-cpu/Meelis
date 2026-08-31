@@ -7,6 +7,7 @@
   "required": [
     "packageVersion",
     "track",
+    "graphBinding",
     "content",
     "access",
     "outcomes",
@@ -42,6 +43,17 @@
         "situation": { "type": "string" },
         "result": { "type": "string" },
         "audience": { "type": "string" }
+      }
+    },
+    "graphBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "graphVersion", "editNeighborPages", "unboundConnectionPolicy"],
+      "properties": {
+        "mode": { "const": "AUTO_BY_TRACK_ID" },
+        "graphVersion": { "type": "string", "const": "3.0" },
+        "editNeighborPages": { "type": "boolean", "const": false },
+        "unboundConnectionPolicy": { "const": "KEEP_AS_LOCKED_NEXT_ACTION_SLOT" }
       }
     },
     "content": {
@@ -173,4 +185,3 @@
     }
   }
 }
-

@@ -1,159 +1,198 @@
-# Отчёт: маршрутная архитектура MLM Academy v2
+# Отчёт: маршрутная архитектура MLM Academy (корректировка полного графа v3)
 
 Дата: 31 августа 2026  
 Ветка: `cursor/track-architecture-954c`  
-Статус итерации: архитектура в кодовой базе, **без production-деплоя**, **без включения оплаты и платной навигации**.
+Статус итерации: архитектурная дельта закрыта, **без production-деплоя**, **без production-миграций**, **без включения оплаты и платной навигации**. Содержание A3-002 и других треков в этой итерации не изготавливалось.
 
-## 1. Архитектура до / после
+## 1. Что изменилось относительно предыдущего отчёта (v2)
 
-### До
+Предыдущий отчёт (`e24f2f9`, checkpoint `d458a28`) реализовал неполную модель:
 
-Живой сайт: Tilda + Cloudflare Worker `mlma-account`. Каталог 112 карточек в `src/data/tracks.catalog.json` / Tilda compact JSON. Переходы — поле `nextTrackIds` (legacy) и хардкод в A2-008. Next.js-оболочка с `/track/<id>`. Права: KV-аккаунт, Tilda Members bind (`tilda_unverified`), клиентские `grantFromQuery` / `grantFromLocalStorage` уже возвращают пусто. Платежи выключены. Отдельного Route Engine, registry entity types и server-only content layer не было.
+| v2 (ошибочная трактовка) | v3 (актуальная) |
+|---|---|
+| 58 RouteRule исполняются | без изменений: engine читает только RouteRule |
+| 231 legacy edge **только archive**, не в рабочем графе | 231 базовые связи **импортированы в рабочий `track_connections`** как возможные направления |
+| не было rule-derived map | +22 rule-derived направления в том же `track_connections` |
+| нет connectionIndex | connectionIndex на все 112 ID |
+| in-memory как фактический runtime | in-memory только тесты/CLI; явный PostgreSQL adapter; production без него **fail closed** |
+| нет модели PUBLIC_DEMO/SANDBOX | поля access_tier / execution_mode и контракт демо без live instance |
 
-### После
+Источник истины: `spec/track-architecture/full-graph-112-v3.json` (импорт программно, JSON в контекст модели не загружался). Проверка: `node spec/track-architecture/tools/validate-graph.mjs` и `graph-query.mjs`.
 
-Пять слоёв в текущем стеке (TypeScript + Zod + in-memory store, SQL как контракт):
+## 2. 231 / 22 / 253 и разница connection vs RouteRule
 
-| Слой | Где | Что хранит |
-|---|---|---|
-| Registry | `track_definitions` / `MemoryArchitectureStore` | 112 стабильных A-ID, тип, canonical, метаданные |
-| Content | `track_content_versions` + `server/content/tracks/` | Версии содержания; не часть обязательной записи registry |
-| Routing | `route_rules` + `decideRoute()` | 58 RouteRule v2; legacy 231 только в archive |
-| Runtime | instances / outcomes / decisions | Прохождение ≠ шаблон трека |
-| Access | flags + entitlements + IdentityProvider | Server session + entitlement AND; клиент не источник права |
+**`track_connection` отвечает:** «куда этот узел в принципе связан?»  
+**`route_rule` отвечает:** «при каком проверенном результате переход разрешено исполнить?»
 
-Канонический URL спецификации: `trackUrl(id)` → `/track?id=<lowercase>`. Pretty `/track/<id>` сохранён как alias Next.js / dedicated Tilda pages. Парсер принимает оба.
-
-A2-008 — первый тестовый узел, не корень графа. Entry rules и правила других ID существуют независимо.
-
-## 2. Изменённые и добавленные файлы
-
-Ключевые добавления:
-
-- `spec/track-architecture/*` — router v2 JSON, schema пакета, access-policy, SQL-референс
-- `src/track-architecture/*` — registry, resolver, evaluator, engine, access, importer, HTTP, CLI
-- `src/app/api/v1/[...mlma]/route.ts` — API contract
-- `server/migrations/004_track_architecture.sql` — локальная миграция, не production
-- `server/content/tracks/a3-002/0.1.0/content.json` — server-only fixture
-- `tests/track-architecture/architecture.test.ts`
-- `docs/mlma-track-architecture/*` — исходные промпты, аудит, этот отчёт
-
-Точечные правки существующего стека (без смены текстов витрины и содержания A2-008):
-
-- `src/domain/routes.ts` — `trackUrl`, `parseTrackIdFromLocation`
-- `src/server/flags.ts` — флаги архитектуры
-- `tilda/src/domain.js`, `tilda/src/commerce.js`, `tilda/src/data/products.catalog.json`
-- `tilda/generate.mjs` — запрет утечки `PILOT_DRAFT_TO_TEST` / fixture secret в public JSON
-- `.env.example`, `package.json`, `.gitignore`, `next.config.ts`
-
-## 3. Миграции и локальный запуск
-
-Файл: `server/migrations/004_track_architecture.sql`.
-
-**Не применялась к production.** Primary production storage задуман через `DATABASE_URL` (PostgreSQL-совместимый). Текущий runtime тестов и CLI — in-memory / `.local/track-architecture/store.json`.
-
-Локально, когда появится Postgres:
-
-```bash
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f server/migrations/004_track_architecture.sql
-```
-
-KV не является хранилищем entitlements этой архитектуры.
-
-## 4. Env / feature flags (без секретов)
-
-Defaults (и production clamp):
+Отсутствие RouteRule **не удаляет** направление. Оно остаётся слотом:
 
 ```
-TRACK_REGISTRY_ENABLED=true
-ROUTE_ENGINE_ENABLED=true
-PAID_TRACK_NAVIGATION_ENABLED=false
-PAYMENTS_ENABLED=false
-ALLOW_DRAFT_RULES=false
-ADMIN_PREVIEW_ENABLED=true
-ENTITLEMENT_BYPASS=false
+activation_mode=LOCKED_NEXT_ACTION_SLOT
+executable=false
+user_visible=false
 ```
 
-В `NODE_ENV=production` код принудительно держит `PAYMENTS_ENABLED`, `PAID_TRACK_NAVIGATION_ENABLED`, `ALLOW_DRAFT_RULES`, `ENTITLEMENT_BYPASS` равными `false`. Test header `x-mlma-test-session` в production игнорируется.
+Route Engine **не имеет права** исполнять закрытый slot. Кнопка пользователю не показывается. Админ/установщик видит слот (`GET /api/v1/admin/tracks/:id/connections`).
 
-`ENTITLEMENT_BYPASS` даже при `true` в non-prod **не открывает контент** (`decideContentAccess` отклоняет bypass).
+Контрольные числа после импорта v3:
 
-## 5. Команды validate / import / test
+```
+nodes                              = 112
+designConnections                  = 231
+ruleDerivedConnections             = 22
+effectiveTrackConnections          = 253
+structuredRouteRules               = 58
+connectionIndex entries            = 112
+nodesWithoutEffectiveIncoming      = 36
+brokenConnections                  = 0
+```
+
+Слои источника:
+
+- 231 × `sourceLayer=BASE_DESIGN_GRAPH_V2`
+- 22 × `sourceLayer=STRUCTURED_ROUTE_RULE_V2`
+
+Исторический archive 231 сохранён отдельно (`statusV2=AUDIT_ONLY_NOT_EXECUTABLE`, `active=false`) **только для аудита**. Он не заменяет рабочий `track_connections`.
+
+## 3. ROUTE_RULE и LOCKED_NEXT_ACTION_SLOT
+
+Эффективные 253 связи:
+
+| activationMode | count | executable | userVisible |
+|---|---|---|---|
+| `LOCKED_NEXT_ACTION_SLOT` | **216** | false | false |
+| `ROUTE_RULE` | **37** | true (направление подтверждено правилом) | false до paid-nav flag |
+
+Из 58 structured RouteRule: 37 ведут в Track ID (это и есть 37 ROUTE_RULE connections), 21 — в терминал/системное действие и поэтому не образуют track-to-track edge.
+
+Контрольный пример: **A1-001 → A1-004** (`TR-001`) существует в `track_connections`, `LOCKED_NEXT_ACTION_SLOT`, engine возвращает `NO_MATCHING_RULE` и не подставляет `legacyNextIds`.
+
+Связь с правилом получает `matchedRouteRuleIds` (например A2-008 → A3-002 / `TR-051` / `RR2-005`). Engine по-прежнему матчит **outcome + field + operator**, а не сам факт наличия connection.
+
+## 4. connectionIndex: A2-008 и A3-002
+
+Материализован для всех 112 ID.
+
+**A2-008**
+
+| поле | значение |
+|---|---|
+| incoming design / effective | 6 / 6 |
+| outgoing design / effective | 2 / 6 |
+| outgoingRouteRuleIds | RR2-005, RR2-006, RR2-007, RR2-008, RR2-009, RR2-010, RR2-011 |
+| incomingRouteRuleIds | RR2-001, RR2-003 |
+| externalEntryRuleIds | ER-001 |
+
+Исходящие design: A3-002, A3-003. Добавленные rule-derived: A2-013, A3-005, A3-016, A2-010.
+
+**A3-002**
+
+| поле | значение |
+|---|---|
+| incoming design / effective | 5 / 6 |
+| outgoing design / effective | 2 / 3 |
+| outgoingRouteRuleIds | RR2-014, RR2-015, RR2-016 |
+| incomingRouteRuleIds | RR2-005, RR2-012 |
+| externalEntryRuleIds | ER-003 |
+
+## 5. Модель PUBLIC_METADATA / PUBLIC_DEMO / PAID
+
+Раздельные поля (не путать с правом пользователя `NONE | TRIAL | FULL | ADMIN`):
+
+```
+content_status  = EMPTY | DRAFT | REVIEW | READY | PUBLISHED | ARCHIVED
+access_tier     = PUBLIC_METADATA | PUBLIC_DEMO | PAID | ADMIN_ONLY
+route_status    = LOCKED | TEST | ACTIVE | RETIRED
+execution_mode  = PREVIEW | SANDBOX | LIVE
+```
+
+Правила access layer:
+
+- **PUBLIC_METADATA** — только название, краткое описание, ситуация, ожидаемый результат (`GET .../meta`). Тело урока не выдаётся.
+- **PUBLIC_DEMO + SANDBOX** — специально опубликованный обезличенный пример. **Не** создаёт live instance, **не** меняет маршрут, **не** исполняет переход (`SANDBOX_NO_LIVE_INSTANCE`).
+- **PAID** — тело только при verified server identity AND entitlement AND product grant AND `content_status=PUBLISHED` AND feature flags. Query / localStorage / success URL / email / Member ID / Tilda group / рекомендация AI **не** являются правом.
+- Оплата **не** открывает `DRAFT` / `REVIEW` / `READY`.
+- Содержание демо-пакета в этой итерации **не создавалось** — только модель, API-контракт (`kind`, `sandbox`, `liveInstance`) и тесты.
+
+Пакет трека обязан нести `graphBinding`:
+
+```
+mode=AUTO_BY_TRACK_ID
+graphVersion=3.0
+editNeighborPages=false
+unboundConnectionPolicy=KEEP_AS_LOCKED_NEXT_ACTION_SLOT
+```
+
+Установка пакета не переписывает `track_connections` и не меняет страницы соседей.
+
+## 6. Состояние PostgreSQL adapter
+
+- Интерфейс: `ArchitectureStore` (`src/track-architecture/store.ts`).
+- In-memory / `.local/track-architecture/store.json` — **только тесты и CLI**.
+- Adapter: `PostgresArchitectureStore` + `PostgresClient` (`src/track-architecture/postgres.ts`). Живой `pg` к production **не подключался**.
+- Локальная миграция (файл, не применялась): `server/migrations/005_track_connections.sql` — `track_connections`, `connection_index_entries`, поля access/status, payload overlay.
+- `NODE_ENV=production` без настроенного production repository → **503 `STORAGE_UNCONFIGURED`**, без тихого fallback на memory. `MLMA_ARCHITECTURE_STORE=memory` в production запрещён.
+
+## 7. Статус A6-017
+
+ID **сохранён** в registry 112. Новый canonical ID не выдумывался, 112 ID не перенумеровывались.
+
+- `entityType=ALIAS`, `canonicalId=A6-017` (self-alias)
+- `dataQuality=DATA_BLOCKED`
+- resolver: `CANONICAL_MISSING`, `canonicalId=null` — самоссылка **не** успешный alias
+- Route Engine: `NO_SUCH_TRACK` / `DATA_BLOCKED`, не исполняется
+- связи A6-017 остаются LOCKED слотами в карте
+- импорт пишет warning в issues; `checkTrack('A6-017').ok === false`
+
+A1-005 → A6-017 также `DATA_BLOCKED` (канон не существует).
+
+## 8. Что намеренно не отменялось
+
+- server-only content
+- fail-closed entitlement AND
+- запрет выдачи прав из query / localStorage / success page / email / Member ID / Tilda group
+- `stripUnsafeFacts` для контактных данных A2-008
+- поиск только по кнопке «Найти решение» или Enter
+- production clamp опасных flags (`PAYMENTS_ENABLED`, `PAID_TRACK_NAVIGATION_ENABLED`, `ALLOW_DRAFT_RULES`, `ENTITLEMENT_BYPASS`)
+- игнор `x-mlma-test-session` в production
+- канонический `trackUrl(id)` → `/track?id=<lowercase>`
+- отсутствие production-деплоя и production-миграций
+
+## 9. Команды и результаты тестов
 
 Из каталога `mlm-academy`:
 
 ```bash
+node spec/track-architecture/tools/validate-graph.mjs
+node spec/track-architecture/tools/graph-query.mjs summary
+node spec/track-architecture/tools/graph-query.mjs track A2-008
+pnpm tracks:validate spec/track-architecture/full-graph-112-v3.json
 pnpm tracks:validate spec/track-architecture/MLM_Academy_Track_Router_v2.json
 pnpm tracks:import --dry-run tests/fixtures/track-packages/a3-002-test/package.json
-pnpm tracks:import --apply tests/fixtures/track-packages/a3-002-test/package.json
 pnpm track:check A2-008
 pnpm test
 pnpm tilda:test
 pnpm typecheck
 ```
 
-`--apply` пишет только `.local/` (gitignore). Это не production.
+Результаты этой итерации:
 
-## 6. Загруженные 112 ID и 58 rules
-
-Импорт `MLM_Academy_Track_Router_v2.json`:
-
-- 112 уникальных A-ID
-- типы: 49 TRACK, 2 CONDITIONAL_TRACK, 17 REMEDIATION, 9 GATE, 19 EMBEDDED_TOOL, 8 SYSTEM_ACTION, 8 ALIAS
-- 58 RouteRule v2 (7 `VALIDATED_RULE`, 51 `PILOT_DRAFT_TO_TEST`)
-- 9 entry rules
-- 231 archive edge со `statusV2=ARCHIVED_NOT_EXECUTABLE`, `active=false`
-
-Предупреждения данных (не блокируют импорт): alias `A6-017` указывает сам на себя, `A1-005` → `A6-017` не имеет не-alias канона. Resolver возвращает `CANONICAL_MISSING` / не создаёт урок.
-
-## 7. Доказательство: legacy 231 не исполняются
-
-- Archive хранится отдельно (`listArchiveEdges`), engine читает только `listRules()`.
-- Тест: исход A1-001 + любой outcome → `NO_MATCHING_RULE`, destination не берётся из `legacyNextIds` (там есть A1-004).
-- `checkTrack('A2-008')`: `archivedEdgesExecutable = 0`.
-
-## 8. Доказательство: paid content без entitlement недоступен
-
-- `GET /api/v1/tracks/a3-002/content` без сессии → 403, тело без секрета фикстуры.
-- `maId` / email / groups FULL без `verified` → 403 (IdentityProvider игнорирует клиентский bind).
-- Query/localStorage/success page: `identityFromUntrustedClient` → ANON.
-- Entitled + published content → `decideContentAccess.allowed === true` только на серверном контексте.
-- `PAID_TRACK_NAVIGATION_ENABLED=false` → RouteDecision `locked: true`, `lockReason: FEATURE_DISABLED`, `destinationUrl: null`.
-- Admin preview (`role=ADMIN`, verified) видит content; обычный FULL без entitlement — нет.
-- Фикстура `MLMA_SERVER_ONLY_A3_002_FIXTURE` есть только в `server/content/...`; generate падает, если она попадёт в public JSON.
-
-## 9. Что намеренно выключено
-
-- Оплата и YuKassa (`PAYMENTS_ENABLED=false`; webhook stub → `payments_disabled`)
-- Платная маршрутная навигация (кнопка перехода для обычного пользователя не работает)
-- Регистрация (`SIGNUP_ENABLED=false`, без изменений этой итерации)
-- Production deploy Worker / Next
-- Массовая генерация 112 HTML-страниц и выдуманный учебный контент
-- Исполнение `PILOT_DRAFT_TO_TEST` в `mode=production`
-- Перенос 231 legacy edge в engine
-- Отправка ФИО/телефона/email/текста переписки A2-008 на сервер (`stripUnsafeFacts`)
-
-Содержание A2-008, поиск (только кнопка «Найти решение» / Enter), юридические тексты и визуал витрины не переписывались.
-
-## 10. Как добавить следующий готовый трек
-
-1. Найти ID в registry: `pnpm track:check A3-002`.
-2. Собрать пакет по `spec/track-architecture/track-package.schema.json` (шаблон рядом).
-3. Полный контент положить в `server/content/tracks/<id>/<version>/` (`serverOnly: true`).
-4. `pnpm tracks:validate <package.json>` и `pnpm tracks:import --dry-run <package.json>`.
-5. `--apply` только в локальный/тестовый store. Не активировать draft rules в production.
-6. Не хардкодить кнопки перехода в HTML; outcomes идут в `POST /api/v1/track-instances/:id/outcomes`.
-7. Пока платежи и `PAID_TRACK_NAVIGATION_ENABLED` выключены, пользователь получает locked decision.
-8. Повторяемый промпт: `docs/mlma-track-architecture/02_CURSOR_PROMPT_INSTALL_TRACK.md`.
-
-Независимый аудит реализации: `docs/mlma-track-architecture/03_CURSOR_PROMPT_AUDIT.md`.
-
-## Проверки, которые прогнаны
-
-- `pnpm test` — 77 passed
+- `validate-graph.mjs` — GRAPH VALIDATION PASSED (112 / 231 / 22 / 253 / 58 / 112 / 36 / broken=0)
+- `tracks:validate` v3 — ok, 216 LOCKED_NEXT_ACTION_SLOT + 37 ROUTE_RULE connections
+- `tracks:validate` router v2 — ok, 112 / 58 / 231 archive (совместимость сохранена)
+- `track:check A2-008` — TRACK, 7 rules, connectionIndex 6/2/6/6, 0 executable archive
+- `pnpm test` — 87 passed
 - `pnpm tilda:test` — 225 passed
 - `pnpm typecheck` — clean
-- `pnpm tracks:validate spec/track-architecture/MLM_Academy_Track_Router_v2.json` — ok, 112 / 58 / 231
-- `pnpm track:check A2-008` — TRACK, 7 v2 rules, 0 executable legacy
 
-Известные ограничения: Tilda Members по-прежнему `tilda_unverified`; живой A2-008 остаётся клиентским модулем до отдельной установки контент-пакета; alias A6-017 в исходных данных v2 битый (self-alias) и сознательно не «лечится» перенумерацией ID.
+`--apply` пишет только `.local/` (gitignore). Это не production.
+
+## 10. Подтверждение границ этой итерации
+
+- Production Worker / Next **не деплоился**.
+- SQL 004/005 **не применялись** к production.
+- `PAYMENTS_ENABLED=false`, `PAID_TRACK_NAVIGATION_ENABLED=false`.
+- YuKassa не подключалась.
+- Учебное содержание A3-002 и остальных треков **не изготавливалось**.
+
+Следующий шаг (отдельная итерация): установка готового трека по `02_CURSOR_PROMPT_INSTALL_TRACK.md` после закрытия этой архитектурной дельты.

@@ -7,16 +7,24 @@ import { decideRoute } from '@/track-architecture/route-engine';
 import { DEFAULT_ARCHITECTURE_FLAGS } from '@/track-architecture/flags';
 import { ANON_ACCESS, identityFromUntrustedClient, identityFromVerifiedSession } from '@/track-architecture/identity';
 import { resolveTrackId, canPublishAsStandaloneLesson } from '@/track-architecture/resolver';
-import { importRouterJson, importTrackPackage } from '@/track-architecture/importer';
+import { importArchitectureSource, importFullGraphJson, importRouterJson, importTrackPackage } from '@/track-architecture/importer';
 import { MemoryArchitectureStore, newId } from '@/track-architecture/store';
-import { routerSource } from '@/track-architecture/seed';
-import { decideContentAccess } from '@/track-architecture/access';
+import { graphSource, routerSource } from '@/track-architecture/seed';
+import { decideContentAccess, decideInstanceCreation } from '@/track-architecture/access';
 import { handleArchitectureRequest } from '@/track-architecture/http';
 import { parseTrackPackage } from '@/track-architecture/package';
 import { stripUnsafeFacts, assertNoContactPii } from '@/track-architecture/privacy';
 import { processPaymentEvent } from '@/track-architecture/payments';
-import { submitOutcome, createTrackInstance } from '@/track-architecture/runtime';
+import { submitOutcome, createTrackInstance, RuntimeRejectedError } from '@/track-architecture/runtime';
 import { checkTrack } from '@/track-architecture/check';
+import { GRAPH_V3_EXPECTED } from '@/track-architecture/from-graph';
+import {
+  FakePostgresClient,
+  PostgresArchitectureStore,
+  ProductionRepositoryNotConfiguredError,
+  isProductionRepositoryConfigured,
+} from '@/track-architecture/postgres';
+import { getArchitectureStore } from '@/track-architecture/seed';
 import { parseTrackIdFromLocation, trackUrl, normalizeTrackId, routes } from '@/domain/routes';
 import type { ArchitectureFlags, RouteContext } from '@/track-architecture/types';
 
@@ -63,13 +71,21 @@ describe('registry v2', () => {
     });
   });
 
-  it('импортирует ровно 58 v2 rules; 231 legacy не исполняются', () => {
+  it('импортирует 253 рабочие связи; 231 базовых слотов не исполняются', () => {
     const store = createSeededStore();
     expect(store.listRules()).toHaveLength(58);
+    expect(store.listConnections()).toHaveLength(253);
+    expect(store.listConnectionIndex()).toHaveLength(112);
+    expect(store.listConnections().filter((row) => row.activationMode === 'LOCKED_NEXT_ACTION_SLOT')).toHaveLength(216);
+    expect(store.listConnections().filter((row) => row.activationMode === 'ROUTE_RULE')).toHaveLength(37);
     const archive = store.listArchiveEdges();
     expect(archive).toHaveLength(231);
     expect(archive.every((edge) => edge.active === false)).toBe(true);
-    expect(archive.every((edge) => edge.statusV2 === 'ARCHIVED_NOT_EXECUTABLE')).toBe(true);
+    expect(archive.every((edge) => edge.statusV2 === 'AUDIT_ONLY_NOT_EXECUTABLE')).toBe(true);
+    const locked = store.listConnections().find((row) => row.fromId === 'A1-001' && row.toId === 'A1-004');
+    expect(locked?.activationMode).toBe('LOCKED_NEXT_ACTION_SLOT');
+    expect(locked?.executable).toBe(false);
+    expect(locked?.userVisible).toBe(false);
     const fromA1001 = decideRoute(
       store,
       ctx({ fromId: 'A1-001', outcomeCode: 'DONE', facts: {}, mode: 'pilot' }),
@@ -228,6 +244,8 @@ describe('resolver и URL', () => {
     expect(store.getContent('A1-016')).toBeUndefined();
     const loop = resolveTrackId('A6-017', (id) => store.getTrack(id));
     expect(loop.error).toBe('CANONICAL_MISSING');
+    expect(loop.canonicalId).toBeNull();
+    expect(store.getTrack('A6-017')?.dataQuality).toBe('DATA_BLOCKED');
   });
 
   it('GATE / EMBEDDED_TOOL / SYSTEM_ACTION / ALIAS не публикуются как урок', () => {
@@ -540,6 +558,8 @@ describe('runtime privacy and API', () => {
     expect(body.meta.title).toBeTruthy();
     expect(JSON.stringify(body)).not.toContain('legacyNextIds');
     expect(JSON.stringify(body)).not.toContain('RR2-005');
+    expect(JSON.stringify(body)).not.toContain('effectiveTrackConnections');
+    expect(JSON.stringify(body)).not.toContain('LOCKED_NEXT_ACTION_SLOT');
 
     const importDenied = await handleArchitectureRequest(
       new Request('https://mlma.test/api/v1/admin/tracks/import/apply', { method: 'POST', body: '{}' }),
@@ -581,6 +601,8 @@ describe('public bundle boundary', () => {
         const text = fs.readFileSync(file, 'utf8');
         expect(text.includes(secret), file).toBe(false);
         expect(text.includes('"routeRules"') && text.includes('RR2-005'), file).toBe(false);
+        expect(text.includes('effectiveTrackConnections'), file).toBe(false);
+        expect(text.includes('LOCKED_NEXT_ACTION_SLOT'), file).toBe(false);
       }
     }
     const fixture = fs.readFileSync(path.join(process.cwd(), 'server/content/tracks/a3-002/0.1.0/content.json'), 'utf8');
@@ -591,6 +613,260 @@ describe('public bundle boundary', () => {
     const ui = fs.readFileSync(path.join(process.cwd(), 'tilda/src/ui.js'), 'utf8');
     expect(ui).toMatch(/type="submit">Найти решение/);
     expect(ui).not.toMatch(/input.*oninput.*searchCatalog/);
+  });
+});
+
+describe('full graph v3 acceptance numbers', () => {
+  it('импорт даёт 112/231/22/253/58/112/36 и zero broken', () => {
+    const store = new MemoryArchitectureStore();
+    const result = importFullGraphJson(store, graphSource(), { dryRun: false });
+    expect(result.ok).toBe(true);
+    expect(result.counts).toMatchObject({
+      tracks: GRAPH_V3_EXPECTED.nodes,
+      rules: GRAPH_V3_EXPECTED.structuredRouteRules,
+      archiveEdges: GRAPH_V3_EXPECTED.designConnections,
+      designConnections: GRAPH_V3_EXPECTED.designConnections,
+      ruleDerivedConnections: GRAPH_V3_EXPECTED.ruleDerivedConnections,
+      effectiveTrackConnections: GRAPH_V3_EXPECTED.effectiveTrackConnections,
+      connectionIndex: GRAPH_V3_EXPECTED.connectionIndex,
+      nodesWithoutEffectiveIncoming: GRAPH_V3_EXPECTED.nodesWithoutEffectiveIncoming,
+      lockedSlots: 216,
+      routeRuleConnections: 37,
+    });
+    expect(store.listTracks()).toHaveLength(112);
+    expect(store.listConnections()).toHaveLength(253);
+    expect(store.listConnectionIndex()).toHaveLength(112);
+    expect(result.issues.some((issue) => issue.message.includes('A6-017'))).toBe(true);
+  });
+
+  it('закрытая связь A1-001 → A1-004 существует, видна admin API и не исполняется', async () => {
+    const store = createSeededStore();
+    const slot = store.listConnections().find((row) => row.fromId === 'A1-001' && row.toId === 'A1-004');
+    expect(slot).toBeDefined();
+    expect(slot?.activationMode).toBe('LOCKED_NEXT_ACTION_SLOT');
+    expect(slot?.executable).toBe(false);
+    const decision = decideRoute(store, ctx({ fromId: 'A1-001', outcomeCode: 'NEXT', facts: {}, mode: 'pilot' }));
+    expect(decision.reasonCode).toBe('NO_MATCHING_RULE');
+    expect(decision.destinationId).toBeNull();
+    const admin = await handleArchitectureRequest(
+      new Request('https://mlma.test/api/v1/admin/tracks/A1-001/connections', {
+        headers: sessionHeader({ userId: 'admin', role: 'ADMIN', verified: true }),
+      }),
+      { store, env: { NODE_ENV: 'test' } },
+    );
+    expect(admin.status).toBe(200);
+    const body = await admin.json();
+    expect(JSON.stringify(body)).toContain('A1-004');
+    expect(body.lockedSlots.some((row: { toId: string }) => row.toId === 'A1-004')).toBe(true);
+    const anon = await handleArchitectureRequest(
+      new Request('https://mlma.test/api/v1/admin/tracks/A1-001/connections'),
+      { store, env: { NODE_ENV: 'test' } },
+    );
+    expect(anon.status).toBe(403);
+  });
+
+  it('RouteRule исполняет только разрешённый outcome', () => {
+    const store = createSeededStore();
+    const matched = decideRoute(store, ctx({ mode: 'pilot' }));
+    expect(matched.reasonCode).toBe('MATCHED');
+    expect(matched.matchedRuleId).toBe('RR2-005');
+    expect(matched.destinationId).toBe('A3-002');
+    const other = decideRoute(
+      store,
+      ctx({ outcomeCode: 'NEXT_MESSAGE', facts: { 'contact.next_action': 'ASK_REFERRAL' }, mode: 'pilot' }),
+    );
+    expect(other.matchedRuleId).not.toBe('RR2-005');
+    expect(other.destinationId).not.toBe('A3-002');
+  });
+
+  it('A2-008 и A3-002 получают входы/выходы из полного connectionIndex', () => {
+    const store = createSeededStore();
+    const a2 = store.getConnectionIndex('A2-008');
+    const a3 = store.getConnectionIndex('A3-002');
+    expect(a2?.incomingDesignConnections).toHaveLength(6);
+    expect(a2?.outgoingDesignConnections).toHaveLength(2);
+    expect(a2?.incomingEffectiveConnections).toHaveLength(6);
+    expect(a2?.outgoingEffectiveConnections).toHaveLength(6);
+    expect(a2?.outgoingRouteRuleIds).toEqual(['RR2-005', 'RR2-006', 'RR2-007', 'RR2-008', 'RR2-009', 'RR2-010', 'RR2-011']);
+    expect(a2?.incomingRouteRuleIds).toEqual(['RR2-001', 'RR2-003']);
+    expect(a2?.externalEntryRuleIds).toEqual(['ER-001']);
+    expect(a3?.incomingDesignConnections).toHaveLength(5);
+    expect(a3?.outgoingDesignConnections).toHaveLength(2);
+    expect(a3?.incomingEffectiveConnections).toHaveLength(6);
+    expect(a3?.outgoingEffectiveConnections).toHaveLength(3);
+    expect(a3?.outgoingRouteRuleIds).toEqual(['RR2-014', 'RR2-015', 'RR2-016']);
+    expect(a3?.incomingRouteRuleIds).toEqual(['RR2-005', 'RR2-012']);
+    expect(a3?.externalEntryRuleIds).toEqual(['ER-003']);
+  });
+});
+
+describe('content package isolation, demo sandbox, postgres fail-closed', () => {
+  it('установка content package не меняет соседние страницы и связи', () => {
+    const store = createSeededStore();
+    const neighborTitle = store.getTrack('A2-008')!.title;
+    const neighborConnections = JSON.stringify(store.listConnections());
+    const pkgPath = path.join(process.cwd(), 'tests/fixtures/track-packages/a3-002-test/package.json');
+    const contentPath = path.join(process.cwd(), 'server/content/tracks/a3-002/0.1.0/content.json');
+    const json = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+    const body = JSON.parse(fs.readFileSync(contentPath, 'utf8'));
+    const apply = importTrackPackage(
+      store,
+      { filename: 'package.json', text: JSON.stringify(json), json, contentBody: body },
+      { dryRun: false },
+    );
+    expect(apply.ok).toBe(true);
+    expect(store.getTrack('A2-008')?.title).toBe(neighborTitle);
+    expect(JSON.stringify(store.listConnections())).toBe(neighborConnections);
+    expect(store.getContent('A3-002')?.contentStatus).toBe('DRAFT');
+    expect(store.getContent('A2-008')).toBeUndefined();
+  });
+
+  it('PUBLIC_DEMO/SANDBOX не создаёт live instance и не исполняет переход', async () => {
+    const store = createSeededStore();
+    store.upsertTrack({
+      ...store.getTrack('A3-002')!,
+      accessTier: 'PUBLIC_DEMO',
+      executionMode: 'SANDBOX',
+    });
+    store.upsertContent({
+      id: newId('cv'),
+      trackId: 'A3-002',
+      contentVersion: 'demo',
+      contentStatus: 'PUBLISHED',
+      contentFormat: 'json',
+      privateContentRef: 'server/demo/a3-002',
+      checksum: 'demo',
+      accessTier: 'PUBLIC_DEMO',
+      executionMode: 'SANDBOX',
+      productPolicy: { policy: 'FREE_CONTENT' },
+      createdAt: '2026-08-31T00:00:00Z',
+      publishedAt: '2026-08-31T00:00:00Z',
+      body: { example: 'anonymized-demo', secret: 'NOT_LIVE' },
+    });
+    const demo = decideContentAccess({
+      track: store.getTrack('A3-002')!,
+      content: store.getContent('A3-002', 'demo')!,
+      access: ANON_ACCESS,
+      flags: DEFAULT_ARCHITECTURE_FLAGS,
+    });
+    expect(demo).toEqual({ allowed: true, kind: 'DEMO' });
+    const live = decideInstanceCreation({
+      track: store.getTrack('A3-002')!,
+      content: store.getContent('A3-002', 'demo')!,
+      access: identityFromVerifiedSession({ userId: 'u1', verified: true, role: 'FULL' }),
+    });
+    expect(live.allowed).toBe(false);
+    if (!live.allowed) expect(live.lockReason).toBe('SANDBOX_NO_LIVE_INSTANCE');
+    expect(() =>
+      createTrackInstance(store, {
+        userId: 'u1',
+        trackId: 'A3-002',
+        access: identityFromVerifiedSession({ userId: 'u1', verified: true, role: 'FULL' }),
+      }),
+    ).toThrow(RuntimeRejectedError);
+
+    const httpDemo = await handleArchitectureRequest(new Request('https://mlma.test/api/v1/tracks/A3-002/content'), {
+      store,
+      env: { NODE_ENV: 'test' },
+    });
+    expect(httpDemo.status).toBe(200);
+    const demoBody = await httpDemo.json();
+    expect(demoBody.sandbox).toBe(true);
+    expect(demoBody.liveInstance).toBe(false);
+    expect(demoBody.body.example).toBe('anonymized-demo');
+
+    const start = await handleArchitectureRequest(
+      new Request('https://mlma.test/api/v1/track-instances', {
+        method: 'POST',
+        headers: { ...sessionHeader({ userId: 'u1', role: 'FULL', verified: true }), 'content-type': 'application/json' },
+        body: JSON.stringify({ trackId: 'A3-002' }),
+      }),
+      { store, env: { NODE_ENV: 'test' } },
+    );
+    expect(start.status).toBe(403);
+    expect((await start.json()).lockReason).toBe('SANDBOX_NO_LIVE_INSTANCE');
+    expect(store.listInstances('u1')).toHaveLength(0);
+  });
+
+  it('оплата не открывает DRAFT/REVIEW/READY; paid content без entitlement закрыт', () => {
+    const store = createSeededStore();
+    const entitled = identityFromVerifiedSession({
+      userId: 'user-1',
+      verified: true,
+      role: 'FULL',
+      entitlements: [{ productCode: 'TEST', status: 'active', startsAt: '2026-01-01T00:00:00Z', endsAt: null, grantsAll: true }],
+    });
+    for (const status of ['DRAFT', 'REVIEW', 'READY'] as const) {
+      store.upsertContent({
+        id: newId('cv'),
+        trackId: 'A3-002',
+        contentVersion: status,
+        contentStatus: status,
+        contentFormat: 'json',
+        privateContentRef: 'server-only',
+        checksum: 'x',
+        accessTier: 'PAID',
+        executionMode: 'LIVE',
+        productPolicy: { policy: 'ENTITLED' },
+        createdAt: '2026-08-31T00:00:00Z',
+        publishedAt: null,
+        body: { secret: 'UNPUBLISHED' },
+      });
+      const decision = decideContentAccess({
+        track: store.getTrack('A3-002')!,
+        content: store.getContent('A3-002', status)!,
+        access: entitled,
+        flags: { ...DEFAULT_ARCHITECTURE_FLAGS, PAID_TRACK_NAVIGATION_ENABLED: true },
+      });
+      expect(decision.allowed).toBe(false);
+      if (!decision.allowed) expect(decision.lockReason).toBe('CONTENT_UNAVAILABLE');
+    }
+  });
+
+  it('production без production repository fail closed, не падает в memory', async () => {
+    expect(isProductionRepositoryConfigured({ NODE_ENV: 'production' })).toBe(false);
+    expect(isProductionRepositoryConfigured({ NODE_ENV: 'production', MLMA_ARCHITECTURE_STORE: 'memory', DATABASE_URL: 'postgres://x' })).toBe(
+      false,
+    );
+    expect(() => getArchitectureStore({ NODE_ENV: 'production' })).toThrow(ProductionRepositoryNotConfiguredError);
+    const res = await handleArchitectureRequest(new Request('https://mlma.test/api/v1/tracks/A2-008/meta'), {
+      env: { NODE_ENV: 'production' },
+    });
+    expect(res.status).toBe(503);
+    expect((await res.json()).code).toBe('STORAGE_UNCONFIGURED');
+
+    const client = new FakePostgresClient();
+    const pg = new PostgresArchitectureStore(client);
+    const memory = createSeededStore();
+    pg.replaceAll(memory.snapshot());
+    expect(pg.listTracks()).toHaveLength(112);
+    expect(pg.listConnections()).toHaveLength(253);
+    expect(pg.listRules()).toHaveLength(58);
+    expect(pg.listEntitlements('nobody')).toEqual([]);
+    expect(client.statements.some((row) => row.sql.includes('track_connections'))).toBe(true);
+  });
+
+  it('A6-017 остаётся в registry как DATA_BLOCKED и не исполняется', () => {
+    const store = createSeededStore();
+    const track = store.getTrack('A6-017');
+    expect(track).toBeDefined();
+    expect(track?.entityType).toBe('ALIAS');
+    expect(track?.canonicalId).toBe('A6-017');
+    expect(track?.dataQuality).toBe('DATA_BLOCKED');
+    const resolved = resolveTrackId('A6-017', (id) => store.getTrack(id));
+    expect(resolved.error).toBe('CANONICAL_MISSING');
+    expect(resolved.canonicalId).toBeNull();
+    const decision = decideRoute(store, ctx({ fromId: 'A6-017', outcomeCode: 'DONE', facts: {}, mode: 'pilot' }));
+    expect(decision.reasonCode).toBe('NO_SUCH_TRACK');
+    expect(decision.lockReason).toBe('DATA_BLOCKED');
+    expect(checkTrack(store, 'A6-017').ok).toBe(false);
+  });
+
+  it('importArchitectureSource понимает v3 graph', () => {
+    const store = new MemoryArchitectureStore();
+    const result = importArchitectureSource(store, graphSource(), { dryRun: false });
+    expect(result.ok).toBe(true);
+    expect(result.counts?.effectiveTrackConnections).toBe(253);
   });
 });
 

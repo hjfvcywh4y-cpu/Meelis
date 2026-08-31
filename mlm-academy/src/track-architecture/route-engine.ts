@@ -30,7 +30,8 @@ function destinationNeedsNavigation(type: DestinationType): boolean {
 }
 
 /**
- * Чистый детерминированный Route Engine. Не читает HTML, legacyNextIds и 231 archive edge.
+ * Чистый детерминированный Route Engine.
+ * Исполняет только RouteRule. Не читает HTML, legacyNextIds, archive и LOCKED_NEXT_ACTION_SLOT.
  */
 export function decideRoute(store: RouteEngineStore, context: RouteContext): RouteDecision {
   if (!context.flags.ROUTE_ENGINE_ENABLED || !context.flags.TRACK_REGISTRY_ENABLED) {
@@ -46,7 +47,12 @@ export function decideRoute(store: RouteEngineStore, context: RouteContext): Rou
   }
 
   const resolved = resolveTrackId(context.fromId, (id) => store.getTrack(id));
-  if (!resolved.canonicalId || !resolved.definition) {
+  const blocked =
+    resolved.error === 'ALIAS_LOOP' ||
+    resolved.error === 'CANONICAL_MISSING' ||
+    resolved.definition?.dataQuality === 'DATA_BLOCKED' ||
+    resolved.definition?.dataQuality === 'CANONICAL_MISSING';
+  if (blocked || !resolved.canonicalId || !resolved.definition) {
     return {
       matchedRuleId: null,
       destinationType: 'DONE',
@@ -54,7 +60,7 @@ export function decideRoute(store: RouteEngineStore, context: RouteContext): Rou
       destinationUrl: null,
       reasonCode: 'NO_SUCH_TRACK',
       locked: true,
-      lockReason: resolved.error === 'ALIAS_LOOP' ? 'ALIAS_LOOP' : 'CONTENT_UNAVAILABLE',
+      lockReason: resolved.error === 'ALIAS_LOOP' ? 'ALIAS_LOOP' : 'DATA_BLOCKED',
     };
   }
 
@@ -78,7 +84,7 @@ export function decideRoute(store: RouteEngineStore, context: RouteContext): Rou
       destinationId: null,
       destinationUrl: null,
       reasonCode: 'NO_MATCHING_RULE',
-      reasonText: 'Нет исполняемого правила v2. Legacy-связи не используются.',
+      reasonText: 'Нет исполняемого RouteRule. LOCKED_NEXT_ACTION_SLOT и archive не исполняются.',
       locked: true,
       lockReason: 'FEATURE_DISABLED',
     };

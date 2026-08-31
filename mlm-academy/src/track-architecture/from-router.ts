@@ -92,6 +92,14 @@ export function tracksFromRouter(file: RouterFile, registryVersion = '2.0'): Tra
       legacyNextIds: track.legacyNextIds || '',
     },
     registryVersion,
+    contentStatus: 'EMPTY',
+    accessTier: 'PUBLIC_METADATA',
+    routeStatus: 'LOCKED',
+    executionMode: 'PREVIEW',
+    dataQuality:
+      track.entityType === 'ALIAS' && String(track.canonicalId || track.id).toUpperCase() === String(track.id).toUpperCase()
+        ? 'DATA_BLOCKED'
+        : 'OK',
   }));
 }
 

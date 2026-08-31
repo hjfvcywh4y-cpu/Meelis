@@ -10,9 +10,11 @@ import type {
   PublicationStatus,
   RouteDecisionRecord,
   RouteRuleRecord,
+  TrackConnectionRecord,
   TrackDefinition,
   TrackInstanceRecord,
   TrackOutcomeRecord,
+  ConnectionIndexEntry,
 } from './types';
 
 export interface ArchitectureStore {
@@ -27,6 +29,12 @@ export interface ArchitectureStore {
   replaceEntryRules(rules: EntryRuleRecord[]): void;
   listArchiveEdges(): ArchiveEdgeRecord[];
   replaceArchiveEdges(edges: ArchiveEdgeRecord[]): void;
+  getConnection(id: string): TrackConnectionRecord | undefined;
+  listConnections(): TrackConnectionRecord[];
+  replaceConnections(rows: TrackConnectionRecord[]): void;
+  getConnectionIndex(id: string): ConnectionIndexEntry | undefined;
+  listConnectionIndex(): ConnectionIndexEntry[];
+  replaceConnectionIndex(index: Record<string, ConnectionIndexEntry>): void;
   getContent(trackId: string, version?: string): ContentVersionRecord | undefined;
   listContent(): ContentVersionRecord[];
   upsertContent(record: ContentVersionRecord): void;
@@ -48,11 +56,22 @@ export interface ArchitectureStore {
   replaceAll(snapshot: StoreSnapshot): void;
 }
 
+export function connectionsForTrack(store: ArchitectureStore, trackId: string) {
+  const id = trackId.toUpperCase();
+  const all = store.listConnections();
+  return {
+    incoming: all.filter((row) => row.toId === id),
+    outgoing: all.filter((row) => row.fromId === id),
+  };
+}
+
 export interface StoreSnapshot {
   tracks: TrackDefinition[];
   rules: RouteRuleRecord[];
   entryRules: EntryRuleRecord[];
   archiveEdges: ArchiveEdgeRecord[];
+  connections: TrackConnectionRecord[];
+  connectionIndex: ConnectionIndexEntry[];
   content: ContentVersionRecord[];
   products: ProductRecord[];
   entitlements: EntitlementRecord[];
@@ -71,6 +90,8 @@ export class MemoryArchitectureStore implements ArchitectureStore {
   private rules = new Map<string, RouteRuleRecord>();
   private entryRules = new Map<string, EntryRuleRecord>();
   private archiveEdges: ArchiveEdgeRecord[] = [];
+  private connections = new Map<string, TrackConnectionRecord>();
+  private connectionIndex = new Map<string, ConnectionIndexEntry>();
   private content = new Map<string, ContentVersionRecord>();
   private products = new Map<string, ProductRecord>();
   private entitlements = new Map<string, EntitlementRecord>();
@@ -115,6 +136,26 @@ export class MemoryArchitectureStore implements ArchitectureStore {
   replaceArchiveEdges(edges: ArchiveEdgeRecord[]) {
     this.archiveEdges = clone(edges);
   }
+  getConnection(id: string) {
+    return this.connections.get(id);
+  }
+  listConnections() {
+    return [...this.connections.values()].sort((a, b) => a.connectionId.localeCompare(b.connectionId));
+  }
+  replaceConnections(rows: TrackConnectionRecord[]) {
+    this.connections.clear();
+    for (const row of rows) this.connections.set(row.connectionId, clone(row));
+  }
+  getConnectionIndex(id: string) {
+    return this.connectionIndex.get(id);
+  }
+  listConnectionIndex() {
+    return [...this.connectionIndex.values()].sort((a, b) => a.id.localeCompare(b.id));
+  }
+  replaceConnectionIndex(index: Record<string, ConnectionIndexEntry>) {
+    this.connectionIndex.clear();
+    for (const [id, entry] of Object.entries(index)) this.connectionIndex.set(id, clone(entry));
+  }
   getContent(trackId: string, version?: string) {
     if (version) return this.content.get(`${trackId}:${version}`);
     const rows = [...this.content.values()]
@@ -126,7 +167,11 @@ export class MemoryArchitectureStore implements ArchitectureStore {
     return [...this.content.values()];
   }
   upsertContent(record: ContentVersionRecord) {
-    this.content.set(`${record.trackId}:${record.contentVersion}`, clone(record));
+    this.content.set(`${record.trackId}:${record.contentVersion}`, clone({
+      accessTier: 'PAID',
+      executionMode: 'LIVE',
+      ...record,
+    }));
   }
   getProduct(code: string) {
     return this.products.get(code);
@@ -178,6 +223,8 @@ export class MemoryArchitectureStore implements ArchitectureStore {
       rules: this.listRules(),
       entryRules: this.listEntryRules(),
       archiveEdges: this.listArchiveEdges(),
+      connections: this.listConnections(),
+      connectionIndex: this.listConnectionIndex(),
       content: this.listContent(),
       products: this.listProducts(),
       entitlements: [...this.entitlements.values()],
@@ -202,6 +249,10 @@ export class MemoryArchitectureStore implements ArchitectureStore {
     this.replaceRules(snapshot.rules);
     this.replaceEntryRules(snapshot.entryRules);
     this.replaceArchiveEdges(snapshot.archiveEdges);
+    this.replaceConnections(snapshot.connections || []);
+    const index: Record<string, ConnectionIndexEntry> = {};
+    for (const entry of snapshot.connectionIndex || []) index[entry.id] = entry;
+    this.replaceConnectionIndex(index);
     for (const row of snapshot.content) this.upsertContent(row);
     for (const row of snapshot.products) this.upsertProduct(row);
     for (const row of snapshot.entitlements) this.upsertEntitlement(row);
@@ -218,6 +269,8 @@ export function emptySnapshot(): StoreSnapshot {
     rules: [],
     entryRules: [],
     archiveEdges: [],
+    connections: [],
+    connectionIndex: [],
     content: [],
     products: [],
     entitlements: [],

@@ -2,12 +2,44 @@ import { decideRoute } from './route-engine';
 import { stripUnsafeFacts } from './privacy';
 import { sanitizeArchitectureEvent, type ArchitectureEvent } from './events';
 import { newId, nowIso, type ArchitectureStore } from './store';
+import { decideInstanceCreation } from './access';
 import type { AccessContext, ArchitectureFlags, RouteContext, RouteDecision, RouteMode } from './types';
+
+export class RuntimeRejectedError extends Error {
+  constructor(
+    message: string,
+    readonly lockReason: 'SANDBOX_NO_LIVE_INSTANCE' | 'DATA_BLOCKED' | 'AUTH_REQUIRED' | 'ENTITLEMENT_REQUIRED',
+  ) {
+    super(message);
+    this.name = 'RuntimeRejectedError';
+  }
+}
 
 export function createTrackInstance(
   store: ArchitectureStore,
-  input: { userId: string; trackId: string; contentVersion?: string | null; parentRouteId?: string | null; now?: string },
+  input: {
+    userId: string;
+    trackId: string;
+    contentVersion?: string | null;
+    parentRouteId?: string | null;
+    now?: string;
+    access?: AccessContext;
+  },
 ) {
+  const track = store.getTrack(input.trackId);
+  if (!track) throw new Error('unknown_track');
+  const content = store.getContent(input.trackId);
+  const access = input.access || {
+    userId: input.userId,
+    role: 'FULL' as const,
+    userRight: 'FULL' as const,
+    verified: true,
+    entitlements: [],
+  };
+  const allowed = decideInstanceCreation({ track, content: content || null, access });
+  if (!allowed.allowed) {
+    throw new RuntimeRejectedError(allowed.lockReason, allowed.lockReason);
+  }
   const instance = {
     instanceId: newId('ti'),
     userId: input.userId,
@@ -68,6 +100,24 @@ export function submitOutcome(
   const instance = store.getInstance(input.instanceId);
   if (!instance || instance.userId !== input.userId) {
     throw new Error('instance_not_found');
+  }
+
+  const track = store.getTrack(instance.trackId);
+  const content = store.getContent(instance.trackId);
+  if (track) {
+    const live = decideInstanceCreation({ track, content: content || null, access: input.access });
+    if (!live.allowed) {
+      const decision: RouteDecision = {
+        matchedRuleId: null,
+        destinationType: 'DONE',
+        destinationId: null,
+        destinationUrl: null,
+        reasonCode: 'ACCESS_LOCKED',
+        locked: true,
+        lockReason: live.lockReason,
+      };
+      return { duplicate: false, outcomeId: '', decision, events: [] };
+    }
   }
 
   const safeFacts = stripUnsafeFacts(input.facts || {});

@@ -33,6 +33,24 @@ export type RuleStatus = (typeof RULE_STATUSES)[number];
 export const PUBLICATION_STATUSES = ['PLANNED', 'DRAFT', 'REVIEW', 'PUBLISHED', 'PAUSED', 'ARCHIVED'] as const;
 export type PublicationStatus = (typeof PUBLICATION_STATUSES)[number];
 
+export const CONTENT_STATUSES = ['EMPTY', 'DRAFT', 'REVIEW', 'READY', 'PUBLISHED', 'ARCHIVED'] as const;
+export type ContentStatus = (typeof CONTENT_STATUSES)[number];
+
+export const ACCESS_TIERS = ['PUBLIC_METADATA', 'PUBLIC_DEMO', 'PAID', 'ADMIN_ONLY'] as const;
+export type AccessTier = (typeof ACCESS_TIERS)[number];
+
+export const ROUTE_STATUSES = ['LOCKED', 'TEST', 'ACTIVE', 'RETIRED'] as const;
+export type RouteStatus = (typeof ROUTE_STATUSES)[number];
+
+export const EXECUTION_MODES = ['PREVIEW', 'SANDBOX', 'LIVE'] as const;
+export type ExecutionMode = (typeof EXECUTION_MODES)[number];
+
+export const USER_RIGHTS = ['NONE', 'TRIAL', 'FULL', 'ADMIN'] as const;
+export type UserRight = (typeof USER_RIGHTS)[number];
+
+export const ACTIVATION_MODES = ['LOCKED_NEXT_ACTION_SLOT', 'ROUTE_RULE'] as const;
+export type ActivationMode = (typeof ACTIVATION_MODES)[number];
+
 export const OPERATORS = ['=', '!=', '>', '>=', '<', '<=', 'IN', 'NOT_IN', 'EXISTS'] as const;
 export type OperatorCode = (typeof OPERATORS)[number];
 
@@ -47,7 +65,9 @@ export type LockReason =
   | 'CONTENT_UNAVAILABLE'
   | 'ENTITY_NOT_LESSON'
   | 'ALIAS_LOOP'
-  | 'CANONICAL_MISSING';
+  | 'CANONICAL_MISSING'
+  | 'DATA_BLOCKED'
+  | 'SANDBOX_NO_LIVE_INSTANCE';
 
 export type ReasonCode =
   | 'MATCHED'
@@ -86,6 +106,11 @@ export interface TrackDefinition {
   catalogVisible: boolean;
   source: Record<string, unknown>;
   registryVersion: string;
+  contentStatus: ContentStatus;
+  accessTier: AccessTier;
+  routeStatus: RouteStatus;
+  executionMode: ExecutionMode;
+  dataQuality: 'OK' | 'CANONICAL_MISSING' | 'DATA_BLOCKED';
 }
 
 export interface PublicTrackMeta {
@@ -133,10 +158,12 @@ export interface ContentVersionRecord {
   id: string;
   trackId: string;
   contentVersion: string;
-  contentStatus: PublicationStatus;
+  contentStatus: ContentStatus | PublicationStatus;
   contentFormat: string;
   privateContentRef: string | null;
   checksum: string;
+  accessTier?: AccessTier;
+  executionMode?: ExecutionMode;
   productPolicy: Record<string, unknown>;
   createdAt: string;
   publishedAt: string | null;
@@ -237,8 +264,47 @@ export interface EntitlementGrant {
 export interface AccessContext {
   userId: string | null;
   role: AccessRole;
+  userRight: UserRight;
   verified: boolean;
   entitlements: EntitlementGrant[];
+}
+
+export interface TrackConnectionRecord {
+  connectionId: string;
+  fromId: string;
+  toId: string;
+  fromCanonicalId: string;
+  toCanonicalId: string;
+  rank: number;
+  relationType: string;
+  relationLabel: string;
+  conditionHint: string;
+  reason: string;
+  userLabel: string;
+  activationMode: ActivationMode;
+  executable: boolean;
+  userVisible: boolean;
+  matchedRouteRuleIds: string[];
+  sourceLayer: string;
+  runtimeStatus: string;
+}
+
+export interface ConnectionIndexEntry {
+  id: string;
+  canonicalId: string;
+  entityType: EntityType;
+  publishSurface: string;
+  domain: string;
+  implementationStatus: string;
+  incomingDesignConnections: unknown[];
+  outgoingDesignConnections: unknown[];
+  incomingEffectiveConnections: unknown[];
+  outgoingEffectiveConnections: unknown[];
+  outgoingRouteRuleIds: string[];
+  incomingRouteRuleIds: string[];
+  externalEntryRuleIds: string[];
+  placementStatus: string;
+  installBehavior: Record<string, unknown>;
 }
 
 export interface RouteContext {

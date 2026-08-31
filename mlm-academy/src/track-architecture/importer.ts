@@ -2,8 +2,23 @@ import { normalizeTrackId } from '../domain/routes';
 import { resolveTrackId, canPublishAsStandaloneLesson } from './resolver';
 import { parseTrackPackage, type TrackPackage } from './package';
 import { tracksFromRouter, rulesFromRouter, entryRulesFromRouter, archiveFromRouter } from './from-router';
+import {
+  GRAPH_V3_EXPECTED,
+  BROKEN_ALIAS_ID,
+  archiveAuditFromDesign,
+  connectionIndexFromGraph,
+  connectionsFromGraph,
+  countsMatchExpected,
+  entryRulesFromGraph,
+  graphCounts,
+  graphWarnings,
+  rulesFromGraph,
+  tracksFromGraph,
+  type GraphFileV3,
+} from './from-graph';
 import { MemoryArchitectureStore, sha256, nowIso, newId, type ArchitectureStore, type StoreSnapshot } from './store';
-import type { ContentVersionRecord, RouteRuleRecord, TrackDefinition } from './types';
+import type { AccessTier, ContentVersionRecord, ExecutionMode, RouteRuleRecord, TrackDefinition } from './types';
+import { accessTierFromPolicy, executionModeForContent } from './access';
 import { parseRecovery, normalizeDestinationId } from './recovery';
 import { isAllowedFieldPath, isAllowedOperator } from './evaluator';
 
@@ -32,7 +47,20 @@ export interface ImportResult {
     tracks: number;
     rules: number;
     archiveEdges: number;
+    designConnections?: number;
+    ruleDerivedConnections?: number;
+    effectiveTrackConnections?: number;
+    connectionIndex?: number;
+    nodesWithoutEffectiveIncoming?: number;
+    lockedSlots?: number;
+    routeRuleConnections?: number;
   };
+}
+
+export function isFullGraphV3(json: unknown): json is GraphFileV3 {
+  if (!json || typeof json !== 'object') return false;
+  const row = json as GraphFileV3;
+  return row.version === '3.0' || Array.isArray(row.effectiveTrackConnections);
 }
 
 function needsDestinationId(type: string): boolean {
@@ -202,6 +230,135 @@ export function importRouterJson(
   return result;
 }
 
+export function importFullGraphJson(
+  store: ArchitectureStore,
+  source: { filename: string; text: string; json: unknown },
+  options: { dryRun: boolean; userId?: string | null },
+): ImportResult {
+  const checksum = sha256(source.text);
+  const issues: ImportIssue[] = [];
+  const file = source.json as GraphFileV3;
+  let tracks: TrackDefinition[] = [];
+  let rules: RouteRuleRecord[] = [];
+  try {
+    tracks = tracksFromGraph(file);
+    rules = rulesFromGraph(file, checksum);
+  } catch (error) {
+    return fail('parse_failed', String(error), checksum, options.dryRun);
+  }
+
+  const actual = graphCounts(file);
+  for (const message of countsMatchExpected(actual)) {
+    issues.push({ level: 'error', code: 'graph_count', message });
+  }
+  for (const message of graphWarnings(file)) {
+    issues.push({ level: 'warning', code: 'data_quality', message });
+  }
+
+  const connections = connectionsFromGraph(file);
+  const lockedSlots = connections.filter((row) => row.activationMode === 'LOCKED_NEXT_ACTION_SLOT').length;
+  const routeRuleConnections = connections.filter((row) => row.activationMode === 'ROUTE_RULE').length;
+  const connectionIndex = connectionIndexFromGraph(file);
+  const archive = archiveAuditFromDesign(file);
+
+  if (connections.length !== GRAPH_V3_EXPECTED.effectiveTrackConnections) {
+    issues.push({
+      level: 'error',
+      code: 'connection_count',
+      message: `Expected ${GRAPH_V3_EXPECTED.effectiveTrackConnections} working track_connections, got ${connections.length}`,
+    });
+  }
+  if (Object.keys(connectionIndex).length !== GRAPH_V3_EXPECTED.connectionIndex) {
+    issues.push({
+      level: 'error',
+      code: 'connection_index',
+      message: `Expected ${GRAPH_V3_EXPECTED.connectionIndex} connectionIndex entries, got ${Object.keys(connectionIndex).length}`,
+    });
+  }
+  if (archive.some((edge) => edge.active)) {
+    issues.push({ level: 'error', code: 'legacy_active', message: 'Audit archive edges must not be active' });
+  }
+
+  const a6017 = tracks.find((track) => track.id === BROKEN_ALIAS_ID);
+  if (!a6017) {
+    issues.push({ level: 'error', code: 'alias_missing', message: 'A6-017 must remain in the 112-ID registry' });
+  } else if (a6017.dataQuality !== 'DATA_BLOCKED' && a6017.dataQuality !== 'CANONICAL_MISSING') {
+    issues.push({
+      level: 'error',
+      code: 'alias_not_blocked',
+      message: 'A6-017 must be marked DATA_BLOCKED / CANONICAL_MISSING',
+    });
+  }
+
+  issues.push(...validateGraph(tracks, rules));
+  const errors = issues.filter((issue) => issue.level === 'error');
+  const before = store.snapshot();
+  const draft = new MemoryArchitectureStore();
+  draft.replaceAll(before);
+  for (const track of tracks) draft.upsertTrack(track);
+  draft.replaceRules(rules);
+  draft.replaceEntryRules(entryRulesFromGraph(file));
+  draft.replaceConnections(connections);
+  draft.replaceConnectionIndex(connectionIndex);
+  draft.replaceArchiveEdges(archive);
+  const after = draft.snapshot();
+  const diff = diffSnapshots(before, after);
+  diff.warnings = issues.filter((issue) => issue.level === 'warning');
+
+  const result: ImportResult = {
+    ok: errors.length === 0,
+    dryRun: options.dryRun,
+    checksum,
+    issues,
+    diff,
+    counts: {
+      tracks: tracks.length,
+      rules: rules.length,
+      archiveEdges: archive.length,
+      designConnections: actual.designConnections,
+      ruleDerivedConnections: actual.ruleDerivedConnections,
+      effectiveTrackConnections: connections.length,
+      connectionIndex: Object.keys(connectionIndex).length,
+      nodesWithoutEffectiveIncoming: actual.nodesWithoutEffectiveIncoming,
+      lockedSlots,
+      routeRuleConnections,
+    },
+  };
+
+  store.insertImportRun({
+    importRunId: newId('imp'),
+    importType: 'full_graph_v3',
+    sourceFilename: source.filename,
+    sourceChecksum: checksum,
+    dryRun: options.dryRun,
+    importStatus: result.ok ? 'ok' : 'rejected',
+    diff: diff as unknown as Record<string, unknown>,
+    initiatedByUserId: options.userId || null,
+    createdAt: nowIso(),
+    completedAt: nowIso(),
+  });
+
+  if (result.ok && !options.dryRun) {
+    store.replaceAll(after);
+  }
+  return result;
+}
+
+export function importArchitectureSource(
+  store: ArchitectureStore,
+  source: { filename: string; text: string; json: unknown; contentBody?: unknown },
+  options: { dryRun: boolean; userId?: string | null; allowProductionActivation?: boolean },
+): ImportResult {
+  const json = source.json;
+  if (json && typeof json === 'object' && 'packageVersion' in (json as object)) {
+    return importTrackPackage(store, source, options);
+  }
+  if (isFullGraphV3(json)) {
+    return importFullGraphJson(store, source, options);
+  }
+  return importRouterJson(store, source, options);
+}
+
 export function importTrackPackage(
   store: ArchitectureStore,
   source: { filename: string; text: string; json: unknown; contentBody?: unknown },
@@ -214,6 +371,21 @@ export function importTrackPackage(
   }
   const pkg = parsed.data;
   const issues: ImportIssue[] = [];
+
+  if (pkg.graphBinding.editNeighborPages !== false) {
+    issues.push({
+      level: 'error',
+      code: 'neighbor_edit',
+      message: 'graphBinding.editNeighborPages must be false',
+    });
+  }
+  if (pkg.graphBinding.unboundConnectionPolicy !== 'KEEP_AS_LOCKED_NEXT_ACTION_SLOT') {
+    issues.push({
+      level: 'error',
+      code: 'unbound_policy',
+      message: 'Unbound connections must stay LOCKED_NEXT_ACTION_SLOT',
+    });
+  }
 
   if (pkg.content.serverOnly !== true) {
     issues.push({ level: 'error', code: 'content_not_server_only', message: 'Track package content must be serverOnly' });
@@ -262,6 +434,14 @@ export function importTrackPackage(
     sourceChecksum: checksum,
   }));
 
+  if (rules.some((rule) => rule.fromTrackId !== pkg.track.id)) {
+    issues.push({
+      level: 'error',
+      code: 'neighbor_rule',
+      message: 'Track package cannot add RouteRules for neighboring Track IDs',
+    });
+  }
+
   if (rules.some((rule) => rule.ruleStatus === 'VALIDATED_RULE') && options.allowProductionActivation !== true) {
     issues.push({
       level: 'error',
@@ -276,7 +456,6 @@ export function importTrackPackage(
   const history = store.listInstances('').length;
   void history;
 
-  const errors = issues.filter((issue) => issue.level === 'error');
   const before = store.snapshot();
   const draft = new MemoryArchitectureStore();
   draft.replaceAll(before);
@@ -293,6 +472,10 @@ export function importTrackPackage(
 
   for (const rule of rules) draft.upsertRule(rule);
 
+  const neighborContentBefore = before.content.filter((row) => row.trackId !== pkg.track.id);
+  const neighborTracksBefore = before.tracks.filter((row) => row.id !== pkg.track.id);
+  const connectionsBefore = JSON.stringify(before.connections);
+
   const content: ContentVersionRecord = {
     id: newId('cv'),
     trackId: pkg.track.id,
@@ -301,6 +484,9 @@ export function importTrackPackage(
     contentFormat: pkg.content.format,
     privateContentRef: pkg.content.sourcePath,
     checksum: pkg.content.checksum && pkg.content.checksum !== 'GENERATE_DURING_IMPORT' ? pkg.content.checksum : checksum,
+    accessTier: (pkg.access.accessTier || accessTierFromPolicy(pkg.access.policy)) as AccessTier,
+    executionMode: (pkg.access.executionMode ||
+      executionModeForContent(pkg.access.accessTier || accessTierFromPolicy(pkg.access.policy), pkg.content.status)) as ExecutionMode,
     productPolicy: { policy: pkg.access.policy, productCodes: pkg.access.productCodes },
     createdAt: nowIso(),
     publishedAt: pkg.content.status === 'PUBLISHED' ? nowIso() : null,
@@ -309,6 +495,30 @@ export function importTrackPackage(
   draft.upsertContent(content);
 
   const after = draft.snapshot();
+  if (JSON.stringify(after.connections) !== connectionsBefore) {
+    issues.push({
+      level: 'error',
+      code: 'neighbor_graph',
+      message: 'Installing a content package must not rewrite track_connections',
+    });
+  }
+  const neighborTracksAfter = after.tracks.filter((row) => row.id !== pkg.track.id);
+  if (JSON.stringify(neighborTracksAfter) !== JSON.stringify(neighborTracksBefore)) {
+    issues.push({
+      level: 'error',
+      code: 'neighbor_pages',
+      message: 'Installing a content package must not edit neighboring track pages',
+    });
+  }
+  const neighborContentAfter = after.content.filter((row) => row.trackId !== pkg.track.id);
+  if (JSON.stringify(neighborContentAfter) !== JSON.stringify(neighborContentBefore)) {
+    issues.push({
+      level: 'error',
+      code: 'neighbor_content',
+      message: 'Installing a content package must not change neighboring content versions',
+    });
+  }
+  const errors = issues.filter((issue) => issue.level === 'error');
   const diff = diffSnapshots(before, after);
   diff.warnings = issues.filter((issue) => issue.level === 'warning');
 
@@ -318,7 +528,13 @@ export function importTrackPackage(
     checksum,
     issues,
     diff,
-    counts: { tracks: after.tracks.length, rules: after.rules.length, archiveEdges: after.archiveEdges.length },
+    counts: {
+      tracks: after.tracks.length,
+      rules: after.rules.length,
+      archiveEdges: after.archiveEdges.length,
+      effectiveTrackConnections: after.connections.length,
+      connectionIndex: after.connectionIndex.length,
+    },
   };
 
   store.insertImportRun({

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { TRACK_ID_PATTERN } from '../domain/track-id';
-import { DESTINATION_TYPES, ENTITY_TYPES, OPERATORS, PUBLICATION_STATUSES } from './types';
+import { DESTINATION_TYPES, ENTITY_TYPES, OPERATORS, PUBLICATION_STATUSES, ACCESS_TIERS, EXECUTION_MODES } from './types';
 
 const trackId = z.string().regex(TRACK_ID_PATTERN);
 
@@ -21,6 +21,14 @@ export const trackPackageSchema = z
         audience: z.string().optional(),
       })
       .strict(),
+    graphBinding: z
+      .object({
+        mode: z.literal('AUTO_BY_TRACK_ID'),
+        graphVersion: z.literal('3.0'),
+        editNeighborPages: z.literal(false),
+        unboundConnectionPolicy: z.literal('KEEP_AS_LOCKED_NEXT_ACTION_SLOT'),
+      })
+      .strict(),
     content: z
       .object({
         version: z.string().min(1),
@@ -36,6 +44,8 @@ export const trackPackageSchema = z
       .object({
         policy: z.enum(['PUBLIC_META', 'FREE_CONTENT', 'ENTITLED', 'ADMIN_PREVIEW', 'UNAVAILABLE']),
         productCodes: z.array(z.string().min(1)),
+        accessTier: z.enum(ACCESS_TIERS).optional(),
+        executionMode: z.enum(EXECUTION_MODES).optional(),
       })
       .strict(),
     outcomes: z.array(

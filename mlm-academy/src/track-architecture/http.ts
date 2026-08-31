@@ -1,15 +1,17 @@
 import { DEFAULT_ARCHITECTURE_FLAGS, resolveArchitectureFlags } from './flags';
 import { identityFromUntrustedClient, identityFromVerifiedSession, ANON_ACCESS } from './identity';
-import { decideContentAccess } from './access';
+import { decideContentAccess, decideInstanceCreation } from './access';
 import { publicMetaResponse, toPublicTrackMeta } from './public-meta';
 import { resolveTrackId, canPublishAsStandaloneLesson } from './resolver';
-import { createTrackInstance, submitOutcome } from './runtime';
-import { importRouterJson, importTrackPackage } from './importer';
+import { createTrackInstance, submitOutcome, RuntimeRejectedError } from './runtime';
+import { importArchitectureSource } from './importer';
 import { getArchitectureStore } from './seed';
 import { stripUnsafeFacts } from './privacy';
 import { sanitizeArchitectureEvent } from './events';
 import { processPaymentEvent } from './payments';
 import { normalizeTrackId } from '../domain/routes';
+import { connectionsForTrack } from './store';
+import { ProductionRepositoryNotConfiguredError } from './postgres';
 import type { AccessContext, ArchitectureFlags, RouteDecision, RouteMode } from './types';
 import type { ArchitectureStore } from './store';
 
@@ -90,7 +92,15 @@ export async function handleArchitectureRequest(
 ): Promise<Response> {
   const env = options?.env || process.env;
   const flags = options?.flags || resolveArchitectureFlags(env);
-  const store = options?.store || getArchitectureStore();
+  let store: ArchitectureStore;
+  try {
+    store = options?.store || getArchitectureStore(env);
+  } catch (error) {
+    if (error instanceof ProductionRepositoryNotConfiguredError) {
+      return json({ ok: false, code: 'STORAGE_UNCONFIGURED', message: error.message }, 503);
+    }
+    throw error;
+  }
   const method = request.method.toUpperCase();
   const path = pathnameOf(request);
   const access = readSession(request, env);
@@ -128,13 +138,16 @@ export async function handleArchitectureRequest(
     });
     if (!decision.allowed) {
       sanitizeArchitectureEvent('track_access_denied', { track_id: resolved.canonicalId, reason: decision.lockReason });
-      return json({ ok: false, code: 'denied', lockReason: decision.lockReason }, 403);
+      return json({ ok: false, code: 'denied', lockReason: decision.lockReason, kind: decision.kind || null }, 403);
     }
     return json({
       ok: true,
       trackId: resolved.canonicalId,
       contentVersion: content?.contentVersion,
       body: content?.body ?? null,
+      kind: decision.kind,
+      sandbox: decision.kind === 'DEMO',
+      liveInstance: decision.kind === 'DEMO' ? false : true,
     });
   }
 
@@ -142,10 +155,26 @@ export async function handleArchitectureRequest(
     if (!access.userId || !access.verified) return json({ ok: false, code: 'AUTH_REQUIRED' }, 401);
     const body = await safeJson(request);
     const trackId = normalizeTrackId(String(body.trackId || ''));
-    if (!trackId || !store.getTrack(trackId)) return json({ ok: false, code: 'unknown_track' }, 400);
-    const instance = createTrackInstance(store, { userId: access.userId, trackId });
-    sanitizeArchitectureEvent('track_started', { track_id: trackId });
-    return json({ ok: true, instance }, 201);
+    const track = trackId ? store.getTrack(trackId) : undefined;
+    if (!trackId || !track) return json({ ok: false, code: 'unknown_track' }, 400);
+    const allowed = decideInstanceCreation({
+      track,
+      content: store.getContent(trackId) || null,
+      access,
+    });
+    if (!allowed.allowed) {
+      return json({ ok: false, code: allowed.lockReason, lockReason: allowed.lockReason }, allowed.lockReason === 'AUTH_REQUIRED' ? 401 : 403);
+    }
+    try {
+      const instance = createTrackInstance(store, { userId: access.userId, trackId, access });
+      sanitizeArchitectureEvent('track_started', { track_id: trackId });
+      return json({ ok: true, instance }, 201);
+    } catch (error) {
+      if (error instanceof RuntimeRejectedError) {
+        return json({ ok: false, code: error.lockReason, lockReason: error.lockReason }, 403);
+      }
+      throw error;
+    }
   }
 
   if (path.startsWith('/api/v1/track-instances/') && method === 'GET' && !path.endsWith('/outcomes')) {
@@ -224,10 +253,24 @@ export async function handleArchitectureRequest(
     const text = JSON.stringify(payload);
     const asRecord = payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : {};
     const result =
-      asRecord.packageVersion
-        ? importTrackPackage(store, { filename, text, json: payload, contentBody: body.contentBody }, { dryRun, userId: access.userId })
-        : importRouterJson(store, { filename, text, json: payload }, { dryRun, userId: access.userId });
+      asRecord.packageVersion || asRecord.version === '3.0' || Array.isArray(asRecord.effectiveTrackConnections)
+        ? importArchitectureSource(store, { filename, text, json: payload, contentBody: body.contentBody }, { dryRun, userId: access.userId })
+        : importArchitectureSource(store, { filename, text, json: payload }, { dryRun, userId: access.userId });
     return json({ ok: result.ok, result }, result.ok ? 200 : 400);
+  }
+
+  if (path.startsWith('/api/v1/admin/tracks/') && path.endsWith('/connections') && method === 'GET') {
+    if (access.role !== 'ADMIN' || !access.verified) return json({ ok: false, code: 'admin_required' }, 403);
+    const id = normalizeTrackId(path.split('/')[5] || '');
+    if (!id || !store.getTrack(id)) return json({ ok: false, code: 'unknown_track' }, 404);
+    const { incoming, outgoing } = connectionsForTrack(store, id);
+    return json({
+      ok: true,
+      trackId: id,
+      connections: { incoming, outgoing },
+      connectionIndex: store.getConnectionIndex(id) || null,
+      lockedSlots: [...incoming, ...outgoing].filter((row) => row.activationMode === 'LOCKED_NEXT_ACTION_SLOT'),
+    });
   }
 
   if (path === '/api/v1/payments/webhook' && method === 'POST') {

@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { createSeededStore, routerSource } from './seed';
-import { importRouterJson, importTrackPackage } from './importer';
+import { createSeededStore, graphSource, routerSource } from './seed';
+import { importArchitectureSource, importFullGraphJson, importRouterJson } from './importer';
 import { checkTrack } from './check';
 import { MemoryArchitectureStore } from './store';
 
@@ -39,10 +39,10 @@ export async function runTracksCli(argv: string[]): Promise<void> {
   if (!command || command === 'help' || command === '-h') {
     print({
       commands: {
-        'tracks:validate <file>': 'Validate router v2 JSON or a track package',
+        'tracks:validate <file>': 'Validate full-graph v3 JSON, router v2 JSON, or a track package',
         'tracks:import --dry-run <file>': 'Show diff without writing the local test store',
         'tracks:import --apply <file>': 'Apply to .local/track-architecture (never production)',
-        'track:check <id>': 'Inspect one Track ID',
+        'track:check <id>': 'Inspect one Track ID including connectionIndex',
       },
     });
     return;
@@ -50,13 +50,10 @@ export async function runTracksCli(argv: string[]): Promise<void> {
 
   if (command === 'validate') {
     const file = argv[1];
-    if (!file) throw new Error('Usage: tracks:validate <router-or-package>');
+    if (!file) throw new Error('Usage: tracks:validate <graph-or-router-or-package>');
     const source = readJsonFile(file);
     const store = createSeededStore();
-    const payload = source.json as { packageVersion?: string };
-    const result = payload.packageVersion
-      ? importTrackPackage(store, source, { dryRun: true })
-      : importRouterJson(new MemoryArchitectureStore(), source, { dryRun: true });
+    const result = importArchitectureSource(store, source, { dryRun: true });
     print(result);
     if (!result.ok) process.exitCode = 1;
     return;
@@ -69,10 +66,7 @@ export async function runTracksCli(argv: string[]): Promise<void> {
     if (!file) throw new Error('Usage: tracks:import --dry-run|--apply <file>');
     const source = readJsonFile(file);
     const store = apply ? loadLocalStore() : createSeededStore();
-    const payload = source.json as { packageVersion?: string };
-    const result = payload.packageVersion
-      ? importTrackPackage(store, source, { dryRun: dryRun || !apply })
-      : importRouterJson(store, source, { dryRun: dryRun || !apply });
+    const result = importArchitectureSource(store, source, { dryRun: dryRun || !apply });
     if (apply && result.ok) saveLocalStore(store);
     print({ ...result, applied: apply && result.ok, store: apply ? localStorePath() : null });
     if (!result.ok) process.exitCode = 1;
@@ -87,10 +81,10 @@ export async function runTracksCli(argv: string[]): Promise<void> {
   }
 
   if (command === 'seed-validate') {
-    const source = routerSource();
-    const result = importRouterJson(new MemoryArchitectureStore(), source, { dryRun: true });
-    print(result);
-    if (!result.ok) process.exitCode = 1;
+    const graph = importFullGraphJson(new MemoryArchitectureStore(), graphSource(), { dryRun: true });
+    const router = importRouterJson(new MemoryArchitectureStore(), routerSource(), { dryRun: true });
+    print({ graph, router });
+    if (!graph.ok || !router.ok) process.exitCode = 1;
     return;
   }
 

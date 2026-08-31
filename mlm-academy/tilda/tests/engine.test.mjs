@@ -25,6 +25,9 @@ const FORBIDDEN = [
   'Осовременивание',
   'mlmacademy.ru/track',
   'priority',
+  'LOCKED_NEXT_ACTION_SLOT',
+  'effectiveTrackConnections',
+  'connectionIndex',
 ];
 
 function sampleTrack(overrides) {
