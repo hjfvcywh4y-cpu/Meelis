@@ -37,6 +37,7 @@ const FORBIDDEN = [
   'PILOT_DRAFT_TO_TEST',
   'legacyArchive',
   'MLMA_SERVER_ONLY_A3_002_FIXTURE',
+  'Первое сообщение без рекламной простыни',
   'LOCKED_NEXT_ACTION_SLOT',
   'effectiveTrackConnections',
   'connectionIndex',

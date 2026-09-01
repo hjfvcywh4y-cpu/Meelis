@@ -1,7 +1,7 @@
 import { DEFAULT_ARCHITECTURE_FLAGS, resolveArchitectureFlags } from './flags';
 import { identityFromUntrustedClient, identityFromVerifiedSession, ANON_ACCESS } from './identity';
 import { decideContentAccess, decideInstanceCreation } from './access';
-import { publicMetaResponse, toPublicTrackMeta } from './public-meta';
+import { overlayPublicCard, publicMetaResponse, toPublicTrackMeta } from './public-meta';
 import { resolveTrackId, canPublishAsStandaloneLesson } from './resolver';
 import { createTrackInstance, submitOutcome, RuntimeRejectedError } from './runtime';
 import { importArchitectureSource } from './importer';
@@ -115,7 +115,11 @@ export async function handleArchitectureRequest(
     const content = store.getContent(resolved.canonicalId);
     const meta = toPublicTrackMeta(resolved.definition, content?.contentStatus === 'PUBLISHED');
     sanitizeArchitectureEvent('track_meta_viewed', { track_id: resolved.canonicalId });
-    return json({ ok: true, meta: publicMetaResponse(meta), redirectTo: resolved.redirect ? resolved.canonicalId : null });
+    return json({
+      ok: true,
+      meta: overlayPublicCard(resolved.canonicalId, publicMetaResponse(meta)),
+      redirectTo: resolved.redirect ? resolved.canonicalId : null,
+    });
   }
 
   if (path.startsWith('/api/v1/tracks/') && path.endsWith('/content') && method === 'GET') {

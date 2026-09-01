@@ -1,0 +1,198 @@
+{
+  "packageVersion": "1.0",
+  "track": {
+    "id": "A3-002",
+    "canonicalId": "A3-002",
+    "entityType": "TRACK",
+    "section": "A3",
+    "domain": "FIRST_CONTACT",
+    "title": "Написать первое сообщение тёплому контакту",
+    "situation": "Есть человек, но я не знаю, как начать без рекламной простыни",
+    "result": "Готово и при прохождении gate отправлено короткое сообщение: настоящий повод, уважение к отношениям и один простой следующий шаг",
+    "audience": "Партнёр перед первым личным сообщением тёплому контакту"
+  },
+  "graphBinding": {
+    "mode": "AUTO_BY_TRACK_ID",
+    "graphVersion": "3.0",
+    "editNeighborPages": false,
+    "unboundConnectionPolicy": "KEEP_AS_LOCKED_NEXT_ACTION_SLOT"
+  },
+  "content": {
+    "version": "0.1.0",
+    "status": "REVIEW",
+    "format": "json",
+    "serverOnly": true,
+    "sourcePath": "server/content/tracks/a3-002/0.1.0",
+    "checksum": "sha256:2181b9718034719cbd63c390a12e2ba1af62a32348fec391f1c35ec9f7b7c716",
+    "releaseNotes": "Первый полный продуктовый пакет A3-002: конструктор, readiness gate, полевая отправка, privacy и route outcomes"
+  },
+  "access": {
+    "policy": "ENTITLED",
+    "productCodes": [
+      "MLMA_FULL"
+    ]
+  },
+  "outcomes": [
+    {
+      "code": "MESSAGE_SENT",
+      "label": "Сообщение отправлено",
+      "observableFact": "Пользователь подтвердил факт отправки без передачи текста и персональных данных",
+      "requiredFacts": [
+        "message.status",
+        "channel_code",
+        "occurred_at"
+      ]
+    },
+    {
+      "code": "MESSAGE_NOT_SENT_NO_REASON",
+      "label": "Нет настоящего повода",
+      "observableFact": "Пользователь не может честно назвать причину обращения человеку",
+      "requiredFacts": [
+        "message.status",
+        "blocked_reason_code"
+      ]
+    },
+    {
+      "code": "MESSAGE_NOT_SENT_ANXIETY",
+      "label": "Действие блокирует конкретный барьер",
+      "observableFact": "Повод и уместность подтверждены, но сообщение не отправлено из-за конкретного барьера действия",
+      "requiredFacts": [
+        "message.status",
+        "barrier_code"
+      ]
+    },
+    {
+      "code": "MESSAGE_STOPPED",
+      "label": "Контакт корректно остановлен",
+      "observableFact": "Зафиксирована явная граница, запрет, риск отношения или решение пользователя не писать",
+      "requiredFacts": [
+        "message.status",
+        "stop_code"
+      ]
+    }
+  ],
+  "routeRules": [
+    {
+      "ruleId": "RR2-014",
+      "fromId": "A3-002",
+      "outcomeCode": "MESSAGE_SENT",
+      "field": "message.status",
+      "operator": "=",
+      "value": "SENT",
+      "destinationType": "SYSTEM_ACTION",
+      "destinationId": "A3-008",
+      "reason": "После полевого действия нужен факт, а не ещё один урок",
+      "stopRule": "Не сохранять текст сообщения и персональные данные на сервере",
+      "recoveryRule": "WAIT_UNTIL",
+      "priority": 10,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR2-015",
+      "fromId": "A3-002",
+      "outcomeCode": "MESSAGE_NOT_SENT_NO_REASON",
+      "field": "message.status",
+      "operator": "=",
+      "value": "BLOCKED_REASON",
+      "destinationType": "TRACK",
+      "destinationId": "A3-016",
+      "reason": "Причина не выглядит настоящей",
+      "stopRule": "Не маскировать продажу под дружеский разговор",
+      "recoveryRule": "WAIT_UNTIL",
+      "priority": 20,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR2-016",
+      "fromId": "A3-002",
+      "outcomeCode": "MESSAGE_NOT_SENT_ANXIETY",
+      "field": "message.status",
+      "operator": "=",
+      "value": "BLOCKED_ANXIETY",
+      "destinationType": "TRACK",
+      "destinationId": "A3-014",
+      "reason": "Подтверждён конкретный барьер действия",
+      "stopRule": "Не превращать нормальное волнение в обязательную терапевтизацию",
+      "recoveryRule": "FIELD_ACTION",
+      "priority": 30,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR3-A3-002-STOP",
+      "fromId": "A3-002",
+      "outcomeCode": "MESSAGE_STOPPED",
+      "field": "message.status",
+      "operator": "=",
+      "value": "STOPPED",
+      "destinationType": "DONE",
+      "destinationId": null,
+      "reason": "Явная граница, запрет или неуместность являются нормальным завершением",
+      "stopRule": "Не предлагать обход запрета, другой канал или повторный контакт",
+      "recoveryRule": null,
+      "priority": 1,
+      "owner": "Методолог + продукт + privacy",
+      "version": "3.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    }
+  ],
+  "privacy": {
+    "serverAllowedFields": [
+      "track_id",
+      "content_version",
+      "outcome_code",
+      "message.status",
+      "channel_code",
+      "reason_type",
+      "goal_code",
+      "occurred_at",
+      "blocked_reason_code",
+      "barrier_code",
+      "stop_code",
+      "route_decision_id"
+    ],
+    "clientOnlyFields": [
+      "contact_name",
+      "phone",
+      "email",
+      "messenger_handle",
+      "profile_url",
+      "real_reason_text",
+      "message_draft",
+      "message_text",
+      "response_text",
+      "free_text_note",
+      "contact_card"
+    ],
+    "analyticsAllowedFields": [
+      "track_id",
+      "content_version",
+      "outcome_code",
+      "message.status",
+      "channel_code",
+      "reason_type",
+      "goal_code",
+      "blocked_reason_code",
+      "barrier_code",
+      "stop_code",
+      "destination_type",
+      "destination_id",
+      "duration_bucket"
+    ]
+  },
+  "source": {
+    "files": [
+      "Рыбкин.pdf: 9.4, 10.2",
+      "MLM_Academy_Track_Matrix_112_v2.xlsx: A3-002, RR2-014/015/016",
+      "Библиотека_онтологии_и_конструкций_треков_v2.xlsx: DEC-031, UC-006, UC-018, UC-019",
+      "БТ_на_трекеры_v2.docx: A.5-A.7"
+    ],
+    "owner": "Методолог MLM Academy",
+    "approvedAt": null
+  }
+}

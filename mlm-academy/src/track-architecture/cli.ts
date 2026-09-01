@@ -16,6 +16,26 @@ function readJsonFile(filePath: string) {
   return { filename: path.basename(abs), text, json: JSON.parse(text) as unknown };
 }
 
+function attachPackageContentBody(
+  source: { filename: string; text: string; json: unknown },
+  filePath: string,
+): { filename: string; text: string; json: unknown; contentBody?: unknown } {
+  const json = source.json as { content?: { sourcePath?: string } } | null;
+  const sourcePath = json?.content?.sourcePath;
+  const dir = path.dirname(path.resolve(filePath));
+  const candidates = [
+    path.join(dir, 'content', 'content.json'),
+    sourcePath ? path.resolve(process.cwd(), sourcePath, 'content.json') : '',
+    sourcePath ? path.resolve(process.cwd(), sourcePath) : '',
+  ].filter(Boolean);
+  for (const candidate of candidates) {
+    if (!fs.existsSync(candidate) || !fs.statSync(candidate).isFile()) continue;
+    if (!candidate.endsWith('.json')) continue;
+    return { ...source, contentBody: JSON.parse(fs.readFileSync(candidate, 'utf8')) as unknown };
+  }
+  return source;
+}
+
 function localStorePath() {
   return path.resolve(process.cwd(), '.local/track-architecture/store.json');
 }
@@ -51,7 +71,7 @@ export async function runTracksCli(argv: string[]): Promise<void> {
   if (command === 'validate') {
     const file = argv[1];
     if (!file) throw new Error('Usage: tracks:validate <graph-or-router-or-package>');
-    const source = readJsonFile(file);
+    const source = attachPackageContentBody(readJsonFile(file), file);
     const store = createSeededStore();
     const result = importArchitectureSource(store, source, { dryRun: true });
     print(result);
@@ -64,7 +84,7 @@ export async function runTracksCli(argv: string[]): Promise<void> {
     const apply = argv.includes('--apply');
     const file = argv.find((item) => !item.startsWith('-') && item !== 'import');
     if (!file) throw new Error('Usage: tracks:import --dry-run|--apply <file>');
-    const source = readJsonFile(file);
+    const source = attachPackageContentBody(readJsonFile(file), file);
     const store = apply ? loadLocalStore() : createSeededStore();
     const result = importArchitectureSource(store, source, { dryRun: dryRun || !apply });
     if (apply && result.ok) saveLocalStore(store);

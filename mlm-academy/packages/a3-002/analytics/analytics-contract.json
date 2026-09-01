@@ -1,0 +1,38 @@
+{
+  "version": "1.0",
+  "trackId": "A3-002",
+  "principle": "Логировать только то, что меняет продуктовое или маршрутное решение",
+  "events": [
+    {"name": "track_started", "properties": ["track_id", "content_version", "entry_rule_id"]},
+    {"name": "goal_selected", "properties": ["track_id", "goal_code"]},
+    {"name": "reason_gate_completed", "properties": ["track_id", "reason_type", "gate_result"]},
+    {"name": "draft_created", "properties": ["track_id", "tone_code", "length_code"], "forbidden": ["message_draft"]},
+    {"name": "quality_gate_completed", "properties": ["track_id", "failed_check_codes", "critical_passed"]},
+    {"name": "field_action_confirmed", "properties": ["track_id", "outcome_code", "channel_code", "duration_bucket"]},
+    {"name": "route_decided", "properties": ["track_id", "outcome_code", "destination_type", "destination_id", "rule_id"]},
+    {"name": "sandbox_completed", "properties": ["demo_id", "based_on_track_id"], "mustNotCreate": ["track_instance", "track_outcome", "route_decision"]}
+  ],
+  "globallyForbiddenProperties": [
+    "contact_name",
+    "phone",
+    "email",
+    "messenger_handle",
+    "profile_url",
+    "real_reason_text",
+    "message_draft",
+    "message_text",
+    "response_text",
+    "free_text_note"
+  ],
+  "pilotMetrics": [
+    "completion_outcome_rate",
+    "median_time_to_outcome",
+    "message_sent_rate",
+    "blocked_reason_rate",
+    "blocked_anxiety_rate",
+    "valid_stop_rate",
+    "route_disagreement_rate",
+    "privacy_violation_count"
+  ]
+}
+
