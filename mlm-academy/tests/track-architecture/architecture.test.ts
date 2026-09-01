@@ -434,7 +434,7 @@ describe('importer', () => {
   it('dry-run и apply тестового пакета A3-002 не публикуют соседние страницы', () => {
     const store = createSeededStore();
     const pkgPath = path.join(process.cwd(), 'tests/fixtures/track-packages/a3-002-test/package.json');
-    const contentPath = path.join(process.cwd(), 'server/content/tracks/a3-002/0.1.0/content.json');
+    const contentPath = path.join(process.cwd(), 'tests/fixtures/track-packages/a3-002-test/content.json');
     const json = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
     const body = JSON.parse(fs.readFileSync(contentPath, 'utf8'));
     const source = { filename: 'package.json', text: JSON.stringify(json), json, contentBody: body };
@@ -605,8 +605,11 @@ describe('public bundle boundary', () => {
         expect(text.includes('LOCKED_NEXT_ACTION_SLOT'), file).toBe(false);
       }
     }
-    const fixture = fs.readFileSync(path.join(process.cwd(), 'server/content/tracks/a3-002/0.1.0/content.json'), 'utf8');
+    const fixture = fs.readFileSync(path.join(process.cwd(), 'tests/fixtures/track-packages/a3-002-test/content.json'), 'utf8');
     expect(fixture).toContain(secret);
+    const paid = fs.readFileSync(path.join(process.cwd(), 'server/content/tracks/a3-002/0.1.0/content.json'), 'utf8');
+    expect(paid).toContain('Первое сообщение без рекламной простыни');
+    expect(paid).not.toContain(secret);
   });
 
   it('публичный поиск по-прежнему стартует только по кнопке или Enter', () => {
@@ -706,7 +709,7 @@ describe('content package isolation, demo sandbox, postgres fail-closed', () => 
     const neighborTitle = store.getTrack('A2-008')!.title;
     const neighborConnections = JSON.stringify(store.listConnections());
     const pkgPath = path.join(process.cwd(), 'tests/fixtures/track-packages/a3-002-test/package.json');
-    const contentPath = path.join(process.cwd(), 'server/content/tracks/a3-002/0.1.0/content.json');
+    const contentPath = path.join(process.cwd(), 'tests/fixtures/track-packages/a3-002-test/content.json');
     const json = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
     const body = JSON.parse(fs.readFileSync(contentPath, 'utf8'));
     const apply = importTrackPackage(

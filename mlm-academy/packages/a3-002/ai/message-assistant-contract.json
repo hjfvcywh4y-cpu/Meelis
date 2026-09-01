@@ -1,0 +1,34 @@
+{
+  "contractVersion": "1.0",
+  "trackId": "A3-002",
+  "purpose": "Собрать до трёх вариантов первого сообщения без изобретения фактов и без давления",
+  "inputPolicy": {
+    "serverAllowed": ["relationship_category", "reason_type", "goal_code", "channel_code", "tone_code", "length_code"],
+    "clientOnly": ["contact_name", "real_reason_text", "message_draft", "contact_details"],
+    "freeTextToServerDefault": false
+  },
+  "behavior": [
+    "Если настоящего повода нет, не генерировать сообщение и вернуть BLOCKED_REASON",
+    "Использовать только факты и плейсхолдеры пользователя",
+    "Предлагать максимум три варианта: тёплый, нейтральный, прямой",
+    "Оставлять один следующий шаг",
+    "Сохранять явное право на отказ",
+    "Не превращать первое сообщение в презентацию"
+  ],
+  "prohibited": [
+    "выдуманный повод",
+    "маскировка коммерческого намерения",
+    "ложная срочность или дефицит",
+    "давление дружбой, виной или страхом",
+    "обещание дохода, лечения или гарантированного результата",
+    "обход отказа или запрета на контакт",
+    "автоматическая отправка"
+  ],
+  "output": {
+    "kind": "MESSAGE_VARIANTS",
+    "maxVariants": 3,
+    "fields": ["tone", "templateWithPlaceholders", "qualityFlags", "blockingReason"],
+    "mustNotContainPersonalData": true
+  }
+}
+

@@ -37,6 +37,7 @@ const FORBIDDEN = [
   'PILOT_DRAFT_TO_TEST',
   'legacyArchive',
   'MLMA_SERVER_ONLY_A3_002_FIXTURE',
+  'Первое сообщение без рекламной простыни',
   'LOCKED_NEXT_ACTION_SLOT',
   'effectiveTrackConnections',
   'connectionIndex',
@@ -212,8 +213,13 @@ function moduleCacheBust(fileName) {
 }
 
 const trackModuleFiles = listTrackModuleFiles();
-const trackModuleScriptTags = (base) =>
-  trackModuleFiles
+function isLiveTrackModule(fileName) {
+  const id = fileName.replace(/\.module\.js$/i, '').toUpperCase();
+  return Object.prototype.hasOwnProperty.call(PILOT_EXECUTABLE, id);
+}
+const liveTrackModuleFiles = trackModuleFiles.filter(isLiveTrackModule);
+const trackModuleScriptTags = (base, files = liveTrackModuleFiles) =>
+  files
     .map((name) => `<script src="${base}/${ASSETS_VERSION}/tracks/${name}?v=${moduleCacheBust(name)}"></script>`)
     .join('\n');
 
@@ -621,9 +627,9 @@ function writeScriptChunks(source, basename, label) {
 
 const domainFiles = writeScriptChunks(domainJs, '03-domain', 'доменная логика');
 const trackFiles = [];
-if (trackModuleFiles.length) {
+if (liveTrackModuleFiles.length) {
   const inner =
-    trackModuleFiles
+    liveTrackModuleFiles
       .map(function (name) {
         return (
           '<script src="' +

@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 import type { PublicTrackMeta, TrackDefinition } from './types';
 import { canPublishAsStandaloneLesson } from './resolver';
 
@@ -33,10 +36,31 @@ export function toPublicTrackMeta(track: TrackDefinition, hasPublishedContent = 
   };
 }
 
+const PUBLIC_CARD_OVERLAY_KEYS = [
+  'publicPromise',
+  'publicIncludes',
+  'estimatedMinutes',
+  'cta',
+  'contentAvailable',
+  'routeAvailable',
+] as const;
+
 export function publicMetaResponse(meta: PublicTrackMeta): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const field of PUBLIC_META_FIELDS) {
     out[field] = meta[field];
   }
   return out;
+}
+
+/** Safe extra fields from server-only sibling card; never copies connections or lesson body. */
+export function overlayPublicCard(trackId: string, meta: Record<string, unknown>): Record<string, unknown> {
+  const file = path.join(process.cwd(), 'server/content/tracks', trackId.toLowerCase(), 'public-meta.json');
+  if (!fs.existsSync(file)) return meta;
+  const card = JSON.parse(fs.readFileSync(file, 'utf8')) as Record<string, unknown>;
+  const extra: Record<string, unknown> = {};
+  for (const key of PUBLIC_CARD_OVERLAY_KEYS) {
+    if (key in card) extra[key] = card[key];
+  }
+  return { ...meta, ...extra };
 }

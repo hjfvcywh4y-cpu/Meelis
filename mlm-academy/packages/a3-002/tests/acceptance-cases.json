@@ -1,0 +1,29 @@
+{
+  "version": "1.0",
+  "trackId": "A3-002",
+  "cases": [
+    {"id": "ROUTE-01", "kind": "ROUTE", "given": {"outcomeCode": "MESSAGE_SENT", "message.status": "SENT"}, "expect": {"destinationType": "SYSTEM_ACTION", "destinationId": "A3-008", "ruleId": "RR2-014"}},
+    {"id": "ROUTE-02", "kind": "ROUTE", "given": {"outcomeCode": "MESSAGE_NOT_SENT_NO_REASON", "message.status": "BLOCKED_REASON"}, "expect": {"destinationType": "TRACK", "destinationId": "A3-016", "ruleId": "RR2-015"}},
+    {"id": "ROUTE-03", "kind": "ROUTE", "given": {"outcomeCode": "MESSAGE_NOT_SENT_ANXIETY", "message.status": "BLOCKED_ANXIETY"}, "expect": {"destinationType": "TRACK", "destinationId": "A3-014", "ruleId": "RR2-016"}},
+    {"id": "ROUTE-04", "kind": "ROUTE", "given": {"outcomeCode": "MESSAGE_STOPPED", "message.status": "STOPPED"}, "expect": {"destinationType": "DONE", "destinationId": null, "ruleId": "RR3-A3-002-STOP"}},
+    {"id": "ROUTE-05", "kind": "ROUTE", "given": {"outcomeCode": "DRAFT_SAVED"}, "expect": {"routeDecisionCreated": false}},
+    {"id": "ROUTE-06", "kind": "ROUTE", "given": {"outcomeCode": "MESSAGE_SENT", "message.status": "BLOCKED_REASON"}, "expect": {"decision": "NO_MATCHING_RULE"}},
+    {"id": "GRAPH-01", "kind": "GRAPH", "given": {"trackId": "A3-002"}, "expect": {"incomingEffective": 6, "outgoingEffective": 3, "neighborPagesEdited": false}},
+    {"id": "GRAPH-02", "kind": "GRAPH", "given": {"connectionId": "TR-072"}, "expect": {"activationMode": "LOCKED_NEXT_ACTION_SLOT", "userVisible": false, "executable": false}},
+    {"id": "ACCESS-01", "kind": "ACCESS", "given": {"identity": "ANON", "resource": "PAID_CONTENT"}, "expect": {"status": 403, "contentLeaked": false}},
+    {"id": "ACCESS-02", "kind": "ACCESS", "given": {"identity": "VERIFIED", "entitlement": false, "resource": "PAID_CONTENT"}, "expect": {"status": 403}},
+    {"id": "ACCESS-03", "kind": "ACCESS", "given": {"identity": "VERIFIED", "entitlement": true, "contentStatus": "REVIEW"}, "expect": {"status": 403}},
+    {"id": "ACCESS-04", "kind": "ACCESS", "given": {"identity": "VERIFIED", "entitlement": true, "contentStatus": "PUBLISHED", "paidNavigationEnabled": false}, "expect": {"contentAllowed": true, "routeLocked": true, "destinationUrl": null}},
+    {"id": "ACCESS-05", "kind": "ACCESS", "given": {"resource": "PUBLIC_METADATA"}, "expect": {"metaAllowed": true, "contentAllowed": false, "connectionsExposed": false}},
+    {"id": "DEMO-01", "kind": "DEMO", "given": {"demoId": "DEMO-A3-002-01"}, "expect": {"liveInstanceCreated": false, "outcomeWritten": false, "routeExecuted": false}},
+    {"id": "PRIVACY-01", "kind": "PRIVACY", "given": {"payload": {"contact_name": "Тест", "message_text": "секрет", "outcome_code": "MESSAGE_SENT"}}, "expect": {"storedFields": ["outcome_code"], "rejectedOrStripped": ["contact_name", "message_text"]}},
+    {"id": "PRIVACY-02", "kind": "PRIVACY", "given": {"analyticsEvent": "draft_created", "properties": {"message_draft": "текст"}}, "expect": {"validation": "FAIL"}},
+    {"id": "PRIVACY-03", "kind": "PRIVACY", "given": {"serverAiInput": {"real_reason_text": "личная история"}}, "expect": {"validation": "FAIL_BY_DEFAULT"}},
+    {"id": "CONTENT-01", "kind": "CONTENT", "given": {"message": "Привет, как дела? У меня к тебе предложение"}, "expect": {"qualityGate": "FAIL", "failedChecks": ["TRANSPARENT"]}},
+    {"id": "CONTENT-02", "kind": "CONTENT", "given": {"message": "Есть уникальная возможность гарантированного дохода"}, "expect": {"qualityGate": "FAIL", "failedChecks": ["TRUE", "NO_UNSOLICITED_PITCH"]}},
+    {"id": "CONTENT-03", "kind": "CONTENT", "given": {"reasonConfirmed": false}, "expect": {"messageGenerated": false, "outcomeCode": "MESSAGE_NOT_SENT_NO_REASON"}},
+    {"id": "CONTENT-04", "kind": "CONTENT", "given": {"explicitDoNotContact": true}, "expect": {"messageGenerated": false, "outcomeCode": "MESSAGE_STOPPED"}},
+    {"id": "CONTENT-05", "kind": "CONTENT", "given": {"criticalChecks": {"TRUE": true, "TRANSPARENT": true, "EASY_NO": true, "NO_UNSOLICITED_PITCH": true}}, "expect": {"fieldActionAvailable": true, "autoSend": false}}
+  ]
+}
+

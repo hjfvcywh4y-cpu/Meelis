@@ -7,12 +7,19 @@ export const CLIENT_ONLY_CONTACT_FIELDS = [
   'phone',
   'email',
   'address',
+  'messenger_handle',
+  'profile_url',
+  'real_reason_text',
+  'message_draft',
   'message_text',
   'message',
+  'response_text',
   'free_text_note',
   'note',
   'notes',
   'correspondence',
+  'contact_card',
+  'contact_details',
 ] as const;
 
 const FORBIDDEN = new Set(CLIENT_ONLY_CONTACT_FIELDS.map((name) => name.toLowerCase()));
@@ -22,9 +29,15 @@ const FORBIDDEN_PATH_PARTS = new Set([
   'email',
   'address',
   'message_text',
+  'message_draft',
+  'real_reason_text',
+  'response_text',
   'full_name',
   'fio',
   'contact_name',
+  'messenger_handle',
+  'profile_url',
+  'contact_card',
 ]);
 
 export function isForbiddenFactKey(key: string): boolean {
