@@ -230,9 +230,12 @@
 
   function visualStem(id) {
     var section = String(id || '').slice(0, 2);
+    if (section === 'A1') return 'visual/track-start-green';
+    if (section === 'A2') return 'visual/track-people-teal';
+    if (section === 'A3') return 'visual/track-dialog-blue';
     if (section === 'A4') return 'visual/track-solution-ochre';
+    if (section === 'A5') return 'visual/track-doubt-coral';
     if (section === 'A6') return 'visual/track-team-plum';
-    if (section === 'A3' || section === 'A5') return 'visual/track-dialog-blue';
     return 'visual/track-start-green';
   }
 
