@@ -226,7 +226,15 @@ describe('A3-002 acceptance cases', () => {
         userId: 'u2',
         verified: true,
         role: 'FULL',
-        entitlements: [{ productCode: 'MLMA_FULL', status: 'active', grantsAll: true }],
+        entitlements: [
+          {
+            productCode: 'MLMA_FULL',
+            status: 'active',
+            startsAt: '2026-01-01T00:00:00Z',
+            endsAt: null,
+            grantsAll: true,
+          },
+        ],
       }),
       flags: DEFAULT_ARCHITECTURE_FLAGS,
     });
@@ -240,7 +248,15 @@ describe('A3-002 acceptance cases', () => {
         userId: 'u3',
         verified: true,
         role: 'FULL',
-        entitlements: [{ productCode: 'MLMA_FULL', status: 'active', grantsTrackIds: ['A3-002'] }],
+        entitlements: [
+          {
+            productCode: 'MLMA_FULL',
+            status: 'active',
+            startsAt: '2026-01-01T00:00:00Z',
+            endsAt: null,
+            grantsTrackIds: ['A3-002'],
+          },
+        ],
       }),
       flags: { ...DEFAULT_ARCHITECTURE_FLAGS, PAID_TRACK_NAVIGATION_ENABLED: false },
       productGrantsTrack: true,
@@ -253,7 +269,15 @@ describe('A3-002 acceptance cases', () => {
           userId: 'u3',
           verified: true,
           role: 'FULL',
-          entitlements: [{ productCode: 'MLMA_FULL', status: 'active', grantsTrackIds: ['A3-002'] }],
+          entitlements: [
+            {
+              productCode: 'MLMA_FULL',
+              status: 'active',
+              startsAt: '2026-01-01T00:00:00Z',
+              endsAt: null,
+              grantsTrackIds: ['A3-002'],
+            },
+          ],
         }),
         flags: { ...PILOT_FLAGS, PAID_TRACK_NAVIGATION_ENABLED: false },
         mode: 'production',
