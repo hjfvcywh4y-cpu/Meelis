@@ -674,6 +674,18 @@ const logoJpg = path.join(SRC, 'assets/mlma-logo.jpg');
 if (!fs.existsSync(logoJpg)) throw new Error('Нет исходного логотипа tilda/src/assets/mlma-logo.jpg');
 fs.copyFileSync(logoJpg, path.join(DIST, 'shared/mlma-logo.jpg'));
 fs.copyFileSync(logoJpg, path.join(v1, 'mlma-logo.jpg'));
+function copyAssetDir(fromName) {
+  const from = path.join(SRC, 'assets', fromName);
+  if (!fs.existsSync(from)) return;
+  for (const dest of [path.join(DIST, 'shared', fromName), path.join(v1, fromName)]) {
+    fs.mkdirSync(dest, { recursive: true });
+    for (const name of fs.readdirSync(from)) {
+      fs.copyFileSync(path.join(from, name), path.join(dest, name));
+    }
+  }
+}
+copyAssetDir('visual');
+copyAssetDir('icons');
 write(path.join(DIST, 'shared/catalog.schema.json'), fs.readFileSync(path.join(ROOT, 'src/data/catalog.schema.json'), 'utf8'));
 write(path.join(v1, 'products.catalog.json'), JSON.stringify(productsFile, null, 2) + '\n');
 write(path.join(DIST, 'shared/products.catalog.json'), JSON.stringify(productsFile, null, 2) + '\n');

@@ -177,6 +177,7 @@
       '</h1></div>' +
       '<div class="mlma-wrap mlma-split mlma-split-84" style="padding-bottom:48px">' +
       '<div style="display:grid;gap:20px">' +
+      (D._ui.trackCover ? D._ui.trackCover(track) : '') +
       '<section class="mlma-card mlma-pad"><span class="mlma-meta">Почему этот трек сейчас</span><p style="margin-top:10px;font-size:17px;line-height:1.45">' +
       esc(track.situation) +
       '</p></section>' +
@@ -193,7 +194,7 @@
       btn(R.section(track.sectionId), 'В раздел') +
       btn(backHref, 'Вернуться к подборке') +
       '</div></section></div>' +
-      '<aside style="display:grid;gap:16px;align-content:start">' +
+      '<aside class="mlma-track-passport-wrap" style="display:grid;gap:16px;align-content:start">' +
       '<div class="mlma-card mlma-pad">' +
       (status.canStart && !running && canBody
         ? '<a class="mlma-btn mlma-btn-primary mlma-btn-block" href="' + esc(startHref) + '" data-mlma-run-start="' + esc(track.trackId) + '">Начать трек</a>'
