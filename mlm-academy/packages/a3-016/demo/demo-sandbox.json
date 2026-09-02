@@ -1,0 +1,44 @@
+{
+  "version": "1.0",
+  "trackId": "A3-016",
+  "accessTier": "PUBLIC_DEMO",
+  "executionMode": "SANDBOX",
+  "liveInstance": false,
+  "aiMode": "PRECOMPUTED_ONLY",
+  "writesAllowed": false,
+  "routeEngineExecutionAllowed": false,
+  "examples": [
+    {
+      "label": "Настоящий повод",
+      "input": "Человек сам спросил о работе пользователя",
+      "result": "REASON_FOUND",
+      "previewNext": "A3-002"
+    },
+    {
+      "label": "Повода пока нет",
+      "input": "Пользователю нужно закрыть собственный план",
+      "result": "NO_REASON",
+      "previewNext": "WAIT_UNTIL"
+    },
+    {
+      "label": "Контакт запрещён",
+      "input": "Человек ранее попросил не писать",
+      "result": "CONTACT_STOPPED",
+      "previewNext": "DONE"
+    }
+  ],
+  "response": {
+    "kind": "PUBLIC_DEMO",
+    "sandbox": true,
+    "liveInstance": null,
+    "reason": "SANDBOX_NO_LIVE_INSTANCE"
+  },
+  "forbidden": [
+    "No real contact input",
+    "No live AI call",
+    "No outcome event",
+    "No RouteDecision",
+    "No destination URL",
+    "No entitlement change"
+  ]
+}

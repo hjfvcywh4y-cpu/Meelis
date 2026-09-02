@@ -6044,6 +6044,121 @@
           '</button>';
       }
       html += '</div>';
+    } else if (step.kind === 'remediation_form') {
+      if (step.instruction) html += '<p class="mlma-muted" style="margin-top:8px">' + esc(step.instruction) + '</p>';
+      for (i = 0; i < (step.fields || []).length; i += 1) {
+        var field = step.fields[i];
+        html += '<label class="mlma-meta" style="margin-top:12px;display:block">' + esc(field.label) + '</label>';
+        if (field.type === 'select') {
+          html += '<select class="mlma-field" data-mlma-local="' + esc(field.key) + '"><option value="">Выберите</option>';
+          for (var j = 0; j < (field.options || []).length; j += 1) {
+            var opt = field.options[j];
+            html +=
+              '<option value="' +
+              esc(opt.code) +
+              '"' +
+              (client[field.key] === opt.code ? ' selected' : '') +
+              '>' +
+              esc(opt.label) +
+              '</option>';
+          }
+          html += '</select>';
+        } else {
+          html +=
+            '<textarea class="mlma-field" data-mlma-local="' +
+            esc(field.key) +
+            '" rows="3">' +
+            esc(client[field.key] || '') +
+            '</textarea>';
+        }
+      }
+      if (step.nextStepId) {
+        html +=
+          '<button type="button" class="mlma-btn mlma-btn-primary" style="margin-top:16px" data-mlma-pkg-next="' +
+          esc(step.nextStepId) +
+          '">Дальше</button>';
+      }
+    } else if (step.kind === 'remediation_checks') {
+      if (step.instruction) html += '<p class="mlma-muted" style="margin-top:8px">' + esc(step.instruction) + '</p>';
+      for (i = 0; i < (step.fields || []).length; i += 1) {
+        field = step.fields[i];
+        html += '<label class="mlma-meta" style="margin-top:12px;display:block">' + esc(field.label) + '</label>';
+        if (field.type === 'select') {
+          html += '<select class="mlma-field" data-mlma-local="' + esc(field.key) + '"><option value="">Выберите</option>';
+          for (j = 0; j < (field.options || []).length; j += 1) {
+            opt = field.options[j];
+            html +=
+              '<option value="' +
+              esc(opt.code) +
+              '"' +
+              (client[field.key] === opt.code ? ' selected' : '') +
+              '>' +
+              esc(opt.label) +
+              '</option>';
+          }
+          html += '</select>';
+        }
+      }
+      client.manualChecks = client.manualChecks || {};
+      for (i = 0; i < (step.checks || []).length; i += 1) {
+        var chk = step.checks[i];
+        html +=
+          '<label style="display:flex;gap:8px;margin-top:10px"><input type="checkbox" data-mlma-manual="' +
+          esc(chk.key) +
+          '"' +
+          (client.manualChecks[chk.key] ? ' checked' : '') +
+          '> ' +
+          esc(chk.label) +
+          '</label>';
+      }
+      if (step.nextStepId) {
+        html +=
+          '<button type="button" class="mlma-btn mlma-btn-primary" style="margin-top:16px" data-mlma-pkg-next="' +
+          esc(step.nextStepId) +
+          '">Дальше</button>';
+      }
+    } else if (step.kind === 'remediation_optional') {
+      if (step.instruction) html += '<p class="mlma-muted" style="margin-top:8px">' + esc(step.instruction) + '</p>';
+      html += '<p class="mlma-meta">Компонент ' + esc(step.componentId || 'A6-027') + ' (необязательно)</p>';
+      for (i = 0; i < (step.fields || []).length; i += 1) {
+        field = step.fields[i];
+        html +=
+          '<label class="mlma-meta" style="margin-top:12px;display:block">' +
+          esc(field.label) +
+          '</label><textarea class="mlma-field" data-mlma-local="' +
+          esc(field.key) +
+          '" rows="2">' +
+          esc(client[field.key] || '') +
+          '</textarea>';
+      }
+      html +=
+        '<div class="mlma-actions" style="margin-top:16px;display:grid;gap:8px"><button type="button" class="mlma-btn mlma-btn-primary" data-mlma-pkg-next="' +
+        esc(step.nextStepId || '') +
+        '">Продолжить</button><button type="button" class="mlma-btn" data-mlma-pkg-next="' +
+        esc(step.nextStepId || '') +
+        '" data-skip-optional="1">Пропустить</button></div>';
+    } else if (step.kind === 'remediation_summary') {
+      if (step.instruction) html += '<p class="mlma-muted" style="margin-top:8px">' + esc(step.instruction) + '</p>';
+      html += '<ul style="margin-top:12px"><li>Факт: ' + esc(client.factSourceCode || '—') + '</li><li>Цель: ' + esc(client.intentCode || '—') + '</li><li>Момент: ' + esc(client.timingCode || '—') + '</li></ul>';
+      html +=
+        '<button type="button" class="mlma-btn mlma-btn-primary" style="margin-top:16px" data-mlma-pkg-next="' +
+        esc(step.nextStepId || 'decision_gate') +
+        '">К решению</button>';
+    } else if (step.kind === 'remediation_decision') {
+      html += '<div class="mlma-actions" style="margin-top:16px;display:grid;gap:8px">';
+      for (i = 0; i < (step.decisions || []).length; i += 1) {
+        var dec = step.decisions[i];
+        html +=
+          '<button type="button" class="mlma-btn' +
+          (dec.outcomeCode === 'REASON_FOUND' ? ' mlma-btn-primary' : '') +
+          '" data-mlma-remediation-decision="' +
+          esc(dec.outcomeCode) +
+          '">' +
+          esc(dec.label) +
+          '</button>';
+      }
+      html += '</div>';
+      html += '<div id="mlma-remediation-extra" style="margin-top:12px"></div>';
     }
     return html + '</section>';
   }
@@ -6075,7 +6190,53 @@
     return '';
   }
 
-  function serverPayload(trackId, outcomeCode) {
+  function serverPayload(trackId, outcomeCode, client) {
+    if (String(trackId).toUpperCase() === 'A3-016') {
+      client = client || loadClient(trackId);
+      var manual = client.manualChecks || {};
+      var allChecks =
+        manual.factIsTrue &&
+        manual.relevantToPerson &&
+        manual.purposeCanBeNamed &&
+        manual.timingIsRespectful &&
+        manual.noVulnerabilityExploitation &&
+        manual.noProhibition &&
+        manual.canSaySameMeaningAloud &&
+        manual.keepsRightToDecline;
+      var outcome = String(outcomeCode || '').toUpperCase();
+      var facts = {
+        track_id: trackId,
+        outcome_code: outcome,
+        ai_used: false,
+        risk_flag_codes: [],
+        mentor_event: 'result_recorded',
+        step_id: 'decision_gate',
+      };
+      if (outcome === 'REASON_FOUND') {
+        facts.real_reason = allChecks && client.disclosureStatus === 'FULLY_NAMED' && client.factSourceCode && client.factSourceCode !== 'NONE';
+        facts.fact_source_code = client.factSourceCode;
+        facts.intent_code = client.intentCode;
+        facts.disclosure_status = client.disclosureStatus;
+        facts.timing_code = client.timingCode;
+        facts.permission_status = client.permissionStatus;
+        facts.contact_allowed = true;
+      } else if (outcome === 'NO_REASON') {
+        facts.real_reason = false;
+        facts.fact_source_code = client.factSourceCode || 'NONE';
+        facts.intent_code = client.intentCode || 'HIDDEN_OR_UNCLEAR';
+        facts.disclosure_status = client.disclosureStatus || 'HIDDEN';
+        facts.timing_code = client.timingCode || 'WAIT_BETTER_CONTEXT';
+        facts.permission_status = client.permissionStatus || 'NEEDS_PERMISSION';
+        facts.contact_allowed = true;
+        facts.no_reason_code = client.noReasonCode;
+        facts.review_trigger_code = client.reviewTriggerCode;
+      } else if (outcome === 'CONTACT_STOPPED') {
+        facts.real_reason = false;
+        facts.contact_allowed = false;
+        facts.stop_code = client.stopCode;
+      }
+      return facts;
+    }
     return {
       track_id: trackId,
       outcome_code: outcomeCode,
@@ -6085,9 +6246,37 @@
     };
   }
 
+  function handoffReasonCardToA3002(client) {
+    var target = {
+      stepId: 'reason_gate',
+      real_reason_text: [client.honestPurposeText, client.factText, client.whyThisPersonText, client.whyNowText]
+        .filter(Boolean)
+        .join('\n'),
+      reasonCard: {
+        factSourceCode: client.factSourceCode,
+        intentCode: client.intentCode,
+        disclosureStatus: client.disclosureStatus,
+        timingCode: client.timingCode,
+        permissionStatus: client.permissionStatus,
+        manualChecks: client.manualChecks || {},
+      },
+    };
+    try {
+      localStorage.setItem('mlma.a3-002.client.v1', JSON.stringify(target));
+    } catch (err) {
+      /* ignore */
+    }
+  }
+
   var api = root.MLMA || {};
   api.renderInstalledPackage = renderPackage;
-  api.packageClient = { load: loadClient, save: saveClient, apiBase: apiBase, serverPayload: serverPayload };
+  api.packageClient = {
+    load: loadClient,
+    save: saveClient,
+    apiBase: apiBase,
+    serverPayload: serverPayload,
+    handoffReasonCardToA3002: handoffReasonCardToA3002,
+  };
   root.MLMA = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
@@ -6311,8 +6500,40 @@
       pack.querySelectorAll('[data-mlma-block]').forEach(function (field) {
         data.blocks[field.getAttribute('data-mlma-block')] = field.value;
       });
+      data.manualChecks = data.manualChecks || {};
+      pack.querySelectorAll('[data-mlma-manual]').forEach(function (field) {
+        data.manualChecks[field.getAttribute('data-mlma-manual')] = field.checked;
+      });
       D.packageClient.save(trackId, data);
       return data;
+    }
+
+    function afterDecision(res, clientData, outcome) {
+      var decision = res && res.decision;
+      if (decision && decision.destinationType === 'SYSTEM_ACTION' && D.systemActionRuntime) {
+        if (
+          D.systemActionRuntime.openFromDecision(rootEl, decision, {
+            sourceTrackId: trackId,
+            sourceInstanceId: D._instanceId,
+            sourceOutcomeCode: outcome,
+          }, remount)
+        ) {
+          return;
+        }
+      }
+      var nextCard = decision && decision.next;
+      if (outcome === 'REASON_FOUND' && D.packageClient.handoffReasonCardToA3002) {
+        D.packageClient.handoffReasonCardToA3002(clientData || D.packageClient.load(trackId));
+      }
+      if (nextCard && nextCard.status === 'done') window.location.href = '/my';
+      else if (nextCard && nextCard.preparing) window.location.href = '/my';
+      else if (nextCard && nextCard.href) {
+        window.location.href = nextCard.href + (String(nextCard.href).indexOf('?') >= 0 ? '&' : '?') + 'run=1';
+      } else if (outcome === 'REASON_FOUND') {
+        window.location.href = '/track?id=a3-002&run=1';
+      } else {
+        window.location.href = '/my';
+      }
     }
 
     pack.querySelectorAll('[data-mlma-pkg-next]').forEach(function (el) {
@@ -6347,7 +6568,7 @@
         var outcome = el.getAttribute('data-outcome');
         var next = el.getAttribute('data-next');
         if (outcome && D.submitTrackOutcome && D._instanceId) {
-          D.submitTrackOutcome(D._instanceId, outcome, D.packageClient.serverPayload(trackId, outcome)).then(function (res) {
+          D.submitTrackOutcome(D._instanceId, outcome, D.packageClient.serverPayload(trackId, outcome, D.packageClient.load(trackId))).then(function (res) {
             var decision = res && res.decision;
             if (decision && decision.destinationType === 'SYSTEM_ACTION' && D.systemActionRuntime) {
               if (
@@ -6383,27 +6604,37 @@
         persistLocal();
         var outcome = el.getAttribute('data-outcome');
         if (!outcome) return;
-        var facts = D.packageClient.serverPayload(trackId, outcome);
+        var facts = D.packageClient.serverPayload(trackId, outcome, D.packageClient.load(trackId));
         if (D._instanceId && D.submitTrackOutcome) {
           D.submitTrackOutcome(D._instanceId, outcome, facts).then(function (res) {
-            var decision = res && res.decision;
-            if (decision && decision.destinationType === 'SYSTEM_ACTION' && D.systemActionRuntime) {
-              if (
-                D.systemActionRuntime.openFromDecision(rootEl, decision, {
-                  sourceTrackId: trackId,
-                  sourceInstanceId: D._instanceId,
-                  sourceOutcomeCode: outcome,
-                }, remount)
-              ) {
-                return;
-              }
-            }
-            var nextCard = decision && decision.next;
-            if (nextCard && nextCard.status === 'done') window.location.href = '/my';
-            else if (nextCard && nextCard.preparing) window.location.href = nextCard.href || '/my';
-            else if (nextCard && nextCard.href) window.location.href = nextCard.href + '&run=1';
+            afterDecision(res, D.packageClient.load(trackId), outcome);
           });
         }
+      });
+    });
+
+    pack.querySelectorAll('[data-mlma-remediation-decision]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var data = persistLocal();
+        var outcome = el.getAttribute('data-mlma-remediation-decision');
+        if (!outcome || !D._instanceId || !D.submitTrackOutcome) return;
+        if (outcome === 'NO_REASON' && !data.noReasonCode) {
+          var code = window.prompt('Код причины отсутствия повода (ONLY_MY_SALES_PLAN / PURPOSE_HIDDEN / TIMING_INAPPROPRIATE / NO_SHARED_CONTEXT)');
+          if (!code) return;
+          data.noReasonCode = code;
+          data.reviewTriggerCode = data.reviewTriggerCode || 'NEW_SHARED_CONTEXT';
+          D.packageClient.save(trackId, data);
+        }
+        if (outcome === 'CONTACT_STOPPED' && !data.stopCode) {
+          var stop = window.prompt('Код остановки (EXPLICIT_REFUSAL / DO_NOT_CONTACT / VULNERABILITY_EXPLOITATION / BOUNDARY_BYPASS)');
+          if (!stop) return;
+          data.stopCode = stop;
+          D.packageClient.save(trackId, data);
+        }
+        var facts = D.packageClient.serverPayload(trackId, outcome, data);
+        D.submitTrackOutcome(D._instanceId, outcome, facts).then(function (res) {
+          afterDecision(res, data, outcome);
+        });
       });
     });
   }

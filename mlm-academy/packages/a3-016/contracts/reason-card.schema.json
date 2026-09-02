@@ -1,0 +1,280 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlm-academy.local/schema/a3-016-reason-card.json",
+  "title": "A3-016 local reason card",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "trackId",
+    "contentVersion",
+    "factSourceCode",
+    "intentCode",
+    "disclosureStatus",
+    "timingCode",
+    "permissionStatus",
+    "manualChecks",
+    "decision"
+  ],
+  "properties": {
+    "trackId": {
+      "const": "A3-016"
+    },
+    "contentVersion": {
+      "const": "0.1.0"
+    },
+    "factSourceCode": {
+      "enum": [
+        "PERSON_ASKED",
+        "PRIOR_CONVERSATION",
+        "AGREED_FOLLOW_UP",
+        "SHARED_EVENT",
+        "REFERRAL_WITH_PERMISSION",
+        "OBSERVED_PUBLIC_CONTEXT",
+        "DIRECT_DISCLOSED_OFFER",
+        "NONE"
+      ]
+    },
+    "intentCode": {
+      "enum": [
+        "ANSWER_REQUEST",
+        "SHARE_RELEVANT_INFORMATION",
+        "INVITE_TO_CONVERSATION",
+        "KEEP_AGREEMENT",
+        "DIRECT_COMMERCIAL_OFFER",
+        "OTHER_TRANSPARENT",
+        "HIDDEN_OR_UNCLEAR"
+      ]
+    },
+    "disclosureStatus": {
+      "enum": [
+        "FULLY_NAMED",
+        "PARTIAL",
+        "HIDDEN"
+      ]
+    },
+    "timingCode": {
+      "enum": [
+        "APPROPRIATE",
+        "WAIT_BETTER_CONTEXT",
+        "VULNERABLE_CONTEXT",
+        "EXPLICIT_BOUNDARY"
+      ]
+    },
+    "permissionStatus": {
+      "enum": [
+        "ALLOWED",
+        "NEEDS_PERMISSION",
+        "PROHIBITED"
+      ]
+    },
+    "factText": {
+      "type": "string",
+      "maxLength": 800,
+      "description": "CLIENT_ONLY"
+    },
+    "whyThisPersonText": {
+      "type": "string",
+      "maxLength": 800,
+      "description": "CLIENT_ONLY"
+    },
+    "whyNowText": {
+      "type": "string",
+      "maxLength": 800,
+      "description": "CLIENT_ONLY"
+    },
+    "honestPurposeText": {
+      "type": "string",
+      "maxLength": 800,
+      "description": "CLIENT_ONLY"
+    },
+    "openerDraft": {
+      "type": "string",
+      "maxLength": 1200,
+      "description": "CLIENT_ONLY; passed locally to A3-002 only after gate"
+    },
+    "manualChecks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "factIsTrue",
+        "relevantToPerson",
+        "purposeCanBeNamed",
+        "timingIsRespectful",
+        "noVulnerabilityExploitation",
+        "noProhibition",
+        "canSaySameMeaningAloud",
+        "keepsRightToDecline"
+      ],
+      "properties": {
+        "factIsTrue": {
+          "type": "boolean"
+        },
+        "relevantToPerson": {
+          "type": "boolean"
+        },
+        "purposeCanBeNamed": {
+          "type": "boolean"
+        },
+        "timingIsRespectful": {
+          "type": "boolean"
+        },
+        "noVulnerabilityExploitation": {
+          "type": "boolean"
+        },
+        "noProhibition": {
+          "type": "boolean"
+        },
+        "canSaySameMeaningAloud": {
+          "type": "boolean"
+        },
+        "keepsRightToDecline": {
+          "type": "boolean"
+        }
+      }
+    },
+    "aiReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "used": {
+          "type": "boolean"
+        },
+        "mode": {
+          "enum": [
+            "NONE",
+            "STRUCTURED_REVIEW",
+            "SANITIZED_TEXT_REVIEW"
+          ]
+        },
+        "advisoryCodes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "userAcceptedSuggestions": {
+          "type": "boolean"
+        }
+      }
+    },
+    "decision": {
+      "enum": [
+        "REASON_FOUND",
+        "NO_REASON",
+        "CONTACT_STOPPED"
+      ]
+    },
+    "noReasonCode": {
+      "enum": [
+        "NO_REAL_EVENT",
+        "ONLY_MY_SALES_PLAN",
+        "PURPOSE_HIDDEN",
+        "RELEVANCE_UNPROVEN",
+        "TIMING_INAPPROPRIATE",
+        "PERMISSION_MISSING",
+        "OTHER_STRUCTURED"
+      ]
+    },
+    "reviewTriggerCode": {
+      "enum": [
+        "NEW_REQUEST_FROM_PERSON",
+        "NEW_SHARED_CONTEXT",
+        "AGREED_DATE",
+        "NEW_RELEVANT_INFORMATION",
+        "DO_NOT_REVIEW_AUTOMATICALLY"
+      ]
+    },
+    "stopCode": {
+      "enum": [
+        "EXPLICIT_REFUSAL",
+        "DO_NOT_CONTACT",
+        "CHANNEL_PROHIBITED",
+        "VULNERABILITY_EXPLOITATION",
+        "RELATIONSHIP_RISK",
+        "OTHER_BOUNDARY"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "const": "REASON_FOUND"
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "then": {
+        "properties": {
+          "manualChecks": {
+            "properties": {
+              "factIsTrue": {
+                "const": true
+              },
+              "relevantToPerson": {
+                "const": true
+              },
+              "purposeCanBeNamed": {
+                "const": true
+              },
+              "timingIsRespectful": {
+                "const": true
+              },
+              "noVulnerabilityExploitation": {
+                "const": true
+              },
+              "noProhibition": {
+                "const": true
+              },
+              "canSaySameMeaningAloud": {
+                "const": true
+              },
+              "keepsRightToDecline": {
+                "const": true
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "const": "NO_REASON"
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "then": {
+        "required": [
+          "noReasonCode",
+          "reviewTriggerCode"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "const": "CONTACT_STOPPED"
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "then": {
+        "required": [
+          "stopCode"
+        ]
+      }
+    }
+  ]
+}
