@@ -5,34 +5,121 @@
 
 Ниже жёстко разделено, что уже на `https://mlmacademy.ru`, что осталось владельцу, и что сознательно не публиковалось.
 
-## Статус живого сайта (сделано агентом)
+## Статус живого сайта (проверка 2026-09-02)
 
 Проект `23906986`, папка MLM Academy, `ASSET_BASE=https://mlma-account.mlmacademy-search.workers.dev`.
 
 | URL | Статус |
 |---|---|
-| `/academy`, `/start`, `/library`, `/library/a1`…`/a6`, `/track`, `/about` | опубликованы, внешний loader v1, старые T123 скрыты (не удалены) |
+| `/academy`, `/start`, `/library`, `/track` | опубликованы, **внешний loader v1, но `?v=0.2` в HTML** (см. §A) |
+| `/my` | pageid `211140509`, Members-only; без входа — пустая оболочка `tilda-members-init`, **без** academy-assets в HTML |
 | `/pricing` | опубликована, pageid `213078109` |
 | `/access` | обновлена новой копией, public |
 | `/payment-and-access` | опубликована, pageid `213078309` |
-| `/my`, `/my/route`, `/my/results`, `/profile` | кабинет, Member/FREE |
 | `/my/purchases` | опубликована, pageid `213078509`, группы Member/Editor/FREE |
 | `/` | корпоративная вёрстка не менялась; в proof-блоке есть «Открыть MLM Academy» → `/academy` |
-| Account Worker | `PAYMENTS_ENABLED=false`, `COMMERCE_PREVIEW_ENABLED=false`, `SIGNUP_ENABLED=false`; `POST /api/checkout/create` → 403 |
+| `/members/signup` | **рабочая форма «Create Your Account»** — регистрация не закрыта (см. §B) |
+| `/members/login` | английский UI, `members-bridge.js` **не подключён** |
+| Account Worker | `SIGNUP_ENABLED=false`, `BETA_COHORT_CUTOFF_ISO=2026-09-02T00:00:00.000Z`, `REGISTERED_BETA_ACCESS_ENABLED=true`; assets `/v1/*?v=0.3` отдаются с Worker |
+
+**Не заявлять**, что v=0.3 или закрытая регистрация на production, пока это не видно в HTML / на живых страницах.
 
 Rollback на `/about` проверен: скрыть loader / показать старые T123 → живая страница без `/v1/domain.js`; вернуть loader → снова v1. Старые record id на about: `3424150101`–`0801`; loader `3426070101`; mount `3426070301`.
 
-## Осталось владельцу
+## Осталось владельцу (закрытие итерации)
 
-1. **Members → язык и extra CSS/JS.** Живой `/members/login` и `/members/signup` остаются английскими («Log In To Your Account»). API `savecustomcss` / `savecustomjs` / `savelanguage` у этого кабинета отвечают HTML 404. Сделать вручную:
-   - Members → Настройки личного кабинета → extra CSS: вставить `tilda/dist/t123/members-bridge.css` → Сохранить.
-   - Тот же раздел → extra HTML/JS: лучше `tilda/dist/t123/members-bridge-loader.html` (скрипт с Worker) или целиком `tilda/dist/t123/members-bridge.js` → Сохранить.
-   - Если есть переключатель языка интерфейса Members → русский.
-   - Проверка: https://mlmacademy.ru/members/login показывает «Войти в кабинет», фон `#f4f0e8`.
-   - Не заявлять, что вход на русском, пока это не видно на живых страницах.
-   - Регистрация сейчас выключена (`SIGNUP_ENABLED=false`). Чтобы снова открыть: `true` в `tilda/src/commerce.js` и `tilda/src/members-bridge.js`, `pnpm tilda:generate`, deploy Worker. Форма `/members/signup` блокируется members-bridge; если extra JS Members ещё не обновлён, в настройках Tilda Members лучше также закрыть регистрацию.
-2. **Настройки сайта Tilda → robots.txt и sitemap** из `tilda/dist/seo/`.
-3. **SQL** `003_product_catalog.sql` не применялся (Supabase в этой итерации не подключался).
+### §A. Переключить loader на `?v=0.3` (5 страниц)
+
+На каждой странице **два** блока T123 (type 131): **блок 1** — внешний loader, **блок 2** — mount. Менять **только блок 1**. Mount и HEAD не трогать.
+
+| № | URL | Title в Tilda | pageid | Блок 1 (loader) record id | Блок 2 (mount) record id |
+|---|---|---|---|---|---|
+| 1 | `/academy` | MLM Academy — библиотека действий | `210631509` | `rec3426152701` | `rec3426153401` |
+| 2 | `/start` | С чего начать · MLM Academy | `210780409` | `rec3426153601` | `rec3426153701` |
+| 3 | `/library` | Библиотека · MLM Academy | `210785009` | `rec3426154001` | `rec3426154101` |
+| 4 | `/track` | Трек · MLM Academy | `211142309` | `rec3426157801` | `rec3426157901` |
+| 5 | `/my` | Личная главная · MLM Academy | `211140509` | первый T123 на странице (открыть в редакторе под Editor) | второй T123 |
+
+**Путь в Tilda:** папка «MLM Academy» → страница → блок **1** (первый T123, комментарий «Внешний loader assets v1») → заменить весь HTML.
+
+**Старое значение** (сейчас на production, пример `/academy`):
+
+```html
+<link rel="stylesheet" href="https://mlma-account.mlmacademy-search.workers.dev/v1/mlma.css?v=0.2">
+<script src="https://mlma-account.mlmacademy-search.workers.dev/v1/catalog-data.js?v=0.2"></script>
+<script src="https://mlma-account.mlmacademy-search.workers.dev/v1/domain.js?v=0.2"></script>
+<script src="https://mlma-account.mlmacademy-search.workers.dev/v1/ui.js?v=0.2"></script>
+```
+
+**Новое значение** — вставить целиком из `tilda/dist/t123/external-loader-v1.live.html`:
+
+```html
+<link rel="stylesheet" href="https://mlma-account.mlmacademy-search.workers.dev/v1/mlma.css?v=0.3">
+<script src="https://mlma-account.mlmacademy-search.workers.dev/v1/catalog-data.js?v=0.3"></script>
+<script src="https://mlma-account.mlmacademy-search.workers.dev/v1/domain.js?v=0.3"></script>
+<script src="https://mlma-account.mlmacademy-search.workers.dev/v1/tracks/a2-008.module.js?v=1.0.2"></script>
+<script src="https://mlma-account.mlmacademy-search.workers.dev/v1/ui.js?v=0.3"></script>
+```
+
+Отличие от v=0.2: версия `0.3` **и** строка `a2-008.module.js` (Digital Mentor). Без неё визуальный слой v=0.3 неполный.
+
+**Кнопки:** Сохранить страницу → **Опубликовать** (все 5 страниц).
+
+**Проверка после публикации** (View Source, не кэш редактора):
+
+```bash
+for p in academy library start track; do
+  echo -n "$p: "; curl -sL "https://mlmacademy.ru/$p" | rg -o 'v=0\.[0-9]+' | sort -u
+done
+```
+
+Ожидание: только `v=0.3` (и `v=1.0.2` для a2-008). Для `/my` — войти как Member/Editor и проверить source той же командой.
+
+### §B. Закрыть публичную регистрацию Tilda Members
+
+Три слоя (все нужны; серверный уже включён):
+
+**1. Tilda Members — отключить самостоятельную регистрацию**
+
+- Личный кабинет (левое меню Tilda) → **Настройки личного кабинета**
+- Вкладка **«Основные»** → снять галочку **«Разрешить регистрацию через форму»**
+- **Сохранить**
+
+Справка: https://help-ru.tilda.cc/membership
+
+**2. Members extra JS — `members-bridge` (резервный UI-слой)**
+
+API `savecustomjs` для этого проекта отвечает 404 — только руками:
+
+- Тот же раздел **Настройки личного кабинета** → **Дополнительный HTML/JS** (или «extra HTML/JS»)
+- Вставить содержимое `tilda/dist/t123/members-bridge-loader.html`:
+
+```html
+<script src="https://mlma-account.mlmacademy-search.workers.dev/members-bridge.js"></script>
+```
+
+- Опционально extra CSS: `tilda/dist/t123/members-bridge.css`
+- **Сохранить**
+
+**3. Сервер (уже настроено, не менять)**
+
+- Worker: `SIGNUP_ENABLED=false`
+- Beta-когорта: `BETA_COHORT_CUTOFF_ISO=2026-09-02T00:00:00.000Z` — аккаунты, созданные **до** этой даты, сохраняют beta-доступ
+- Проверка: `GET https://mlma-account.mlmacademy-search.workers.dev/api/v1/flags` → `SIGNUP_ENABLED: false`
+
+**Проверка после публикации:**
+
+- `https://mlmacademy.ru/members/signup` → редирект на `/members/login?signup=paused` **или** текст «Регистрация временно закрыта», форма скрыта
+- В Network на `/members/login` есть запрос `members-bridge.js`
+- Новый email через форму зарегистрировать нельзя
+
+Чтобы снова открыть регистрацию: галочку в Tilda вернуть + `SIGNUP_ENABLED=true` в `commerce.js` и `members-bridge.js`, `pnpm tilda:generate`, deploy Worker.
+
+### §C. Прочее (без изменений в этой итерации)
+
+1. **Настройки сайта Tilda → robots.txt и sitemap** из `tilda/dist/seo/`.
+2. **SQL** `003_product_catalog.sql` не применялся (Supabase в этой итерации не подключался).
+3. **Язык Members** → русский (если есть переключатель в настройках кабинета).
 
 ## Сознательно не публиковалось
 
@@ -49,7 +136,8 @@ Rollback на `/about` проверен: скрыть loader / показать 
 
 ## 1. Внешние assets `/shared/v1/*`
 
-Сделано: сначала `/about`, затем остальные Academy-страницы на том же loader. Rollback сохранён скрытыми T123.
+Worker отдаёт v=0.3. Живые страницы Tilda пока на `?v=0.2` — см. **§A** выше.
+Rollback сохранён скрытыми T123 на каждой странице.
 
 Повторный rollback при сбое:
 
@@ -60,7 +148,7 @@ Rollback на `/about` проверен: скрыть loader / показать 
 
 ## 2. Страницы витрины
 
-Сделано. Повторно публиковать не нужно, пока не меняется mount/HEAD.
+Опубликованы. Для v=0.3 — повторная публикация по **§A**.
 
 ## 3. Юридические страницы
 
