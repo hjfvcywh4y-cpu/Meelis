@@ -25,6 +25,9 @@ const FORBIDDEN = [
   'Осовременивание',
   'mlmacademy.ru/track',
   'priority',
+  'LOCKED_NEXT_ACTION_SLOT',
+  'effectiveTrackConnections',
+  'connectionIndex',
 ];
 
 function sampleTrack(overrides) {
@@ -246,6 +249,12 @@ describe('маршруты Tilda', () => {
     const R = MLMA.routes({ dedicatedTrackPages: ['a3-002'] });
     assert.equal(R.track('A3-002'), '/track/a3-002');
     assert.equal(R.track('A1-001'), '/track?id=a1-001');
+  });
+
+  it('trackUrl — единый helper, парсер понимает query и pretty', () => {
+    assert.equal(MLMA.trackUrl('A2-008'), '/track?id=a2-008');
+    assert.equal(MLMA.parseTrackLocation('/track', '?id=a2-008'), 'A2-008');
+    assert.equal(MLMA.parseTrackLocation('/track/a2-008', ''), 'A2-008');
   });
 });
 

@@ -1,0 +1,8 @@
+{
+  "serverOnly": true,
+  "contentStatus": "REVIEW",
+  "version": "0.1.0",
+  "format": "system-ui",
+  "systemActionId": "A3-008",
+  "uiDefinitionRef": "ui-definition.json"
+}

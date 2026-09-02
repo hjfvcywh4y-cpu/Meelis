@@ -1,0 +1,336 @@
+{
+  "version": "1.0",
+  "trackId": "A3-005",
+  "cases": [
+    {
+      "id": "PKG-001",
+      "category": "PACKAGE",
+      "requirement": "Track ID is A3-005",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "PKG-002",
+      "category": "PACKAGE",
+      "requirement": "Entity type is TRACK and surface is public track",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "PKG-003",
+      "category": "PACKAGE",
+      "requirement": "Content is server-only REVIEW 0.1.0",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "PKG-004",
+      "category": "PACKAGE",
+      "requirement": "Graph binding v3 does not edit neighbor pages",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "PKG-005",
+      "category": "PACKAGE",
+      "requirement": "Three base rules and one terminal overlay stay PILOT_DRAFT_TO_TEST",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "GRAPH-001",
+      "category": "GRAPH",
+      "requirement": "Incoming design/effective counts are 2/3",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "GRAPH-002",
+      "category": "GRAPH",
+      "requirement": "Outgoing design/effective counts are 2/4",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "GRAPH-003",
+      "category": "GRAPH",
+      "requirement": "RR2-008 is the only incoming RouteRule",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "GRAPH-004",
+      "category": "GRAPH",
+      "requirement": "RR2-023/024/025 are exact base outgoing rules",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "GRAPH-005",
+      "category": "GRAPH",
+      "requirement": "TR-077 and TR-078 remain locked slots",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "GRAPH-006",
+      "category": "GRAPH",
+      "requirement": "TR-080 and TR-227 remain locked incoming slots",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "GRAPH-007",
+      "category": "GRAPH",
+      "requirement": "A6-030 remains canonical to A3-001",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "GRAPH-008",
+      "category": "GRAPH",
+      "requirement": "Terminal overlay creates no graph edge",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-001",
+      "category": "FLOW",
+      "requirement": "Consent gate appears before slot selection",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-002",
+      "category": "FLOW",
+      "requirement": "Silence and politeness are not confirmation",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-003",
+      "category": "FLOW",
+      "requirement": "Topic is named transparently",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-004",
+      "category": "FLOW",
+      "requirement": "Duration is realistic and explicit",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-005",
+      "category": "FLOW",
+      "requirement": "At most two real slots are offered",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-006",
+      "category": "FLOW",
+      "requirement": "User may suggest another slot or decline",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-007",
+      "category": "FLOW",
+      "requirement": "Timezone is required for confirmation",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-008",
+      "category": "FLOW",
+      "requirement": "Date time duration format and topic are checked once",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-009",
+      "category": "FLOW",
+      "requirement": "Calendar action occurs only after confirmation",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-010",
+      "category": "FLOW",
+      "requirement": "No attendee invite is sent automatically",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-011",
+      "category": "FLOW",
+      "requirement": "LATER requires permission and a review anchor",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-012",
+      "category": "FLOW",
+      "requirement": "No permission or anchor leads to DONE",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ROUTE-001",
+      "category": "ROUTING",
+      "requirement": "A2-008 NEXT_SCHEDULE enters A3-005 through RR2-008",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ROUTE-002",
+      "category": "ROUTING",
+      "requirement": "CONFIRMED routes to A3-010",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ROUTE-003",
+      "category": "ROUTING",
+      "requirement": "LATER routes to WAIT_UNTIL",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ROUTE-004",
+      "category": "ROUTING",
+      "requirement": "DECLINED routes to A5-014",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ROUTE-005",
+      "category": "ROUTING",
+      "requirement": "CLOSED_NO_FOLLOWUP routes to DONE",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ROUTE-006",
+      "category": "ROUTING",
+      "requirement": "UNCONFIRMED executes no rule",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ROUTE-007",
+      "category": "ROUTING",
+      "requirement": "Legacy nextTrackIds are never fallback",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ROUTE-008",
+      "category": "ROUTING",
+      "requirement": "Sandbox never creates a live instance",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "AI-001",
+      "category": "AI",
+      "requirement": "AI is optional and disabled by default",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "AI-002",
+      "category": "AI",
+      "requirement": "Structured mode is default with no free text",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "AI-003",
+      "category": "AI",
+      "requirement": "Sanitized text requires consent and is not persisted",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "AI-004",
+      "category": "AI",
+      "requirement": "AI preserves facts refusal and third option",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "AI-005",
+      "category": "AI",
+      "requirement": "AI cannot infer availability or timezone",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "AI-006",
+      "category": "AI",
+      "requirement": "AI cannot confirm or route",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "AI-007",
+      "category": "AI",
+      "requirement": "AI cannot write calendar or send invitation",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "PRIV-001",
+      "category": "PRIVACY",
+      "requirement": "Counterparty identity and contact data remain client-only",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "PRIV-002",
+      "category": "PRIVACY",
+      "requirement": "Meeting link location and copy remain client-only",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "PRIV-003",
+      "category": "PRIVACY",
+      "requirement": "Server stores only appointment mechanics",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "PRIV-004",
+      "category": "PRIVACY",
+      "requirement": "Exact timestamps are excluded from analytics",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "PRIV-005",
+      "category": "PRIVACY",
+      "requirement": "No attendee data reaches server or AI",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ACCESS-001",
+      "category": "ACCESS",
+      "requirement": "Public metadata has no body",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ACCESS-002",
+      "category": "ACCESS",
+      "requirement": "Demo has no instance writes routes or entitlements",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ACCESS-003",
+      "category": "ACCESS",
+      "requirement": "Full content still requires server entitlement policy",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ACCESS-004",
+      "category": "ACCESS",
+      "requirement": "Installation does not enable payment or paid navigation",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "SOURCE-001",
+      "category": "SOURCES",
+      "requirement": "Rybkin scheduling sequence is preserved",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "SOURCE-002",
+      "category": "SOURCES",
+      "requirement": "Forced choice is transformed into bounded options plus decline",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "SOURCE-003",
+      "category": "SOURCES",
+      "requirement": "Implied consent and total control are rejected",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "SOURCE-004",
+      "category": "SOURCES",
+      "requirement": "Rybkin-2 realistic planning and rescheduling are used",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "QA-001",
+      "category": "QA",
+      "requirement": "All JSON parses and unknown package fields are rejected",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "QA-002",
+      "category": "QA",
+      "requirement": "Route fixtures cover positive negative locked access and demo cases",
+      "status": "MUST_PASS"
+    }
+  ]
+}

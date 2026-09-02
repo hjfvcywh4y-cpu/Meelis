@@ -1,0 +1,282 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlm-academy.local/schema/a3-014-readiness-card.json",
+  "title": "A3-014 local readiness card",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "trackId",
+    "contentVersion",
+    "originTrackId",
+    "readinessGateCode",
+    "fearEventCode",
+    "evidenceCode",
+    "nextNeedCode",
+    "decision"
+  ],
+  "properties": {
+    "trackId": {
+      "const": "A3-014"
+    },
+    "contentVersion": {
+      "const": "0.1.0"
+    },
+    "originTrackId": {
+      "enum": [
+        "A3-002",
+        "SELF_ENTRY",
+        "OTHER_ROUTE"
+      ]
+    },
+    "readinessGateCode": {
+      "enum": [
+        "CONTINUE",
+        "PAUSE",
+        "OUT_OF_SCOPE"
+      ]
+    },
+    "targetActionCode": {
+      "enum": [
+        "WRITE_MESSAGE",
+        "MAKE_CALL",
+        "SCHEDULE_CONVERSATION",
+        "PREPARE_MEETING",
+        "REHEARSE_ONLY",
+        "NONE"
+      ]
+    },
+    "fearEventCode": {
+      "enum": [
+        "SILENCE",
+        "REFUSAL",
+        "JUDGMENT",
+        "LOSE_WORDS",
+        "HARM_RELATIONSHIP",
+        "FEEL_PRESSURE_TO_CONVINCE",
+        "UNKNOWN",
+        "OTHER_LOCAL_ONLY"
+      ]
+    },
+    "predictionCode": {
+      "enum": [
+        "ONE_REFUSAL_MEANS_FAILURE",
+        "RELATIONSHIP_WILL_BREAK",
+        "I_MUST_LOOK_CONFIDENT",
+        "I_MUST_GET_AGREEMENT",
+        "I_WILL_HAVE_NO_WORDS",
+        "UNKNOWN",
+        "OTHER_LOCAL_ONLY"
+      ]
+    },
+    "evidenceCode": {
+      "enum": [
+        "CURRENT_FACT",
+        "PREDICTION",
+        "PAST_EVENT_GENERALIZED",
+        "MIXED",
+        "NOT_ASSESSED"
+      ]
+    },
+    "supportCode": {
+      "enum": [
+        "OPENING_LINE",
+        "MEETING_MAP",
+        "ONE_REHEARSAL",
+        "BUDDY_PRESENCE",
+        "ENVIRONMENT_SETUP",
+        "SHORT_PAUSE",
+        "HUMAN_SUPPORT",
+        "NONE"
+      ]
+    },
+    "microStepCode": {
+      "enum": [
+        "SAY_OPENING_ALOUD",
+        "TYPE_UNSENT_MESSAGE",
+        "OPEN_CONTACT_CARD",
+        "SET_ACTION_TIME",
+        "REHEARSE_ONCE",
+        "NONE"
+      ]
+    },
+    "nextNeedCode": {
+      "enum": [
+        "RETURN_TO_ORIGIN",
+        "MEETING_MAP",
+        "SPECIFIC_FEAR",
+        "WAIT",
+        "HUMAN_SUPPORT"
+      ]
+    },
+    "dueCode": {
+      "enum": [
+        "NOW",
+        "TODAY",
+        "SCHEDULED",
+        "NOT_SET"
+      ]
+    },
+    "reviewTriggerCode": {
+      "enum": [
+        "RESTED_AND_READY",
+        "SCHEDULED_TIME",
+        "NEW_CONTEXT",
+        "USER_DECIDES",
+        "NO_AUTOMATIC_REVIEW"
+      ]
+    },
+    "supportHandoffCode": {
+      "enum": [
+        "TRUSTED_PERSON",
+        "TEAM_MENTOR",
+        "QUALIFIED_PROFESSIONAL",
+        "LOCAL_EMERGENCY_SUPPORT",
+        "USER_CHOICE"
+      ]
+    },
+    "fearText": {
+      "type": "string",
+      "maxLength": 800,
+      "description": "CLIENT_ONLY"
+    },
+    "predictedConsequenceText": {
+      "type": "string",
+      "maxLength": 800,
+      "description": "CLIENT_ONLY"
+    },
+    "pastExperienceText": {
+      "type": "string",
+      "maxLength": 800,
+      "description": "CLIENT_ONLY"
+    },
+    "openingLine": {
+      "type": "string",
+      "maxLength": 600,
+      "description": "CLIENT_ONLY"
+    },
+    "supportNote": {
+      "type": "string",
+      "maxLength": 800,
+      "description": "CLIENT_ONLY"
+    },
+    "scheduledAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "CLIENT_ONLY"
+    },
+    "aiReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "used": {
+          "type": "boolean"
+        },
+        "mode": {
+          "enum": [
+            "NONE",
+            "STRUCTURED_MIRROR",
+            "SANITIZED_TEXT_MIRROR"
+          ]
+        },
+        "advisoryCodes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "userAcceptedSuggestions": {
+          "type": "boolean"
+        }
+      }
+    },
+    "decision": {
+      "enum": [
+        "ACTION_READY",
+        "SUPPORT_REQUIRED",
+        "WAIT_FOR_RESOURCE",
+        "OUT_OF_SCOPE_SUPPORT"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "const": "ACTION_READY"
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "then": {
+        "required": [
+          "targetActionCode",
+          "supportCode",
+          "microStepCode",
+          "dueCode"
+        ],
+        "properties": {
+          "readinessGateCode": {
+            "const": "CONTINUE"
+          },
+          "nextNeedCode": {
+            "const": "RETURN_TO_ORIGIN"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "const": "WAIT_FOR_RESOURCE"
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "then": {
+        "required": [
+          "reviewTriggerCode"
+        ],
+        "properties": {
+          "readinessGateCode": {
+            "const": "PAUSE"
+          },
+          "nextNeedCode": {
+            "const": "WAIT"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "const": "OUT_OF_SCOPE_SUPPORT"
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "then": {
+        "required": [
+          "supportHandoffCode"
+        ],
+        "properties": {
+          "readinessGateCode": {
+            "const": "OUT_OF_SCOPE"
+          },
+          "nextNeedCode": {
+            "const": "HUMAN_SUPPORT"
+          }
+        }
+      }
+    }
+  ]
+}

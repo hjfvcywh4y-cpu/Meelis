@@ -1,0 +1,89 @@
+{
+  "version": "1.0",
+  "events": [
+    {
+      "name": "track_opened",
+      "fields": [
+        "track_id",
+        "content_version",
+        "entry_source_code"
+      ]
+    },
+    {
+      "name": "reason_source_selected",
+      "fields": [
+        "track_id",
+        "fact_source_code"
+      ]
+    },
+    {
+      "name": "reason_gate_failed",
+      "fields": [
+        "track_id",
+        "gate_code",
+        "risk_flag_codes"
+      ]
+    },
+    {
+      "name": "ai_reason_review_requested",
+      "fields": [
+        "track_id",
+        "ai_mode"
+      ]
+    },
+    {
+      "name": "ai_reason_review_completed",
+      "fields": [
+        "track_id",
+        "ai_mode",
+        "ai_advisory_codes"
+      ]
+    },
+    {
+      "name": "reason_decision_recorded",
+      "fields": [
+        "track_id",
+        "outcome_code",
+        "real_reason",
+        "no_reason_code",
+        "stop_code",
+        "duration_bucket"
+      ]
+    },
+    {
+      "name": "route_decision_received",
+      "fields": [
+        "track_id",
+        "outcome_code",
+        "destination_type",
+        "destination_id",
+        "lock_reason"
+      ]
+    }
+  ],
+  "forbiddenFields": [
+    "contact_name",
+    "phone",
+    "email",
+    "messenger_handle",
+    "profile_url",
+    "company_name",
+    "real_reason_text",
+    "fact_text",
+    "why_this_person_text",
+    "why_now_text",
+    "opener_draft",
+    "message_draft",
+    "conversation_quote",
+    "free_text_note",
+    "contact_card",
+    "sanitized_reason_draft",
+    "occurred_at"
+  ],
+  "rules": [
+    "Allowlist every event before dispatch",
+    "Do not infer contact quality or conversion probability",
+    "Do not score people",
+    "Do not retain AI prompt text"
+  ]
+}

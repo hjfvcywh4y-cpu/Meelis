@@ -1,4 +1,4 @@
-<!-- Блок T123: доменная логика 1/14 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: доменная логика 1/17 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
 /**
  * Доменная логика MLM Academy для Tilda.
@@ -42,14 +42,14 @@
 
   var SECTION_IDS = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6'];
   var TRACK_ID_RE = /^A[1-6]-\d{3}$/;
-  var ACCENT_INK = { A1: '#fffdf8', A2: '#fffdf8', A3: '#fffdf8', A4: '#1c1914', A5: '#fffdf8', A6: '#fffdf8' };
+  var ACCENT_INK = { A1: '#fffdf8', A2: '#fffdf8', A3: '#fffdf8', A4: '#171612', A5: '#fffdf8', A6: '#fffdf8' };
   var SECTION_COLORS = {
-    A1: '#C45F42',
-    A2: '#3D6B4F',
-    A3: '#2F4F8A',
-    A4: '#C4922A',
-    A5: '#6B4C8A',
-    A6: '#2A7A72',
+    A1: '#2F7D5B',
+    A2: '#267A75',
+    A3: '#2D5DA8',
+    A4: '#C68A18',
+    A5: '#7A4E78',
+    A6: '#315E50',
   };
 
   function svgCover(bg, ink, motif) {
@@ -603,6 +603,26 @@
     return SECTION_IDS.indexOf(candidate) === -1 ? null : candidate;
   }
 
+  function parseTrackLocation(pathname, search) {
+    var query = String(search || '');
+    if (query.charAt(0) === '?') query = query.slice(1);
+    var parts = query.split('&');
+    for (var i = 0; i < parts.length; i += 1) {
+      var pair = parts[i].split('=');
+      if (decodeURIComponent(pair[0] || '') === 'id') {
+        return normalizeTrackId(decodeURIComponent(pair[1] || ''));
+      }
+    }
+    var path = String(pathname || '');
+    var marker = '/track/';
+    var idx = path.indexOf(marker);
+    if (idx >= 0) {
+      var slug = path.slice(idx + marker.length).split('/')[0].split('?')[0];
+      return normalizeTrackId(slug);
+    }
+    return null;
+  }
+
   function routes(config) {
     config = config || {};
     var dedicated = config.dedicatedTrackPages || [];
@@ -907,6 +927,10 @@
     normalizeTrackId: normalizeTrackId,
     normalizeSectionId: normalizeSectionId,
     routes: routes,
+    trackUrl: function (trackId) {
+      return routes().track(trackId);
+    },
+    parseTrackLocation: parseTrackLocation,
     isListed: isListed,
     isReachable: isReachable,
     listVisible: listVisible,

@@ -1,0 +1,89 @@
+{
+  "contractVersion": "1.0",
+  "trackId": "A3-005",
+  "featureFlag": "AI_SCHEDULING_EDITOR_ENABLED",
+  "defaultEnabled": false,
+  "optional": true,
+  "purpose": "Сжать и прояснить приглашение, не меняя тему, длительность, слоты, право предложить своё время и право отказаться.",
+  "modes": {
+    "STRUCTURED_EDITOR": {
+      "default": true,
+      "freeText": false,
+      "input": [
+        "topic_code",
+        "duration_minutes",
+        "format_code",
+        "slot_count",
+        "timezone_present",
+        "relationship_tone_code"
+      ]
+    },
+    "SANITIZED_TEXT_EDITOR": {
+      "default": false,
+      "requiresExplicitConsent": true,
+      "requiresUserPreview": true,
+      "transientInput": [
+        "sanitized_invitation_draft"
+      ],
+      "maxCharacters": 700,
+      "persistence": false,
+      "logging": false,
+      "trainingUse": false
+    }
+  },
+  "prohibitedInput": [
+    "contact_name",
+    "phone",
+    "email",
+    "messenger_handle",
+    "profile_url",
+    "company_name",
+    "contact_card",
+    "topic_text",
+    "location_text",
+    "meeting_link",
+    "counterpart_availability_text",
+    "slot_label_text",
+    "invitation_draft",
+    "confirmation_text",
+    "conversation_quote",
+    "free_text_note",
+    "calendar_title",
+    "calendar_description",
+    "attendee_data",
+    "private_calendar",
+    "work_schedule",
+    "location_history",
+    "income",
+    "health_condition"
+  ],
+  "tasks": [
+    "Flag HIDDEN_TOPIC, FALSE_CHOICE, FAKE_URGENCY, IMPLIED_CONSENT, OVERLONG_INVITATION and MISSING_TIMEZONE.",
+    "Offer at most two wording variants using only supplied facts.",
+    "Preserve the ability to suggest another time and decline.",
+    "Explain which phrase triggered each advisory code."
+  ],
+  "prohibitedBehavior": [
+    "Inventing availability, time zone, relationship context or topic.",
+    "Removing the right to decline or suggest another slot.",
+    "Creating fake scarcity or urgency.",
+    "Treating silence, emoji or politeness as confirmation.",
+    "Choosing appointment.status or executing RouteRule.",
+    "Creating, modifying or sending a calendar event.",
+    "Auto-sending a message or creating a live instance."
+  ],
+  "output": {
+    "kind": "SCHEDULING_COPY_REVIEW",
+    "fields": [
+      "advisoryCodes",
+      "clarifyingQuestions",
+      "wordingVariants",
+      "preservedFacts",
+      "explanations"
+    ],
+    "maxQuestions": 2,
+    "maxVariants": 2,
+    "advisoryOnly": true,
+    "deterministicGateStillRequired": true
+  }
+}

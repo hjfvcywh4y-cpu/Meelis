@@ -48,6 +48,7 @@ import {
   sanitizeRunMeta,
   cancelAutoRenewal,
 } from './account-core.js';
+import { handleArchitectureBeta } from './architecture-beta.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' };
 
@@ -188,6 +189,36 @@ export default {
         200,
         origin,
       );
+    }
+
+    if (path.indexOf('/api/v1/') === 0) {
+      if (method !== 'GET' && method !== 'POST') {
+        return json({ ok: false, reason: 'method_not_allowed' }, 405, origin, { Allow: 'GET, POST, OPTIONS' });
+      }
+      const isPublicMeta = /\/api\/v1\/tracks\/[^/]+\/meta$/.test(path) || path === '/api/v1/flags';
+      if (!isPublicMeta && !requireAllowedOrigin(origin)) {
+        return json({ ok: false, reason: 'origin_denied' }, 403, origin);
+      }
+      if (!isPublicMeta) {
+        if (!env.MLMA_SESSION_SECRET) return json({ ok: false, reason: 'server_misconfigured' }, 500, origin);
+        if (!env.MLMA_ACCOUNT) return json({ ok: false, reason: 'kv_missing' }, 500, origin);
+      }
+      let body = {};
+      if (method === 'POST') {
+        const parsed = await readJsonBody(request, origin);
+        if (parsed.error) return parsed.error;
+        body = parsed.body || {};
+      }
+      const handled = await handleArchitectureBeta(request, env, {
+        json,
+        origin,
+        requireUser,
+        method,
+        path,
+        body,
+      });
+      if (handled) return handled;
+      return json({ ok: false, code: 'not_found' }, 404, origin);
     }
 
     if (PAYMENT_PATHS.indexOf(path) !== -1) {

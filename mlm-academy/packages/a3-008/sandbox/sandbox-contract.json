@@ -1,0 +1,28 @@
+{
+  "version": "1.0",
+  "accessTier": "PUBLIC_DEMO",
+  "executionMode": "SANDBOX",
+  "liveInstance": false,
+  "entitlementRequired": false,
+  "writesAllowed": false,
+  "routeEngineExecutionAllowed": false,
+  "sampleScenario": {
+    "sourceTrackId": "A3-002",
+    "selectedOutcome": "MEETING_CONFIRMED",
+    "displayOnlyResult": "Показать, что следующим мог бы быть A3-010, но не создавать решение и не открывать содержимое трека."
+  },
+  "response": {
+    "kind": "PUBLIC_DEMO",
+    "sandbox": true,
+    "liveInstance": null,
+    "reason": "SANDBOX_NO_LIVE_INSTANCE"
+  },
+  "forbidden": [
+    "No outcome event",
+    "No RouteDecision",
+    "No entitlement grant",
+    "No paid destination URL",
+    "No user contact data",
+    "No analytics that can be mistaken for live completion"
+  ]
+}

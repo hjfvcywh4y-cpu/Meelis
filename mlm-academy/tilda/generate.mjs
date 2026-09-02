@@ -18,6 +18,7 @@ const SRC = path.join(__dirname, 'src');
 const DIST = path.join(__dirname, 'dist');
 const T123_LIMIT = 45000;
 const ASSETS_VERSION = 'v1';
+const PUBLIC_CACHE_VERSION = '0.3';
 const ASSET_BASE_LIVE = 'https://mlma-account.mlmacademy-search.workers.dev';
 const CATALOG_SCHEMA = 'mlma.catalog.public.v1';
 const EXPECTED_SECTION_COUNTS = { A1: 16, A2: 16, A3: 17, A4: 17, A5: 14, A6: 32 };
@@ -34,6 +35,14 @@ const FORBIDDEN = [
   'transformationType',
   'adaptationLevel',
   'legacyPublicUrl',
+  'PILOT_DRAFT_TO_TEST',
+  'legacyArchive',
+  'MLMA_SERVER_ONLY_A3_002_FIXTURE',
+  'Первое сообщение без рекламной простыни',
+  'LOCKED_NEXT_ACTION_SLOT',
+  'effectiveTrackConnections',
+  'connectionIndex',
+  'matchedRouteRuleIds',
   'Не создана',
   'Осовременивание',
   'mlmacademy.ru/track',
@@ -173,8 +182,11 @@ const legalJs = fs.readFileSync(path.join(SRC, 'legal.js'), 'utf8');
 const searchJs = fs.readFileSync(path.join(SRC, 'search.js'), 'utf8');
 const analyticsJs = fs.readFileSync(path.join(SRC, 'analytics.js'), 'utf8');
 const ontologyJs = fs.readFileSync(path.join(SRC, 'ontology.js'), 'utf8');
+const packageRuntimeJs = fs.readFileSync(path.join(SRC, 'package-runtime.js'), 'utf8');
+const packageBindJs = fs.readFileSync(path.join(SRC, 'package-bind.js'), 'utf8');
+const systemActionRuntimeJs = fs.readFileSync(path.join(SRC, 'system-action-runtime.js'), 'utf8');
 const SPLIT = '\n\n/* __MLMA_UI_SPLIT__ */\n\n';
-const domainJs = [domainCore.trim(), accessJs.trim(), storageJs.trim(), paymentsJs.trim(), commerceJs.trim(), legalJs.trim(), searchJs.trim(), analyticsJs.trim()].join(SPLIT) + '\n\n' + ontologyJs.trim();
+const domainJs = [domainCore.trim(), accessJs.trim(), storageJs.trim(), paymentsJs.trim(), commerceJs.trim(), legalJs.trim(), searchJs.trim(), analyticsJs.trim(), packageRuntimeJs.trim(), systemActionRuntimeJs.trim(), packageBindJs.trim()].join(SPLIT) + '\n\n' + ontologyJs.trim();
 const uiJs = fs.readFileSync(path.join(SRC, 'ui.js'), 'utf8');
 const publicBundle = domainJs + uiJs + css;
 const oldSeller = ['Бор' + 'исенко', 'Бале' + 'шенко', '532000' + '135580', '1071@savv' + '.tech'];
@@ -205,8 +217,13 @@ function moduleCacheBust(fileName) {
 }
 
 const trackModuleFiles = listTrackModuleFiles();
-const trackModuleScriptTags = (base) =>
-  trackModuleFiles
+function isLiveTrackModule(fileName) {
+  const id = fileName.replace(/\.module\.js$/i, '').toUpperCase();
+  return Object.prototype.hasOwnProperty.call(PILOT_EXECUTABLE, id);
+}
+const liveTrackModuleFiles = trackModuleFiles.filter(isLiveTrackModule);
+const trackModuleScriptTags = (base, files = liveTrackModuleFiles) =>
+  files
     .map((name) => `<script src="${base}/${ASSETS_VERSION}/tracks/${name}?v=${moduleCacheBust(name)}"></script>`)
     .join('\n');
 
@@ -614,9 +631,9 @@ function writeScriptChunks(source, basename, label) {
 
 const domainFiles = writeScriptChunks(domainJs, '03-domain', 'доменная логика');
 const trackFiles = [];
-if (trackModuleFiles.length) {
+if (liveTrackModuleFiles.length) {
   const inner =
-    trackModuleFiles
+    liveTrackModuleFiles
       .map(function (name) {
         return (
           '<script src="' +
@@ -667,6 +684,18 @@ const logoJpg = path.join(SRC, 'assets/mlma-logo.jpg');
 if (!fs.existsSync(logoJpg)) throw new Error('Нет исходного логотипа tilda/src/assets/mlma-logo.jpg');
 fs.copyFileSync(logoJpg, path.join(DIST, 'shared/mlma-logo.jpg'));
 fs.copyFileSync(logoJpg, path.join(v1, 'mlma-logo.jpg'));
+function copyAssetDir(fromName) {
+  const from = path.join(SRC, 'assets', fromName);
+  if (!fs.existsSync(from)) return;
+  for (const dest of [path.join(DIST, 'shared', fromName), path.join(v1, fromName)]) {
+    fs.mkdirSync(dest, { recursive: true });
+    for (const name of fs.readdirSync(from)) {
+      fs.copyFileSync(path.join(from, name), path.join(dest, name));
+    }
+  }
+}
+copyAssetDir('visual');
+copyAssetDir('icons');
 write(path.join(DIST, 'shared/catalog.schema.json'), fs.readFileSync(path.join(ROOT, 'src/data/catalog.schema.json'), 'utf8'));
 write(path.join(v1, 'products.catalog.json'), JSON.stringify(productsFile, null, 2) + '\n');
 write(path.join(DIST, 'shared/products.catalog.json'), JSON.stringify(productsFile, null, 2) + '\n');
@@ -721,11 +750,11 @@ for (const page of pages) {
 const loader = `<!-- Внешние assets ${ASSETS_VERSION}. Не публиковать все страницы сразу.
 Rollback: вернуть блоки T123 01-css, 02-data-*, 03-domain-*, 03b-tracks-*, 04-ui-*.
 Замените ASSET_BASE на URL файлов. Секреты сюда не класть. -->
-<link rel="stylesheet" href="ASSET_BASE/${ASSETS_VERSION}/mlma.css?v=${catalogFile.version}">
-<script src="ASSET_BASE/${ASSETS_VERSION}/catalog-data.js?v=${catalogFile.version}"></script>
-<script src="ASSET_BASE/${ASSETS_VERSION}/domain.js?v=${catalogFile.version}"></script>
+<link rel="stylesheet" href="ASSET_BASE/${ASSETS_VERSION}/mlma.css?v=${PUBLIC_CACHE_VERSION}">
+<script src="ASSET_BASE/${ASSETS_VERSION}/catalog-data.js?v=${PUBLIC_CACHE_VERSION}"></script>
+<script src="ASSET_BASE/${ASSETS_VERSION}/domain.js?v=${PUBLIC_CACHE_VERSION}"></script>
 ${trackModuleScriptTags('ASSET_BASE')}
-<script src="ASSET_BASE/${ASSETS_VERSION}/ui.js?v=${catalogFile.version}"></script>
+<script src="ASSET_BASE/${ASSETS_VERSION}/ui.js?v=${PUBLIC_CACHE_VERSION}"></script>
 `;
 write(path.join(DIST, 't123/external-loader-v1.html'), t123Wrap(loader, `Внешний loader assets ${ASSETS_VERSION}. Сначала одна тестовая страница.`));
 write(

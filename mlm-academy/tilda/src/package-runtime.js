@@ -1,0 +1,617 @@
+/**
+ * Универсальный renderer установленного track package.
+ * Свободные тексты и контакты остаются в localStorage. На сервер — только коды.
+ */
+(function (root) {
+  'use strict';
+
+  function esc(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function clientKey(trackId) {
+    return 'mlma.' + String(trackId || '').toLowerCase() + '.client.v1';
+  }
+
+  function loadClient(trackId) {
+    try {
+      return JSON.parse(localStorage.getItem(clientKey(trackId)) || '{}');
+    } catch (err) {
+      return {};
+    }
+  }
+
+  function saveClient(trackId, data) {
+    try {
+      localStorage.setItem(clientKey(trackId), JSON.stringify(data || {}));
+    } catch (err) {
+      /* ignore */
+    }
+  }
+
+  function apiBase() {
+    try {
+      if (root.MLMA_API_URL) return String(root.MLMA_API_URL).replace(/\/$/, '');
+    } catch (err) {
+      /* ignore */
+    }
+    return '';
+  }
+
+  function renderStep(step, client) {
+    var html = '<section class="mlma-card mlma-pad" data-mlma-step="' + esc(step.id) + '"><h2 class="mlma-h3">' + esc(step.title) + '</h2>';
+    var i;
+    if (step.kind === 'single_choice') {
+      html += '<div class="mlma-actions" style="margin-top:16px;display:grid;gap:8px">';
+      for (i = 0; i < (step.options || []).length; i += 1) {
+        html +=
+          '<button type="button" class="mlma-btn" data-mlma-pkg-choice="' +
+          esc(step.options[i].code) +
+          '">' +
+          esc(step.options[i].label) +
+          '</button>';
+      }
+      html += '</div>';
+    } else if (step.kind === 'gate') {
+      html += '<ul style="margin-top:12px">';
+      for (i = 0; i < (step.prompts || []).length; i += 1) html += '<li>' + esc(step.prompts[i]) + '</li>';
+      html +=
+        '</ul><label class="mlma-meta" style="margin-top:12px;display:block">Настоящий повод (остаётся на этом устройстве)</label>' +
+        '<textarea class="mlma-field" data-mlma-local="real_reason_text" rows="3">' +
+        esc(client.real_reason_text || '') +
+        '</textarea>' +
+        '<div class="mlma-actions" style="margin-top:16px;display:grid;gap:8px">';
+      for (i = 0; i < (step.branches || []).length; i += 1) {
+        var br = step.branches[i];
+        html +=
+          '<button type="button" class="mlma-btn' +
+          (i === 0 ? ' mlma-btn-primary' : '') +
+          '" data-mlma-pkg-branch="' +
+          esc(br.answer) +
+          '" data-outcome="' +
+          esc(br.outcomeCode || '') +
+          '" data-next="' +
+          esc(br.nextStepId || '') +
+          '">' +
+          esc(br.answer === 'REASON_CONFIRMED' ? 'Повод настоящий, продолжить' : br.answer === 'NO_TRUE_REASON' ? 'Нет настоящего повода' : br.answer === 'ACTION_BARRIER' ? 'Мешает конкретный барьер' : 'Остановить контакт') +
+          '</button>';
+      }
+      html += '</div>';
+    } else if (step.kind === 'artifact_builder') {
+      html += '<p class="mlma-muted" style="margin-top:8px">Четыре блока. Текст не уходит на сервер.</p>';
+      for (i = 0; i < (step.blocks || []).length; i += 1) {
+        var block = step.blocks[i];
+        html +=
+          '<label class="mlma-meta" style="margin-top:12px;display:block">' +
+          esc(block.label) +
+          '</label><textarea class="mlma-field" data-mlma-block="' +
+          esc(block.id) +
+          '" rows="2">' +
+          esc((client.blocks && client.blocks[block.id]) || '') +
+          '</textarea>';
+      }
+      html +=
+        '<label class="mlma-meta" style="margin-top:12px;display:block">Черновик сообщения</label>' +
+        '<textarea class="mlma-field" data-mlma-local="message_draft" rows="5">' +
+        esc(client.message_draft || '') +
+        '</textarea>' +
+        '<button type="button" class="mlma-btn mlma-btn-primary" style="margin-top:12px" data-mlma-pkg-next="tone_variants">Дальше</button>';
+    } else if (step.kind === 'local_transform') {
+      html += '<p class="mlma-muted" style="margin-top:8px">Не добавляйте новые факты и не придумывайте повод.</p><div class="mlma-actions" style="margin-top:12px">';
+      for (i = 0; i < (step.variants || []).length; i += 1) {
+        html += '<button type="button" class="mlma-btn" data-mlma-pkg-tone="' + esc(step.variants[i]) + '">' + esc(step.variants[i]) + '</button>';
+      }
+      html += '</div><button type="button" class="mlma-btn mlma-btn-primary" style="margin-top:12px" data-mlma-pkg-next="quality_gate">К проверке</button>';
+    } else if (step.kind === 'checklist_gate') {
+      html += '<div style="margin-top:12px;display:grid;gap:8px">';
+      for (i = 0; i < (step.items || []).length; i += 1) {
+        var item = step.items[i];
+        html +=
+          '<label><input type="checkbox" data-mlma-check="' +
+          esc(item.code) +
+          '"' +
+          (item.critical ? ' data-critical="1"' : '') +
+          '> ' +
+          esc(item.label) +
+          (item.critical ? ' *' : '') +
+          '</label>';
+      }
+      html +=
+        '</div><button type="button" class="mlma-btn mlma-btn-primary" style="margin-top:16px" data-mlma-pkg-next="field_action">К действию</button>';
+    } else if (step.kind === 'field_action') {
+      html += '<p class="mlma-muted" style="margin-top:8px">Автоотправки нет. Зафиксируйте факт.</p><div class="mlma-actions" style="margin-top:12px;display:grid;gap:8px">';
+      for (i = 0; i < (step.actions || []).length; i += 1) {
+        var act = step.actions[i];
+        html +=
+          '<button type="button" class="mlma-btn' +
+          (act.outcomeCode === 'MESSAGE_SENT' ? ' mlma-btn-primary' : '') +
+          '" data-mlma-pkg-action="' +
+          esc(act.code) +
+          '" data-outcome="' +
+          esc(act.outcomeCode || '') +
+          '">' +
+          esc(act.label) +
+          '</button>';
+      }
+      html += '</div>';
+    } else if (step.kind === 'remediation_form') {
+      if (step.instruction) html += '<p class="mlma-muted" style="margin-top:8px">' + esc(step.instruction) + '</p>';
+      if (step.gateBranches) {
+        html +=
+          '<div class="mlma-actions" style="margin-top:16px;display:grid;gap:8px"><button type="button" class="mlma-btn mlma-btn-primary" data-mlma-readiness-gate="CONTINUE" data-mlma-pkg-next="' +
+          esc(step.nextStepId || '') +
+          '">Продолжить подготовку</button><button type="button" class="mlma-btn" data-mlma-readiness-gate="PAUSE" data-outcome="WAIT_FOR_RESOURCE">Сделать паузу</button><button type="button" class="mlma-btn" data-mlma-readiness-gate="OUT_OF_SCOPE" data-outcome="OUT_OF_SCOPE_SUPPORT">Нужна человеческая поддержка</button></div>';
+      }
+      for (i = 0; i < (step.fields || []).length; i += 1) {
+        var field = step.fields[i];
+        html += '<label class="mlma-meta" style="margin-top:12px;display:block">' + esc(field.label) + '</label>';
+        if (field.type === 'select') {
+          html += '<select class="mlma-field" data-mlma-local="' + esc(field.key) + '"><option value="">Выберите</option>';
+          for (var j = 0; j < (field.options || []).length; j += 1) {
+            var opt = field.options[j];
+            html +=
+              '<option value="' +
+              esc(opt.code) +
+              '"' +
+              (client[field.key] === opt.code ? ' selected' : '') +
+              '>' +
+              esc(opt.label) +
+              '</option>';
+          }
+          html += '</select>';
+        } else {
+          html +=
+            '<textarea class="mlma-field" data-mlma-local="' +
+            esc(field.key) +
+            '" rows="3">' +
+            esc(client[field.key] || '') +
+            '</textarea>';
+        }
+      }
+      if (step.nextStepId && !step.gateBranches) {
+        html +=
+          '<button type="button" class="mlma-btn mlma-btn-primary" style="margin-top:16px" data-mlma-pkg-next="' +
+          esc(step.nextStepId) +
+          '">Дальше</button>';
+      }
+    } else if (step.kind === 'remediation_checks') {
+      if (step.instruction) html += '<p class="mlma-muted" style="margin-top:8px">' + esc(step.instruction) + '</p>';
+      for (i = 0; i < (step.fields || []).length; i += 1) {
+        field = step.fields[i];
+        html += '<label class="mlma-meta" style="margin-top:12px;display:block">' + esc(field.label) + '</label>';
+        if (field.type === 'select') {
+          html += '<select class="mlma-field" data-mlma-local="' + esc(field.key) + '"><option value="">Выберите</option>';
+          for (j = 0; j < (field.options || []).length; j += 1) {
+            opt = field.options[j];
+            html +=
+              '<option value="' +
+              esc(opt.code) +
+              '"' +
+              (client[field.key] === opt.code ? ' selected' : '') +
+              '>' +
+              esc(opt.label) +
+              '</option>';
+          }
+          html += '</select>';
+        }
+      }
+      client.manualChecks = client.manualChecks || {};
+      for (i = 0; i < (step.checks || []).length; i += 1) {
+        var chk = step.checks[i];
+        html +=
+          '<label style="display:flex;gap:8px;margin-top:10px"><input type="checkbox" data-mlma-manual="' +
+          esc(chk.key) +
+          '"' +
+          (client.manualChecks[chk.key] ? ' checked' : '') +
+          '> ' +
+          esc(chk.label) +
+          '</label>';
+      }
+      if (step.nextStepId) {
+        html +=
+          '<button type="button" class="mlma-btn mlma-btn-primary" style="margin-top:16px" data-mlma-pkg-next="' +
+          esc(step.nextStepId) +
+          '">Дальше</button>';
+      }
+    } else if (step.kind === 'remediation_optional') {
+      if (step.instruction) html += '<p class="mlma-muted" style="margin-top:8px">' + esc(step.instruction) + '</p>';
+      html += '<p class="mlma-meta">Компонент ' + esc(step.componentId || 'A6-027') + ' (необязательно)</p>';
+      for (i = 0; i < (step.fields || []).length; i += 1) {
+        field = step.fields[i];
+        html +=
+          '<label class="mlma-meta" style="margin-top:12px;display:block">' +
+          esc(field.label) +
+          '</label><textarea class="mlma-field" data-mlma-local="' +
+          esc(field.key) +
+          '" rows="2">' +
+          esc(client[field.key] || '') +
+          '</textarea>';
+      }
+      html +=
+        '<div class="mlma-actions" style="margin-top:16px;display:grid;gap:8px"><button type="button" class="mlma-btn mlma-btn-primary" data-mlma-pkg-next="' +
+        esc(step.nextStepId || '') +
+        '">Продолжить</button><button type="button" class="mlma-btn" data-mlma-pkg-next="' +
+        esc(step.nextStepId || '') +
+        '" data-skip-optional="1">Пропустить</button></div>';
+    } else if (step.kind === 'remediation_summary') {
+      if (step.instruction) html += '<p class="mlma-muted" style="margin-top:8px">' + esc(step.instruction) + '</p>';
+      html += '<ul style="margin-top:12px"><li>Факт: ' + esc(client.factSourceCode || '—') + '</li><li>Цель: ' + esc(client.intentCode || '—') + '</li><li>Момент: ' + esc(client.timingCode || '—') + '</li></ul>';
+      html +=
+        '<button type="button" class="mlma-btn mlma-btn-primary" style="margin-top:16px" data-mlma-pkg-next="' +
+        esc(step.nextStepId || 'decision_gate') +
+        '">К решению</button>';
+    } else if (step.kind === 'remediation_decision') {
+      if (step.waitFields) {
+        for (i = 0; i < step.waitFields.length; i += 1) {
+          field = step.waitFields[i];
+          html += '<label class="mlma-meta" style="margin-top:12px;display:block">' + esc(field.label) + ' (для паузы)</label>';
+          if (field.type === 'select') {
+            html += '<select class="mlma-field" data-mlma-local="' + esc(field.key) + '"><option value="">Выберите</option>';
+            for (j = 0; j < (field.options || []).length; j += 1) {
+              opt = field.options[j];
+              html +=
+                '<option value="' +
+                esc(opt.code) +
+                '"' +
+                (client[field.key] === opt.code ? ' selected' : '') +
+                '>' +
+                esc(opt.label) +
+                '</option>';
+            }
+            html += '</select>';
+          }
+        }
+      }
+      if (step.supportFields) {
+        for (i = 0; i < step.supportFields.length; i += 1) {
+          field = step.supportFields[i];
+          html += '<label class="mlma-meta" style="margin-top:12px;display:block">' + esc(field.label) + '</label>';
+          if (field.type === 'select') {
+            html += '<select class="mlma-field" data-mlma-local="' + esc(field.key) + '"><option value="">Выберите</option>';
+            for (j = 0; j < (field.options || []).length; j += 1) {
+              opt = field.options[j];
+              html +=
+                '<option value="' +
+                esc(opt.code) +
+                '"' +
+                (client[field.key] === opt.code ? ' selected' : '') +
+                '>' +
+                esc(opt.label) +
+                '</option>';
+            }
+            html += '</select>';
+          }
+        }
+      }
+      html += '<div class="mlma-actions" style="margin-top:16px;display:grid;gap:8px">';
+      for (i = 0; i < (step.decisions || []).length; i += 1) {
+        var dec = step.decisions[i];
+        html +=
+          '<button type="button" class="mlma-btn' +
+          (dec.outcomeCode === 'ACTION_READY' || dec.outcomeCode === 'REASON_FOUND' ? ' mlma-btn-primary' : '') +
+          '" data-mlma-remediation-decision="' +
+          esc(dec.outcomeCode) +
+          '"' +
+          (dec.nextNeedCode ? ' data-next-need="' + esc(dec.nextNeedCode) + '"' : '') +
+          '>' +
+          esc(dec.label) +
+          '</button>';
+      }
+      html += '</div>';
+      html += '<div id="mlma-remediation-extra" style="margin-top:12px"></div>';
+    } else if (step.kind === 'scheduling_consent_gate') {
+      if (step.instruction) html += '<p class="mlma-muted" style="margin-top:8px">' + esc(step.instruction) + '</p>';
+      html += '<div class="mlma-actions" style="margin-top:16px;display:grid;gap:8px">';
+      for (i = 0; i < (step.branches || []).length; i += 1) {
+        var consentBr = step.branches[i];
+        html +=
+          '<button type="button" class="mlma-btn' +
+          (consentBr.code === 'READY_NOW' ? ' mlma-btn-primary' : '') +
+          '" data-mlma-scheduling-consent="' +
+          esc(consentBr.code) +
+          '" data-next="' +
+          esc(consentBr.nextStepId || '') +
+          '"' +
+          (consentBr.presetStatus ? ' data-preset-status="' + esc(consentBr.presetStatus) + '"' : '') +
+          '>' +
+          esc(consentBr.label) +
+          '</button>';
+      }
+      html += '</div>';
+    } else if (step.kind === 'scheduling_form' || step.kind === 'scheduling_slots' || step.kind === 'scheduling_response' || step.kind === 'scheduling_confirm' || step.kind === 'scheduling_calendar') {
+      if (step.instruction) html += '<p class="mlma-muted" style="margin-top:8px">' + esc(step.instruction) + '</p>';
+      if (step.sharedReferenceComponentId) {
+        html += '<p class="mlma-meta">Компонент ' + esc(step.sharedReferenceComponentId) + ' (справочно)</p>';
+      }
+      if (step.kind === 'scheduling_slots') {
+        html += '<p class="mlma-meta">Максимум ' + esc(String(step.maxSlots || 2)) + ' слота. Человек может предложить своё время или отказаться.</p>';
+      }
+      if (step.kind === 'scheduling_calendar') {
+        html += '<p class="mlma-meta">Только личное напоминание. Участник не добавляется, приглашение не отправляется.</p>';
+      }
+      for (i = 0; i < (step.fields || []).length; i += 1) {
+        field = step.fields[i];
+        html += '<label class="mlma-meta" style="margin-top:12px;display:block">' + esc(field.label) + (field.clientOnly ? ' (только здесь)' : '') + '</label>';
+        if (field.type === 'select') {
+          html += '<select class="mlma-field" data-mlma-local="' + esc(field.key) + '"><option value="">Выберите</option>';
+          for (j = 0; j < (field.options || []).length; j += 1) {
+            opt = field.options[j];
+            html +=
+              '<option value="' +
+              esc(opt.code) +
+              '"' +
+              (client[field.key] === opt.code ? ' selected' : '') +
+              '>' +
+              esc(opt.label) +
+              '</option>';
+          }
+          html += '</select>';
+        } else if (field.type === 'checkbox') {
+          html +=
+            '<label style="display:flex;gap:8px;margin-top:8px"><input type="checkbox" data-mlma-local-check="' +
+            esc(field.key) +
+            '"' +
+            (client[field.key] === true ? ' checked' : '') +
+            '> ' +
+            esc(field.label) +
+            '</label>';
+        } else if (field.type === 'datetime-local' || field.type === 'date') {
+          html +=
+            '<input class="mlma-field" type="' +
+            esc(field.type) +
+            '" data-mlma-local="' +
+            esc(field.key) +
+            '" value="' +
+            esc(client[field.key] || '') +
+            '">';
+        } else {
+          html +=
+            '<textarea class="mlma-field" data-mlma-local="' +
+            esc(field.key) +
+            '" rows="2">' +
+            esc(client[field.key] || '') +
+            '</textarea>';
+        }
+      }
+      if (step.nextStepId) {
+        html +=
+          '<button type="button" class="mlma-btn mlma-btn-primary" style="margin-top:16px" data-mlma-pkg-next="' +
+          esc(step.nextStepId) +
+          '">Дальше</button>';
+      }
+    } else if (step.kind === 'scheduling_decision') {
+      html += '<p class="mlma-muted" style="margin-top:8px">Исход доступен только при выполнении условий шага. Молчание и вежливость не считаются подтверждением.</p>';
+      html += '<div class="mlma-actions" style="margin-top:16px;display:grid;gap:8px">';
+      for (i = 0; i < (step.decisions || []).length; i += 1) {
+        dec = step.decisions[i];
+        html +=
+          '<button type="button" class="mlma-btn' +
+          (dec.outcomeCode === 'MEETING_SCHEDULED' ? ' mlma-btn-primary' : '') +
+          '" data-mlma-scheduling-decision="' +
+          esc(dec.outcomeCode) +
+          '">' +
+          esc(dec.label) +
+          '</button>';
+      }
+      html += '</div>';
+    }
+    return html + '</section>';
+  }
+
+  function renderPackage(input) {
+    var body = input.body || {};
+    var steps = body.steps || [];
+    var client = loadClient(input.trackId);
+    var stepId = input.stepId || client.stepId || (steps[0] && steps[0].id);
+    var step = null;
+    for (var i = 0; i < steps.length; i += 1) if (steps[i].id === stepId) step = steps[i];
+    if (!step) step = steps[0];
+    var html =
+      '<div id="mlma-package-runtime" data-mlma-package="' +
+      esc(input.trackId) +
+      '"><p class="mlma-lead">' +
+      esc(body.lead || '') +
+      '</p>' +
+      (step ? renderStep(step, client) : '') +
+      '<p class="mlma-muted" style="margin-top:12px;font-size:13px">Имя, телефон, email, текст сообщения и повод хранятся только здесь. На сервер уходит факт результата.</p></div>';
+    return html;
+  }
+
+  function outcomeStatus(code) {
+    if (code === 'MESSAGE_SENT') return 'SENT';
+    if (code === 'MESSAGE_NOT_SENT_NO_REASON') return 'BLOCKED_REASON';
+    if (code === 'MESSAGE_NOT_SENT_ANXIETY') return 'BLOCKED_ANXIETY';
+    if (code === 'MESSAGE_STOPPED') return 'STOPPED';
+    return '';
+  }
+
+  function serverPayload(trackId, outcomeCode, client) {
+    if (String(trackId).toUpperCase() === 'A3-016') {
+      client = client || loadClient(trackId);
+      var manual = client.manualChecks || {};
+      var allChecks =
+        manual.factIsTrue &&
+        manual.relevantToPerson &&
+        manual.purposeCanBeNamed &&
+        manual.timingIsRespectful &&
+        manual.noVulnerabilityExploitation &&
+        manual.noProhibition &&
+        manual.canSaySameMeaningAloud &&
+        manual.keepsRightToDecline;
+      var outcome = String(outcomeCode || '').toUpperCase();
+      var facts = {
+        track_id: trackId,
+        outcome_code: outcome,
+        ai_used: false,
+        risk_flag_codes: [],
+        mentor_event: 'result_recorded',
+        step_id: 'decision_gate',
+      };
+      if (outcome === 'REASON_FOUND') {
+        facts.real_reason = allChecks && client.disclosureStatus === 'FULLY_NAMED' && client.factSourceCode && client.factSourceCode !== 'NONE';
+        facts.fact_source_code = client.factSourceCode;
+        facts.intent_code = client.intentCode;
+        facts.disclosure_status = client.disclosureStatus;
+        facts.timing_code = client.timingCode;
+        facts.permission_status = client.permissionStatus;
+        facts.contact_allowed = true;
+      } else if (outcome === 'NO_REASON') {
+        facts.real_reason = false;
+        facts.fact_source_code = client.factSourceCode || 'NONE';
+        facts.intent_code = client.intentCode || 'HIDDEN_OR_UNCLEAR';
+        facts.disclosure_status = client.disclosureStatus || 'HIDDEN';
+        facts.timing_code = client.timingCode || 'WAIT_BETTER_CONTEXT';
+        facts.permission_status = client.permissionStatus || 'NEEDS_PERMISSION';
+        facts.contact_allowed = true;
+        facts.no_reason_code = client.noReasonCode;
+        facts.review_trigger_code = client.reviewTriggerCode;
+      } else if (outcome === 'CONTACT_STOPPED') {
+        facts.real_reason = false;
+        facts.contact_allowed = false;
+        facts.stop_code = client.stopCode;
+      }
+      return facts;
+    }
+    if (String(trackId).toUpperCase() === 'A3-014') {
+      client = client || loadClient(trackId);
+      var oc = String(outcomeCode || '').toUpperCase();
+      var facts014 = {
+        track_id: trackId,
+        outcome_code: oc,
+        origin_track_id: client.originTrackId || 'A3-002',
+        readiness_gate_code: client.readinessGateCode || 'CONTINUE',
+        fear_event_code: client.fearEventCode || 'UNKNOWN',
+        evidence_code: client.evidenceCode || 'UNKNOWN',
+        next_need_code: client.nextNeedCode || 'RETURN_TO_ORIGIN',
+        risk_flag_codes: [],
+        ai_used: false,
+        mentor_event: 'result_recorded',
+        step_id: 'decision_gate',
+      };
+      if (oc === 'ACTION_READY') {
+        facts014.readiness_gate_code = 'CONTINUE';
+        facts014.target_action_code = client.targetActionCode;
+        facts014.support_code = client.supportCode;
+        facts014.micro_step_code = client.microStepCode;
+        facts014.next_need_code = 'RETURN_TO_ORIGIN';
+        facts014.due_code = client.dueCode;
+      } else if (oc === 'SUPPORT_REQUIRED') {
+        facts014.readiness_gate_code = 'CONTINUE';
+        facts014.next_need_code = client.nextNeedCode || 'MEETING_MAP';
+      } else if (oc === 'WAIT_FOR_RESOURCE') {
+        facts014.readiness_gate_code = 'PAUSE';
+        facts014.next_need_code = 'WAIT';
+        facts014.review_trigger_code = client.reviewTriggerCode;
+        facts014.due_code = client.dueCode;
+      } else if (oc === 'OUT_OF_SCOPE_SUPPORT') {
+        facts014.readiness_gate_code = 'OUT_OF_SCOPE';
+        facts014.next_need_code = 'HUMAN_SUPPORT';
+        facts014.support_handoff_code = client.supportHandoffCode || 'HUMAN_SUPPORT';
+      }
+      return facts014;
+    }
+    if (String(trackId).toUpperCase() === 'A3-005') {
+      client = client || loadClient(trackId);
+      var oc5 = String(outcomeCode || '').toUpperCase();
+      var facts005 = {
+        track_id: trackId,
+        outcome_code: oc5,
+        ai_used: false,
+        risk_flag_codes: [],
+        mentor_event: 'result_recorded',
+        step_id: 'decision_gate',
+      };
+      if (oc5 === 'MEETING_SCHEDULED') {
+        facts005['appointment.status'] = 'CONFIRMED';
+        facts005['appointment.explicit_confirmation'] = client.explicitConfirmation === true;
+        facts005['appointment.starts_at'] = client.startsAt;
+        facts005['appointment.timezone'] = client.timezone;
+        facts005['appointment.duration_minutes'] = Number(client.durationMinutes || 0) || undefined;
+        facts005['appointment.format_code'] = client.formatCode;
+        facts005['appointment.topic_code'] = client.topicCode;
+        facts005['appointment.calendar_action_code'] = client.calendarActionCode || 'SKIP';
+        facts005['appointment.decision_source_code'] = client.decisionSourceCode;
+      } else if (oc5 === 'LATER') {
+        facts005['appointment.status'] = 'LATER';
+        facts005['appointment.followup_allowed'] = client.followupAllowed === 'true' || client.followupAllowed === true;
+        facts005['appointment.review_anchor_code'] = client.reviewAnchorCode;
+        facts005['appointment.review_at'] = client.reviewAt;
+        facts005['appointment.decision_source_code'] = client.decisionSourceCode;
+      } else if (oc5 === 'DECLINED') {
+        facts005['appointment.status'] = 'DECLINED';
+        facts005['appointment.decision_source_code'] = client.decisionSourceCode || 'EXPLICIT_DECLINE';
+      } else if (oc5 === 'NO_FOLLOW_UP') {
+        facts005['appointment.status'] = 'CLOSED_NO_FOLLOWUP';
+        facts005['appointment.no_followup_reason_code'] = client.noFollowupReasonCode || 'NO_EXPLICIT_CONSENT';
+        facts005['appointment.decision_source_code'] = client.decisionSourceCode;
+      }
+      return facts005;
+    }
+    return {
+      track_id: trackId,
+      outcome_code: outcomeCode,
+      'message.status': outcomeStatus(outcomeCode),
+      mentor_event: 'result_recorded',
+      step_id: 'field_action',
+    };
+  }
+
+  function handoffReturnToOrigin(client) {
+    var origin = String((client && client.originTrackId) || 'A3-002').toUpperCase();
+    if (origin !== 'A3-002') return;
+    var target = {
+      stepId: 'field_action',
+      anxietyPrepared: true,
+      readinessCard: {
+        targetActionCode: client.targetActionCode,
+        fearEventCode: client.fearEventCode,
+        supportCode: client.supportCode,
+        microStepCode: client.microStepCode,
+      },
+    };
+    try {
+      localStorage.setItem('mlma.a3-002.client.v1', JSON.stringify(target));
+    } catch (err) {
+      /* ignore */
+    }
+  }
+
+  function handoffReasonCardToA3002(client) {
+    var target = {
+      stepId: 'reason_gate',
+      real_reason_text: [client.honestPurposeText, client.factText, client.whyThisPersonText, client.whyNowText]
+        .filter(Boolean)
+        .join('\n'),
+      reasonCard: {
+        factSourceCode: client.factSourceCode,
+        intentCode: client.intentCode,
+        disclosureStatus: client.disclosureStatus,
+        timingCode: client.timingCode,
+        permissionStatus: client.permissionStatus,
+        manualChecks: client.manualChecks || {},
+      },
+    };
+    try {
+      localStorage.setItem('mlma.a3-002.client.v1', JSON.stringify(target));
+    } catch (err) {
+      /* ignore */
+    }
+  }
+
+  var api = root.MLMA || {};
+  api.renderInstalledPackage = renderPackage;
+  api.packageClient = {
+    load: loadClient,
+    save: saveClient,
+    apiBase: apiBase,
+    serverPayload: serverPayload,
+    handoffReasonCardToA3002: handoffReasonCardToA3002,
+    handoffReturnToOrigin: handoffReturnToOrigin,
+  };
+  root.MLMA = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);

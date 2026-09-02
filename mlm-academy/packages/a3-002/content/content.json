@@ -1,0 +1,103 @@
+{
+  "trackId": "A3-002",
+  "version": "0.1.0",
+  "contentStatus": "REVIEW",
+  "accessTier": "PAID",
+  "routeStatus": "TEST",
+  "executionMode": "LIVE",
+  "serverOnly": true,
+  "estimatedMinutes": 10,
+  "title": "Первое сообщение без рекламной простыни",
+  "lead": "Соберите один честный следующий шаг. Не продавайте всё в первом сообщении.",
+  "steps": [
+    {
+      "id": "select_goal",
+      "kind": "single_choice",
+      "title": "Что вы хотите получить этим сообщением?",
+      "options": [
+        {"code": "ASK_ONE_QUESTION", "label": "Задать один вопрос"},
+        {"code": "ASK_PERMISSION_TO_SHARE", "label": "Спросить разрешение коротко рассказать"},
+        {"code": "OFFER_SHORT_TALK", "label": "Предложить короткий разговор"},
+        {"code": "OFFER_MATERIAL_WITH_PERMISSION", "label": "Предложить материал, не отправляя его без запроса"}
+      ],
+      "clientOnly": false
+    },
+    {
+      "id": "reason_gate",
+      "kind": "gate",
+      "title": "Есть ли настоящий повод?",
+      "prompts": [
+        "Что действительно произошло или было сказано, из-за чего вы вспомнили об этом человеке?",
+        "Можете ли вы назвать этот повод человеку прямо?",
+        "Не будет ли человеку странно узнать настоящую цель сообщения позже?"
+      ],
+      "localFields": ["real_reason_text"],
+      "branches": [
+        {"answer": "REASON_CONFIRMED", "nextStepId": "message_builder"},
+        {"answer": "NO_TRUE_REASON", "outcomeCode": "MESSAGE_NOT_SENT_NO_REASON"},
+        {"answer": "ACTION_BARRIER", "outcomeCode": "MESSAGE_NOT_SENT_ANXIETY"},
+        {"answer": "STOP_SIGNAL", "outcomeCode": "MESSAGE_STOPPED"}
+      ]
+    },
+    {
+      "id": "message_builder",
+      "kind": "artifact_builder",
+      "title": "Соберите четыре смысловых блока",
+      "blocks": [
+        {"id": "opening", "label": "Естественное обращение", "clientOnly": true},
+        {"id": "real_reason", "label": "Настоящий повод", "clientOnly": true},
+        {"id": "relevance", "label": "Почему вы пишете именно этому человеку", "clientOnly": true},
+        {"id": "next_step", "label": "Один простой следующий шаг и право отказаться", "clientOnly": true}
+      ],
+      "artifactField": "message_draft",
+      "artifactStorage": "CLIENT_ONLY"
+    },
+    {
+      "id": "tone_variants",
+      "kind": "local_transform",
+      "title": "Выберите тон",
+      "variants": ["WARM", "NEUTRAL", "DIRECT"],
+      "constraints": [
+        "Не добавлять новые факты",
+        "Не придумывать повод",
+        "Не добавлять срочность, обещание дохода или лечебный эффект",
+        "Оставить один следующий шаг",
+        "Сохранить право на отказ"
+      ]
+    },
+    {
+      "id": "quality_gate",
+      "kind": "checklist_gate",
+      "title": "Проверьте перед отправкой",
+      "items": [
+        {"code": "TRUE", "label": "Всё написанное соответствует фактам", "critical": true},
+        {"code": "WHY_NOW", "label": "Понятно, почему вы пишете сейчас", "critical": false},
+        {"code": "TRANSPARENT", "label": "Настоящая цель не спрятана", "critical": true},
+        {"code": "ONE_STEP", "label": "Есть только один следующий шаг", "critical": false},
+        {"code": "EASY_NO", "label": "Человеку легко ответить «нет»", "critical": true},
+        {"code": "NO_UNSOLICITED_PITCH", "label": "Нет непрошенной презентации, ссылки, прайса или обещаний", "critical": true},
+        {"code": "PERSONAL", "label": "Это личное сообщение, а не массовая рассылка", "critical": false}
+      ],
+      "passRule": "ALL_CRITICAL_TRUE"
+    },
+    {
+      "id": "field_action",
+      "kind": "field_action",
+      "title": "Решите и зафиксируйте факт",
+      "actions": [
+        {"code": "COPY", "label": "Скопировать", "createsOutcome": false},
+        {"code": "OPEN_MESSENGER", "label": "Открыть мессенджер", "createsOutcome": false, "autoSend": false},
+        {"code": "CONFIRM_SENT", "label": "Я отправил", "outcomeCode": "MESSAGE_SENT"},
+        {"code": "NO_REASON", "label": "Не отправляю: нет настоящего повода", "outcomeCode": "MESSAGE_NOT_SENT_NO_REASON"},
+        {"code": "ANXIETY", "label": "Не отправляю: мешает конкретный барьер", "outcomeCode": "MESSAGE_NOT_SENT_ANXIETY"},
+        {"code": "STOP", "label": "Остановить контакт", "outcomeCode": "MESSAGE_STOPPED"}
+      ]
+    }
+  ],
+  "completion": {
+    "successCodes": ["MESSAGE_SENT", "MESSAGE_NOT_SENT_NO_REASON", "MESSAGE_NOT_SENT_ANXIETY", "MESSAGE_STOPPED"],
+    "nonTerminalCodes": ["DRAFT_SAVED"],
+    "nextSystemActionOnSent": "A3-008"
+  }
+}
+

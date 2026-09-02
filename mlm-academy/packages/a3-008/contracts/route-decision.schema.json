@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlm-academy.local/schema/a3-008-route-decision-response.json",
+  "title": "A3-008 outcome recorder response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "outcomeEventId",
+    "recordStatus",
+    "idempotentReplay",
+    "routeDecision"
+  ],
+  "properties": {
+    "outcomeEventId": {
+      "type": "string"
+    },
+    "recordStatus": {
+      "enum": [
+        "RECORDED",
+        "SUPERSEDED"
+      ]
+    },
+    "idempotentReplay": {
+      "type": "boolean"
+    },
+    "routeDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decisionId",
+        "status",
+        "destinationType",
+        "destinationId",
+        "locked",
+        "destinationUrl"
+      ],
+      "properties": {
+        "decisionId": {
+          "type": "string"
+        },
+        "matchedRuleId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "enum": [
+            "MATCHED",
+            "NO_MATCHING_RULE",
+            "RULE_NOT_EXECUTABLE",
+            "FEATURE_DISABLED",
+            "STORAGE_UNCONFIGURED"
+          ]
+        },
+        "destinationType": {
+          "enum": [
+            "TRACK",
+            "SYSTEM_ACTION",
+            "FIELD_ACTION",
+            "WAIT_UNTIL",
+            "DONE",
+          "EXPERT",
+          "PROCESS_OWNER",
+          "RETURN_TO_ROUTE",
+          null
+          ]
+        },
+        "destinationId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "waitUntil": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "locked": {
+          "type": "boolean"
+        },
+        "lockReason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "destinationUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

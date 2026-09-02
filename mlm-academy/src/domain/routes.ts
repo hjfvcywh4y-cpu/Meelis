@@ -5,8 +5,9 @@ import { SECTION_IDS, type SectionId } from './types';
  * Все внутренние переходы строятся здесь.
  * Домен нигде не хардкодится, `legacyPublicUrl` в навигации не используется.
  *
- * Канонический URL — lowercase (`/track/a1-004`),
- * канонический ID внутри системы — uppercase (`A1-004`).
+ * Канонический ID внутри системы — uppercase (`A1-004`).
+ * Next.js pretty URL: `/track/<lowercase-id>`.
+ * Tilda/spec v2 URL: `/track?id=<lowercase-id>` — `trackUrl()`.
  */
 
 export const routes = {
@@ -48,4 +49,27 @@ export function normalizeSectionId(raw: string): SectionId | null {
 /** URL уже канонический (lowercase)? Иначе нужен редирект. */
 export function isCanonicalParam(raw: string): boolean {
   return raw === raw.toLowerCase();
+}
+
+/**
+ * Канонический URL спецификации v2. Единственная функция для query-формы.
+ * Pretty `/track/<id>` остаётся alias/redirect и `routes.track`.
+ */
+export function trackUrl(trackId: string): string {
+  const id = normalizeTrackId(trackId);
+  if (!id) {
+    throw new Error('Invalid track id');
+  }
+  return `/track?id=${encodeURIComponent(id.toLowerCase())}`;
+}
+
+/** Разбирает `/track?id=` и `/track/<id>` в канонический uppercase ID. */
+export function parseTrackIdFromLocation(pathname: string, search = ''): string | null {
+  const query = search.startsWith('?') ? search.slice(1) : search;
+  const params = new URLSearchParams(query);
+  const fromQuery = params.get('id');
+  if (fromQuery) return normalizeTrackId(fromQuery);
+  const match = String(pathname || '').match(/\/track\/([^/?#]+)\/?$/i);
+  if (match) return normalizeTrackId(match[1]);
+  return null;
 }

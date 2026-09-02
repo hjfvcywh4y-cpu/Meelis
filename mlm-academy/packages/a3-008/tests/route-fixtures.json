@@ -1,0 +1,142 @@
+{
+  "version": "1.0",
+  "trackId": "A3-008",
+  "base": {
+    "systemActionId": "A3-008",
+    "actionVersion": "0.1.0",
+    "sourceTrackId": "A3-003",
+    "sourceInstanceId": "instance-test-0001",
+    "sourceOutcomeCode": "CALL_COMPLETED",
+    "contactCardRef": "contact-ref-opaque-0001",
+    "occurredAt": "2026-08-31T12:00:00Z",
+    "idempotencyKey": "idem-a3-008-test-0001"
+  },
+  "cases": [
+    {
+      "id": "meeting-valid",
+      "patch": {
+        "contact": { "outcome": "MEETING_CONFIRMED" },
+        "meetingAt": "2026-09-02T15:00:00Z",
+        "meetingFormatCode": "ONLINE"
+      },
+      "valid": true,
+      "expectedRuleId": "RR2-026",
+      "expectedDestinationType": "TRACK",
+      "expectedDestinationId": "A3-010"
+    },
+    {
+      "id": "meeting-missing-date",
+      "patch": {
+        "contact": { "outcome": "MEETING_CONFIRMED" },
+        "meetingFormatCode": "PHONE"
+      },
+      "valid": false,
+      "expectedError": "meetingAt_required"
+    },
+    {
+      "id": "later-valid",
+      "patch": {
+        "contact": { "outcome": "LATER" },
+        "followUpPermission": true,
+        "nextActionAt": "2026-09-07T12:00:00Z"
+      },
+      "valid": true,
+      "expectedRuleId": "RR2-027",
+      "expectedDestinationType": "TRACK",
+      "expectedDestinationId": "A5-010"
+    },
+    {
+      "id": "later-without-permission",
+      "patch": {
+        "contact": { "outcome": "LATER" },
+        "followUpPermission": false,
+        "nextActionAt": "2026-09-07T12:00:00Z"
+      },
+      "valid": false,
+      "expectedError": "explicit_permission_required"
+    },
+    {
+      "id": "refusal-valid",
+      "patch": {
+        "contact": { "outcome": "REFUSAL" }
+      },
+      "valid": true,
+      "expectedRuleId": "RR2-028",
+      "expectedDestinationType": "TRACK",
+      "expectedDestinationId": "A5-014"
+    },
+    {
+      "id": "no-reply-valid",
+      "patch": {
+        "contact": { "outcome": "NO_REPLY" },
+        "waitUntil": "2026-09-03T12:00:00Z",
+        "retryCount": 0
+      },
+      "valid": true,
+      "expectedRuleId": "RR2-029",
+      "expectedDestinationType": "WAIT_UNTIL",
+      "expectedDestinationId": null
+    },
+    {
+      "id": "no-reply-too-many-retries",
+      "patch": {
+        "contact": { "outcome": "NO_REPLY" },
+        "waitUntil": "2026-09-03T12:00:00Z",
+        "retryCount": 2
+      },
+      "valid": false,
+      "expectedError": "retry_count_max_1"
+    },
+    {
+      "id": "referral-valid",
+      "patch": {
+        "contact": { "outcome": "REFERRAL_WITH_PERMISSION" },
+        "referralPermissionConfirmed": true
+      },
+      "valid": true,
+      "expectedRuleId": "RR2-030",
+      "expectedDestinationType": "TRACK",
+      "expectedDestinationId": "A3-003"
+    },
+    {
+      "id": "referral-without-permission",
+      "patch": {
+        "contact": { "outcome": "REFERRAL_WITH_PERMISSION" },
+        "referralPermissionConfirmed": false
+      },
+      "valid": false,
+      "expectedError": "referral_permission_required"
+    },
+    {
+      "id": "done-valid",
+      "patch": {
+        "contact": { "outcome": "NO_NEXT_ACTION" },
+        "stopCode": "NO_NEXT_ACTION"
+      },
+      "valid": true,
+      "expectedRuleId": "RR2-031",
+      "expectedDestinationType": "DONE",
+      "expectedDestinationId": null
+    },
+    {
+      "id": "pii-rejected",
+      "patch": {
+        "contact": { "outcome": "REFUSAL" },
+        "contact_name": "НЕ ДОЛЖНО УЙТИ НА СЕРВЕР",
+        "message_text": "НЕ ДОЛЖНО УЙТИ НА СЕРВЕР"
+      },
+      "valid": false,
+      "expectedError": "additional_properties_forbidden"
+    },
+    {
+      "id": "idempotent-replay",
+      "patch": {
+        "contact": { "outcome": "REFUSAL" }
+      },
+      "repeat": 2,
+      "valid": true,
+      "expectedCreatedEvents": 1,
+      "expectedSecondResponseIdempotentReplay": true
+    }
+  ]
+}

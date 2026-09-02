@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   outputFileTracingIncludes: {
     '/api/search/rerank': ['./search-proxy/**/*'],
+    '/api/v1/[...mlma]': ['./spec/track-architecture/**/*'],
   },
   async redirects() {
     return [

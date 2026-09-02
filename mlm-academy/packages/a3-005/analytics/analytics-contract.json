@@ -1,0 +1,102 @@
+{
+  "version": "1.0",
+  "trackId": "A3-005",
+  "purpose": "Measure clarity and routing quality without measuring pressure or counterpart value.",
+  "events": [
+    {
+      "name": "track_started",
+      "fields": [
+        "track_id",
+        "content_version"
+      ]
+    },
+    {
+      "name": "permission_gate_completed",
+      "fields": [
+        "appointment.status"
+      ]
+    },
+    {
+      "name": "appointment_parameters_ready",
+      "fields": [
+        "appointment.duration_minutes",
+        "appointment.format_code",
+        "appointment.topic_code",
+        "appointment.timezone_region"
+      ]
+    },
+    {
+      "name": "explicit_confirmation_recorded",
+      "fields": [
+        "appointment.explicit_confirmation",
+        "appointment.decision_source_code"
+      ]
+    },
+    {
+      "name": "ai_editor_used",
+      "fields": [
+        "ai_used",
+        "ai_advisory_codes"
+      ]
+    },
+    {
+      "name": "track_completed",
+      "fields": [
+        "outcome_code",
+        "appointment.calendar_action_code",
+        "appointment.review_anchor_code",
+        "duration_bucket"
+      ]
+    },
+    {
+      "name": "route_decided",
+      "fields": [
+        "destination_type",
+        "destination_id",
+        "outcome_code"
+      ]
+    }
+  ],
+  "forbiddenMetrics": [
+    "persuasion_score",
+    "pressure_success_rate",
+    "forced_choice_conversion",
+    "contact_value",
+    "counterparty_availability_score",
+    "income_probability"
+  ],
+  "forbiddenFields": [
+    "contact_name",
+    "phone",
+    "email",
+    "messenger_handle",
+    "profile_url",
+    "company_name",
+    "contact_card",
+    "topic_text",
+    "location_text",
+    "meeting_link",
+    "counterpart_availability_text",
+    "slot_label_text",
+    "invitation_draft",
+    "confirmation_text",
+    "conversation_quote",
+    "free_text_note",
+    "calendar_title",
+    "calendar_description",
+    "attendee_data",
+    "appointment.starts_at",
+    "appointment.review_at",
+    "sanitized_invitation_draft"
+  ],
+  "qualityMetrics": [
+    "confirmed_rate",
+    "later_with_anchor_rate",
+    "declined_rate",
+    "closed_no_followup_rate",
+    "missing_timezone_rejection_count",
+    "unconfirmed_schedule_rejection_count",
+    "manual_route_override_rate",
+    "pii_rejection_count"
+  ]
+}

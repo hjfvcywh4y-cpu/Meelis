@@ -1,0 +1,294 @@
+{
+  "version": "1.0",
+  "trackId": "A3-016",
+  "cases": [
+    {
+      "id": "A3-016-001",
+      "title": "Registry identity",
+      "assertion": "A3-016 resolves as REMEDIATION / ON_DEMAND_TRACK with canonical A3-016.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-002",
+      "title": "Content status",
+      "assertion": "Installed content remains REVIEW and is not exposed to ordinary paid users.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-003",
+      "title": "Product grant",
+      "assertion": "Installation stops with a blocker when MLMA_FULL does not exist.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-004",
+      "title": "Graph snapshot",
+      "assertion": "Actual A3-016 connectionIndex exactly matches the bundled v3 snapshot.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-005",
+      "title": "Graph immutability",
+      "assertion": "Package install does not mutate 253 effective connections or neighboring pages.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-006",
+      "title": "Incoming A2-008",
+      "assertion": "RR2-009 can assign A3-016 only for NEXT_NEEDS_REASON.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-007",
+      "title": "Incoming A3-002",
+      "assertion": "RR2-015 can assign A3-016 only for MESSAGE_NOT_SENT_NO_REASON.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-008",
+      "title": "Locked incoming directions",
+      "assertion": "A3-013, A3-015 and A6-027 remain locked without structured incoming rules.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-009",
+      "title": "Embedded A6-027",
+      "assertion": "A6-027 is rendered only as an optional component inside A3-016, not as a new page.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-010",
+      "title": "Reason found gate",
+      "assertion": "REASON_FOUND requires every manual truth, relevance, transparency, timing and boundary check to be true.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-011",
+      "title": "Reason found route",
+      "assertion": "REASON_FOUND matches RR2-012 and targets A3-002.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-012",
+      "title": "No reason route",
+      "assertion": "NO_REASON matches RR2-013 and returns WAIT_UNTIL without a track URL.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-013",
+      "title": "No fake reason",
+      "assertion": "The system and AI refuse to invent an event or reason to avoid WAIT.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-014",
+      "title": "Boundary terminal",
+      "assertion": "CONTACT_STOPPED matches RR3-A3-016-STOP and returns DONE.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-015",
+      "title": "Boundary priority",
+      "assertion": "Explicit refusal or do-not-contact overrides REASON_FOUND and all selling branches.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-016",
+      "title": "Locked outgoing A4-001",
+      "assertion": "TR-099 remains a hidden LOCKED_NEXT_ACTION_SLOT.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-017",
+      "title": "Locked outgoing A3-017",
+      "assertion": "TR-100 remains a hidden LOCKED_NEXT_ACTION_SLOT.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-018",
+      "title": "No field action here",
+      "assertion": "A3-016 does not send a message; it hands a local reason card to A3-002.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-019",
+      "title": "Reason card local",
+      "assertion": "Fact text, purpose text and opener draft remain client-only.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-020",
+      "title": "Server minimality",
+      "assertion": "Only structured allowlisted route facts reach persistence.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-021",
+      "title": "PII rejection",
+      "assertion": "Names, phones, emails, handles, profile URLs and exact quotes are stripped before server/log/analytics.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-022",
+      "title": "No wallet scoring",
+      "assertion": "The flow never evaluates purchasing power, profitability or value of the person.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-023",
+      "title": "No health inference",
+      "assertion": "The flow never infers a health need or diagnosis from public or private context.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-024",
+      "title": "Vulnerability stop",
+      "assertion": "Illness, grief, job loss, debt or acute distress cannot be used as a contact lever.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-025",
+      "title": "Small-talk inversion",
+      "assertion": "The track does not prescribe fake small talk as a route into presentation.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-026",
+      "title": "Compliment optional",
+      "assertion": "A6-027 can be skipped and never blocks completion.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-027",
+      "title": "Compliment integrity",
+      "assertion": "A compliment/observation must be specific and sincere and cannot demand reciprocity.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-028",
+      "title": "AI optional",
+      "assertion": "The deterministic manual track completes with AI disabled.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-029",
+      "title": "AI default off",
+      "assertion": "AI_REASON_CRITIC_ENABLED defaults to false and is not enabled in production by install.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-030",
+      "title": "Structured AI review",
+      "assertion": "Default AI review sends only structured codes and no free text.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-031",
+      "title": "Sanitized AI consent",
+      "assertion": "Sanitized text review requires explicit consent and a user preview.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-032",
+      "title": "AI transient data",
+      "assertion": "Sanitized text is not persisted, logged, traced, analyzed or used for training.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-033",
+      "title": "AI cannot certify",
+      "assertion": "AI advisory output cannot set real_reason=true or execute a RouteRule.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-034",
+      "title": "AI no invention",
+      "assertion": "AI returns NO_REASON_RECOMMENDED instead of fabricating facts.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-035",
+      "title": "AI risk flags",
+      "assertion": "AI flags hidden intent, fake relevance, fake urgency, flattery, boundary bypass, vulnerability and unsupported claims.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-036",
+      "title": "AI output limit",
+      "assertion": "AI asks at most three questions and returns at most two placeholder skeletons.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-037",
+      "title": "Public metadata",
+      "assertion": "Public endpoint exposes only title, situation, result and route preview.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-038",
+      "title": "Sandbox isolation",
+      "assertion": "PUBLIC_DEMO creates no instance, outcome, decision, AI request or entitlement.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-039",
+      "title": "Search recommendation only",
+      "assertion": "Entry dataset can rank metadata but cannot create a live instance without the platform entry policy.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-040",
+      "title": "Paid navigation off",
+      "assertion": "With PAID_TRACK_NAVIGATION_ENABLED=false, A3-002 destination remains locked with null URL.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-041",
+      "title": "Draft rule clamp",
+      "assertion": "PILOT_DRAFT_TO_TEST rules do not execute in production mode.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-042",
+      "title": "Analytics allowlist",
+      "assertion": "Analytics contains only coarse structured fields and never AI prompt text.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-043",
+      "title": "Route explanation",
+      "assertion": "The user sees why the route is message, wait or done without exposing internal scoring.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-044",
+      "title": "Rybkin adaptation",
+      "assertion": "Content preserves contact/readiness/shared frame and rejects behavior-control and mass-compliment mechanics.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-045",
+      "title": "Second-book method",
+      "assertion": "Track uses reproducible structure, short practice and feedback rather than a lecture or memorized script.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-046",
+      "title": "Schema validation",
+      "assertion": "package.json conforms to track-package.schema.json v1.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-047",
+      "title": "Existing tests",
+      "assertion": "All existing project tests and typecheck remain green.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-016-048",
+      "title": "No production side effects",
+      "assertion": "No deploy, production migration, payment, paid navigation or registration activation occurs.",
+      "status": "MUST_PASS"
+    }
+  ]
+}

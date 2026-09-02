@@ -1,0 +1,217 @@
+{
+  "trackId": "A3-014",
+  "version": "0.1.0",
+  "contentStatus": "REVIEW",
+  "accessTier": "PAID",
+  "routeStatus": "TEST",
+  "executionMode": "LIVE",
+  "serverOnly": true,
+  "estimatedMinutes": 7,
+  "title": "Снизить тревогу перед разговором",
+  "lead": "Не убрать волнение любой ценой, а понять барьер, подобрать одну опору и сделать уместный следующий шаг либо честно остановиться.",
+  "steps": [
+    {
+      "id": "readiness_gate",
+      "kind": "remediation_form",
+      "title": "Сначала проверьте ресурс",
+      "instruction": "Отметьте только рабочую готовность. Не описывайте диагнозы и подробности здоровья.",
+      "fields": [
+        {
+          "key": "readinessGateCode",
+          "label": "Готовность сейчас",
+          "type": "select",
+          "options": [
+            { "code": "CONTINUE", "label": "Могу продолжить короткую подготовку" },
+            { "code": "PAUSE", "label": "Нужна пауза — нет рабочего ресурса" },
+            { "code": "OUT_OF_SCOPE", "label": "Состояние слишком сильное — нужна человеческая поддержка" }
+          ]
+        }
+      ],
+      "gateBranches": true,
+      "nextStepId": "name_target_action"
+    },
+    {
+      "id": "name_target_action",
+      "kind": "remediation_form",
+      "title": "Назовите одно действие",
+      "instruction": "Не «провести успешную встречу», а наблюдаемое действие: написать первое сообщение, начать звонок, договориться о времени.",
+      "fields": [
+        {
+          "key": "originTrackId",
+          "label": "Откуда пришли",
+          "type": "select",
+          "options": [
+            { "code": "A3-002", "label": "Из трека первого сообщения" },
+            { "code": "SELF_ENTRY", "label": "Самостоятельно" },
+            { "code": "OTHER_ROUTE", "label": "Из другого маршрута" }
+          ]
+        },
+        {
+          "key": "targetActionCode",
+          "label": "Конкретное действие",
+          "type": "select",
+          "options": [
+            { "code": "WRITE_MESSAGE", "label": "Написать первое сообщение" },
+            { "code": "START_CALL", "label": "Начать звонок" },
+            { "code": "SCHEDULE_TALK", "label": "Договориться о времени" },
+            { "code": "PREPARE_MEETING", "label": "Подготовить встречу" }
+          ]
+        }
+      ],
+      "nextStepId": "locate_fear_event"
+    },
+    {
+      "id": "locate_fear_event",
+      "kind": "remediation_form",
+      "title": "Найдите конкретный пугающий момент",
+      "instruction": "Выберите, чего именно вы ожидаете. Один отказ не доказывает общий сценарий.",
+      "fields": [
+        {
+          "key": "fearEventCode",
+          "label": "Пугающий момент",
+          "type": "select",
+          "options": [
+            { "code": "SILENCE", "label": "Молчание или игнор" },
+            { "code": "REFUSAL", "label": "Отказ" },
+            { "code": "JUDGMENT", "label": "Оценка или критика" },
+            { "code": "LOST_WORDS", "label": "Потеря слов" },
+            { "code": "RELATIONSHIP_HARM", "label": "Ущерб отношениям" },
+            { "code": "MUST_CONVINCE", "label": "Давление «обязательно убедить»" }
+          ]
+        },
+        { "key": "fearText", "label": "Своими словами (только на устройстве)", "type": "textarea", "localOnly": true }
+      ],
+      "nextStepId": "fact_prediction_split"
+    },
+    {
+      "id": "fact_prediction_split",
+      "kind": "remediation_form",
+      "title": "Отделите факт от прогноза",
+      "instruction": "Отметьте: это уже произошло, это прогноз или перенос одного прошлого опыта на все будущие контакты.",
+      "fields": [
+        {
+          "key": "predictionCode",
+          "label": "Тип мысли",
+          "type": "select",
+          "options": [
+            { "code": "FACT_NOW", "label": "Уже произошло сейчас" },
+            { "code": "PREDICTION", "label": "Это прогноз" },
+            { "code": "PAST_GENERALIZATION", "label": "Перенос прошлого опыта" }
+          ]
+        },
+        {
+          "key": "evidenceCode",
+          "label": "Опора на факты",
+          "type": "select",
+          "options": [
+            { "code": "ONE_CASE_ONLY", "label": "Один случай — не закон для всех" },
+            { "code": "NO_EVIDENCE", "label": "Нет проверяемых фактов" },
+            { "code": "MIXED", "label": "Есть и факты, и догадки" }
+          ]
+        },
+        { "key": "predictedConsequenceText", "label": "Прогноз (только на устройстве)", "type": "textarea", "localOnly": true },
+        { "key": "pastExperienceText", "label": "Прошлый опыт (только на устройстве)", "type": "textarea", "localOnly": true }
+      ],
+      "nextStepId": "ethical_reference_frame"
+    },
+    {
+      "id": "ethical_reference_frame",
+      "kind": "remediation_form",
+      "title": "Верните рабочую опору",
+      "instruction": "Сформулируйте роль: честно открыть тему, услышать ответ, сохранить право человека отказаться.",
+      "fields": [
+        { "key": "supportNote", "label": "Рабочая опора (только на устройстве)", "type": "textarea", "localOnly": true }
+      ],
+      "nextStepId": "choose_one_support"
+    },
+    {
+      "id": "choose_one_support",
+      "kind": "remediation_form",
+      "title": "Выберите одну опору",
+      "instruction": "Только одна опора. Не превращайте подготовку в бесконечную репетицию.",
+      "fields": [
+        {
+          "key": "supportCode",
+          "label": "Опора",
+          "type": "select",
+          "options": [
+            { "code": "OPENING_LINE", "label": "Первая фраза" },
+            { "code": "MEETING_MAP", "label": "Карта встречи" },
+            { "code": "ONE_REHEARSAL", "label": "Одна репетиция" },
+            { "code": "MENTOR_PRESENCE", "label": "Присутствие наставника" },
+            { "code": "SAFE_PLACE", "label": "Удобное место" },
+            { "code": "SHORT_PAUSE", "label": "Короткая пауза" }
+          ]
+        },
+        { "key": "openingLine", "label": "Первая фраза (только на устройстве)", "type": "textarea", "localOnly": true }
+      ],
+      "nextStepId": "micro_exposure"
+    },
+    {
+      "id": "micro_exposure",
+      "kind": "remediation_form",
+      "title": "Сделайте безопасную пробу",
+      "instruction": "Произнесите фразу вслух, наберите сообщение без отправки или один раз прорепетируйте начало. Одна проба — не экзамен.",
+      "fields": [
+        {
+          "key": "microStepCode",
+          "label": "Проба",
+          "type": "select",
+          "options": [
+            { "code": "SAY_ALOUD", "label": "Произнести вслух" },
+            { "code": "DRAFT_NO_SEND", "label": "Набрать без отправки" },
+            { "code": "OPEN_CONTACT", "label": "Открыть карточку контакта" },
+            { "code": "SET_TIME", "label": "Назначить время себе" },
+            { "code": "ONE_REHEARSAL", "label": "Один раз прорепетировать" }
+          ]
+        }
+      ],
+      "nextStepId": "decision_gate"
+    },
+    {
+      "id": "decision_gate",
+      "kind": "remediation_decision",
+      "title": "Назначьте следующий ход",
+      "decisions": [
+        { "code": "ACTION_READY", "label": "Вернуться к исходному действию", "outcomeCode": "ACTION_READY" },
+        { "code": "MEETING_MAP", "label": "Нужна карта первой встречи", "outcomeCode": "SUPPORT_REQUIRED", "nextNeedCode": "MEETING_MAP" },
+        { "code": "SPECIFIC_FEAR", "label": "Нужен разбор конкретного страха", "outcomeCode": "SUPPORT_REQUIRED", "nextNeedCode": "SPECIFIC_FEAR" },
+        { "code": "WAIT_FOR_RESOURCE", "label": "Сделать паузу", "outcomeCode": "WAIT_FOR_RESOURCE" },
+        { "code": "OUT_OF_SCOPE_SUPPORT", "label": "Остановить трек и обратиться за поддержкой", "outcomeCode": "OUT_OF_SCOPE_SUPPORT" }
+      ],
+      "waitFields": [
+        {
+          "key": "reviewTriggerCode",
+          "label": "Когда вернуться",
+          "type": "select",
+          "options": [
+            { "code": "AGREED_DATE", "label": "В согласованную дату" },
+            { "code": "AFTER_EVENT", "label": "После согласованного события" },
+            { "code": "THEIR_INITIATIVE", "label": "Инициатива у собеседника — без автокасания" }
+          ]
+        },
+        {
+          "key": "dueCode",
+          "label": "Якорь ожидания",
+          "type": "select",
+          "options": [
+            { "code": "DATE_SET", "label": "Есть конкретная дата" },
+            { "code": "EVENT_SET", "label": "Есть событие-якорь" },
+            { "code": "NO_AUTO_TOUCH", "label": "Без автоматического касания" }
+          ]
+        }
+      ],
+      "supportFields": [
+        {
+          "key": "supportHandoffCode",
+          "label": "Куда передать",
+          "type": "select",
+          "options": [
+            { "code": "HUMAN_SUPPORT", "label": "Человеческая поддержка" },
+            { "code": "MENTOR", "label": "Наставник" }
+          ]
+        }
+      ]
+    }
+  ]
+}

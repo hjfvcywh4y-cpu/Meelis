@@ -4,15 +4,20 @@ import {
   isCanonicalParam,
   normalizeSectionId,
   normalizeTrackId,
+  parseTrackIdFromLocation,
   routeForSection,
   routeForTrack,
   routes,
+  trackUrl,
 } from '@/domain/routes';
 import { getInternalTracks } from '@/server/catalog';
 
 describe('маршруты', () => {
   it('канонический URL трека — lowercase, ID внутри системы — uppercase', () => {
     expect(routeForTrack('A1-004')).toBe('/track/a1-004');
+    expect(trackUrl('A1-004')).toBe('/track?id=a1-004');
+    expect(parseTrackIdFromLocation('/track', 'id=a1-004')).toBe('A1-004');
+    expect(parseTrackIdFromLocation('/track/a1-004', '')).toBe('A1-004');
     expect(normalizeTrackId('a1-004')).toBe('A1-004');
     expect(normalizeTrackId('A1-004')).toBe('A1-004');
   });

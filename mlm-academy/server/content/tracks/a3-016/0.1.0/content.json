@@ -1,0 +1,196 @@
+{
+  "trackId": "A3-016",
+  "version": "0.1.0",
+  "contentStatus": "REVIEW",
+  "accessTier": "PAID",
+  "routeStatus": "TEST",
+  "executionMode": "LIVE",
+  "serverOnly": true,
+  "estimatedMinutes": 6,
+  "title": "Открыть разговор через настоящий повод",
+  "lead": "Не придумать красивый предлог, а проверить, существует ли честное основание для контакта.",
+  "steps": [
+    {
+      "id": "strip_cover_story",
+      "kind": "remediation_form",
+      "title": "Уберите вежливую легенду",
+      "instruction": "Если убрать приветствие, комплимент и презентацию, зачем вы хотите обратиться именно к этому человеку?",
+      "fields": [
+        { "key": "honestPurposeText", "label": "Честная цель (только на устройстве)", "type": "textarea", "localOnly": true }
+      ],
+      "nextStepId": "find_real_fact"
+    },
+    {
+      "id": "find_real_fact",
+      "kind": "remediation_form",
+      "title": "Назовите факт, который действительно произошёл",
+      "instruction": "Выберите источник контекста и запишите факт без догадок о человеке.",
+      "fields": [
+        {
+          "key": "factSourceCode",
+          "label": "Источник факта",
+          "type": "select",
+          "options": [
+            { "code": "PERSON_ASKED", "label": "Человек сам спросил" },
+            { "code": "PRIOR_CONVERSATION", "label": "Был общий разговор" },
+            { "code": "AGREED_FOLLOW_UP", "label": "Договорились вернуться к теме" },
+            { "code": "SHARED_EVENT", "label": "Было общее событие" },
+            { "code": "REFERRAL_WITH_PERMISSION", "label": "Есть рекомендация с разрешением" },
+            { "code": "DIRECT_DISCLOSED_OFFER", "label": "Прямо раскрываю коммерческое предложение" },
+            { "code": "NONE", "label": "Проверяемого факта нет" }
+          ]
+        },
+        { "key": "factText", "label": "Факт (только на устройстве)", "type": "textarea", "localOnly": true }
+      ],
+      "nextStepId": "relevance_and_now"
+    },
+    {
+      "id": "relevance_and_now",
+      "kind": "remediation_form",
+      "title": "Проверьте: почему этот человек и почему сейчас",
+      "instruction": "Зафиксируйте релевантность без оценки кошелька, здоровья, статуса или предполагаемой выгоды.",
+      "fields": [
+        { "key": "whyThisPersonText", "label": "Почему этот человек (только на устройстве)", "type": "textarea", "localOnly": true },
+        { "key": "whyNowText", "label": "Почему сейчас (только на устройстве)", "type": "textarea", "localOnly": true },
+        {
+          "key": "timingCode",
+          "label": "Момент",
+          "type": "select",
+          "options": [
+            { "code": "APPROPRIATE", "label": "Уместно" },
+            { "code": "WAIT_BETTER_CONTEXT", "label": "Лучше подождать контекст" },
+            { "code": "VULNERABLE_CONTEXT", "label": "Уязвимый контекст" },
+            { "code": "EXPLICIT_BOUNDARY", "label": "Есть явная граница" }
+          ]
+        }
+      ],
+      "nextStepId": "transparency_test"
+    },
+    {
+      "id": "transparency_test",
+      "kind": "remediation_checks",
+      "title": "Тест прозрачности",
+      "instruction": "Сможете ли вы сказать человеку тот же смысл без дружеской маски и скрытого перехода?",
+      "fields": [
+        {
+          "key": "intentCode",
+          "label": "Честная цель",
+          "type": "select",
+          "options": [
+            { "code": "ANSWER_REQUEST", "label": "Ответить на запрос" },
+            { "code": "SHARE_RELEVANT_INFORMATION", "label": "Поделиться релевантной информацией" },
+            { "code": "INVITE_TO_CONVERSATION", "label": "Пригласить к разговору" },
+            { "code": "KEEP_AGREEMENT", "label": "Выполнить договорённость" },
+            { "code": "DIRECT_COMMERCIAL_OFFER", "label": "Прямое коммерческое предложение" },
+            { "code": "OTHER_TRANSPARENT", "label": "Другая прозрачная цель" },
+            { "code": "HIDDEN_OR_UNCLEAR", "label": "Цель скрыта или неясна" }
+          ]
+        },
+        {
+          "key": "disclosureStatus",
+          "label": "Прозрачность цели",
+          "type": "select",
+          "options": [
+            { "code": "FULLY_NAMED", "label": "Могу назвать прямо" },
+            { "code": "PARTIAL", "label": "Частично" },
+            { "code": "HIDDEN", "label": "Скрыта" }
+          ]
+        },
+        {
+          "key": "permissionStatus",
+          "label": "Разрешение на контакт",
+          "type": "select",
+          "options": [
+            { "code": "ALLOWED", "label": "Разрешено" },
+            { "code": "NEEDS_PERMISSION", "label": "Нужно спросить разрешение" },
+            { "code": "PROHIBITED", "label": "Запрещено" }
+          ]
+        }
+      ],
+      "checks": [
+        { "key": "purposeCanBeNamed", "label": "Могу назвать цель человеку прямо" },
+        { "key": "canSaySameMeaningAloud", "label": "Могу сказать тот же смысл вслух" }
+      ],
+      "nextStepId": "boundary_gate"
+    },
+    {
+      "id": "boundary_gate",
+      "kind": "remediation_checks",
+      "title": "Граница контакта",
+      "instruction": "Проверьте запрет, прошлый отказ, неразрешённый канал и уязвимый контекст.",
+      "checks": [
+        { "key": "factIsTrue", "label": "Факт действительно произошёл" },
+        { "key": "relevantToPerson", "label": "Это относится к этому человеку" },
+        { "key": "timingIsRespectful", "label": "Момент уважителен" },
+        { "key": "noVulnerabilityExploitation", "label": "Не использую уязвимость" },
+        { "key": "noProhibition", "label": "Нет явного запрета" },
+        { "key": "keepsRightToDecline", "label": "Человек может легко отказать" }
+      ],
+      "nextStepId": "embedded_a6_027"
+    },
+    {
+      "id": "embedded_a6_027",
+      "kind": "remediation_optional",
+      "title": "Необязательное наблюдение без лести",
+      "instruction": "Если открытие опирается на наблюдение — оно должно быть конкретным и искренним. Если основы нет, пропустите.",
+      "componentId": "A6-027",
+      "fields": [
+        { "key": "observationText", "label": "Одно конкретное наблюдение (только на устройстве)", "type": "textarea", "localOnly": true }
+      ],
+      "nextStepId": "assemble_reason_card"
+    },
+    {
+      "id": "assemble_reason_card",
+      "kind": "remediation_summary",
+      "title": "Соберите карточку настоящего повода",
+      "instruction": "Это ещё не готовое сообщение. При подтверждённом поводе карточка локально передаётся в A3-002.",
+      "nextStepId": "decision_gate"
+    },
+    {
+      "id": "decision_gate",
+      "kind": "remediation_decision",
+      "title": "Решение",
+      "decisions": [
+        { "code": "REASON_FOUND", "label": "Повод честный — перейти к сообщению", "outcomeCode": "REASON_FOUND" },
+        { "code": "NO_REASON", "label": "Настоящего повода пока нет", "outcomeCode": "NO_REASON" },
+        { "code": "CONTACT_STOPPED", "label": "Контакт неуместен или запрещён", "outcomeCode": "CONTACT_STOPPED" }
+      ],
+      "noReasonFields": [
+        {
+          "key": "noReasonCode",
+          "label": "Почему повода нет",
+          "type": "select",
+          "options": [
+            { "code": "ONLY_MY_SALES_PLAN", "label": "Только мой план продаж" },
+            { "code": "PURPOSE_HIDDEN", "label": "Цель скрыта" },
+            { "code": "TIMING_INAPPROPRIATE", "label": "Момент неуместен" },
+            { "code": "NO_SHARED_CONTEXT", "label": "Нет общего контекста" }
+          ]
+        },
+        {
+          "key": "reviewTriggerCode",
+          "label": "Когда вернуться к проверке",
+          "type": "select",
+          "options": [
+            { "code": "NEW_REQUEST_FROM_PERSON", "label": "Человек сам обратится" },
+            { "code": "NEW_SHARED_CONTEXT", "label": "Появится новый контекст" },
+            { "code": "AGREED_DATE", "label": "Наступит согласованная дата" }
+          ]
+        }
+      ],
+      "stopFields": [
+        {
+          "key": "stopCode",
+          "label": "Причина остановки",
+          "type": "select",
+          "options": [
+            { "code": "EXPLICIT_REFUSAL", "label": "Явный отказ" },
+            { "code": "DO_NOT_CONTACT", "label": "Просьба не писать" },
+            { "code": "VULNERABILITY_EXPLOITATION", "label": "Эксплуатация уязвимости" },
+            { "code": "BOUNDARY_BYPASS", "label": "Обход границы" }
+          ]
+        }
+      ]
+    }
+  ]
+}

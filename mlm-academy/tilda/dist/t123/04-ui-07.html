@@ -329,6 +329,7 @@
         if (D.performMembersLogout) D.performMembersLogout(event);
       });
     });
+    if (D.bindInstalledPackage) D.bindInstalledPackage(rootEl, mount);
     var cookieBox = rootEl.querySelector('#mlma-cookie');
     var cookieChoice = '';
     try {
@@ -834,7 +835,12 @@
       profile: D.getProfile(),
       account: D.hydrateAccount ? D.hydrateAccount(D.readMembersSession ? D.readMembersSession() : { loggedIn: false }) : { loggedIn: false },
       R: R,
+      trackMeta: D._trackMetaCache || null,
+      packageBody: D._packageBodyCache || null,
+      packageDenied: !!D._packageDenied,
+      packageStepId: D._packageStepId || null,
     };
+    if (D._cabinetCache && state.account) state.account.cabinet = D._cabinetCache;
     if (state.account && state.account.profile) state.profile = state.account.profile;
     rootEl.innerHTML =
       header(state) +
@@ -849,13 +855,47 @@
         if (!account) return;
         var prevMode = state.account && state.account.storageMode;
         state.account = account;
+        if (D._cabinetCache) state.account.cabinet = D._cabinetCache;
         if (account.profile) state.profile = account.profile;
         if (prevMode === 'server' && account.storageMode === 'server') {
           var same = JSON.stringify((state.profile && state.profile.savedTrackIds) || []) === JSON.stringify(account.savedTrackIds || (account.profile && account.profile.savedTrackIds) || []);
-          if (same) return;
+          if (same && D._cabinetCache) return;
         }
         mount(rootEl);
       });
+    }
+    if (state.account && state.account.loggedIn && D.fetchCabinet && !D._cabinetCache) {
+      D.fetchCabinet().then(function (cabinet) {
+        if (!cabinet) return;
+        D._cabinetCache = cabinet;
+        mount(rootEl);
+      });
+    }
+    if (state.page === 'track' && D.fetchTrackMeta) {
+      var metaId = D.normalizeTrackId(queryParam('id'));
+      if (metaId && !D._trackMetaCache) {
+        D.fetchTrackMeta(metaId).then(function (meta) {
+          if (!meta) return;
+          D._trackMetaCache = meta;
+          mount(rootEl);
+        });
+      }
+      if (metaId && state.account && state.account.loggedIn && queryParam('run') === '1' && D.fetchTrackContent && !D._packageBodyCache && !D._packageDenied) {
+        D.fetchTrackContent(metaId).then(function (res) {
+          if (res && res.ok && res.data && res.data.body) {
+            D._packageBodyCache = res.data.body;
+            D._packageDenied = false;
+            if (D.startTrackInstance) {
+              D.startTrackInstance(metaId).then(function (instance) {
+                if (instance && instance.instanceId) D._instanceId = instance.instanceId;
+              });
+            }
+          } else {
+            D._packageDenied = true;
+          }
+          mount(rootEl);
+        });
+      }
     }
     if (state.page === 'home') {
       D.trackEvent('academy_open', { source: 'home' });

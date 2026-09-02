@@ -1,0 +1,47 @@
+{
+  "version": "1.0",
+  "trackId": "A3-014",
+  "accessTier": "PUBLIC_DEMO",
+  "executionMode": "SANDBOX",
+  "liveInstance": false,
+  "aiMode": "PRECOMPUTED_ONLY",
+  "writesAllowed": false,
+  "routeEngineExecutionAllowed": false,
+  "createsLiveInstance": false,
+  "writesOutcome": false,
+  "executesRoute": false,
+  "examples": [
+    {
+      "label": "Готовность восстановлена",
+      "input": "Назван барьер и выбрана одна опора",
+      "result": "ACTION_READY",
+      "previewNext": "RETURN_TO_ROUTE"
+    },
+    {
+      "label": "Нужна пауза",
+      "input": "Нет рабочего ресурса сейчас",
+      "result": "WAIT_FOR_RESOURCE",
+      "previewNext": "WAIT_UNTIL"
+    },
+    {
+      "label": "Нужна поддержка",
+      "input": "Состояние выходит за рамки короткой практики",
+      "result": "OUT_OF_SCOPE_SUPPORT",
+      "previewNext": "EXPERT"
+    }
+  ],
+  "response": {
+    "kind": "PUBLIC_DEMO",
+    "sandbox": true,
+    "liveInstance": null,
+    "reason": "SANDBOX_NO_LIVE_INSTANCE"
+  },
+  "forbidden": [
+    "No real contact input",
+    "No live AI call",
+    "No outcome event",
+    "No RouteDecision",
+    "No destination URL",
+    "No entitlement change"
+  ]
+}

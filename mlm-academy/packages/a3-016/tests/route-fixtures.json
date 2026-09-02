@@ -1,0 +1,152 @@
+{
+  "version": "1.0",
+  "trackId": "A3-016",
+  "cases": [
+    {
+      "id": "asked-valid",
+      "facts": {
+        "real_reason": true,
+        "fact_source_code": "PERSON_ASKED",
+        "intent_code": "ANSWER_REQUEST",
+        "disclosure_status": "FULLY_NAMED",
+        "timing_code": "APPROPRIATE",
+        "permission_status": "ALLOWED",
+        "contact_allowed": true
+      },
+      "outcomeCode": "REASON_FOUND",
+      "expectedRuleId": "RR2-012",
+      "expectedDestinationId": "A3-002"
+    },
+    {
+      "id": "agreed-followup-valid",
+      "facts": {
+        "real_reason": true,
+        "fact_source_code": "AGREED_FOLLOW_UP",
+        "intent_code": "KEEP_AGREEMENT",
+        "disclosure_status": "FULLY_NAMED",
+        "timing_code": "APPROPRIATE",
+        "permission_status": "ALLOWED",
+        "contact_allowed": true
+      },
+      "outcomeCode": "REASON_FOUND",
+      "expectedRuleId": "RR2-012",
+      "expectedDestinationId": "A3-002"
+    },
+    {
+      "id": "direct-offer-valid",
+      "facts": {
+        "real_reason": true,
+        "fact_source_code": "DIRECT_DISCLOSED_OFFER",
+        "intent_code": "DIRECT_COMMERCIAL_OFFER",
+        "disclosure_status": "FULLY_NAMED",
+        "timing_code": "APPROPRIATE",
+        "permission_status": "NEEDS_PERMISSION",
+        "contact_allowed": true
+      },
+      "outcomeCode": "REASON_FOUND",
+      "expectedRuleId": "RR2-012",
+      "expectedDestinationId": "A3-002"
+    },
+    {
+      "id": "sales-plan-not-reason",
+      "facts": {
+        "real_reason": false,
+        "no_reason_code": "ONLY_MY_SALES_PLAN",
+        "review_trigger_code": "NEW_REQUEST_FROM_PERSON",
+        "contact_allowed": true
+      },
+      "outcomeCode": "NO_REASON",
+      "expectedRuleId": "RR2-013",
+      "expectedDestinationType": "WAIT_UNTIL"
+    },
+    {
+      "id": "hidden-purpose-not-reason",
+      "facts": {
+        "real_reason": false,
+        "no_reason_code": "PURPOSE_HIDDEN",
+        "review_trigger_code": "NEW_SHARED_CONTEXT",
+        "contact_allowed": true
+      },
+      "outcomeCode": "NO_REASON",
+      "expectedRuleId": "RR2-013",
+      "expectedDestinationType": "WAIT_UNTIL"
+    },
+    {
+      "id": "timing-wait",
+      "facts": {
+        "real_reason": false,
+        "no_reason_code": "TIMING_INAPPROPRIATE",
+        "review_trigger_code": "AGREED_DATE",
+        "contact_allowed": true
+      },
+      "outcomeCode": "NO_REASON",
+      "expectedRuleId": "RR2-013",
+      "expectedDestinationType": "WAIT_UNTIL"
+    },
+    {
+      "id": "explicit-refusal-stop",
+      "facts": {
+        "real_reason": false,
+        "contact_allowed": false,
+        "stop_code": "EXPLICIT_REFUSAL"
+      },
+      "outcomeCode": "CONTACT_STOPPED",
+      "expectedRuleId": "RR3-A3-016-STOP",
+      "expectedDestinationType": "DONE"
+    },
+    {
+      "id": "do-not-contact-stop",
+      "facts": {
+        "real_reason": false,
+        "contact_allowed": false,
+        "stop_code": "DO_NOT_CONTACT"
+      },
+      "outcomeCode": "CONTACT_STOPPED",
+      "expectedRuleId": "RR3-A3-016-STOP",
+      "expectedDestinationType": "DONE"
+    },
+    {
+      "id": "vulnerability-stop",
+      "facts": {
+        "real_reason": false,
+        "contact_allowed": false,
+        "stop_code": "VULNERABILITY_EXPLOITATION"
+      },
+      "outcomeCode": "CONTACT_STOPPED",
+      "expectedRuleId": "RR3-A3-016-STOP",
+      "expectedDestinationType": "DONE"
+    },
+    {
+      "id": "reason-found-partial-disclosure-invalid",
+      "facts": {
+        "real_reason": true,
+        "disclosure_status": "PARTIAL",
+        "contact_allowed": true
+      },
+      "outcomeCode": "REASON_FOUND",
+      "valid": false,
+      "expectedError": "FULLY_NAMED_REQUIRED"
+    },
+    {
+      "id": "pii-rejected",
+      "payloadExtra": {
+        "contact_name": "НЕ ПЕРЕДАВАТЬ",
+        "phone": "+0",
+        "opener_draft": "НЕ ПЕРЕДАВАТЬ"
+      },
+      "valid": false,
+      "expectedError": "ADDITIONAL_PROPERTIES_FORBIDDEN"
+    },
+    {
+      "id": "ai-advisory-cannot-route",
+      "aiOutput": {
+        "noReasonRecommended": false,
+        "advisoryCodes": []
+      },
+      "deterministicGate": {
+        "purposeCanBeNamed": false
+      },
+      "expectedOutcome": "NO_REASON"
+    }
+  ]
+}

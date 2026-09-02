@@ -1,0 +1,242 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlm-academy.local/schema/a3-008-outcome-recorder-request.json",
+  "title": "A3-008 outcome recorder request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "systemActionId",
+    "actionVersion",
+    "sourceTrackId",
+    "sourceInstanceId",
+    "sourceOutcomeCode",
+    "contactCardRef",
+    "contact",
+    "occurredAt",
+    "idempotencyKey"
+  ],
+  "properties": {
+    "systemActionId": {
+      "const": "A3-008"
+    },
+    "actionVersion": {
+      "const": "0.1.0"
+    },
+    "sourceTrackId": {
+      "type": "string",
+      "pattern": "^A[1-6]-[0-9]{3}$"
+    },
+    "sourceInstanceId": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128
+    },
+    "sourceOutcomeCode": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 80
+    },
+    "contactCardRef": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "description": "Opaque user-scoped reference; never name, phone, email or profile URL"
+    },
+    "contact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "outcome"
+      ],
+      "properties": {
+        "outcome": {
+          "enum": [
+            "MEETING_CONFIRMED",
+            "LATER",
+            "REFUSAL",
+            "NO_REPLY",
+            "REFERRAL_WITH_PERMISSION",
+            "NO_NEXT_ACTION"
+          ]
+        }
+      }
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "meetingAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "meetingFormatCode": {
+      "enum": [
+        "ONLINE",
+        "PHONE",
+        "IN_PERSON",
+        "OTHER"
+      ]
+    },
+    "followUpPermission": {
+      "type": "boolean"
+    },
+    "nextActionAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "referralPermissionConfirmed": {
+      "type": "boolean"
+    },
+    "waitUntil": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "retryCount": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "stopCode": {
+      "enum": [
+        "NO_NEXT_ACTION",
+        "USER_STOPPED",
+        "CONTACT_BOUNDARY",
+        "NOT_RELEVANT",
+        "OTHER_STRUCTURED"
+      ]
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 128
+    },
+    "supersedesOutcomeId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 8,
+      "maxLength": 128
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "contact": {
+            "properties": {
+              "outcome": {
+                "const": "MEETING_CONFIRMED"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "meetingAt",
+          "meetingFormatCode"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "contact": {
+            "properties": {
+              "outcome": {
+                "const": "LATER"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "followUpPermission",
+          "nextActionAt"
+        ],
+        "properties": {
+          "followUpPermission": {
+            "const": true
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "contact": {
+            "properties": {
+              "outcome": {
+                "const": "NO_REPLY"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "waitUntil",
+          "retryCount"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "contact": {
+            "properties": {
+              "outcome": {
+                "const": "REFERRAL_WITH_PERMISSION"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "referralPermissionConfirmed"
+        ],
+        "properties": {
+          "referralPermissionConfirmed": {
+            "const": true
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "contact": {
+            "properties": {
+              "outcome": {
+                "const": "NO_NEXT_ACTION"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "stopCode"
+        ]
+      }
+    }
+  ]
+}

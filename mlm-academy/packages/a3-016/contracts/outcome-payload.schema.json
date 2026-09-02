@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlm-academy.local/schema/a3-016-outcome-payload.json",
+  "title": "A3-016 minimal server outcome",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "trackId",
+    "contentVersion",
+    "outcomeCode",
+    "realReason",
+    "contactAllowed",
+    "riskFlagCodes",
+    "aiUsed",
+    "occurredAt"
+  ],
+  "properties": {
+    "trackId": {
+      "const": "A3-016"
+    },
+    "contentVersion": {
+      "const": "0.1.0"
+    },
+    "outcomeCode": {
+      "enum": [
+        "REASON_FOUND",
+        "NO_REASON",
+        "CONTACT_STOPPED"
+      ]
+    },
+    "realReason": {
+      "type": "boolean"
+    },
+    "factSourceCode": {
+      "type": "string"
+    },
+    "intentCode": {
+      "type": "string"
+    },
+    "disclosureStatus": {
+      "enum": [
+        "FULLY_NAMED",
+        "PARTIAL",
+        "HIDDEN"
+      ]
+    },
+    "timingCode": {
+      "type": "string"
+    },
+    "permissionStatus": {
+      "type": "string"
+    },
+    "contactAllowed": {
+      "type": "boolean"
+    },
+    "noReasonCode": {
+      "type": "string"
+    },
+    "reviewTriggerCode": {
+      "type": "string"
+    },
+    "stopCode": {
+      "type": "string"
+    },
+    "riskFlagCodes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "aiUsed": {
+      "type": "boolean"
+    },
+    "aiAdvisoryCodes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "outcomeCode": {
+            "const": "REASON_FOUND"
+          }
+        },
+        "required": [
+          "outcomeCode"
+        ]
+      },
+      "then": {
+        "required": [
+          "factSourceCode",
+          "intentCode",
+          "disclosureStatus",
+          "timingCode",
+          "permissionStatus"
+        ],
+        "properties": {
+          "realReason": {
+            "const": true
+          },
+          "contactAllowed": {
+            "const": true
+          },
+          "disclosureStatus": {
+            "const": "FULLY_NAMED"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcomeCode": {
+            "const": "NO_REASON"
+          }
+        },
+        "required": [
+          "outcomeCode"
+        ]
+      },
+      "then": {
+        "required": [
+          "factSourceCode",
+          "intentCode",
+          "disclosureStatus",
+          "timingCode",
+          "permissionStatus",
+          "noReasonCode",
+          "reviewTriggerCode"
+        ],
+        "properties": {
+          "realReason": {
+            "const": false
+          },
+          "contactAllowed": {
+            "const": true
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcomeCode": {
+            "const": "CONTACT_STOPPED"
+          }
+        },
+        "required": [
+          "outcomeCode"
+        ]
+      },
+      "then": {
+        "required": [
+          "stopCode"
+        ],
+        "properties": {
+          "realReason": {
+            "const": false
+          },
+          "contactAllowed": {
+            "const": false
+          }
+        }
+      }
+    }
+  ]
+}

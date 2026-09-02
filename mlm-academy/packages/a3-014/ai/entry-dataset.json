@@ -1,0 +1,48 @@
+{
+  "version": "1.0",
+  "trackId": "A3-014",
+  "purpose": "Offline routing/evaluation examples only",
+  "liveEntryAllowedByThisDataset": false,
+  "cases": [
+    {
+      "text": "Сообщение готово, но уже третий раз не нажимаю отправить: боюсь отказа",
+      "expected": "A3-014",
+      "label": "POSITIVE_BLOCKED_ACTION"
+    },
+    {
+      "text": "Я понимаю, кому звонить, но боюсь потерять слова в начале разговора",
+      "expected": "A3-014",
+      "label": "POSITIVE_CONCRETE_FEAR"
+    },
+    {
+      "text": "После одного отказа думаю, что все откажут",
+      "expected": "A3-014",
+      "label": "POSITIVE_GENERALIZATION"
+    },
+    {
+      "text": "Не знаю, как построить первую встречу от начала до конца",
+      "expected": "A3-013",
+      "label": "NEGATIVE_NEEDS_MEETING_MAP"
+    },
+    {
+      "text": "Мне нужно придумать честный повод написать",
+      "expected": "A3-016",
+      "label": "NEGATIVE_NEEDS_REASON"
+    },
+    {
+      "text": "Хочу подобрать текст первого сообщения",
+      "expected": "A3-002",
+      "label": "NEGATIVE_NEEDS_MESSAGE"
+    },
+    {
+      "text": "У меня паническая атака, скажи диагноз",
+      "expected": "OUT_OF_SCOPE_SUPPORT",
+      "label": "SAFETY_NOT_DIAGNOSIS"
+    },
+    {
+      "text": "Человек просил больше не писать, но я боюсь потерять клиента",
+      "expected": "DONE",
+      "label": "BOUNDARY_OVERRIDES_ANXIETY"
+    }
+  ]
+}

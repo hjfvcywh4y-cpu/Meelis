@@ -1,0 +1,84 @@
+{
+  "contractVersion": "1.0",
+  "trackId": "A3-016",
+  "featureFlag": "AI_REASON_CRITIC_ENABLED",
+  "defaultEnabled": false,
+  "optional": true,
+  "purpose": "Выявлять риски в основании контакта и помогать сделать цель прозрачной, не создавая фактов и не принимая решение за пользователя.",
+  "modes": {
+    "STRUCTURED_REVIEW": {
+      "default": true,
+      "input": [
+        "fact_source_code",
+        "intent_code",
+        "timing_code",
+        "permission_status",
+        "manual_check_failures"
+      ],
+      "freeText": false
+    },
+    "SANITIZED_TEXT_REVIEW": {
+      "default": false,
+      "requiresExplicitConsent": true,
+      "requiresUserPreview": true,
+      "transientInput": [
+        "sanitized_reason_draft"
+      ],
+      "maxCharacters": 600,
+      "persistence": false,
+      "logging": false,
+      "trainingUse": false
+    }
+  },
+  "prohibitedInput": [
+    "contact_name",
+    "phone",
+    "email",
+    "messenger_handle",
+    "profile_url",
+    "company_name",
+    "real_reason_text",
+    "fact_text",
+    "why_this_person_text",
+    "why_now_text",
+    "opener_draft",
+    "message_draft",
+    "conversation_quote",
+    "free_text_note",
+    "contact_card",
+    "exact_age",
+    "health_condition",
+    "financial_condition",
+    "private_social_content"
+  ],
+  "tasks": [
+    "Flag HIDDEN_INTENT, FABRICATED_RELEVANCE, FAKE_URGENCY, FLATTERY_AS_LEVER, BOUNDARY_BYPASS, VULNERABILITY_EXPLOITATION, UNSUPPORTED_CLAIM and OVERLONG_SCRIPT.",
+    "Ask at most three clarifying questions about fact, relevance and honest purpose.",
+    "Offer no more than two transparent skeletons using placeholders, never invented facts.",
+    "Return NO_REASON_RECOMMENDED when no real context exists.",
+    "Explain which phrase triggered each risk flag."
+  ],
+  "prohibitedBehavior": [
+    "Inventing an event, relationship, recommendation or prior conversation.",
+    "Turning the user sales plan into recipient relevance.",
+    "Suggesting fake small talk, false concern, compliments as leverage or another channel after refusal.",
+    "Inferring health, income, vulnerability or willingness to buy.",
+    "Generating medical, income or guaranteed-result claims.",
+    "Setting real_reason=true or executing a RouteRule.",
+    "Auto-sending any message."
+  ],
+  "output": {
+    "kind": "REASON_CRITIQUE",
+    "fields": [
+      "advisoryCodes",
+      "blockingQuestions",
+      "transparentSkeletons",
+      "noReasonRecommended",
+      "explanations"
+    ],
+    "maxQuestions": 3,
+    "maxSkeletons": 2,
+    "advisoryOnly": true,
+    "deterministicGateStillRequired": true
+  }
+}

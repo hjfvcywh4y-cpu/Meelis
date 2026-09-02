@@ -1,0 +1,368 @@
+{
+  "snapshotVersion": "1.0",
+  "generatedFrom": "full-graph-112-v3.json",
+  "graphVersion": "3.0",
+  "trackId": "A3-002",
+  "graphCounts": {
+    "nodes": 112,
+    "baseDesignConnections": 231,
+    "ruleDerivedConnections": 22,
+    "effectiveTrackConnections": 253,
+    "routeRulesToTracks": 37,
+    "routeRulesToTerminalsOrActions": 21,
+    "structuredRouteRules": 58,
+    "entryRules": 9,
+    "nodesWithoutDesignIncoming": 41,
+    "nodesWithoutEffectiveIncoming": 36
+  },
+  "node": {
+    "id": "A3-002",
+    "section": "A3",
+    "title": "Написать первое сообщение теплому контакту",
+    "situation": "Есть человек, но я не знаю, как начать без рекламной простыни",
+    "result": "Готово короткое сообщение: настоящий повод, уважение к отношениям и простой следующий шаг",
+    "legacyPriority": "P0",
+    "entityType": "TRACK",
+    "publishSurface": "PUBLIC_TRACK",
+    "canonicalId": "A3-002",
+    "domain": "FIRST_CONTACT",
+    "audience": "Партнёр перед первым сообщением, звонком или договорённостью",
+    "implementationStatus": "NEXT_BUILD",
+    "canonicalUrl": "https://mlmacademy.ru/track?id=a3-002",
+    "sourceCode": "9.4; 10.2",
+    "sourcePages": "209–234; 244–256",
+    "legacyNextIds": "A3-016, A3-008"
+  },
+  "expected": {
+    "effectiveIncomingCount": 6,
+    "effectiveOutgoingCount": 3,
+    "outgoingRouteRuleCount": 3,
+    "incomingRouteRuleCount": 2,
+    "externalEntryRuleIds": [
+      "ER-003"
+    ],
+    "editNeighborPages": false,
+    "unboundConnectionPolicy": "KEEP_AS_LOCKED_NEXT_ACTION_SLOT"
+  },
+  "connectionIndex": {
+    "id": "A3-002",
+    "canonicalId": "A3-002",
+    "entityType": "TRACK",
+    "publishSurface": "PUBLIC_TRACK",
+    "domain": "FIRST_CONTACT",
+    "implementationStatus": "NEXT_BUILD",
+    "incomingDesignConnections": [
+      {
+        "connectionId": "TR-040",
+        "fromId": "A2-003",
+        "fromCanonicalId": "A2-003",
+        "relationType": "WORKFLOW_FORWARD",
+        "userLabel": "Написать первое сообщение теплому контакту",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": []
+      },
+      {
+        "connectionId": "TR-044",
+        "fromId": "A2-005",
+        "fromCanonicalId": "A2-005",
+        "relationType": "WORKFLOW_FORWARD",
+        "userLabel": "Написать первое сообщение теплому контакту",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": []
+      },
+      {
+        "connectionId": "TR-051",
+        "fromId": "A2-008",
+        "fromCanonicalId": "A2-008",
+        "relationType": "WORKFLOW_FORWARD",
+        "userLabel": "Написать первое сообщение теплому контакту",
+        "activationMode": "ROUTE_RULE",
+        "matchedRouteRuleIds": [
+          "RR2-005"
+        ]
+      },
+      {
+        "connectionId": "TR-058",
+        "fromId": "A2-011",
+        "fromCanonicalId": "A2-011",
+        "relationType": "WORKFLOW_FORWARD",
+        "userLabel": "Написать первое сообщение теплому контакту",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": []
+      },
+      {
+        "connectionId": "TR-069",
+        "fromId": "A3-001",
+        "fromCanonicalId": "A3-001",
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Написать первое сообщение теплому контакту",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": []
+      }
+    ],
+    "outgoingDesignConnections": [
+      {
+        "connectionId": "TR-071",
+        "toId": "A3-016",
+        "toCanonicalId": "A3-016",
+        "rank": 1,
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Открыть разговор через настоящий повод",
+        "conditionHint": "Если после результата «Готово короткое сообщение: настоящий повод, уважение к отношениям и простой следующий шаг» актуальна ситуация: «Начинаю с заученной презентации или неловкого small talk».",
+        "activationMode": "ROUTE_RULE",
+        "matchedRouteRuleIds": [
+          "RR2-015"
+        ]
+      },
+      {
+        "connectionId": "TR-072",
+        "toId": "A3-008",
+        "toCanonicalId": "A3-008",
+        "rank": 2,
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Зафиксировать результат разговора и следующий контакт",
+        "conditionHint": "Если после результата «Готово короткое сообщение: настоящий повод, уважение к отношениям и простой следующий шаг» актуальна ситуация: «После звонка договоренности растворяются».",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": []
+      }
+    ],
+    "incomingEffectiveConnections": [
+      {
+        "connectionId": "TR-040",
+        "fromId": "A2-003",
+        "fromCanonicalId": "A2-003",
+        "relationType": "WORKFLOW_FORWARD",
+        "userLabel": "Написать первое сообщение теплому контакту",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": [],
+        "sourceLayer": "BASE_DESIGN_GRAPH_V2"
+      },
+      {
+        "connectionId": "TR-044",
+        "fromId": "A2-005",
+        "fromCanonicalId": "A2-005",
+        "relationType": "WORKFLOW_FORWARD",
+        "userLabel": "Написать первое сообщение теплому контакту",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": [],
+        "sourceLayer": "BASE_DESIGN_GRAPH_V2"
+      },
+      {
+        "connectionId": "TR-051",
+        "fromId": "A2-008",
+        "fromCanonicalId": "A2-008",
+        "relationType": "WORKFLOW_FORWARD",
+        "userLabel": "Написать первое сообщение теплому контакту",
+        "activationMode": "ROUTE_RULE",
+        "matchedRouteRuleIds": [
+          "RR2-005"
+        ],
+        "sourceLayer": "BASE_DESIGN_GRAPH_V2"
+      },
+      {
+        "connectionId": "TR-058",
+        "fromId": "A2-011",
+        "fromCanonicalId": "A2-011",
+        "relationType": "WORKFLOW_FORWARD",
+        "userLabel": "Написать первое сообщение теплому контакту",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": [],
+        "sourceLayer": "BASE_DESIGN_GRAPH_V2"
+      },
+      {
+        "connectionId": "TR-069",
+        "fromId": "A3-001",
+        "fromCanonicalId": "A3-001",
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Написать первое сообщение теплому контакту",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": [],
+        "sourceLayer": "BASE_DESIGN_GRAPH_V2"
+      },
+      {
+        "connectionId": "V3-RR2-012",
+        "fromId": "A3-016",
+        "fromCanonicalId": "A3-016",
+        "relationType": "STRUCTURED_ROUTE_ADDITION",
+        "userLabel": "Написать первое сообщение теплому контакту",
+        "activationMode": "ROUTE_RULE",
+        "matchedRouteRuleIds": [
+          "RR2-012"
+        ],
+        "sourceLayer": "STRUCTURED_ROUTE_RULE_V2"
+      }
+    ],
+    "outgoingEffectiveConnections": [
+      {
+        "connectionId": "TR-071",
+        "toId": "A3-016",
+        "toCanonicalId": "A3-016",
+        "rank": 1,
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Открыть разговор через настоящий повод",
+        "conditionHint": "Если после результата «Готово короткое сообщение: настоящий повод, уважение к отношениям и простой следующий шаг» актуальна ситуация: «Начинаю с заученной презентации или неловкого small talk».",
+        "activationMode": "ROUTE_RULE",
+        "matchedRouteRuleIds": [
+          "RR2-015"
+        ],
+        "sourceLayer": "BASE_DESIGN_GRAPH_V2"
+      },
+      {
+        "connectionId": "TR-072",
+        "toId": "A3-008",
+        "toCanonicalId": "A3-008",
+        "rank": 2,
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Зафиксировать результат разговора и следующий контакт",
+        "conditionHint": "Если после результата «Готово короткое сообщение: настоящий повод, уважение к отношениям и простой следующий шаг» актуальна ситуация: «После звонка договоренности растворяются».",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": [],
+        "sourceLayer": "BASE_DESIGN_GRAPH_V2"
+      },
+      {
+        "connectionId": "V3-RR2-016",
+        "toId": "A3-014",
+        "toCanonicalId": "A3-014",
+        "rank": 130,
+        "relationType": "STRUCTURED_ROUTE_ADDITION",
+        "userLabel": "Снизить тревогу перед разговором",
+        "conditionHint": "MESSAGE_NOT_SENT_ANXIETY: message.status = \"BLOCKED_ANXIETY\"",
+        "activationMode": "ROUTE_RULE",
+        "matchedRouteRuleIds": [
+          "RR2-016"
+        ],
+        "sourceLayer": "STRUCTURED_ROUTE_RULE_V2"
+      }
+    ],
+    "outgoingRouteRuleIds": [
+      "RR2-014",
+      "RR2-015",
+      "RR2-016"
+    ],
+    "incomingRouteRuleIds": [
+      "RR2-005",
+      "RR2-012"
+    ],
+    "externalEntryRuleIds": [
+      "ER-003"
+    ],
+    "placementStatus": "PLACED_IN_GRAPH",
+    "installBehavior": {
+      "registerAllIncomingConnections": true,
+      "registerAllOutgoingConnections": true,
+      "createLockedSlotsForUnboundConnections": true,
+      "activateOnlyByAccessAndRulePolicy": true,
+      "neverInferFromTrackNumber": true
+    }
+  },
+  "relatedStructuredRouteRules": [
+    {
+      "ruleId": "RR2-005",
+      "fromId": "A2-008",
+      "outcomeCode": "NEXT_MESSAGE",
+      "field": "contact.next_action",
+      "operator": "=",
+      "value": "MESSAGE",
+      "destinationType": "TRACK",
+      "destinationId": "A3-002",
+      "reason": "Есть тёплый контекст и уместно короткое личное сообщение",
+      "stopRule": "Если реального повода нет — сообщение не создавать",
+      "recoveryRule": "A3-016",
+      "priority": 10,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR2-012",
+      "fromId": "A3-016",
+      "outcomeCode": "REASON_FOUND",
+      "field": "real_reason",
+      "operator": "=",
+      "value": true,
+      "destinationType": "TRACK",
+      "destinationId": "A3-002",
+      "reason": "Настоящий повод найден и может быть честно назван",
+      "stopRule": "Если повод нельзя назвать человеку — он не подходит",
+      "recoveryRule": "WAIT_UNTIL",
+      "priority": 10,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR2-014",
+      "fromId": "A3-002",
+      "outcomeCode": "MESSAGE_SENT",
+      "field": "message.status",
+      "operator": "=",
+      "value": "SENT",
+      "destinationType": "SYSTEM_ACTION",
+      "destinationId": "A3-008",
+      "reason": "После полевого действия нужен факт, а не ещё один урок",
+      "stopRule": "Не сохранять текст сообщения и персональные данные на сервере",
+      "recoveryRule": "WAIT_UNTIL",
+      "priority": 10,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR2-015",
+      "fromId": "A3-002",
+      "outcomeCode": "MESSAGE_NOT_SENT_NO_REASON",
+      "field": "message.status",
+      "operator": "=",
+      "value": "BLOCKED_REASON",
+      "destinationType": "TRACK",
+      "destinationId": "A3-016",
+      "reason": "Причина не выглядит настоящей",
+      "stopRule": "Не маскировать продажу под дружеский разговор",
+      "recoveryRule": "WAIT_UNTIL",
+      "priority": 20,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR2-016",
+      "fromId": "A3-002",
+      "outcomeCode": "MESSAGE_NOT_SENT_ANXIETY",
+      "field": "message.status",
+      "operator": "=",
+      "value": "BLOCKED_ANXIETY",
+      "destinationType": "TRACK",
+      "destinationId": "A3-014",
+      "reason": "Подтверждён конкретный барьер действия",
+      "stopRule": "Не превращать нормальное волнение в обязательную терапевтизацию",
+      "recoveryRule": "FIELD_ACTION",
+      "priority": 30,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    }
+  ],
+  "relatedEntryRules": [
+    {
+      "id": "ER-003",
+      "source": "ARTIFACT",
+      "signal": "В A2-008 выбран MESSAGE",
+      "destination": "A3-002",
+      "guard": "Встроить gate настоящего повода"
+    }
+  ],
+  "packageTerminalRule": {
+    "ruleId": "RR3-A3-002-STOP",
+    "outcomeCode": "MESSAGE_STOPPED",
+    "destinationType": "DONE",
+    "createsTrackConnection": false,
+    "status": "PILOT_DRAFT_TO_TEST"
+  },
+  "installAssertions": [
+    "Resolve by Track ID A3-002; never infer neighbors from numbering.",
+    "Do not edit neighboring pages or rewrite track_connections.",
+    "Keep unbound directions locked and invisible to ordinary users.",
+    "Activate route buttons only after content, access and rule policies allow them.",
+    "Stop and report a diff if the runtime connectionIndex differs from this snapshot."
+  ]
+}

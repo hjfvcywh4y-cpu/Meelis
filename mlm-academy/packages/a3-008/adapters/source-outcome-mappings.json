@@ -1,0 +1,67 @@
+{
+  "version": "1.0",
+  "systemActionId": "A3-008",
+  "principle": "Source outcomes open A3-008 in the context of the same source instance. They do not preselect the contact outcome.",
+  "activeInvocations": [
+    {
+      "ruleId": "RR2-014",
+      "sourceTrackId": "A3-002",
+      "sourceOutcomeCode": "MESSAGE_SENT",
+      "destinationType": "SYSTEM_ACTION",
+      "destinationId": "A3-008",
+      "action": "OPEN_A3_008_OUTCOME_RECORDER",
+      "createsA3_008TrackInstance": false,
+      "preselectedOutcome": null,
+      "ruleStatus": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR2-017",
+      "sourceTrackId": "A2-013",
+      "sourceOutcomeCode": "REFERRAL_REQUEST_SENT",
+      "destinationType": "SYSTEM_ACTION",
+      "destinationId": "A3-008",
+      "action": "OPEN_A3_008_OUTCOME_RECORDER",
+      "createsA3_008TrackInstance": false,
+      "preselectedOutcome": null,
+      "ruleStatus": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR2-020",
+      "sourceTrackId": "A3-003",
+      "sourceOutcomeCode": "CALL_COMPLETED",
+      "destinationType": "SYSTEM_ACTION",
+      "destinationId": "A3-008",
+      "action": "OPEN_A3_008_OUTCOME_RECORDER",
+      "createsA3_008TrackInstance": false,
+      "preselectedOutcome": null,
+      "ruleStatus": "PILOT_DRAFT_TO_TEST"
+    }
+  ],
+  "lockedDesignSources": [
+    {
+      "connectionId": "TR-076",
+      "sourceTrackId": "A3-004",
+      "activationMode": "LOCKED_NEXT_ACTION_SLOT"
+    },
+    {
+      "connectionId": "TR-077",
+      "sourceTrackId": "A3-005",
+      "activationMode": "LOCKED_NEXT_ACTION_SLOT"
+    },
+    {
+      "connectionId": "TR-133",
+      "sourceTrackId": "A4-016",
+      "activationMode": "LOCKED_NEXT_ACTION_SLOT"
+    },
+    {
+      "connectionId": "TR-224",
+      "sourceTrackId": "A6-029",
+      "activationMode": "LOCKED_NEXT_ACTION_SLOT"
+    }
+  ],
+  "constraints": [
+    "Do not infer an outcome from the source action: a sent message may still be waiting, a call may yield any supported result.",
+    "Do not activate locked design sources without a structured RouteRule.",
+    "Do not create a second user journey or standalone lesson for A3-008."
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "contractVersion": "1.0",
+  "trackId": "A3-014",
+  "featureFlag": "AI_ANXIETY_MIRROR_ENABLED",
+  "defaultEnabled": false,
+  "optional": true,
+  "purpose": "Помочь структурировать рабочий барьер перед контактом: отличить факт от прогноза, уменьшить шаг и выбрать подходящую опору без диагностики и давления.",
+  "modes": {
+    "STRUCTURED_MIRROR": {
+      "default": true,
+      "freeText": false,
+      "input": [
+        "target_action_code",
+        "fear_event_code",
+        "prediction_code",
+        "evidence_code",
+        "support_code",
+        "micro_step_code"
+      ]
+    },
+    "SANITIZED_TEXT_MIRROR": {
+      "default": false,
+      "requiresExplicitConsent": true,
+      "requiresUserPreview": true,
+      "transientInput": [
+        "sanitized_fear_statement"
+      ],
+      "maxCharacters": 500,
+      "persistence": false,
+      "logging": false,
+      "trainingUse": false
+    }
+  },
+  "prohibitedInput": [
+    "contact_name",
+    "phone",
+    "email",
+    "messenger_handle",
+    "profile_url",
+    "company_name",
+    "contact_card",
+    "message_draft",
+    "conversation_quote",
+    "fear_text",
+    "predicted_consequence_text",
+    "past_experience_text",
+    "support_note",
+    "opening_line",
+    "rehearsal_text",
+    "scheduled_at",
+    "free_text_note",
+    "health_detail",
+    "diagnosis",
+    "medication",
+    "therapy_note",
+    "exact_age",
+    "mental_health_history",
+    "medical_history",
+    "financial_condition",
+    "private_social_content"
+  ],
+  "tasks": [
+    "Flag POSSIBLE_GENERALIZATION when one past event is treated as a universal rule.",
+    "Flag STEP_TOO_LARGE when the chosen action is not minimal and observable.",
+    "Flag SUPPORT_MISMATCH when the selected support does not address the named feared event.",
+    "Flag PREPARATION_AVOIDANCE when another rehearsal replaces a scheduled field action.",
+    "Offer at most two smaller action options using only the supplied codes.",
+    "Recommend PAUSE_OR_HUMAN_SUPPORT when the user selects PAUSE or OUT_OF_SCOPE; do not infer this state independently."
+  ],
+  "prohibitedBehavior": [
+    "Diagnosing anxiety, panic, trauma, depression or any mental-health condition.",
+    "Estimating severity, medical risk or fitness to act from text.",
+    "Promising success, generating affirmations as facts or telling the user to suppress emotion.",
+    "Choosing readiness_gate_code, next_need_code or executing a RouteRule.",
+    "Pressuring contact, optimizing persuasion or bypassing a refusal.",
+    "Requesting names, contact details, medical facts, medication, therapy notes or private correspondence.",
+    "Auto-sending a message or creating a live track instance."
+  ],
+  "output": {
+    "kind": "WORK_BARRIER_MIRROR",
+    "fields": [
+      "advisoryCodes",
+      "clarifyingQuestions",
+      "smallerStepOptions",
+      "supportFitNotes",
+      "pauseReminder"
+    ],
+    "maxQuestions": 2,
+    "maxStepOptions": 2,
+    "advisoryOnly": true,
+    "deterministicGateStillRequired": true
+  }
+}

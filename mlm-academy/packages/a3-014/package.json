@@ -1,0 +1,252 @@
+{
+  "packageVersion": "1.0",
+  "track": {
+    "id": "A3-014",
+    "canonicalId": "A3-014",
+    "entityType": "REMEDIATION",
+    "section": "A3",
+    "domain": "FIRST_CONTACT",
+    "title": "Снизить тревогу перед разговором",
+    "situation": "Знаю, что делать, но откладываю сообщение, звонок или встречу из-за конкретного волнения",
+    "result": "Выявлен конкретный барьер, подготовлена одна рабочая опора и назначено минимальное безопасное действие либо честная пауза",
+    "audience": "Партнёр перед первым сообщением, звонком или договорённостью, когда действие остановлено тревогой"
+  },
+  "graphBinding": {
+    "mode": "AUTO_BY_TRACK_ID",
+    "graphVersion": "3.0",
+    "editNeighborPages": false,
+    "unboundConnectionPolicy": "KEEP_AS_LOCKED_NEXT_ACTION_SLOT"
+  },
+  "content": {
+    "version": "0.1.0",
+    "status": "REVIEW",
+    "format": "json",
+    "serverOnly": true,
+    "sourcePath": "server/content/tracks/a3-014/0.1.0",
+    "checksum": "GENERATE_DURING_IMPORT",
+    "releaseNotes": "Remediation-пакет: readiness gate, факт/прогноз, микроопора, микроэкспозиция, RETURN_TO_ROUTE, locked slots A3-013/A6-020, optional AI mirror и safety boundaries"
+  },
+  "access": {
+    "policy": "ENTITLED",
+    "productCodes": [
+      "MLMA_FULL"
+    ]
+  },
+  "outcomes": [
+    {
+      "code": "ACTION_READY",
+      "label": "Минимальное действие подготовлено",
+      "observableFact": "Пользователь назвал конкретный барьер, отделил факт от прогноза, выбрал одну опору и назначил реальное действие",
+      "requiredFacts": [
+        "readiness_gate_code",
+        "target_action_code",
+        "fear_event_code",
+        "evidence_code",
+        "support_code",
+        "micro_step_code",
+        "next_need_code",
+        "due_code"
+      ]
+    },
+    {
+      "code": "SUPPORT_REQUIRED",
+      "label": "Нужна предметная подготовка",
+      "observableFact": "Пользователь установил, что барьер связан не с общей тревогой, а с отсутствием карты встречи или устойчивым страхом конкретного действия",
+      "requiredFacts": [
+        "readiness_gate_code",
+        "fear_event_code",
+        "next_need_code"
+      ]
+    },
+    {
+      "code": "WAIT_FOR_RESOURCE",
+      "label": "Выбрана безопасная пауза",
+      "observableFact": "Пользователь сам отметил усталость, нездоровье или отсутствие рабочего ресурса и не принуждает себя к контакту сейчас",
+      "requiredFacts": [
+        "readiness_gate_code",
+        "review_trigger_code",
+        "next_need_code"
+      ]
+    },
+    {
+      "code": "OUT_OF_SCOPE_SUPPORT",
+      "label": "Трек остановлен, нужна человеческая поддержка",
+      "observableFact": "Пользователь сам отметил, что состояние слишком сильное, длительное или небезопасное для короткой рабочей практики",
+      "requiredFacts": [
+        "readiness_gate_code",
+        "support_handoff_code",
+        "next_need_code"
+      ]
+    }
+  ],
+  "routeRules": [
+    {
+      "ruleId": "RR3-A3-014-OUT-OF-SCOPE",
+      "fromId": "A3-014",
+      "outcomeCode": "OUT_OF_SCOPE_SUPPORT",
+      "field": "readiness_gate_code",
+      "operator": "=",
+      "value": "OUT_OF_SCOPE",
+      "destinationType": "EXPERT",
+      "destinationId": null,
+      "reason": "Пользователь сам отметил состояние, выходящее за рамки короткой рабочей подготовки",
+      "stopRule": "Не продолжать контактный сценарий, не ставить диагноз и не обещать, что трек заменяет профессиональную помощь",
+      "recoveryRule": "DONE",
+      "priority": 1,
+      "owner": "Методолог + продукт + safety",
+      "version": "3.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR3-A3-014-WAIT",
+      "fromId": "A3-014",
+      "outcomeCode": "WAIT_FOR_RESOURCE",
+      "field": "readiness_gate_code",
+      "operator": "=",
+      "value": "PAUSE",
+      "destinationType": "WAIT_UNTIL",
+      "destinationId": null,
+      "reason": "Сейчас не хватает рабочего ресурса; пауза безопаснее вынужденного контакта",
+      "stopRule": "Не создавать автоматическое касание без выбранной даты, события или нового решения пользователя",
+      "recoveryRule": "DONE",
+      "priority": 5,
+      "owner": "Методолог + продукт",
+      "version": "3.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR3-A3-014-MEETING-MAP",
+      "fromId": "A3-014",
+      "outcomeCode": "SUPPORT_REQUIRED",
+      "field": "next_need_code",
+      "operator": "=",
+      "value": "MEETING_MAP",
+      "destinationType": "TRACK",
+      "destinationId": "A3-013",
+      "reason": "Тревога связана с отсутствием понятной структуры первой встречи",
+      "stopRule": "Не заменять подготовку требованием обязательно убедить человека",
+      "recoveryRule": "WAIT_UNTIL",
+      "priority": 10,
+      "owner": "Методолог + продукт",
+      "version": "3.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR3-A3-014-SPECIFIC-FEAR",
+      "fromId": "A3-014",
+      "outcomeCode": "SUPPORT_REQUIRED",
+      "field": "next_need_code",
+      "operator": "=",
+      "value": "SPECIFIC_FEAR",
+      "destinationType": "TRACK",
+      "destinationId": "A6-020",
+      "reason": "Подтверждён устойчивый страх конкретного действия, который не снимается короткой подготовкой",
+      "stopRule": "Не терапевтизировать нормальное волнение и не назначать углубление только по оценке AI",
+      "recoveryRule": "WAIT_UNTIL",
+      "priority": 20,
+      "owner": "Методолог + продукт",
+      "version": "3.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR3-A3-014-RETURN",
+      "fromId": "A3-014",
+      "outcomeCode": "ACTION_READY",
+      "field": "next_need_code",
+      "operator": "=",
+      "value": "RETURN_TO_ORIGIN",
+      "destinationType": "RETURN_TO_ROUTE",
+      "destinationId": null,
+      "reason": "Подготовлена рабочая опора; пользователь возвращается в родительский маршрут (при входе по RR2-016 — в A3-002)",
+      "stopRule": "Готовность означает право попробовать, а не обязанность получить согласие или продолжить вопреки отказу",
+      "recoveryRule": "WAIT_UNTIL",
+      "priority": 30,
+      "owner": "Методолог + продукт",
+      "version": "3.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    }
+  ],
+  "privacy": {
+    "serverAllowedFields": [
+      "track_id",
+      "content_version",
+      "outcome_code",
+      "origin_track_id",
+      "readiness_gate_code",
+      "target_action_code",
+      "fear_event_code",
+      "evidence_code",
+      "support_code",
+      "micro_step_code",
+      "next_need_code",
+      "due_code",
+      "review_trigger_code",
+      "support_handoff_code",
+      "risk_flag_codes",
+      "ai_used",
+      "ai_advisory_codes",
+      "route_decision_id",
+      "occurred_at"
+    ],
+    "clientOnlyFields": [
+      "contact_name",
+      "phone",
+      "email",
+      "messenger_handle",
+      "profile_url",
+      "company_name",
+      "contact_card",
+      "message_draft",
+      "conversation_quote",
+      "fear_text",
+      "predicted_consequence_text",
+      "past_experience_text",
+      "support_note",
+      "opening_line",
+      "rehearsal_text",
+      "scheduled_at",
+      "free_text_note",
+      "health_detail",
+      "diagnosis",
+      "medication",
+      "therapy_note"
+    ],
+    "analyticsAllowedFields": [
+      "track_id",
+      "content_version",
+      "outcome_code",
+      "origin_track_id",
+      "readiness_gate_code",
+      "target_action_code",
+      "fear_event_code",
+      "evidence_code",
+      "support_code",
+      "micro_step_code",
+      "next_need_code",
+      "due_code",
+      "review_trigger_code",
+      "support_handoff_code",
+      "risk_flag_codes",
+      "ai_used",
+      "ai_advisory_codes",
+      "destination_type",
+      "destination_id",
+      "duration_bucket"
+    ]
+  },
+  "source": {
+    "files": [
+      "Рыбкин.pdf: 11.4–11.4.4, книжные страницы 292–299 (PDF pages 289–296)",
+      "T0002429.pdf: книжные страницы 36–37 — психологическая подготовка к конкретному клиенту и снятие личных ограничений",
+      "T0002429.pdf: книжные страницы 238–240 — поддержка без подавления самостоятельности и разбор полевой практики",
+      "MLM_Academy_Track_Matrix_112_v2.xlsx: A3-014, RR2-016, TR-095, TR-096",
+      "Библиотека_онтологии_и_конструкций_треков_v2.xlsx: REMEDIATION, readiness diagnostic, stage-gate, micro-exposure",
+      "БТ_на_трекеры_v2.docx: приложения A.3–A.7",
+      "Жанр.pdf: восстановление + диагностическая мастерская + спокойная тональность",
+      "Сценарии_типовые_наборы.pdf: №16 обходной маршрут, №24 диагностика готовности, №51 подготовка→действие→фиксация, №58 микроэкспозиция, №130 маршрут исключения",
+      "full-graph-112-v3.json: connectionIndex A3-014"
+    ],
+    "owner": "Методолог MLM Academy",
+    "approvedAt": null
+  }
+}
