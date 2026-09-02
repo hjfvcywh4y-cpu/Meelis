@@ -1,0 +1,20 @@
+{
+  "trackId": "A3-005",
+  "kind": "PUBLIC_DEMO",
+  "accessTier": "PUBLIC_DEMO",
+  "executionMode": "SANDBOX",
+  "liveInstance": false,
+  "writesAllowed": false,
+  "routeEngineExecutionAllowed": false,
+  "entitlementCreated": false,
+  "createsLiveInstance": false,
+  "writesOutcome": false,
+  "executesRoute": false,
+  "aiMode": "PRECOMPUTED_ONLY",
+  "sample": {
+    "situation": "Человек сказал «давайте на следующей неделе», но время не выбрано.",
+    "invitation": "Предлагаю 15 минут по видео, чтобы обсудить вопрос о продукте. Мне удобно во вторник в 18:00 или в четверг в 12:30 по Новосибирску. Если не подходит — предложите своё время.",
+    "confirmationGate": "Демо показывает необходимость явного ответа, но не сохраняет встречу.",
+    "ending": "Показать будущий маршрут; не создавать instance, calendar event или route decision."
+  }
+}

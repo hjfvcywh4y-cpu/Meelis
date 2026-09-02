@@ -6209,6 +6209,101 @@
       }
       html += '</div>';
       html += '<div id="mlma-remediation-extra" style="margin-top:12px"></div>';
+    } else if (step.kind === 'scheduling_consent_gate') {
+      if (step.instruction) html += '<p class="mlma-muted" style="margin-top:8px">' + esc(step.instruction) + '</p>';
+      html += '<div class="mlma-actions" style="margin-top:16px;display:grid;gap:8px">';
+      for (i = 0; i < (step.branches || []).length; i += 1) {
+        var consentBr = step.branches[i];
+        html +=
+          '<button type="button" class="mlma-btn' +
+          (consentBr.code === 'READY_NOW' ? ' mlma-btn-primary' : '') +
+          '" data-mlma-scheduling-consent="' +
+          esc(consentBr.code) +
+          '" data-next="' +
+          esc(consentBr.nextStepId || '') +
+          '"' +
+          (consentBr.presetStatus ? ' data-preset-status="' + esc(consentBr.presetStatus) + '"' : '') +
+          '>' +
+          esc(consentBr.label) +
+          '</button>';
+      }
+      html += '</div>';
+    } else if (step.kind === 'scheduling_form' || step.kind === 'scheduling_slots' || step.kind === 'scheduling_response' || step.kind === 'scheduling_confirm' || step.kind === 'scheduling_calendar') {
+      if (step.instruction) html += '<p class="mlma-muted" style="margin-top:8px">' + esc(step.instruction) + '</p>';
+      if (step.sharedReferenceComponentId) {
+        html += '<p class="mlma-meta">Компонент ' + esc(step.sharedReferenceComponentId) + ' (справочно)</p>';
+      }
+      if (step.kind === 'scheduling_slots') {
+        html += '<p class="mlma-meta">Максимум ' + esc(String(step.maxSlots || 2)) + ' слота. Человек может предложить своё время или отказаться.</p>';
+      }
+      if (step.kind === 'scheduling_calendar') {
+        html += '<p class="mlma-meta">Только личное напоминание. Участник не добавляется, приглашение не отправляется.</p>';
+      }
+      for (i = 0; i < (step.fields || []).length; i += 1) {
+        field = step.fields[i];
+        html += '<label class="mlma-meta" style="margin-top:12px;display:block">' + esc(field.label) + (field.clientOnly ? ' (только здесь)' : '') + '</label>';
+        if (field.type === 'select') {
+          html += '<select class="mlma-field" data-mlma-local="' + esc(field.key) + '"><option value="">Выберите</option>';
+          for (j = 0; j < (field.options || []).length; j += 1) {
+            opt = field.options[j];
+            html +=
+              '<option value="' +
+              esc(opt.code) +
+              '"' +
+              (client[field.key] === opt.code ? ' selected' : '') +
+              '>' +
+              esc(opt.label) +
+              '</option>';
+          }
+          html += '</select>';
+        } else if (field.type === 'checkbox') {
+          html +=
+            '<label style="display:flex;gap:8px;margin-top:8px"><input type="checkbox" data-mlma-local-check="' +
+            esc(field.key) +
+            '"' +
+            (client[field.key] === true ? ' checked' : '') +
+            '> ' +
+            esc(field.label) +
+            '</label>';
+        } else if (field.type === 'datetime-local' || field.type === 'date') {
+          html +=
+            '<input class="mlma-field" type="' +
+            esc(field.type) +
+            '" data-mlma-local="' +
+            esc(field.key) +
+            '" value="' +
+            esc(client[field.key] || '') +
+            '">';
+        } else {
+          html +=
+            '<textarea class="mlma-field" data-mlma-local="' +
+            esc(field.key) +
+            '" rows="2">' +
+            esc(client[field.key] || '') +
+            '</textarea>';
+        }
+      }
+      if (step.nextStepId) {
+        html +=
+          '<button type="button" class="mlma-btn mlma-btn-primary" style="margin-top:16px" data-mlma-pkg-next="' +
+          esc(step.nextStepId) +
+          '">Дальше</button>';
+      }
+    } else if (step.kind === 'scheduling_decision') {
+      html += '<p class="mlma-muted" style="margin-top:8px">Исход доступен только при выполнении условий шага. Молчание и вежливость не считаются подтверждением.</p>';
+      html += '<div class="mlma-actions" style="margin-top:16px;display:grid;gap:8px">';
+      for (i = 0; i < (step.decisions || []).length; i += 1) {
+        dec = step.decisions[i];
+        html +=
+          '<button type="button" class="mlma-btn' +
+          (dec.outcomeCode === 'MEETING_SCHEDULED' ? ' mlma-btn-primary' : '') +
+          '" data-mlma-scheduling-decision="' +
+          esc(dec.outcomeCode) +
+          '">' +
+          esc(dec.label) +
+          '</button>';
+      }
+      html += '</div>';
     }
     return html + '</section>';
   }
@@ -6324,6 +6419,43 @@
         facts014.support_handoff_code = client.supportHandoffCode || 'HUMAN_SUPPORT';
       }
       return facts014;
+    }
+    if (String(trackId).toUpperCase() === 'A3-005') {
+      client = client || loadClient(trackId);
+      var oc5 = String(outcomeCode || '').toUpperCase();
+      var facts005 = {
+        track_id: trackId,
+        outcome_code: oc5,
+        ai_used: false,
+        risk_flag_codes: [],
+        mentor_event: 'result_recorded',
+        step_id: 'decision_gate',
+      };
+      if (oc5 === 'MEETING_SCHEDULED') {
+        facts005['appointment.status'] = 'CONFIRMED';
+        facts005['appointment.explicit_confirmation'] = client.explicitConfirmation === true;
+        facts005['appointment.starts_at'] = client.startsAt;
+        facts005['appointment.timezone'] = client.timezone;
+        facts005['appointment.duration_minutes'] = Number(client.durationMinutes || 0) || undefined;
+        facts005['appointment.format_code'] = client.formatCode;
+        facts005['appointment.topic_code'] = client.topicCode;
+        facts005['appointment.calendar_action_code'] = client.calendarActionCode || 'SKIP';
+        facts005['appointment.decision_source_code'] = client.decisionSourceCode;
+      } else if (oc5 === 'LATER') {
+        facts005['appointment.status'] = 'LATER';
+        facts005['appointment.followup_allowed'] = client.followupAllowed === 'true' || client.followupAllowed === true;
+        facts005['appointment.review_anchor_code'] = client.reviewAnchorCode;
+        facts005['appointment.review_at'] = client.reviewAt;
+        facts005['appointment.decision_source_code'] = client.decisionSourceCode;
+      } else if (oc5 === 'DECLINED') {
+        facts005['appointment.status'] = 'DECLINED';
+        facts005['appointment.decision_source_code'] = client.decisionSourceCode || 'EXPLICIT_DECLINE';
+      } else if (oc5 === 'NO_FOLLOW_UP') {
+        facts005['appointment.status'] = 'CLOSED_NO_FOLLOWUP';
+        facts005['appointment.no_followup_reason_code'] = client.noFollowupReasonCode || 'NO_EXPLICIT_CONSENT';
+        facts005['appointment.decision_source_code'] = client.decisionSourceCode;
+      }
+      return facts005;
     }
     return {
       track_id: trackId,
@@ -6613,6 +6745,9 @@
       pack.querySelectorAll('[data-mlma-manual]').forEach(function (field) {
         data.manualChecks[field.getAttribute('data-mlma-manual')] = field.checked;
       });
+      pack.querySelectorAll('[data-mlma-local-check]').forEach(function (field) {
+        data[field.getAttribute('data-mlma-local-check')] = field.checked;
+      });
       D.packageClient.save(trackId, data);
       return data;
     }
@@ -6782,6 +6917,69 @@
           if (!stop) return;
           data.stopCode = stop;
           D.packageClient.save(trackId, data);
+        }
+        var facts = D.packageClient.serverPayload(trackId, outcome, data);
+        D.submitTrackOutcome(D._instanceId, outcome, facts).then(function (res) {
+          afterDecision(res, data, outcome);
+        });
+      });
+    });
+
+    function canSubmitScheduling(outcome, data) {
+      if (outcome === 'MEETING_SCHEDULED') {
+        return (
+          data.appointmentStatus === 'CONFIRMED' &&
+          data.explicitConfirmation === true &&
+          data.startsAt &&
+          data.timezone &&
+          data.durationMinutes &&
+          data.formatCode &&
+          data.topicCode
+        );
+      }
+      if (outcome === 'LATER') {
+        return data.appointmentStatus === 'LATER' && (data.followupAllowed === 'true' || data.followupAllowed === true) && data.reviewAnchorCode;
+      }
+      if (outcome === 'DECLINED') {
+        return data.appointmentStatus === 'DECLINED';
+      }
+      if (outcome === 'NO_FOLLOW_UP') {
+        return (
+          data.appointmentStatus === 'UNCONFIRMED' ||
+          data.appointmentStatus === 'CLOSED_NO_FOLLOWUP' ||
+          (data.appointmentStatus === 'LATER' && data.followupAllowed !== 'true' && data.followupAllowed !== true)
+        );
+      }
+      return false;
+    }
+
+    pack.querySelectorAll('[data-mlma-scheduling-consent]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var data = persistLocal();
+        var code = el.getAttribute('data-mlma-scheduling-consent');
+        var preset = el.getAttribute('data-preset-status');
+        data.scheduleIntentCode = code;
+        if (preset) data.appointmentStatus = preset;
+        if (preset === 'LATER') {
+          data.followupAllowed = data.followupAllowed || 'false';
+        }
+        D.packageClient.save(trackId, data);
+        var next = el.getAttribute('data-next');
+        if (next) {
+          D._packageStepId = next;
+          remount(rootEl);
+        }
+      });
+    });
+
+    pack.querySelectorAll('[data-mlma-scheduling-decision]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var data = persistLocal();
+        var outcome = el.getAttribute('data-mlma-scheduling-decision');
+        if (!outcome || !D._instanceId || !D.submitTrackOutcome) return;
+        if (!canSubmitScheduling(outcome, data)) {
+          window.alert('Условия исхода не выполнены. Проверьте явное подтверждение, дату, часовой пояс и разрешение на follow-up.');
+          return;
         }
         var facts = D.packageClient.serverPayload(trackId, outcome, data);
         D.submitTrackOutcome(D._instanceId, outcome, facts).then(function (res) {

@@ -1,0 +1,395 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlm-academy.local/schema/a3-005-appointment-card.json",
+  "title": "A3-005 local appointment card",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "trackId",
+    "contentVersion",
+    "scheduleIntentCode",
+    "topicCode",
+    "durationMinutes",
+    "formatCode",
+    "timezone",
+    "slots",
+    "appointment",
+    "decision"
+  ],
+  "properties": {
+    "trackId": {
+      "const": "A3-005"
+    },
+    "contentVersion": {
+      "const": "0.1.0"
+    },
+    "scheduleIntentCode": {
+      "enum": [
+        "READY_TO_SCHEDULE",
+        "UNCERTAIN",
+        "NOT_INTERESTED"
+      ]
+    },
+    "topicCode": {
+      "enum": [
+        "INTRO_CONVERSATION",
+        "PRODUCT_QUESTION",
+        "BUSINESS_OPPORTUNITY",
+        "FOLLOW_UP",
+        "OTHER_TRANSPARENT"
+      ]
+    },
+    "topicText": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "CLIENT_ONLY"
+    },
+    "durationMinutes": {
+      "enum": [
+        10,
+        15,
+        20,
+        30,
+        45,
+        60
+      ]
+    },
+    "formatCode": {
+      "enum": [
+        "VOICE_CALL",
+        "VIDEO_CALL",
+        "IN_PERSON",
+        "OTHER_AGREED"
+      ]
+    },
+    "locationText": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "CLIENT_ONLY"
+    },
+    "meetingLink": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "CLIENT_ONLY"
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "slots": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "startsAt"
+        ],
+        "properties": {
+          "startsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "labelText": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "CLIENT_ONLY"
+          }
+        }
+      }
+    },
+    "invitationDraft": {
+      "type": "string",
+      "maxLength": 1200,
+      "description": "CLIENT_ONLY"
+    },
+    "confirmationText": {
+      "type": "string",
+      "maxLength": 1200,
+      "description": "CLIENT_ONLY"
+    },
+    "appointment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "explicitConfirmation"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "CONFIRMED",
+            "LATER",
+            "DECLINED",
+            "CLOSED_NO_FOLLOWUP",
+            "UNCONFIRMED"
+          ]
+        },
+        "explicitConfirmation": {
+          "type": "boolean"
+        },
+        "startsAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "timezone": {
+          "type": "string"
+        },
+        "durationMinutes": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 120
+        },
+        "formatCode": {
+          "type": "string"
+        },
+        "topicCode": {
+          "type": "string"
+        },
+        "calendarActionCode": {
+          "enum": [
+            "NONE",
+            "PERSONAL_REMINDER",
+            "DOWNLOAD_ICS",
+            "EXISTING_CALENDAR_CONNECTION"
+          ]
+        },
+        "followupAllowed": {
+          "type": "boolean"
+        },
+        "reviewAnchorCode": {
+          "enum": [
+            "DATE",
+            "EVENT",
+            "PERSON_INITIATES",
+            "NONE"
+          ]
+        },
+        "reviewAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "decisionSourceCode": {
+          "enum": [
+            "EXPLICIT_TEXT",
+            "EXPLICIT_VOICE",
+            "EXPLICIT_UI",
+            "OTHER_EXPLICIT"
+          ]
+        },
+        "noFollowupReasonCode": {
+          "enum": [
+            "NO_EXPLICIT_CONFIRMATION",
+            "NO_PERMISSION",
+            "NO_REVIEW_ANCHOR",
+            "DO_NOT_CONTACT",
+            "TOPIC_NOT_RELEVANT",
+            "OTHER_BOUNDARY"
+          ]
+        }
+      }
+    },
+    "aiReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "used": {
+          "type": "boolean"
+        },
+        "mode": {
+          "enum": [
+            "NONE",
+            "STRUCTURED_EDITOR",
+            "SANITIZED_TEXT_EDITOR"
+          ]
+        },
+        "advisoryCodes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "userAcceptedSuggestions": {
+          "type": "boolean"
+        }
+      }
+    },
+    "decision": {
+      "enum": [
+        "MEETING_SCHEDULED",
+        "LATER",
+        "DECLINED",
+        "NO_FOLLOW_UP"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "const": "MEETING_SCHEDULED"
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "then": {
+        "properties": {
+          "appointment": {
+            "required": [
+              "status",
+              "explicitConfirmation",
+              "startsAt",
+              "timezone",
+              "durationMinutes",
+              "formatCode",
+              "topicCode",
+              "calendarActionCode"
+            ],
+            "properties": {
+              "status": {
+                "const": "CONFIRMED"
+              },
+              "explicitConfirmation": {
+                "const": true
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "const": "LATER"
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "then": {
+        "properties": {
+          "appointment": {
+            "required": [
+              "status",
+              "explicitConfirmation",
+              "followupAllowed",
+              "reviewAnchorCode"
+            ],
+            "properties": {
+              "status": {
+                "const": "LATER"
+              },
+              "explicitConfirmation": {
+                "const": true
+              },
+              "followupAllowed": {
+                "const": true
+              },
+              "reviewAnchorCode": {
+                "enum": [
+                  "DATE",
+                  "EVENT",
+                  "PERSON_INITIATES"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "const": "DECLINED"
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "then": {
+        "properties": {
+          "appointment": {
+            "required": [
+              "status",
+              "explicitConfirmation",
+              "decisionSourceCode"
+            ],
+            "properties": {
+              "status": {
+                "const": "DECLINED"
+              },
+              "explicitConfirmation": {
+                "const": true
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "const": "NO_FOLLOW_UP"
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "then": {
+        "properties": {
+          "appointment": {
+            "required": [
+              "status",
+              "noFollowupReasonCode"
+            ],
+            "properties": {
+              "status": {
+                "const": "CLOSED_NO_FOLLOWUP"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "appointment": {
+            "properties": {
+              "reviewAnchorCode": {
+                "const": "DATE"
+              }
+            },
+            "required": [
+              "reviewAnchorCode"
+            ]
+          }
+        },
+        "required": [
+          "appointment"
+        ]
+      },
+      "then": {
+        "properties": {
+          "appointment": {
+            "required": [
+              "reviewAt"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

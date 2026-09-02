@@ -1,0 +1,48 @@
+{
+  "version": "1.0",
+  "trackId": "A3-005",
+  "purpose": "Offline routing/evaluation examples only",
+  "liveEntryAllowedByThisDataset": false,
+  "cases": [
+    {
+      "text": "Давайте как-нибудь созвонимся",
+      "expected": "A3-005",
+      "label": "POSITIVE_VAGUE_INTENT"
+    },
+    {
+      "text": "Можно поговорить на следующей неделе, но время не выбрали",
+      "expected": "A3-005",
+      "label": "POSITIVE_NEEDS_SLOT"
+    },
+    {
+      "text": "Он согласился на вторник, надо зафиксировать формат и тему",
+      "expected": "A3-005",
+      "label": "POSITIVE_INCOMPLETE_APPOINTMENT"
+    },
+    {
+      "text": "Не понимаю, писать, звонить или встречаться",
+      "expected": "A3-001",
+      "label": "NEGATIVE_NEEDS_CHANNEL"
+    },
+    {
+      "text": "На вопрос «о чём речь?» начинаю читать презентацию",
+      "expected": "A3-006",
+      "label": "NEGATIVE_PHONE_OBJECTION"
+    },
+    {
+      "text": "Встреча уже назначена, надо подготовиться по существу",
+      "expected": "A3-010",
+      "label": "NEGATIVE_ALREADY_SCHEDULED"
+    },
+    {
+      "text": "Человек отказался разговаривать",
+      "expected": "A5-014",
+      "label": "NEGATIVE_DECLINED"
+    },
+    {
+      "text": "Попросил напомнить через месяц и дал разрешение",
+      "expected": "A5-010",
+      "label": "NEGATIVE_FOLLOWUP_TRACK"
+    }
+  ]
+}

@@ -1,0 +1,244 @@
+{
+  "trackId": "A3-005",
+  "version": "0.1.0",
+  "contentStatus": "REVIEW",
+  "accessTier": "PAID",
+  "routeStatus": "TEST",
+  "executionMode": "LIVE",
+  "serverOnly": true,
+  "estimatedMinutes": 6,
+  "title": "Назначить время и формат разговора",
+  "lead": "Превратить расплывчатое намерение в точную добровольную договорённость — или корректно не создавать встречу.",
+  "aiSchedulingEditorEnabled": false,
+  "deterministicInvitationTemplate": "Предлагаю [формат] на [длительность], чтобы обсудить [тема]. Мне удобно [слот 1] или [слот 2]. Если не подходит — предложите своё время; если сейчас неактуально, всё нормально.",
+  "steps": [
+    {
+      "id": "permission_gate",
+      "kind": "scheduling_consent_gate",
+      "title": "Проверьте, есть ли согласие обсуждать встречу",
+      "instruction": "«Когда-нибудь созвонимся» ещё не встреча. Уточните, хочет ли человек действительно выбрать время сейчас. Молчание, вежливость и отсутствие возражения не считаются согласием.",
+      "branches": [
+        { "code": "READY_NOW", "label": "Человек готов выбрать время сейчас", "nextStepId": "name_topic" },
+        { "code": "NOT_NOW", "label": "Сейчас не готов, но разрешил вернуться позже", "nextStepId": "explicit_response", "presetStatus": "LATER" },
+        { "code": "DECLINED", "label": "Человек явно отказался от разговора", "nextStepId": "decision_gate", "presetStatus": "DECLINED" },
+        { "code": "NO_CONSENT", "label": "Нет явного согласия — не планируем встречу", "nextStepId": "decision_gate", "presetStatus": "CLOSED_NO_FOLLOWUP" }
+      ]
+    },
+    {
+      "id": "name_topic",
+      "kind": "scheduling_form",
+      "title": "Назовите тему без маскировки",
+      "instruction": "Сформулируйте одним предложением, что именно будете обсуждать. Не называйте встречу «просто кофе», если планируется разговор о продукте или бизнес-возможности.",
+      "fields": [
+        {
+          "key": "topicCode",
+          "label": "Тема разговора",
+          "type": "select",
+          "options": [
+            { "code": "PRODUCT_QUESTION", "label": "Вопрос о продукте" },
+            { "code": "BUSINESS_OPPORTUNITY", "label": "Бизнес-возможность" },
+            { "code": "PERSONAL_REQUEST", "label": "Личный запрос человека" },
+            { "code": "FOLLOW_UP_TOPIC", "label": "Продолжение предыдущего разговора" },
+            { "code": "OTHER_NAMED", "label": "Другая прозрачно названная тема" }
+          ]
+        },
+        { "key": "topicText", "label": "Формулировка темы (только здесь)", "type": "textarea", "clientOnly": true }
+      ],
+      "nextStepId": "set_duration"
+    },
+    {
+      "id": "set_duration",
+      "kind": "scheduling_form",
+      "title": "Обозначьте реалистичную длительность",
+      "instruction": "Выберите время, которого действительно достаточно. Не обещайте «пять минут», если нужен получасовой разговор.",
+      "fields": [
+        {
+          "key": "durationMinutes",
+          "label": "Длительность",
+          "type": "select",
+          "options": [
+            { "code": "15", "label": "15 минут" },
+            { "code": "30", "label": "30 минут" },
+            { "code": "45", "label": "45 минут" },
+            { "code": "60", "label": "60 минут" }
+          ]
+        }
+      ],
+      "nextStepId": "choose_format"
+    },
+    {
+      "id": "choose_format",
+      "kind": "scheduling_form",
+      "title": "Согласуйте формат и контекст",
+      "instruction": "Предложите голосовой звонок, видео или личную встречу с учётом удобства человека. Место, ссылку и контактные детали храните локально.",
+      "sharedReferenceComponentId": "A6-030",
+      "fields": [
+        {
+          "key": "formatCode",
+          "label": "Формат",
+          "type": "select",
+          "options": [
+            { "code": "VOICE_CALL", "label": "Голосовой звонок" },
+            { "code": "VIDEO_CALL", "label": "Видеозвонок" },
+            { "code": "IN_PERSON", "label": "Личная встреча" }
+          ]
+        },
+        { "key": "locationText", "label": "Место (только здесь)", "type": "textarea", "clientOnly": true },
+        { "key": "meetingLink", "label": "Ссылка (только здесь)", "type": "textarea", "clientOnly": true }
+      ],
+      "nextStepId": "offer_real_slots"
+    },
+    {
+      "id": "offer_real_slots",
+      "kind": "scheduling_slots",
+      "title": "Предложите один или два реальных слота",
+      "instruction": "Дайте максимум два доступных варианта и прямо разрешите предложить третий или отказаться. Это помощь в выборе, а не выбор без выбора.",
+      "maxSlots": 2,
+      "fields": [
+        { "key": "slot1", "label": "Слот 1 (дата и время)", "type": "datetime-local" },
+        { "key": "slot2", "label": "Слот 2 (необязательно)", "type": "datetime-local", "optional": true },
+        {
+          "key": "timezone",
+          "label": "Часовой пояс",
+          "type": "select",
+          "options": [
+            { "code": "Europe/Moscow", "label": "Москва (UTC+3)" },
+            { "code": "Asia/Yekaterinburg", "label": "Екатеринбург (UTC+5)" },
+            { "code": "Asia/Novosibirsk", "label": "Новосибирск (UTC+7)" },
+            { "code": "Asia/Vladivostok", "label": "Владивосток (UTC+10)" },
+            { "code": "OTHER", "label": "Другой (укажите в заметке локально)" }
+          ]
+        }
+      ],
+      "nextStepId": "explicit_response"
+    },
+    {
+      "id": "explicit_response",
+      "kind": "scheduling_response",
+      "title": "Получите явный ответ",
+      "instruction": "Зафиксируйте только произнесённое или написанное подтверждение. «Посмотрим», реакция-эмодзи и молчание оставляют статус UNCONFIRMED. Для «позже» отдельно запишите разрешение и опору.",
+      "fields": [
+        {
+          "key": "appointmentStatus",
+          "label": "Что ответил человек",
+          "type": "select",
+          "options": [
+            { "code": "CONFIRMED", "label": "Явно подтвердил дату и время" },
+            { "code": "LATER", "label": "Попросил вернуться позже" },
+            { "code": "DECLINED", "label": "Явно отказался" },
+            { "code": "UNCONFIRMED", "label": "Нет явного ответа" }
+          ]
+        },
+        {
+          "key": "decisionSourceCode",
+          "label": "Источник решения",
+          "type": "select",
+          "options": [
+            { "code": "SPOKEN_CONFIRMATION", "label": "Произнесённое подтверждение" },
+            { "code": "WRITTEN_CONFIRMATION", "label": "Письменное подтверждение" },
+            { "code": "EXPLICIT_DECLINE", "label": "Прямой отказ" },
+            { "code": "PERMISSION_TO_RETURN", "label": "Разрешение вернуться позже" },
+            { "code": "NO_RESPONSE", "label": "Нет ответа / неясно" }
+          ]
+        },
+        {
+          "key": "followupAllowed",
+          "label": "Разрешение на follow-up (для «позже»)",
+          "type": "select",
+          "options": [
+            { "code": "true", "label": "Да, явно разрешил" },
+            { "code": "false", "label": "Нет / неясно" }
+          ],
+          "showWhenStatus": "LATER"
+        },
+        {
+          "key": "reviewAnchorCode",
+          "label": "Опора для возврата",
+          "type": "select",
+          "options": [
+            { "code": "NAMED_DATE", "label": "Конкретная дата" },
+            { "code": "NAMED_EVENT", "label": "После события" },
+            { "code": "COUNTERPART_INITIATIVE", "label": "Инициатива самого человека" }
+          ],
+          "showWhenStatus": "LATER"
+        },
+        { "key": "reviewAt", "label": "Дата возврата (если названа)", "type": "date", "showWhenStatus": "LATER" },
+        {
+          "key": "noFollowupReasonCode",
+          "label": "Почему нет разрешения",
+          "type": "select",
+          "options": [
+            { "code": "NO_EXPLICIT_CONSENT", "label": "Нет явного согласия" },
+            { "code": "POLITE_DEFLECTION", "label": "Вежливый уход без даты" },
+            { "code": "SILENCE", "label": "Молчание / неясный ответ" }
+          ],
+          "showWhenStatus": "UNCONFIRMED"
+        },
+        { "key": "explicitConfirmation", "label": "Явное подтверждение получено", "type": "checkbox", "showWhenStatus": "CONFIRMED" }
+      ],
+      "nextStepId": "confirm_contract",
+      "nextStepWhenConfirmed": "confirm_contract",
+      "nextStepWhenLater": "decision_gate",
+      "nextStepWhenDeclined": "decision_gate",
+      "nextStepWhenUnconfirmed": "decision_gate"
+    },
+    {
+      "id": "confirm_contract",
+      "kind": "scheduling_confirm",
+      "title": "Повторите договорённость один раз",
+      "instruction": "Сверьте дату, время, часовой пояс, длительность, формат и тему. Добавьте простой способ перенести или отменить. Не собирайте серию «да».",
+      "fields": [
+        { "key": "startsAt", "label": "Подтверждённая дата и время", "type": "datetime-local" },
+        {
+          "key": "timezone",
+          "label": "Часовой пояс",
+          "type": "select",
+          "options": [
+            { "code": "Europe/Moscow", "label": "Москва (UTC+3)" },
+            { "code": "Asia/Yekaterinburg", "label": "Екатеринбург (UTC+5)" },
+            { "code": "Asia/Novosibirsk", "label": "Новосибирск (UTC+7)" },
+            { "code": "Asia/Vladivostok", "label": "Владивосток (UTC+10)" },
+            { "code": "OTHER", "label": "Другой" }
+          ]
+        },
+        { "key": "confirmationText", "label": "Текст сверки (только здесь)", "type": "textarea", "clientOnly": true }
+      ],
+      "nextStepId": "calendar_boundary"
+    },
+    {
+      "id": "calendar_boundary",
+      "kind": "scheduling_calendar",
+      "title": "Добавьте только личное напоминание",
+      "instruction": "После подтверждения вы можете создать личное напоминание или скачать ICS. Участник не добавляется и приглашение не отправляется автоматически.",
+      "requiresConfirmed": true,
+      "fields": [
+        {
+          "key": "calendarActionCode",
+          "label": "Действие с календарём",
+          "type": "select",
+          "options": [
+            { "code": "PERSONAL_REMINDER", "label": "Личное напоминание" },
+            { "code": "DOWNLOAD_ICS", "label": "Скачать ICS (без участников)" },
+            { "code": "SKIP", "label": "Пропустить" }
+          ]
+        }
+      ],
+      "nextStepId": "decision_gate"
+    },
+    {
+      "id": "decision_gate",
+      "kind": "scheduling_decision",
+      "title": "Зафиксируйте исход",
+      "decisions": [
+        { "outcomeCode": "MEETING_SCHEDULED", "label": "Разговор подтверждён", "routeRuleId": "RR2-023" },
+        { "outcomeCode": "LATER", "label": "Разрешено вернуться позже", "routeRuleId": "RR2-024" },
+        { "outcomeCode": "DECLINED", "label": "Разговор отклонён", "routeRuleId": "RR2-025" },
+        { "outcomeCode": "NO_FOLLOW_UP", "label": "Нет разрешённого следующего касания", "routeRuleId": "RR3-A3-005-NO-FOLLOW-UP" }
+      ]
+    }
+  ],
+  "completion": {
+    "successCodes": ["MEETING_SCHEDULED", "LATER", "DECLINED", "NO_FOLLOW_UP"],
+    "nonTerminalCodes": ["DRAFT_SAVED"]
+  }
+}

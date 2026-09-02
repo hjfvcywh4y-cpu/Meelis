@@ -31,6 +31,9 @@
       pack.querySelectorAll('[data-mlma-manual]').forEach(function (field) {
         data.manualChecks[field.getAttribute('data-mlma-manual')] = field.checked;
       });
+      pack.querySelectorAll('[data-mlma-local-check]').forEach(function (field) {
+        data[field.getAttribute('data-mlma-local-check')] = field.checked;
+      });
       D.packageClient.save(trackId, data);
       return data;
     }
@@ -200,6 +203,69 @@
           if (!stop) return;
           data.stopCode = stop;
           D.packageClient.save(trackId, data);
+        }
+        var facts = D.packageClient.serverPayload(trackId, outcome, data);
+        D.submitTrackOutcome(D._instanceId, outcome, facts).then(function (res) {
+          afterDecision(res, data, outcome);
+        });
+      });
+    });
+
+    function canSubmitScheduling(outcome, data) {
+      if (outcome === 'MEETING_SCHEDULED') {
+        return (
+          data.appointmentStatus === 'CONFIRMED' &&
+          data.explicitConfirmation === true &&
+          data.startsAt &&
+          data.timezone &&
+          data.durationMinutes &&
+          data.formatCode &&
+          data.topicCode
+        );
+      }
+      if (outcome === 'LATER') {
+        return data.appointmentStatus === 'LATER' && (data.followupAllowed === 'true' || data.followupAllowed === true) && data.reviewAnchorCode;
+      }
+      if (outcome === 'DECLINED') {
+        return data.appointmentStatus === 'DECLINED';
+      }
+      if (outcome === 'NO_FOLLOW_UP') {
+        return (
+          data.appointmentStatus === 'UNCONFIRMED' ||
+          data.appointmentStatus === 'CLOSED_NO_FOLLOWUP' ||
+          (data.appointmentStatus === 'LATER' && data.followupAllowed !== 'true' && data.followupAllowed !== true)
+        );
+      }
+      return false;
+    }
+
+    pack.querySelectorAll('[data-mlma-scheduling-consent]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var data = persistLocal();
+        var code = el.getAttribute('data-mlma-scheduling-consent');
+        var preset = el.getAttribute('data-preset-status');
+        data.scheduleIntentCode = code;
+        if (preset) data.appointmentStatus = preset;
+        if (preset === 'LATER') {
+          data.followupAllowed = data.followupAllowed || 'false';
+        }
+        D.packageClient.save(trackId, data);
+        var next = el.getAttribute('data-next');
+        if (next) {
+          D._packageStepId = next;
+          remount(rootEl);
+        }
+      });
+    });
+
+    pack.querySelectorAll('[data-mlma-scheduling-decision]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var data = persistLocal();
+        var outcome = el.getAttribute('data-mlma-scheduling-decision');
+        if (!outcome || !D._instanceId || !D.submitTrackOutcome) return;
+        if (!canSubmitScheduling(outcome, data)) {
+          window.alert('Условия исхода не выполнены. Проверьте явное подтверждение, дату, часовой пояс и разрешение на follow-up.');
+          return;
         }
         var facts = D.packageClient.serverPayload(trackId, outcome, data);
         D.submitTrackOutcome(D._instanceId, outcome, facts).then(function (res) {

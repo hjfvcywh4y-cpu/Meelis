@@ -4,7 +4,7 @@
   "css": 35723,
   "json": 53320,
   "dataChunks": 2,
-  "domain": 311422,
+  "domain": 320556,
   "ui": 177214,
   "trackModules": [
     "a2-008.module.js",
@@ -26,7 +26,7 @@
     "css": 35723,
     "json": 53320,
     "dataChunks": 2,
-    "domain": 311422,
+    "domain": 320556,
     "ui": 177214,
     "trackModules": [
       "a2-008.module.js",
@@ -48,7 +48,7 @@
       "css": 35723,
       "json": 53320,
       "dataChunks": 2,
-      "domain": 304478,
+      "domain": 311422,
       "ui": 177214,
       "trackModules": [
         "a2-008.module.js",
@@ -70,7 +70,7 @@
         "css": 35723,
         "json": 53320,
         "dataChunks": 2,
-        "domain": 304478,
+        "domain": 311422,
         "ui": 177214,
         "trackModules": [
           "a2-008.module.js",
@@ -92,7 +92,7 @@
           "css": 35723,
           "json": 53320,
           "dataChunks": 2,
-          "domain": 294274,
+          "domain": 304478,
           "ui": 177214,
           "trackModules": [
             "a2-008.module.js",
@@ -114,7 +114,7 @@
             "css": 35723,
             "json": 53320,
             "dataChunks": 2,
-            "domain": 294274,
+            "domain": 304478,
             "ui": 177214,
             "trackModules": [
               "a2-008.module.js",
@@ -136,7 +136,7 @@
               "css": 35723,
               "json": 53320,
               "dataChunks": 2,
-              "domain": 285311,
+              "domain": 294274,
               "ui": 177214,
               "trackModules": [
                 "a2-008.module.js",
@@ -158,7 +158,7 @@
                 "css": 35723,
                 "json": 53320,
                 "dataChunks": 2,
-                "domain": 285311,
+                "domain": 294274,
                 "ui": 177214,
                 "trackModules": [
                   "a2-008.module.js",
@@ -177,11 +177,11 @@
                 "previous": {
                   "assetsVersion": "v1",
                   "schema": "mlma.catalog.public.v1",
-                  "css": 32630,
+                  "css": 35723,
                   "json": 53320,
                   "dataChunks": 2,
-                  "domain": 281308,
-                  "ui": 177746,
+                  "domain": 285311,
+                  "ui": 177214,
                   "trackModules": [
                     "a2-008.module.js",
                     "a3-002.module.js"
@@ -199,11 +199,11 @@
                   "previous": {
                     "assetsVersion": "v1",
                     "schema": "mlma.catalog.public.v1",
-                    "css": 32630,
+                    "css": 35723,
                     "json": 53320,
                     "dataChunks": 2,
-                    "domain": 281308,
-                    "ui": 177746,
+                    "domain": 285311,
+                    "ui": 177214,
                     "trackModules": [
                       "a2-008.module.js",
                       "a3-002.module.js"
@@ -224,7 +224,7 @@
                       "css": 32630,
                       "json": 53320,
                       "dataChunks": 2,
-                      "domain": 281160,
+                      "domain": 281308,
                       "ui": 177746,
                       "trackModules": [
                         "a2-008.module.js",
@@ -246,8 +246,8 @@
                         "css": 32630,
                         "json": 53320,
                         "dataChunks": 2,
-                        "domain": 269974,
-                        "ui": 173746,
+                        "domain": 281308,
+                        "ui": 177746,
                         "trackModules": [
                           "a2-008.module.js",
                           "a3-002.module.js"
@@ -268,8 +268,8 @@
                           "css": 32630,
                           "json": 53320,
                           "dataChunks": 2,
-                          "domain": 269974,
-                          "ui": 173746,
+                          "domain": 281160,
+                          "ui": 177746,
                           "trackModules": [
                             "a2-008.module.js",
                             "a3-002.module.js"
@@ -293,7 +293,8 @@
                             "domain": 269974,
                             "ui": 173746,
                             "trackModules": [
-                              "a2-008.module.js"
+                              "a2-008.module.js",
+                              "a3-002.module.js"
                             ],
                             "tracks": 112,
                             "uniqueTrackIds": 112,
@@ -314,7 +315,8 @@
                               "domain": 269974,
                               "ui": 173746,
                               "trackModules": [
-                                "a2-008.module.js"
+                                "a2-008.module.js",
+                                "a3-002.module.js"
                               ],
                               "tracks": 112,
                               "uniqueTrackIds": 112,
@@ -330,9 +332,9 @@
                                 "assetsVersion": "v1",
                                 "schema": "mlma.catalog.public.v1",
                                 "css": 32630,
-                                "json": 53169,
+                                "json": 53320,
                                 "dataChunks": 2,
-                                "domain": 268420,
+                                "domain": 269974,
                                 "ui": 173746,
                                 "trackModules": [
                                   "a2-008.module.js"
@@ -351,10 +353,10 @@
                                   "assetsVersion": "v1",
                                   "schema": "mlma.catalog.public.v1",
                                   "css": 32630,
-                                  "json": 53169,
+                                  "json": 53320,
                                   "dataChunks": 2,
-                                  "domain": 268675,
-                                  "ui": 174738,
+                                  "domain": 269974,
+                                  "ui": 173746,
                                   "trackModules": [
                                     "a2-008.module.js"
                                   ],
@@ -372,10 +374,10 @@
                                     "assetsVersion": "v1",
                                     "schema": "mlma.catalog.public.v1",
                                     "css": 32630,
-                                    "json": 53548,
+                                    "json": 53169,
                                     "dataChunks": 2,
-                                    "domain": 268675,
-                                    "ui": 175038,
+                                    "domain": 268420,
+                                    "ui": 173746,
                                     "trackModules": [
                                       "a2-008.module.js"
                                     ],
@@ -393,10 +395,10 @@
                                       "assetsVersion": "v1",
                                       "schema": "mlma.catalog.public.v1",
                                       "css": 32630,
-                                      "json": 53525,
+                                      "json": 53169,
                                       "dataChunks": 2,
-                                      "domain": 267616,
-                                      "ui": 174333,
+                                      "domain": 268675,
+                                      "ui": 174738,
                                       "trackModules": [
                                         "a2-008.module.js"
                                       ],
@@ -414,10 +416,10 @@
                                         "assetsVersion": "v1",
                                         "schema": "mlma.catalog.public.v1",
                                         "css": 32630,
-                                        "json": 53525,
+                                        "json": 53548,
                                         "dataChunks": 2,
-                                        "domain": 267617,
-                                        "ui": 174333,
+                                        "domain": 268675,
+                                        "ui": 175038,
                                         "trackModules": [
                                           "a2-008.module.js"
                                         ],
@@ -437,7 +439,7 @@
                                           "css": 32630,
                                           "json": 53525,
                                           "dataChunks": 2,
-                                          "domain": 267618,
+                                          "domain": 267616,
                                           "ui": 174333,
                                           "trackModules": [
                                             "a2-008.module.js"
@@ -458,7 +460,7 @@
                                             "css": 32630,
                                             "json": 53525,
                                             "dataChunks": 2,
-                                            "domain": 266977,
+                                            "domain": 267617,
                                             "ui": 174333,
                                             "trackModules": [
                                               "a2-008.module.js"
@@ -476,11 +478,11 @@
                                             "previous": {
                                               "assetsVersion": "v1",
                                               "schema": "mlma.catalog.public.v1",
-                                              "css": 32351,
-                                              "json": 53253,
+                                              "css": 32630,
+                                              "json": 53525,
                                               "dataChunks": 2,
-                                              "domain": 259222,
-                                              "ui": 171440,
+                                              "domain": 267618,
+                                              "ui": 174333,
                                               "trackModules": [
                                                 "a2-008.module.js"
                                               ],
@@ -497,11 +499,11 @@
                                               "previous": {
                                                 "assetsVersion": "v1",
                                                 "schema": "mlma.catalog.public.v1",
-                                                "css": 32351,
-                                                "json": 53253,
+                                                "css": 32630,
+                                                "json": 53525,
                                                 "dataChunks": 2,
-                                                "domain": 259222,
-                                                "ui": 171428,
+                                                "domain": 266977,
+                                                "ui": 174333,
                                                 "trackModules": [
                                                   "a2-008.module.js"
                                                 ],
@@ -518,11 +520,11 @@
                                                 "previous": {
                                                   "assetsVersion": "v1",
                                                   "schema": "mlma.catalog.public.v1",
-                                                  "css": 32663,
+                                                  "css": 32351,
                                                   "json": 53253,
                                                   "dataChunks": 2,
                                                   "domain": 259222,
-                                                  "ui": 171384,
+                                                  "ui": 171440,
                                                   "trackModules": [
                                                     "a2-008.module.js"
                                                   ],
@@ -539,11 +541,11 @@
                                                   "previous": {
                                                     "assetsVersion": "v1",
                                                     "schema": "mlma.catalog.public.v1",
-                                                    "css": 32663,
+                                                    "css": 32351,
                                                     "json": 53253,
                                                     "dataChunks": 2,
                                                     "domain": 259222,
-                                                    "ui": 171355,
+                                                    "ui": 171428,
                                                     "trackModules": [
                                                       "a2-008.module.js"
                                                     ],
@@ -560,11 +562,11 @@
                                                     "previous": {
                                                       "assetsVersion": "v1",
                                                       "schema": "mlma.catalog.public.v1",
-                                                      "css": 32457,
+                                                      "css": 32663,
                                                       "json": 53253,
                                                       "dataChunks": 2,
                                                       "domain": 259222,
-                                                      "ui": 170353,
+                                                      "ui": 171384,
                                                       "trackModules": [
                                                         "a2-008.module.js"
                                                       ],
@@ -581,11 +583,11 @@
                                                       "previous": {
                                                         "assetsVersion": "v1",
                                                         "schema": "mlma.catalog.public.v1",
-                                                        "css": 32284,
+                                                        "css": 32663,
                                                         "json": 53253,
                                                         "dataChunks": 2,
-                                                        "domain": 259145,
-                                                        "ui": 170348,
+                                                        "domain": 259222,
+                                                        "ui": 171355,
                                                         "trackModules": [
                                                           "a2-008.module.js"
                                                         ],
@@ -602,11 +604,11 @@
                                                         "previous": {
                                                           "assetsVersion": "v1",
                                                           "schema": "mlma.catalog.public.v1",
-                                                          "css": 32284,
+                                                          "css": 32457,
                                                           "json": 53253,
                                                           "dataChunks": 2,
-                                                          "domain": 258404,
-                                                          "ui": 170348,
+                                                          "domain": 259222,
+                                                          "ui": 170353,
                                                           "trackModules": [
                                                             "a2-008.module.js"
                                                           ],
@@ -623,11 +625,11 @@
                                                           "previous": {
                                                             "assetsVersion": "v1",
                                                             "schema": "mlma.catalog.public.v1",
-                                                            "css": 29246,
+                                                            "css": 32284,
                                                             "json": 53253,
                                                             "dataChunks": 2,
-                                                            "domain": 233013,
-                                                            "ui": 163255,
+                                                            "domain": 259145,
+                                                            "ui": 170348,
                                                             "trackModules": [
                                                               "a2-008.module.js"
                                                             ],
@@ -644,11 +646,11 @@
                                                             "previous": {
                                                               "assetsVersion": "v1",
                                                               "schema": "mlma.catalog.public.v1",
-                                                              "css": 29246,
+                                                              "css": 32284,
                                                               "json": 53253,
                                                               "dataChunks": 2,
-                                                              "domain": 233013,
-                                                              "ui": 163255,
+                                                              "domain": 258404,
+                                                              "ui": 170348,
                                                               "trackModules": [
                                                                 "a2-008.module.js"
                                                               ],
@@ -710,8 +712,8 @@
                                                                     "css": 29246,
                                                                     "json": 53253,
                                                                     "dataChunks": 2,
-                                                                    "domain": 230742,
-                                                                    "ui": 162997,
+                                                                    "domain": 233013,
+                                                                    "ui": 163255,
                                                                     "trackModules": [
                                                                       "a2-008.module.js"
                                                                     ],
@@ -731,8 +733,8 @@
                                                                       "css": 29246,
                                                                       "json": 53253,
                                                                       "dataChunks": 2,
-                                                                      "domain": 230742,
-                                                                      "ui": 162997,
+                                                                      "domain": 233013,
+                                                                      "ui": 163255,
                                                                       "trackModules": [
                                                                         "a2-008.module.js"
                                                                       ],
@@ -750,10 +752,13 @@
                                                                         "assetsVersion": "v1",
                                                                         "schema": "mlma.catalog.public.v1",
                                                                         "css": 29246,
-                                                                        "json": 53240,
+                                                                        "json": 53253,
                                                                         "dataChunks": 2,
-                                                                        "domain": 229257,
-                                                                        "ui": 162519,
+                                                                        "domain": 230742,
+                                                                        "ui": 162997,
+                                                                        "trackModules": [
+                                                                          "a2-008.module.js"
+                                                                        ],
                                                                         "tracks": 112,
                                                                         "uniqueTrackIds": 112,
                                                                         "sectionCounts": {
@@ -768,10 +773,13 @@
                                                                           "assetsVersion": "v1",
                                                                           "schema": "mlma.catalog.public.v1",
                                                                           "css": 29246,
-                                                                          "json": 53232,
+                                                                          "json": 53253,
                                                                           "dataChunks": 2,
-                                                                          "domain": 218024,
-                                                                          "ui": 161971,
+                                                                          "domain": 230742,
+                                                                          "ui": 162997,
+                                                                          "trackModules": [
+                                                                            "a2-008.module.js"
+                                                                          ],
                                                                           "tracks": 112,
                                                                           "uniqueTrackIds": 112,
                                                                           "sectionCounts": {
@@ -786,10 +794,10 @@
                                                                             "assetsVersion": "v1",
                                                                             "schema": "mlma.catalog.public.v1",
                                                                             "css": 29246,
-                                                                            "json": 53232,
+                                                                            "json": 53240,
                                                                             "dataChunks": 2,
-                                                                            "domain": 218024,
-                                                                            "ui": 161971,
+                                                                            "domain": 229257,
+                                                                            "ui": 162519,
                                                                             "tracks": 112,
                                                                             "uniqueTrackIds": 112,
                                                                             "sectionCounts": {
@@ -803,11 +811,11 @@
                                                                             "previous": {
                                                                               "assetsVersion": "v1",
                                                                               "schema": "mlma.catalog.public.v1",
-                                                                              "css": 29207,
+                                                                              "css": 29246,
                                                                               "json": 53232,
                                                                               "dataChunks": 2,
-                                                                              "domain": 218035,
-                                                                              "ui": 161938,
+                                                                              "domain": 218024,
+                                                                              "ui": 161971,
                                                                               "tracks": 112,
                                                                               "uniqueTrackIds": 112,
                                                                               "sectionCounts": {
@@ -821,11 +829,11 @@
                                                                               "previous": {
                                                                                 "assetsVersion": "v1",
                                                                                 "schema": "mlma.catalog.public.v1",
-                                                                                "css": 29207,
+                                                                                "css": 29246,
                                                                                 "json": 53232,
                                                                                 "dataChunks": 2,
-                                                                                "domain": 218035,
-                                                                                "ui": 161938,
+                                                                                "domain": 218024,
+                                                                                "ui": 161971,
                                                                                 "tracks": 112,
                                                                                 "uniqueTrackIds": 112,
                                                                                 "sectionCounts": {
@@ -861,7 +869,7 @@
                                                                                     "json": 53232,
                                                                                     "dataChunks": 2,
                                                                                     "domain": 218035,
-                                                                                    "ui": 161934,
+                                                                                    "ui": 161938,
                                                                                     "tracks": 112,
                                                                                     "uniqueTrackIds": 112,
                                                                                     "sectionCounts": {
@@ -878,8 +886,8 @@
                                                                                       "css": 29207,
                                                                                       "json": 53232,
                                                                                       "dataChunks": 2,
-                                                                                      "domain": 219042,
-                                                                                      "ui": 162936,
+                                                                                      "domain": 218035,
+                                                                                      "ui": 161938,
                                                                                       "tracks": 112,
                                                                                       "uniqueTrackIds": 112,
                                                                                       "sectionCounts": {
@@ -896,8 +904,8 @@
                                                                                         "css": 29207,
                                                                                         "json": 53232,
                                                                                         "dataChunks": 2,
-                                                                                        "domain": 219251,
-                                                                                        "ui": 162936,
+                                                                                        "domain": 218035,
+                                                                                        "ui": 161934,
                                                                                         "tracks": 112,
                                                                                         "uniqueTrackIds": 112,
                                                                                         "sectionCounts": {
@@ -912,10 +920,10 @@
                                                                                           "assetsVersion": "v1",
                                                                                           "schema": "mlma.catalog.public.v1",
                                                                                           "css": 29207,
-                                                                                          "json": 47266,
+                                                                                          "json": 53232,
                                                                                           "dataChunks": 2,
-                                                                                          "domain": 203174,
-                                                                                          "ui": 151418,
+                                                                                          "domain": 219042,
+                                                                                          "ui": 162936,
                                                                                           "tracks": 112,
                                                                                           "uniqueTrackIds": 112,
                                                                                           "sectionCounts": {
@@ -927,12 +935,50 @@
                                                                                             "A6": 32
                                                                                           },
                                                                                           "previous": {
+                                                                                            "assetsVersion": "v1",
+                                                                                            "schema": "mlma.catalog.public.v1",
                                                                                             "css": 29207,
-                                                                                            "json": 47211,
+                                                                                            "json": 53232,
                                                                                             "dataChunks": 2,
-                                                                                            "domain": 194163,
-                                                                                            "ui": 146792,
-                                                                                            "tracks": 112
+                                                                                            "domain": 219251,
+                                                                                            "ui": 162936,
+                                                                                            "tracks": 112,
+                                                                                            "uniqueTrackIds": 112,
+                                                                                            "sectionCounts": {
+                                                                                              "A1": 16,
+                                                                                              "A2": 16,
+                                                                                              "A3": 17,
+                                                                                              "A4": 17,
+                                                                                              "A5": 14,
+                                                                                              "A6": 32
+                                                                                            },
+                                                                                            "previous": {
+                                                                                              "assetsVersion": "v1",
+                                                                                              "schema": "mlma.catalog.public.v1",
+                                                                                              "css": 29207,
+                                                                                              "json": 47266,
+                                                                                              "dataChunks": 2,
+                                                                                              "domain": 203174,
+                                                                                              "ui": 151418,
+                                                                                              "tracks": 112,
+                                                                                              "uniqueTrackIds": 112,
+                                                                                              "sectionCounts": {
+                                                                                                "A1": 16,
+                                                                                                "A2": 16,
+                                                                                                "A3": 17,
+                                                                                                "A4": 17,
+                                                                                                "A5": 14,
+                                                                                                "A6": 32
+                                                                                              },
+                                                                                              "previous": {
+                                                                                                "css": 29207,
+                                                                                                "json": 47211,
+                                                                                                "dataChunks": 2,
+                                                                                                "domain": 194163,
+                                                                                                "ui": 146792,
+                                                                                                "tracks": 112
+                                                                                              }
+                                                                                            }
                                                                                           }
                                                                                         }
                                                                                       }

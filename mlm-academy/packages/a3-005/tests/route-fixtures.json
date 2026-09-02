@@ -1,0 +1,176 @@
+{
+  "version": "1.0",
+  "trackId": "A3-005",
+  "cases": [
+    {
+      "id": "IN-01",
+      "fromId": "A2-008",
+      "outcomeCode": "NEXT_SCHEDULE",
+      "facts": {
+        "contact.next_action": "SCHEDULE_TALK"
+      },
+      "expected": {
+        "ruleId": "RR2-008",
+        "destinationType": "TRACK",
+        "destinationId": "A3-005"
+      }
+    },
+    {
+      "id": "IN-02",
+      "fromId": "A2-008",
+      "outcomeCode": "NEXT_SCHEDULE",
+      "facts": {
+        "contact.next_action": "WRITE_MESSAGE"
+      },
+      "expected": {
+        "decision": "NO_MATCHING_RULE"
+      }
+    },
+    {
+      "id": "OUT-01",
+      "fromId": "A3-005",
+      "outcomeCode": "MEETING_SCHEDULED",
+      "facts": {
+        "appointment.status": "CONFIRMED"
+      },
+      "expected": {
+        "ruleId": "RR2-023",
+        "destinationType": "TRACK",
+        "destinationId": "A3-010"
+      }
+    },
+    {
+      "id": "OUT-02",
+      "fromId": "A3-005",
+      "outcomeCode": "LATER",
+      "facts": {
+        "appointment.status": "LATER"
+      },
+      "expected": {
+        "ruleId": "RR2-024",
+        "destinationType": "WAIT_UNTIL",
+        "destinationId": ""
+      }
+    },
+    {
+      "id": "OUT-03",
+      "fromId": "A3-005",
+      "outcomeCode": "DECLINED",
+      "facts": {
+        "appointment.status": "DECLINED"
+      },
+      "expected": {
+        "ruleId": "RR2-025",
+        "destinationType": "TRACK",
+        "destinationId": "A5-014"
+      }
+    },
+    {
+      "id": "OUT-04",
+      "fromId": "A3-005",
+      "outcomeCode": "NO_FOLLOW_UP",
+      "facts": {
+        "appointment.status": "CLOSED_NO_FOLLOWUP"
+      },
+      "expected": {
+        "ruleId": "RR3-A3-005-NO-FOLLOW-UP",
+        "destinationType": "DONE",
+        "destinationId": null
+      }
+    },
+    {
+      "id": "NEG-01",
+      "fromId": "A3-005",
+      "outcomeCode": "MEETING_SCHEDULED",
+      "facts": {
+        "appointment.status": "UNCONFIRMED"
+      },
+      "expected": {
+        "decision": "NO_MATCHING_RULE"
+      }
+    },
+    {
+      "id": "NEG-02",
+      "fromId": "A3-005",
+      "outcomeCode": "LATER",
+      "facts": {
+        "appointment.status": "UNCONFIRMED"
+      },
+      "expected": {
+        "decision": "NO_MATCHING_RULE"
+      }
+    },
+    {
+      "id": "NEG-03",
+      "fromId": "A3-005",
+      "outcomeCode": "DECLINED",
+      "facts": {
+        "appointment.status": "LATER"
+      },
+      "expected": {
+        "decision": "NO_MATCHING_RULE"
+      }
+    },
+    {
+      "id": "LOCK-01",
+      "fromId": "A3-005",
+      "outcomeCode": "UNKNOWN",
+      "facts": {},
+      "expected": {
+        "decision": "NO_MATCHING_RULE",
+        "mustNotUseConnectionId": "TR-077"
+      }
+    },
+    {
+      "id": "LOCK-02",
+      "fromId": "A3-005",
+      "outcomeCode": "UNKNOWN",
+      "facts": {},
+      "expected": {
+        "decision": "NO_MATCHING_RULE",
+        "mustNotUseConnectionId": "TR-078"
+      }
+    },
+    {
+      "id": "ACCESS-01",
+      "fromId": "A3-005",
+      "outcomeCode": "MEETING_SCHEDULED",
+      "facts": {
+        "appointment.status": "CONFIRMED"
+      },
+      "context": {
+        "paidNavigationEnabled": false
+      },
+      "expected": {
+        "ruleId": "RR2-023",
+        "locked": true,
+        "destinationUrl": null
+      }
+    },
+    {
+      "id": "DEMO-01",
+      "fromId": "A3-005",
+      "outcomeCode": "MEETING_SCHEDULED",
+      "facts": {
+        "appointment.status": "CONFIRMED"
+      },
+      "context": {
+        "executionMode": "SANDBOX"
+      },
+      "expected": {
+        "decision": "SANDBOX_NO_LIVE_INSTANCE"
+      }
+    },
+    {
+      "id": "LEGACY-01",
+      "fromId": "A3-005",
+      "outcomeCode": "UNKNOWN",
+      "facts": {
+        "legacyNextIds": "A3-008,A3-013"
+      },
+      "expected": {
+        "decision": "NO_MATCHING_RULE"
+      }
+    }
+  ]
+}

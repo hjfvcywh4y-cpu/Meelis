@@ -14,6 +14,9 @@ import publicMetaA3016 from '../server/content/tracks/a3-016/public-meta.json' w
 import contentA3014 from '../server/content/tracks/a3-014/0.1.0/content.json' with { type: 'json' };
 import packageA3014 from '../packages/a3-014/package.json' with { type: 'json' };
 import publicMetaA3014 from '../server/content/tracks/a3-014/public-meta.json' with { type: 'json' };
+import contentA3005 from '../server/content/tracks/a3-005/0.1.0/content.json' with { type: 'json' };
+import packageA3005 from '../packages/a3-005/package.json' with { type: 'json' };
+import publicMetaA3005 from '../server/content/tracks/a3-005/public-meta.json' with { type: 'json' };
 import { normalizeTrackId as catalogNormalize } from './account-core.js';
 
 const BETA_STATUSES = { REVIEW: true, READY: true, PUBLISHED: true };
@@ -60,6 +63,12 @@ const PACKAGES = {
     content: contentA3014,
     pkg: packageA3014,
     publicMeta: publicMetaA3014,
+  },
+  'A3-005': {
+    entityType: 'TRACK',
+    content: contentA3005,
+    pkg: packageA3005,
+    publicMeta: publicMetaA3005,
   },
 };
 
@@ -139,6 +148,10 @@ function matchRule(trackId, outcomeCode, facts) {
     if (String(rule.value) === actual) return rule;
     if (rule.field === 'message.status') {
       const status = String((facts && facts['message.status']) || '');
+      if (String(rule.value) === status) return rule;
+    }
+    if (rule.field === 'appointment.status') {
+      const status = String((facts && facts['appointment.status']) || '');
       if (String(rule.value) === status) return rule;
     }
   }

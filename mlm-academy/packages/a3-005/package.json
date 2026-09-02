@@ -1,0 +1,234 @@
+{
+  "packageVersion": "1.0",
+  "track": {
+    "id": "A3-005",
+    "canonicalId": "A3-005",
+    "entityType": "TRACK",
+    "section": "A3",
+    "domain": "FIRST_CONTACT",
+    "title": "Назначить время и формат разговора",
+    "situation": "Человек отвечает «когда-нибудь созвонимся», но конкретной договорённости нет",
+    "result": "Зафиксированы явно подтверждённые дата, время, часовой пояс, длительность, формат и тема разговора либо законный WAIT/DONE",
+    "audience": "Партнёр после согласия обсудить тему, когда нужно превратить намерение в конкретную добровольную договорённость"
+  },
+  "graphBinding": {
+    "mode": "AUTO_BY_TRACK_ID",
+    "graphVersion": "3.0",
+    "editNeighborPages": false,
+    "unboundConnectionPolicy": "KEEP_AS_LOCKED_NEXT_ACTION_SLOT"
+  },
+  "content": {
+    "version": "0.1.0",
+    "status": "REVIEW",
+    "format": "json",
+    "serverOnly": true,
+    "sourcePath": "server/content/tracks/a3-005/0.1.0",
+    "checksum": "GENERATE_DURING_IMPORT",
+    "releaseNotes": "Полный scheduling-пакет: explicit-consent gate, прозрачная тема, длительность/формат, два реальных слота, точное подтверждение, calendar boundary, 3 base RouteRule + terminal overlay"
+  },
+  "access": {
+    "policy": "ENTITLED",
+    "productCodes": [
+      "MLMA_FULL"
+    ]
+  },
+  "outcomes": [
+    {
+      "code": "MEETING_SCHEDULED",
+      "label": "Разговор подтверждён",
+      "observableFact": "Человек явно подтвердил дату, время, часовой пояс, длительность, формат и прозрачную тему разговора",
+      "requiredFacts": [
+        "appointment.status",
+        "appointment.explicit_confirmation",
+        "appointment.starts_at",
+        "appointment.timezone",
+        "appointment.duration_minutes",
+        "appointment.format_code",
+        "appointment.topic_code",
+        "appointment.calendar_action_code"
+      ]
+    },
+    {
+      "code": "LATER",
+      "label": "Согласовано вернуться позже",
+      "observableFact": "Человек не назначил разговор сейчас, но явно разрешил вернуться по названной дате, событию или собственной инициативе",
+      "requiredFacts": [
+        "appointment.status",
+        "appointment.followup_allowed",
+        "appointment.review_anchor_code"
+      ]
+    },
+    {
+      "code": "DECLINED",
+      "label": "Разговор отклонён",
+      "observableFact": "Человек явно отказался от разговора; отказ записан без переубеждения и обхода границы",
+      "requiredFacts": [
+        "appointment.status",
+        "appointment.decision_source_code"
+      ]
+    },
+    {
+      "code": "NO_FOLLOW_UP",
+      "label": "Нет основания для повторного касания",
+      "observableFact": "Конкретная договорённость не появилась и разрешения на follow-up нет; календарь и напоминания не создаются",
+      "requiredFacts": [
+        "appointment.status",
+        "appointment.no_followup_reason_code"
+      ]
+    }
+  ],
+  "routeRules": [
+    {
+      "ruleId": "RR2-023",
+      "fromId": "A3-005",
+      "outcomeCode": "MEETING_SCHEDULED",
+      "field": "appointment.status",
+      "operator": "=",
+      "value": "CONFIRMED",
+      "destinationType": "TRACK",
+      "destinationId": "A3-010",
+      "reason": "Перед встречей нужна содержательная подготовка",
+      "stopRule": "Не назначать встречу без согласованных даты и формата",
+      "recoveryRule": "WAIT_UNTIL",
+      "priority": 10,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR2-024",
+      "fromId": "A3-005",
+      "outcomeCode": "LATER",
+      "field": "appointment.status",
+      "operator": "=",
+      "value": "LATER",
+      "destinationType": "WAIT_UNTIL",
+      "destinationId": "",
+      "reason": "Вернуться в согласованный момент",
+      "stopRule": "Нет согласованной даты — нет автоматического касания",
+      "recoveryRule": "DONE",
+      "priority": 20,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR2-025",
+      "fromId": "A3-005",
+      "outcomeCode": "DECLINED",
+      "field": "appointment.status",
+      "operator": "=",
+      "value": "DECLINED",
+      "destinationType": "TRACK",
+      "destinationId": "A5-014",
+      "reason": "Корректно закрыть отказ",
+      "stopRule": "Не переубеждать после прямого отказа",
+      "recoveryRule": "DONE",
+      "priority": 30,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR3-A3-005-NO-FOLLOW-UP",
+      "fromId": "A3-005",
+      "outcomeCode": "NO_FOLLOW_UP",
+      "field": "appointment.status",
+      "operator": "=",
+      "value": "CLOSED_NO_FOLLOWUP",
+      "destinationType": "DONE",
+      "destinationId": null,
+      "reason": "Нет явного согласия на встречу или последующее касание; ветка завершается без скрытого напоминания",
+      "stopRule": "Не создавать встречу, календарное событие, автоматический follow-up или новый канал контакта без явного согласия",
+      "recoveryRule": null,
+      "priority": 1,
+      "owner": "Методолог + продукт + privacy",
+      "version": "3.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    }
+  ],
+  "privacy": {
+    "serverAllowedFields": [
+      "track_id",
+      "content_version",
+      "outcome_code",
+      "appointment.status",
+      "appointment.explicit_confirmation",
+      "appointment.starts_at",
+      "appointment.timezone",
+      "appointment.duration_minutes",
+      "appointment.format_code",
+      "appointment.topic_code",
+      "appointment.calendar_action_code",
+      "appointment.followup_allowed",
+      "appointment.review_anchor_code",
+      "appointment.review_at",
+      "appointment.decision_source_code",
+      "appointment.no_followup_reason_code",
+      "risk_flag_codes",
+      "ai_used",
+      "ai_advisory_codes",
+      "route_decision_id",
+      "occurred_at"
+    ],
+    "clientOnlyFields": [
+      "contact_name",
+      "phone",
+      "email",
+      "messenger_handle",
+      "profile_url",
+      "company_name",
+      "contact_card",
+      "topic_text",
+      "location_text",
+      "meeting_link",
+      "counterpart_availability_text",
+      "slot_label_text",
+      "invitation_draft",
+      "confirmation_text",
+      "conversation_quote",
+      "free_text_note",
+      "calendar_title",
+      "calendar_description",
+      "attendee_data"
+    ],
+    "analyticsAllowedFields": [
+      "track_id",
+      "content_version",
+      "outcome_code",
+      "appointment.status",
+      "appointment.explicit_confirmation",
+      "appointment.timezone_region",
+      "appointment.duration_minutes",
+      "appointment.format_code",
+      "appointment.topic_code",
+      "appointment.calendar_action_code",
+      "appointment.followup_allowed",
+      "appointment.review_anchor_code",
+      "appointment.decision_source_code",
+      "appointment.no_followup_reason_code",
+      "risk_flag_codes",
+      "ai_used",
+      "ai_advisory_codes",
+      "destination_type",
+      "destination_id",
+      "duration_bucket"
+    ]
+  },
+  "source": {
+    "files": [
+      "Рыбкин.pdf: 10.2.2, книжные страницы 252–255 (PDF pages 249–252)",
+      "Рыбкин.pdf: 20.3.10–20.3.11, книжные страницы 641–648 — только равный контакт, комфорт и уважение времени",
+      "T0002429.pdf: книжные страницы 36–37 — назначение встречи как отдельный технологический этап",
+      "T0002429.pdf: книжные страницы 348–351 — реалистичные сроки, переносы и жёсткие/гибкие календарные задачи",
+      "MLM_Academy_Track_Matrix_112_v2.xlsx: A3-005, RR2-008, RR2-023/024/025, TR-077/078/080/227",
+      "Библиотека_онтологии_и_конструкций_треков_v2.xlsx: TRACK, stage-gate, фиксация результата, несколько финалов",
+      "БТ_на_трекеры_v2.docx: приложения A.3–A.7",
+      "Жанр.pdf: координационный центр + конструктор договорённости + деловая спокойная тональность",
+      "Сценарии_типовые_наборы.pdf: №9 несколько финалов, №15 stage-gate, №27 выбор по критериям, №51 подготовка→действие→фиксация, №86 согласованное решение",
+      "full-graph-112-v3.json: connectionIndex A3-005"
+    ],
+    "owner": "Методолог MLM Academy",
+    "approvedAt": null
+  }
+}

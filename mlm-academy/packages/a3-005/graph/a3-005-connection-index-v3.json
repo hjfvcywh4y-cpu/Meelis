@@ -1,0 +1,306 @@
+{
+  "snapshotVersion": "1.0",
+  "sourceGraphVersion": "3.0",
+  "sourceGeneratedAt": "2026-08-31T05:42:47.251Z",
+  "node": {
+    "id": "A3-005",
+    "section": "A3",
+    "title": "Назначить время и формат разговора",
+    "situation": "Человек отвечает «когда-нибудь созвонимся»",
+    "result": "Зафиксированы конкретные дата, время, формат и тема разговора",
+    "legacyPriority": "P1",
+    "entityType": "TRACK",
+    "publishSurface": "PUBLIC_TRACK",
+    "canonicalId": "A3-005",
+    "domain": "FIRST_CONTACT",
+    "audience": "Партнёр перед первым сообщением, звонком или договорённостью",
+    "implementationStatus": "NEXT_BUILD",
+    "canonicalUrl": "https://mlmacademy.ru/track?id=a3-005",
+    "sourceCode": "10.2.2",
+    "sourcePages": "252",
+    "legacyNextIds": "A3-008, A3-013"
+  },
+  "sharedReferenceComponent": {
+    "id": "A6-030",
+    "section": "A6",
+    "title": "Выбрать правильные место, темп и длительность разговора",
+    "situation": "Содержательно все верно, но разговор происходит не вовремя и не там",
+    "result": "Контекст разговора настроен под чувствительность темы и ресурс человека",
+    "legacyPriority": "P2",
+    "entityType": "EMBEDDED_TOOL",
+    "publishSurface": "EMBEDDED_TOOL",
+    "canonicalId": "A3-001",
+    "domain": "CLIENT_CYCLE",
+    "audience": "Партнёр после покупки или результата клиента",
+    "implementationStatus": "EMBED_IN_PARENT",
+    "canonicalUrl": "",
+    "sourceCode": "20.3.9–20.3.11",
+    "sourcePages": "637–647",
+    "legacyNextIds": "A3-001, A3-005"
+  },
+  "connectionIndex": {
+    "id": "A3-005",
+    "canonicalId": "A3-005",
+    "entityType": "TRACK",
+    "publishSurface": "PUBLIC_TRACK",
+    "domain": "FIRST_CONTACT",
+    "implementationStatus": "NEXT_BUILD",
+    "incomingDesignConnections": [
+      {
+        "connectionId": "TR-080",
+        "fromId": "A3-006",
+        "fromCanonicalId": "A3-006",
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Назначить время и формат разговора",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": []
+      },
+      {
+        "connectionId": "TR-227",
+        "fromId": "A6-030",
+        "fromCanonicalId": "A3-001",
+        "relationType": "REMEDIATION_RETURN",
+        "userLabel": "Назначить время и формат разговора",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": []
+      }
+    ],
+    "outgoingDesignConnections": [
+      {
+        "connectionId": "TR-077",
+        "toId": "A3-008",
+        "toCanonicalId": "A3-008",
+        "rank": 1,
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Зафиксировать результат разговора и следующий контакт",
+        "conditionHint": "Если после результата «Зафиксированы конкретные дата, время, формат и тема разговора» актуальна ситуация: «После звонка договоренности растворяются».",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": []
+      },
+      {
+        "connectionId": "TR-078",
+        "toId": "A3-013",
+        "toCanonicalId": "A3-013",
+        "rank": 2,
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Собрать карту первой встречи",
+        "conditionHint": "Если после результата «Зафиксированы конкретные дата, время, формат и тема разговора» актуальна ситуация: «Не понимаю, как вести разговор от начала до завершения».",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": []
+      }
+    ],
+    "incomingEffectiveConnections": [
+      {
+        "connectionId": "V3-RR2-008",
+        "fromId": "A2-008",
+        "fromCanonicalId": "A2-008",
+        "relationType": "STRUCTURED_ROUTE_ADDITION",
+        "userLabel": "Назначить время и формат разговора",
+        "activationMode": "ROUTE_RULE",
+        "matchedRouteRuleIds": [
+          "RR2-008"
+        ],
+        "sourceLayer": "STRUCTURED_ROUTE_RULE_V2"
+      },
+      {
+        "connectionId": "TR-080",
+        "fromId": "A3-006",
+        "fromCanonicalId": "A3-006",
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Назначить время и формат разговора",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": [],
+        "sourceLayer": "BASE_DESIGN_GRAPH_V2"
+      },
+      {
+        "connectionId": "TR-227",
+        "fromId": "A6-030",
+        "fromCanonicalId": "A3-001",
+        "relationType": "REMEDIATION_RETURN",
+        "userLabel": "Назначить время и формат разговора",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": [],
+        "sourceLayer": "BASE_DESIGN_GRAPH_V2"
+      }
+    ],
+    "outgoingEffectiveConnections": [
+      {
+        "connectionId": "TR-077",
+        "toId": "A3-008",
+        "toCanonicalId": "A3-008",
+        "rank": 1,
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Зафиксировать результат разговора и следующий контакт",
+        "conditionHint": "Если после результата «Зафиксированы конкретные дата, время, формат и тема разговора» актуальна ситуация: «После звонка договоренности растворяются».",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": [],
+        "sourceLayer": "BASE_DESIGN_GRAPH_V2"
+      },
+      {
+        "connectionId": "TR-078",
+        "toId": "A3-013",
+        "toCanonicalId": "A3-013",
+        "rank": 2,
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Собрать карту первой встречи",
+        "conditionHint": "Если после результата «Зафиксированы конкретные дата, время, формат и тема разговора» актуальна ситуация: «Не понимаю, как вести разговор от начала до завершения».",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": [],
+        "sourceLayer": "BASE_DESIGN_GRAPH_V2"
+      },
+      {
+        "connectionId": "V3-RR2-023",
+        "toId": "A3-010",
+        "toCanonicalId": "A3-010",
+        "rank": 110,
+        "relationType": "STRUCTURED_ROUTE_ADDITION",
+        "userLabel": "Подготовить встречу по существу, а не по скрипту",
+        "conditionHint": "MEETING_SCHEDULED: appointment.status = \"CONFIRMED\"",
+        "activationMode": "ROUTE_RULE",
+        "matchedRouteRuleIds": [
+          "RR2-023"
+        ],
+        "sourceLayer": "STRUCTURED_ROUTE_RULE_V2"
+      },
+      {
+        "connectionId": "V3-RR2-025",
+        "toId": "A5-014",
+        "toCanonicalId": "A5-014",
+        "rank": 130,
+        "relationType": "STRUCTURED_ROUTE_ADDITION",
+        "userLabel": "Завершить отказ корректно и понять следующий шаг",
+        "conditionHint": "DECLINED: appointment.status = \"DECLINED\"",
+        "activationMode": "ROUTE_RULE",
+        "matchedRouteRuleIds": [
+          "RR2-025"
+        ],
+        "sourceLayer": "STRUCTURED_ROUTE_RULE_V2"
+      }
+    ],
+    "outgoingRouteRuleIds": [
+      "RR2-023",
+      "RR2-024",
+      "RR2-025"
+    ],
+    "incomingRouteRuleIds": [
+      "RR2-008"
+    ],
+    "externalEntryRuleIds": [],
+    "placementStatus": "PLACED_IN_GRAPH",
+    "installBehavior": {
+      "registerAllIncomingConnections": true,
+      "registerAllOutgoingConnections": true,
+      "createLockedSlotsForUnboundConnections": true,
+      "activateOnlyByAccessAndRulePolicy": true,
+      "neverInferFromTrackNumber": true
+    }
+  },
+  "inboundRouteRules": [
+    {
+      "ruleId": "RR2-008",
+      "fromId": "A2-008",
+      "outcomeCode": "NEXT_SCHEDULE",
+      "field": "contact.next_action",
+      "operator": "=",
+      "value": "SCHEDULE_TALK",
+      "destinationType": "TRACK",
+      "destinationId": "A3-005",
+      "reason": "Контекст уже создан, осталось договориться о времени",
+      "stopRule": "Не назначать встречу без явного согласия",
+      "recoveryRule": "WAIT_UNTIL",
+      "priority": 40,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    }
+  ],
+  "outboundBaseRouteRules": [
+    {
+      "ruleId": "RR2-023",
+      "fromId": "A3-005",
+      "outcomeCode": "MEETING_SCHEDULED",
+      "field": "appointment.status",
+      "operator": "=",
+      "value": "CONFIRMED",
+      "destinationType": "TRACK",
+      "destinationId": "A3-010",
+      "reason": "Перед встречей нужна содержательная подготовка",
+      "stopRule": "Не назначать встречу без согласованных даты и формата",
+      "recoveryRule": "WAIT_UNTIL",
+      "priority": 10,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR2-024",
+      "fromId": "A3-005",
+      "outcomeCode": "LATER",
+      "field": "appointment.status",
+      "operator": "=",
+      "value": "LATER",
+      "destinationType": "WAIT_UNTIL",
+      "destinationId": "",
+      "reason": "Вернуться в согласованный момент",
+      "stopRule": "Нет согласованной даты — нет автоматического касания",
+      "recoveryRule": "DONE",
+      "priority": 20,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR2-025",
+      "fromId": "A3-005",
+      "outcomeCode": "DECLINED",
+      "field": "appointment.status",
+      "operator": "=",
+      "value": "DECLINED",
+      "destinationType": "TRACK",
+      "destinationId": "A5-014",
+      "reason": "Корректно закрыть отказ",
+      "stopRule": "Не переубеждать после прямого отказа",
+      "recoveryRule": "DONE",
+      "priority": 30,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    }
+  ],
+  "packageTerminalRuleOverlay": {
+    "ruleId": "RR3-A3-005-NO-FOLLOW-UP",
+    "fromId": "A3-005",
+    "outcomeCode": "NO_FOLLOW_UP",
+    "field": "appointment.status",
+    "operator": "=",
+    "value": "CLOSED_NO_FOLLOWUP",
+    "destinationType": "DONE",
+    "destinationId": null,
+    "reason": "Нет явного согласия на встречу или последующее касание; ветка завершается без скрытого напоминания",
+    "stopRule": "Не создавать встречу, календарное событие, автоматический follow-up или новый канал контакта без явного согласия",
+    "recoveryRule": null,
+    "priority": 1,
+    "owner": "Методолог + продукт + privacy",
+    "version": "3.0",
+    "status": "PILOT_DRAFT_TO_TEST"
+  },
+  "expectedCounts": {
+    "incomingDesignConnections": 2,
+    "incomingEffectiveConnections": 3,
+    "outgoingDesignConnections": 2,
+    "outgoingEffectiveConnections": 4,
+    "incomingRouteRules": 1,
+    "outgoingBaseRouteRules": 3,
+    "externalEntryRules": 0,
+    "packageTerminalRuleOverlays": 1,
+    "executableLegacyArchiveEdges": 0
+  },
+  "bindingNotes": [
+    "A2-008→A3-005 enters by RR2-008 only when contact.next_action=SCHEDULE_TALK.",
+    "TR-080 from A3-006 and TR-227 from alias A6-030/canonical A3-001 remain LOCKED_NEXT_ACTION_SLOT.",
+    "TR-077→A3-008 and TR-078→A3-013 remain locked design directions; installation does not turn them into buttons.",
+    "RR2-023→A3-010 and RR2-025→A5-014 are the two rule-derived track connections; RR2-024 is terminal WAIT_UNTIL.",
+    "RR3-A3-005-NO-FOLLOW-UP is a terminal DONE overlay and creates no graph edge.",
+    "A6-030 may be reused later as a shared context component but its canonicalId remains A3-001; this package must not reassign it."
+  ]
+}
