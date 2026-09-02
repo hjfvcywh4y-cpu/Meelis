@@ -1,0 +1,318 @@
+{
+  "version": "1.0",
+  "trackId": "A3-014",
+  "cases": [
+    {
+      "id": "PKG-001",
+      "category": "PACKAGE",
+      "requirement": "Track ID is exactly A3-014",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "PKG-002",
+      "category": "PACKAGE",
+      "requirement": "Entity type is REMEDIATION and surface remains on-demand",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "PKG-003",
+      "category": "PACKAGE",
+      "requirement": "Content is server-only REVIEW 0.1.0",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "PKG-004",
+      "category": "PACKAGE",
+      "requirement": "Graph binding is AUTO_BY_TRACK_ID v3 and neighbor pages are untouched",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "PKG-005",
+      "category": "PACKAGE",
+      "requirement": "All five package RouteRules remain PILOT_DRAFT_TO_TEST",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "GRAPH-001",
+      "category": "GRAPH",
+      "requirement": "Incoming design count is 0 and incoming effective count is 1",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "GRAPH-002",
+      "category": "GRAPH",
+      "requirement": "RR2-016 is the only existing incoming RouteRule",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "GRAPH-003",
+      "category": "GRAPH",
+      "requirement": "Outgoing design and effective counts are both 2",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "GRAPH-004",
+      "category": "GRAPH",
+      "requirement": "TR-095 points to A3-013 and TR-096 points to A6-020",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "GRAPH-005",
+      "category": "GRAPH",
+      "requirement": "Locked slots do not become visible merely because content is installed",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "GRAPH-006",
+      "category": "GRAPH",
+      "requirement": "Return rule uses RETURN_TO_ROUTE; RR2-016 parent resolves to A3-002 without editing A3-002",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "GRAPH-007",
+      "category": "GRAPH",
+      "requirement": "WAIT_UNTIL and EXPERT overlays create no graph edges",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-001",
+      "category": "FLOW",
+      "requirement": "Readiness gate is the first interactive decision",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-002",
+      "category": "FLOW",
+      "requirement": "Normal nervousness is not automatically routed to therapy or support",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-003",
+      "category": "FLOW",
+      "requirement": "User names one observable target action",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-004",
+      "category": "FLOW",
+      "requirement": "User names one feared event, not a personality label",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-005",
+      "category": "FLOW",
+      "requirement": "Current fact, prediction and generalized past event are separate codes",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-006",
+      "category": "FLOW",
+      "requirement": "The ethical frame preserves the other person right to decline",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-007",
+      "category": "FLOW",
+      "requirement": "Exactly one support is selected before action",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-008",
+      "category": "FLOW",
+      "requirement": "Micro-exposure is safe, limited and not an exam",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-009",
+      "category": "FLOW",
+      "requirement": "Success does not require anxiety to disappear",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "FLOW-010",
+      "category": "FLOW",
+      "requirement": "ACTION_READY requires a due code",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ROUTE-001",
+      "category": "ROUTING",
+      "requirement": "A3-002 BLOCKED_ANXIETY enters A3-014 through RR2-016",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ROUTE-002",
+      "category": "ROUTING",
+      "requirement": "ACTION_READY plus RETURN_TO_ORIGIN returns to the runtime parent route",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ROUTE-003",
+      "category": "ROUTING",
+      "requirement": "SUPPORT_REQUIRED plus MEETING_MAP routes to A3-013",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ROUTE-004",
+      "category": "ROUTING",
+      "requirement": "SUPPORT_REQUIRED plus SPECIFIC_FEAR routes to A6-020",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ROUTE-005",
+      "category": "ROUTING",
+      "requirement": "WAIT_FOR_RESOURCE plus PAUSE routes to WAIT_UNTIL",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ROUTE-006",
+      "category": "ROUTING",
+      "requirement": "OUT_OF_SCOPE_SUPPORT plus OUT_OF_SCOPE routes to EXPERT",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ROUTE-007",
+      "category": "ROUTING",
+      "requirement": "No legacy nextTrackId is executed as a fallback",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ROUTE-008",
+      "category": "ROUTING",
+      "requirement": "No route executes in PUBLIC_DEMO SANDBOX",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "AI-001",
+      "category": "AI",
+      "requirement": "AI is optional and disabled by default",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "AI-002",
+      "category": "AI",
+      "requirement": "Structured mode with no free text is the default",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "AI-003",
+      "category": "AI",
+      "requirement": "Sanitized text requires explicit consent and is not persisted",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "AI-004",
+      "category": "AI",
+      "requirement": "AI output is advisory and deterministic gate remains required",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "AI-005",
+      "category": "AI",
+      "requirement": "AI cannot diagnose or estimate severity",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "AI-006",
+      "category": "AI",
+      "requirement": "AI cannot choose readiness or execute routing",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "AI-007",
+      "category": "AI",
+      "requirement": "AI cannot generate pressure, false certainty or auto-send",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "PRIV-001",
+      "category": "PRIVACY",
+      "requirement": "Contact identity and message text remain client-only",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "PRIV-002",
+      "category": "PRIVACY",
+      "requirement": "Fear narrative and health details remain client-only",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "PRIV-003",
+      "category": "PRIVACY",
+      "requirement": "Server receives structured minimum only",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "PRIV-004",
+      "category": "PRIVACY",
+      "requirement": "Analytics exclude sensitive free text and health scoring",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "PRIV-005",
+      "category": "PRIVACY",
+      "requirement": "OUT_OF_SCOPE records a handoff code, not a diagnosis",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ACCESS-001",
+      "category": "ACCESS",
+      "requirement": "Public metadata has no body",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ACCESS-002",
+      "category": "ACCESS",
+      "requirement": "Sandbox creates no live instance, write or entitlement",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ACCESS-003",
+      "category": "ACCESS",
+      "requirement": "Paid content still requires server identity and entitlement",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "ACCESS-004",
+      "category": "ACCESS",
+      "requirement": "Installing the package does not enable payments or paid navigation",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "SOURCE-001",
+      "category": "SOURCES",
+      "requirement": "Rybkin concrete-client preparation is preserved",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "SOURCE-002",
+      "category": "SOURCES",
+      "requirement": "Generalization from one refusal is explicitly corrected",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "SOURCE-003",
+      "category": "SOURCES",
+      "requirement": "Implied consent is transformed into readiness for any answer",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "SOURCE-004",
+      "category": "SOURCES",
+      "requirement": "Support preserves autonomy and avoids manager dominance",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "QA-001",
+      "category": "QA",
+      "requirement": "All JSON files parse and unknown package fields are rejected",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "QA-002",
+      "category": "QA",
+      "requirement": "Route fixtures include positive, negative, wait and out-of-scope cases",
+      "status": "MUST_PASS"
+    }
+  ]
+}

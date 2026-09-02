@@ -1,0 +1,179 @@
+{
+  "trackId": "A3-014",
+  "version": "0.1.0",
+  "status": "REVIEW",
+  "entityType": "REMEDIATION",
+  "estimatedMinutes": 7,
+  "promise": "Не убрать волнение любой ценой, а понять барьер, подобрать опору и сделать уместный следующий шаг либо честно остановиться.",
+  "prerequisite": "Есть конкретное действие в контакте, которое пользователь понимает, но откладывает из-за волнения.",
+  "safetyNotice": "Это рабочая подготовка, не диагностика и не лечение. Сильное, длительное или небезопасное состояние завершает трек и переводит к человеческой поддержке.",
+  "steps": [
+    {
+      "id": "readiness_gate",
+      "title": "Сначала проверьте ресурс",
+      "type": "SAFETY_GATE",
+      "instruction": "Отметьте только рабочую готовность: продолжить, сделать паузу или остановить упражнение и обратиться за человеческой поддержкой. Не описывайте диагнозы и подробности здоровья.",
+      "fields": [
+        "readinessGateCode"
+      ],
+      "branches": [
+        "CONTINUE",
+        "PAUSE",
+        "OUT_OF_SCOPE"
+      ]
+    },
+    {
+      "id": "name_target_action",
+      "title": "Назовите одно действие",
+      "instruction": "Не «провести успешную встречу», а наблюдаемое действие: написать первое сообщение, начать звонок, договориться о времени или подготовить встречу.",
+      "fields": [
+        "originTrackId",
+        "targetActionCode"
+      ]
+    },
+    {
+      "id": "locate_fear_event",
+      "title": "Найдите конкретный пугающий момент",
+      "instruction": "Выберите, чего именно вы ожидаете: молчания, отказа, оценки, потери слов, ущерба отношениям или давления на себя «обязательно убедить».",
+      "fields": [
+        "fearEventCode",
+        "fearText"
+      ],
+      "localOnly": [
+        "fearText"
+      ]
+    },
+    {
+      "id": "fact_prediction_split",
+      "title": "Отделите факт от прогноза",
+      "instruction": "Отметьте: это уже произошло сейчас, это прогноз или перенос одного прошлого опыта на все будущие контакты. Один отказ не доказывает общий сценарий.",
+      "fields": [
+        "predictionCode",
+        "evidenceCode",
+        "predictedConsequenceText",
+        "pastExperienceText"
+      ],
+      "localOnly": [
+        "predictedConsequenceText",
+        "pastExperienceText"
+      ]
+    },
+    {
+      "id": "ethical_reference_frame",
+      "title": "Верните рабочую опору",
+      "instruction": "Сформулируйте не обещание успеха, а роль: честно открыть тему, услышать ответ, сохранить право человека отказаться и выполнить свою часть разговора.",
+      "fields": [
+        "supportNote"
+      ],
+      "localOnly": [
+        "supportNote"
+      ]
+    },
+    {
+      "id": "choose_one_support",
+      "title": "Выберите одну опору",
+      "instruction": "Только одна: первая фраза, карта встречи, одна репетиция, поддерживающее присутствие наставника, удобное место или короткая пауза. Опора не должна превращаться в бесконечную подготовку.",
+      "fields": [
+        "supportCode",
+        "openingLine"
+      ],
+      "localOnly": [
+        "openingLine"
+      ]
+    },
+    {
+      "id": "micro_exposure",
+      "title": "Сделайте безопасную пробу",
+      "instruction": "Произнесите первую фразу вслух, наберите сообщение без отправки, откройте карточку контакта, назначьте время или один раз прорепетируйте начало. Одна проба — не экзамен.",
+      "fields": [
+        "microStepCode"
+      ]
+    },
+    {
+      "id": "optional_ai_mirror",
+      "title": "Необязательное AI-зеркало",
+      "optional": true,
+      "featureFlag": "AI_ANXIETY_MIRROR_ENABLED",
+      "contract": "../ai/anxiety-mirror-contract.json",
+      "instruction": "AI может подсветить обобщение, слишком большой шаг или неподходящую опору. AI не оценивает психическое здоровье и не решает, готов ли пользователь."
+    },
+    {
+      "id": "decision_gate",
+      "title": "Назначьте следующий ход",
+      "type": "DECISION_GATE",
+      "decisions": [
+        {
+          "code": "ACTION_READY",
+          "label": "Вернуться к исходному действию",
+          "routeRuleId": "RR3-A3-014-RETURN"
+        },
+        {
+          "code": "SUPPORT_REQUIRED",
+          "nextNeedCode": "MEETING_MAP",
+          "label": "Нужна карта первой встречи",
+          "routeRuleId": "RR3-A3-014-MEETING-MAP"
+        },
+        {
+          "code": "SUPPORT_REQUIRED",
+          "nextNeedCode": "SPECIFIC_FEAR",
+          "label": "Нужен разбор конкретного страха",
+          "routeRuleId": "RR3-A3-014-SPECIFIC-FEAR"
+        },
+        {
+          "code": "WAIT_FOR_RESOURCE",
+          "label": "Сделать паузу",
+          "routeRuleId": "RR3-A3-014-WAIT"
+        },
+        {
+          "code": "OUT_OF_SCOPE_SUPPORT",
+          "label": "Остановить трек и обратиться за поддержкой",
+          "routeRuleId": "RR3-A3-014-OUT-OF-SCOPE"
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "usefulReframes": [
+      {
+        "prediction": "Если мне откажут, значит я не умею общаться",
+        "reframe": "Отказ — ответ одного человека в одной ситуации; моя задача — сделать уважительное действие и услышать ответ"
+      },
+      {
+        "prediction": "Я должен выглядеть полностью уверенным",
+        "reframe": "Мне достаточно говорить ясно, не обещать лишнего и позволить паузу"
+      },
+      {
+        "prediction": "Я обязан убедить",
+        "reframe": "Я обязан быть честным; решение остаётся у человека"
+      }
+    ],
+    "unsafePatterns": [
+      {
+        "pattern": "Обещание «у тебя точно получится»",
+        "risk": "FALSE_CERTAINTY"
+      },
+      {
+        "pattern": "Стыд за волнение или сравнение с сильными продавцами",
+        "risk": "SHAME_PRESSURE"
+      },
+      {
+        "pattern": "Многократная репетиция вместо действия",
+        "risk": "PREPARATION_AVOIDANCE"
+      },
+      {
+        "pattern": "AI-диагноз или оценка тяжести состояния",
+        "risk": "MENTAL_HEALTH_INFERENCE"
+      },
+      {
+        "pattern": "Контакт вопреки усталости, нездоровью или явной границе",
+        "risk": "FORCED_ACTION"
+      }
+    ]
+  },
+  "finalArtifact": {
+    "name": "Карточка готовности к одному действию",
+    "storage": "CLIENT_LOCAL",
+    "handoff": "RETURN_TO_ORIGIN_OR_ROUTE_DECISION",
+    "serverSummaryOnly": true
+  }
+}
