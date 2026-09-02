@@ -1,0 +1,178 @@
+{
+  "trackId": "A3-016",
+  "version": "0.1.0",
+  "status": "REVIEW",
+  "entityType": "REMEDIATION",
+  "estimatedMinutes": 6,
+  "promise": "Не придумать красивый предлог, а проверить, существует ли честное основание для контакта.",
+  "prerequisite": "Есть конкретный человек или категория отношений, но основание первого обращения неясно.",
+  "steps": [
+    {
+      "id": "strip_cover_story",
+      "title": "Уберите вежливую легенду",
+      "instruction": "Ответьте себе: если убрать приветствие, комплимент и презентацию, зачем вы хотите обратиться именно к этому человеку?",
+      "fields": [
+        "honestPurposeText"
+      ],
+      "localOnly": true
+    },
+    {
+      "id": "find_real_fact",
+      "title": "Назовите факт, который действительно произошёл",
+      "instruction": "Выберите источник контекста и запишите факт без догадок о человеке.",
+      "fields": [
+        "factSourceCode",
+        "factText"
+      ],
+      "examplesAllowed": [
+        "Человек сам спросил",
+        "Вы договорились вернуться к теме",
+        "Был общий разговор или событие",
+        "Есть рекомендация с разрешением",
+        "Вы прямо раскрываете коммерческое предложение"
+      ],
+      "examplesBlocked": [
+        "Мне надо закрыть план",
+        "Он наверняка нуждается",
+        "Придумать повод ради касания",
+        "Использовать тяжёлую личную ситуацию"
+      ]
+    },
+    {
+      "id": "relevance_and_now",
+      "title": "Проверьте: почему этот человек и почему сейчас",
+      "instruction": "Зафиксируйте релевантность без оценки кошелька, здоровья, статуса или предполагаемой выгоды от человека.",
+      "fields": [
+        "whyThisPersonText",
+        "whyNowText",
+        "timingCode"
+      ]
+    },
+    {
+      "id": "transparency_test",
+      "title": "Тест прозрачности",
+      "instruction": "Сможете ли вы сказать человеку тот же смысл: «Я обращаюсь, потому что…» — без дружеской маски и скрытого перехода?",
+      "fields": [
+        "intentCode",
+        "disclosureStatus",
+        "permissionStatus",
+        "manualChecks.purposeCanBeNamed",
+        "manualChecks.canSaySameMeaningAloud"
+      ]
+    },
+    {
+      "id": "boundary_gate",
+      "title": "Граница контакта",
+      "instruction": "Проверьте запрет, прошлый отказ, неразрешённый канал и уязвимый контекст. Эти сигналы сильнее любого продающего повода.",
+      "fields": [
+        "manualChecks.timingIsRespectful",
+        "manualChecks.noVulnerabilityExploitation",
+        "manualChecks.noProhibition",
+        "manualChecks.keepsRightToDecline"
+      ]
+    },
+    {
+      "id": "embedded_a6_027",
+      "title": "Необязательное наблюдение без лести",
+      "componentId": "A6-027",
+      "optional": true,
+      "instruction": "Если открытие опирается на наблюдение, оно должно быть конкретным и искренним, не требовать ответной симпатии и не использоваться как приманка. Если искренней основы нет — пропустите компонент.",
+      "output": "one_specific_observation_local_only"
+    },
+    {
+      "id": "assemble_reason_card",
+      "title": "Соберите карточку настоящего повода",
+      "formula": [
+        "Что реально произошло",
+        "Почему это относится к этому человеку",
+        "Моя честная цель",
+        "Почему момент уместен",
+        "Как сохранить право отказаться"
+      ],
+      "artifactSchema": "../contracts/reason-card.schema.json",
+      "note": "Это ещё не готовое сообщение. При REASON_FOUND карточка локально передаётся в A3-002."
+    },
+    {
+      "id": "optional_ai_review",
+      "title": "Необязательная проверка AI-критиком",
+      "optional": true,
+      "featureFlag": "AI_REASON_CRITIC_ENABLED",
+      "contract": "../ai/reason-critic-contract.json",
+      "note": "AI ищет риски и задаёт вопросы, но не подтверждает факты и не принимает маршрутное решение."
+    },
+    {
+      "id": "decision_gate",
+      "title": "Решение",
+      "type": "DECISION_GATE",
+      "decisions": [
+        {
+          "code": "REASON_FOUND",
+          "label": "Повод честный — перейти к сообщению",
+          "routeRuleId": "RR2-012"
+        },
+        {
+          "code": "NO_REASON",
+          "label": "Настоящего повода пока нет",
+          "routeRuleId": "RR2-013"
+        },
+        {
+          "code": "CONTACT_STOPPED",
+          "label": "Контакт неуместен или запрещён",
+          "routeRuleId": "RR3-A3-016-STOP"
+        }
+      ]
+    }
+  ],
+  "examples": {
+    "safe": [
+      {
+        "context": "Человек сам спросил, чем вы сейчас занимаетесь",
+        "reason": "Ответить на его вопрос и спросить, хочет ли он узнать подробнее"
+      },
+      {
+        "context": "Вы договорились вернуться к теме после отпуска",
+        "reason": "Выполнить договорённость в согласованное время"
+      },
+      {
+        "context": "Вас представили по рекомендации и дали разрешение написать",
+        "reason": "Назвать рекомендателя и предложить короткий разговор без обязательств"
+      },
+      {
+        "context": "Вы прямо хотите сделать коммерческое предложение",
+        "reason": "Не маскировать цель; коротко обозначить тему и спросить разрешение"
+      }
+    ],
+    "unsafe": [
+      {
+        "pattern": "Как ты? Сто лет не общались… → скрытая презентация",
+        "risk": "HIDDEN_INTENT"
+      },
+      {
+        "pattern": "Увидел и сразу подумал о тебе",
+        "risk": "FABRICATED_RELEVANCE"
+      },
+      {
+        "pattern": "Только сегодня уникальный шанс",
+        "risk": "FAKE_URGENCY"
+      },
+      {
+        "pattern": "Комплимент как приманка перед продажей",
+        "risk": "FLATTERY_AS_LEVER"
+      },
+      {
+        "pattern": "Использование болезни, долга, потери работы или тревоги",
+        "risk": "VULNERABILITY_EXPLOITATION"
+      },
+      {
+        "pattern": "Новый канал после просьбы не писать",
+        "risk": "BOUNDARY_BYPASS"
+      }
+    ]
+  },
+  "finalArtifact": {
+    "name": "Карточка настоящего повода",
+    "storage": "CLIENT_LOCAL",
+    "handoff": "A3-002_LOCAL_CONTEXT",
+    "serverSummaryOnly": true
+  }
+}

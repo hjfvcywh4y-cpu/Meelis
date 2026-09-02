@@ -8,6 +8,9 @@ import publicMetaA3002 from '../server/content/tracks/a3-002/public-meta.json' w
 import contentA3008 from '../server/system-actions/a3-008/0.1.0/content.json' with { type: 'json' };
 import uiA3008 from '../server/system-actions/a3-008/0.1.0/ui-definition.json' with { type: 'json' };
 import packageA3008 from '../packages/a3-008/package.json' with { type: 'json' };
+import contentA3016 from '../server/content/tracks/a3-016/0.1.0/content.json' with { type: 'json' };
+import packageA3016 from '../packages/a3-016/package.json' with { type: 'json' };
+import publicMetaA3016 from '../server/content/tracks/a3-016/public-meta.json' with { type: 'json' };
 import { normalizeTrackId as catalogNormalize } from './account-core.js';
 
 const BETA_STATUSES = { REVIEW: true, READY: true, PUBLISHED: true };
@@ -43,10 +46,19 @@ const PACKAGES = {
     pkg: packageA3008,
     publicMeta: { title: packageA3008.track.title, situation: packageA3008.track.situation },
   },
+  'A3-016': {
+    entityType: 'REMEDIATION',
+    content: contentA3016,
+    pkg: packageA3016,
+    publicMeta: publicMetaA3016,
+  },
 };
 
 function trackPackageIds() {
-  return Object.keys(PACKAGES).filter((id) => PACKAGES[id].entityType === 'TRACK');
+  return Object.keys(PACKAGES).filter((id) => {
+    const type = PACKAGES[id].entityType;
+    return type === 'TRACK' || type === 'REMEDIATION';
+  });
 }
 
 function installedIds() {
@@ -317,7 +329,7 @@ export async function handleArchitectureBeta(request, env, ctx) {
     if (!inBetaCohort(auth.row, env)) return denyCohort(origin, json);
     const body = ctx.body || {};
     const trackId = catalogNormalize(body.trackId) || String(body.trackId || '').toUpperCase();
-    if (!PACKAGES[trackId] || PACKAGES[trackId].entityType !== 'TRACK' || installedIds().indexOf(trackId) < 0) {
+    if (!PACKAGES[trackId] || !['TRACK', 'REMEDIATION'].includes(PACKAGES[trackId].entityType) || installedIds().indexOf(trackId) < 0) {
       return json({ ok: false, code: 'unknown_track' }, 400, origin);
     }
     const state = await loadBeta(env, auth.session.userKey);

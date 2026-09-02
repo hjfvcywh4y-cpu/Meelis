@@ -27,8 +27,40 @@
       pack.querySelectorAll('[data-mlma-block]').forEach(function (field) {
         data.blocks[field.getAttribute('data-mlma-block')] = field.value;
       });
+      data.manualChecks = data.manualChecks || {};
+      pack.querySelectorAll('[data-mlma-manual]').forEach(function (field) {
+        data.manualChecks[field.getAttribute('data-mlma-manual')] = field.checked;
+      });
       D.packageClient.save(trackId, data);
       return data;
+    }
+
+    function afterDecision(res, clientData, outcome) {
+      var decision = res && res.decision;
+      if (decision && decision.destinationType === 'SYSTEM_ACTION' && D.systemActionRuntime) {
+        if (
+          D.systemActionRuntime.openFromDecision(rootEl, decision, {
+            sourceTrackId: trackId,
+            sourceInstanceId: D._instanceId,
+            sourceOutcomeCode: outcome,
+          }, remount)
+        ) {
+          return;
+        }
+      }
+      var nextCard = decision && decision.next;
+      if (outcome === 'REASON_FOUND' && D.packageClient.handoffReasonCardToA3002) {
+        D.packageClient.handoffReasonCardToA3002(clientData || D.packageClient.load(trackId));
+      }
+      if (nextCard && nextCard.status === 'done') window.location.href = '/my';
+      else if (nextCard && nextCard.preparing) window.location.href = '/my';
+      else if (nextCard && nextCard.href) {
+        window.location.href = nextCard.href + (String(nextCard.href).indexOf('?') >= 0 ? '&' : '?') + 'run=1';
+      } else if (outcome === 'REASON_FOUND') {
+        window.location.href = '/track?id=a3-002&run=1';
+      } else {
+        window.location.href = '/my';
+      }
     }
 
     pack.querySelectorAll('[data-mlma-pkg-next]').forEach(function (el) {
@@ -63,7 +95,7 @@
         var outcome = el.getAttribute('data-outcome');
         var next = el.getAttribute('data-next');
         if (outcome && D.submitTrackOutcome && D._instanceId) {
-          D.submitTrackOutcome(D._instanceId, outcome, D.packageClient.serverPayload(trackId, outcome)).then(function (res) {
+          D.submitTrackOutcome(D._instanceId, outcome, D.packageClient.serverPayload(trackId, outcome, D.packageClient.load(trackId))).then(function (res) {
             var decision = res && res.decision;
             if (decision && decision.destinationType === 'SYSTEM_ACTION' && D.systemActionRuntime) {
               if (
@@ -99,27 +131,37 @@
         persistLocal();
         var outcome = el.getAttribute('data-outcome');
         if (!outcome) return;
-        var facts = D.packageClient.serverPayload(trackId, outcome);
+        var facts = D.packageClient.serverPayload(trackId, outcome, D.packageClient.load(trackId));
         if (D._instanceId && D.submitTrackOutcome) {
           D.submitTrackOutcome(D._instanceId, outcome, facts).then(function (res) {
-            var decision = res && res.decision;
-            if (decision && decision.destinationType === 'SYSTEM_ACTION' && D.systemActionRuntime) {
-              if (
-                D.systemActionRuntime.openFromDecision(rootEl, decision, {
-                  sourceTrackId: trackId,
-                  sourceInstanceId: D._instanceId,
-                  sourceOutcomeCode: outcome,
-                }, remount)
-              ) {
-                return;
-              }
-            }
-            var nextCard = decision && decision.next;
-            if (nextCard && nextCard.status === 'done') window.location.href = '/my';
-            else if (nextCard && nextCard.preparing) window.location.href = nextCard.href || '/my';
-            else if (nextCard && nextCard.href) window.location.href = nextCard.href + '&run=1';
+            afterDecision(res, D.packageClient.load(trackId), outcome);
           });
         }
+      });
+    });
+
+    pack.querySelectorAll('[data-mlma-remediation-decision]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var data = persistLocal();
+        var outcome = el.getAttribute('data-mlma-remediation-decision');
+        if (!outcome || !D._instanceId || !D.submitTrackOutcome) return;
+        if (outcome === 'NO_REASON' && !data.noReasonCode) {
+          var code = window.prompt('Код причины отсутствия повода (ONLY_MY_SALES_PLAN / PURPOSE_HIDDEN / TIMING_INAPPROPRIATE / NO_SHARED_CONTEXT)');
+          if (!code) return;
+          data.noReasonCode = code;
+          data.reviewTriggerCode = data.reviewTriggerCode || 'NEW_SHARED_CONTEXT';
+          D.packageClient.save(trackId, data);
+        }
+        if (outcome === 'CONTACT_STOPPED' && !data.stopCode) {
+          var stop = window.prompt('Код остановки (EXPLICIT_REFUSAL / DO_NOT_CONTACT / VULNERABILITY_EXPLOITATION / BOUNDARY_BYPASS)');
+          if (!stop) return;
+          data.stopCode = stop;
+          D.packageClient.save(trackId, data);
+        }
+        var facts = D.packageClient.serverPayload(trackId, outcome, data);
+        D.submitTrackOutcome(D._instanceId, outcome, facts).then(function (res) {
+          afterDecision(res, data, outcome);
+        });
       });
     });
   }

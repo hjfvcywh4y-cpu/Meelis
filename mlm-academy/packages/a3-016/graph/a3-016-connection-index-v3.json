@@ -1,0 +1,334 @@
+{
+  "snapshotVersion": "1.0",
+  "sourceGraphVersion": "3.0",
+  "sourceGeneratedAt": "2026-08-31T05:42:47.251Z",
+  "node": {
+    "id": "A3-016",
+    "section": "A3",
+    "title": "Открыть разговор через настоящий повод",
+    "situation": "Начинаю с заученной презентации или неловкого small talk",
+    "result": "Сформулировано и произнесено естественное открытие разговора",
+    "legacyPriority": "P0",
+    "entityType": "REMEDIATION",
+    "publishSurface": "ON_DEMAND_TRACK",
+    "canonicalId": "A3-016",
+    "domain": "FIRST_CONTACT",
+    "audience": "Партнёр перед первым сообщением, звонком или договорённостью",
+    "implementationStatus": "NEXT_BUILD",
+    "canonicalUrl": "https://mlmacademy.ru/track?id=a3-016",
+    "sourceCode": "12.1–12.1.3",
+    "sourcePages": "316–317",
+    "legacyNextIds": "A4-001, A3-017"
+  },
+  "embeddedCanonicalComponent": {
+    "id": "A6-027",
+    "section": "A6",
+    "title": "Сделать уместный комплимент без лести",
+    "situation": "Комплимент звучит искусственно или как прием",
+    "result": "Сформулировано конкретное наблюдение без скрытого требования",
+    "legacyPriority": "P2",
+    "entityType": "EMBEDDED_TOOL",
+    "publishSurface": "EMBEDDED_TOOL",
+    "canonicalId": "A3-016",
+    "domain": "SKILL_GROWTH",
+    "audience": "Партнёр и наставник: работа с подтверждённым дефицитом",
+    "implementationStatus": "EMBED_IN_PARENT",
+    "canonicalUrl": "",
+    "sourceCode": "20.3.5; приложение 13",
+    "sourcePages": "622; 716",
+    "legacyNextIds": "A3-016, A6-026"
+  },
+  "connectionIndex": {
+    "id": "A3-016",
+    "canonicalId": "A3-016",
+    "entityType": "REMEDIATION",
+    "publishSurface": "ON_DEMAND_TRACK",
+    "domain": "FIRST_CONTACT",
+    "implementationStatus": "NEXT_BUILD",
+    "incomingDesignConnections": [
+      {
+        "connectionId": "TR-071",
+        "fromId": "A3-002",
+        "fromCanonicalId": "A3-002",
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Открыть разговор через настоящий повод",
+        "activationMode": "ROUTE_RULE",
+        "matchedRouteRuleIds": [
+          "RR2-015"
+        ]
+      },
+      {
+        "connectionId": "TR-093",
+        "fromId": "A3-013",
+        "fromCanonicalId": "A3-013",
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Открыть разговор через настоящий повод",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": []
+      },
+      {
+        "connectionId": "TR-097",
+        "fromId": "A3-015",
+        "fromCanonicalId": "A3-015",
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Открыть разговор через настоящий повод",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": []
+      },
+      {
+        "connectionId": "TR-220",
+        "fromId": "A6-027",
+        "fromCanonicalId": "A3-016",
+        "relationType": "REMEDIATION_RETURN",
+        "userLabel": "Открыть разговор через настоящий повод",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": []
+      }
+    ],
+    "outgoingDesignConnections": [
+      {
+        "connectionId": "TR-099",
+        "toId": "A4-001",
+        "toCanonicalId": "A4-001",
+        "rank": 1,
+        "relationType": "WORKFLOW_FORWARD",
+        "userLabel": "Перейти от рассказа о продукте к исследованию человека",
+        "conditionHint": "Если после результата «Сформулировано и произнесено естественное открытие разговора» актуальна ситуация: «Я слишком рано начинаю презентовать».",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": []
+      },
+      {
+        "connectionId": "TR-100",
+        "toId": "A3-017",
+        "toCanonicalId": "A3-017",
+        "rank": 2,
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Создать доверие без попытки понравиться любой ценой",
+        "conditionHint": "Если после результата «Сформулировано и произнесено естественное открытие разговора» актуальна ситуация: «Стараюсь произвести впечатление и перестаю слышать человека».",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": []
+      }
+    ],
+    "incomingEffectiveConnections": [
+      {
+        "connectionId": "V3-RR2-009",
+        "fromId": "A2-008",
+        "fromCanonicalId": "A2-008",
+        "relationType": "STRUCTURED_ROUTE_ADDITION",
+        "userLabel": "Открыть разговор через настоящий повод",
+        "activationMode": "ROUTE_RULE",
+        "matchedRouteRuleIds": [
+          "RR2-009"
+        ],
+        "sourceLayer": "STRUCTURED_ROUTE_RULE_V2"
+      },
+      {
+        "connectionId": "TR-071",
+        "fromId": "A3-002",
+        "fromCanonicalId": "A3-002",
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Открыть разговор через настоящий повод",
+        "activationMode": "ROUTE_RULE",
+        "matchedRouteRuleIds": [
+          "RR2-015"
+        ],
+        "sourceLayer": "BASE_DESIGN_GRAPH_V2"
+      },
+      {
+        "connectionId": "TR-093",
+        "fromId": "A3-013",
+        "fromCanonicalId": "A3-013",
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Открыть разговор через настоящий повод",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": [],
+        "sourceLayer": "BASE_DESIGN_GRAPH_V2"
+      },
+      {
+        "connectionId": "TR-097",
+        "fromId": "A3-015",
+        "fromCanonicalId": "A3-015",
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Открыть разговор через настоящий повод",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": [],
+        "sourceLayer": "BASE_DESIGN_GRAPH_V2"
+      },
+      {
+        "connectionId": "TR-220",
+        "fromId": "A6-027",
+        "fromCanonicalId": "A3-016",
+        "relationType": "REMEDIATION_RETURN",
+        "userLabel": "Открыть разговор через настоящий повод",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": [],
+        "sourceLayer": "BASE_DESIGN_GRAPH_V2"
+      }
+    ],
+    "outgoingEffectiveConnections": [
+      {
+        "connectionId": "TR-099",
+        "toId": "A4-001",
+        "toCanonicalId": "A4-001",
+        "rank": 1,
+        "relationType": "WORKFLOW_FORWARD",
+        "userLabel": "Перейти от рассказа о продукте к исследованию человека",
+        "conditionHint": "Если после результата «Сформулировано и произнесено естественное открытие разговора» актуальна ситуация: «Я слишком рано начинаю презентовать».",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": [],
+        "sourceLayer": "BASE_DESIGN_GRAPH_V2"
+      },
+      {
+        "connectionId": "TR-100",
+        "toId": "A3-017",
+        "toCanonicalId": "A3-017",
+        "rank": 2,
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Создать доверие без попытки понравиться любой ценой",
+        "conditionHint": "Если после результата «Сформулировано и произнесено естественное открытие разговора» актуальна ситуация: «Стараюсь произвести впечатление и перестаю слышать человека».",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": [],
+        "sourceLayer": "BASE_DESIGN_GRAPH_V2"
+      },
+      {
+        "connectionId": "V3-RR2-012",
+        "toId": "A3-002",
+        "toCanonicalId": "A3-002",
+        "rank": 110,
+        "relationType": "STRUCTURED_ROUTE_ADDITION",
+        "userLabel": "Написать первое сообщение теплому контакту",
+        "conditionHint": "REASON_FOUND: real_reason = true",
+        "activationMode": "ROUTE_RULE",
+        "matchedRouteRuleIds": [
+          "RR2-012"
+        ],
+        "sourceLayer": "STRUCTURED_ROUTE_RULE_V2"
+      }
+    ],
+    "outgoingRouteRuleIds": [
+      "RR2-012",
+      "RR2-013"
+    ],
+    "incomingRouteRuleIds": [
+      "RR2-009",
+      "RR2-015"
+    ],
+    "externalEntryRuleIds": [],
+    "placementStatus": "PLACED_IN_GRAPH",
+    "installBehavior": {
+      "registerAllIncomingConnections": true,
+      "registerAllOutgoingConnections": true,
+      "createLockedSlotsForUnboundConnections": true,
+      "activateOnlyByAccessAndRulePolicy": true,
+      "neverInferFromTrackNumber": true
+    }
+  },
+  "inboundRouteRules": [
+    {
+      "ruleId": "RR2-009",
+      "fromId": "A2-008",
+      "outcomeCode": "NEXT_NEEDS_REASON",
+      "field": "contact.real_reason",
+      "operator": "=",
+      "value": false,
+      "destinationType": "TRACK",
+      "destinationId": "A3-016",
+      "reason": "Сначала нужен настоящий повод, иначе текст будет натянутым",
+      "stopRule": "Не использовать искусственную срочность и скрытую цель",
+      "recoveryRule": "WAIT_UNTIL",
+      "priority": 50,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR2-015",
+      "fromId": "A3-002",
+      "outcomeCode": "MESSAGE_NOT_SENT_NO_REASON",
+      "field": "message.status",
+      "operator": "=",
+      "value": "BLOCKED_REASON",
+      "destinationType": "TRACK",
+      "destinationId": "A3-016",
+      "reason": "Причина не выглядит настоящей",
+      "stopRule": "Не маскировать продажу под дружеский разговор",
+      "recoveryRule": "WAIT_UNTIL",
+      "priority": 20,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    }
+  ],
+  "outboundBaseRouteRules": [
+    {
+      "ruleId": "RR2-012",
+      "fromId": "A3-016",
+      "outcomeCode": "REASON_FOUND",
+      "field": "real_reason",
+      "operator": "=",
+      "value": true,
+      "destinationType": "TRACK",
+      "destinationId": "A3-002",
+      "reason": "Настоящий повод найден и может быть честно назван",
+      "stopRule": "Если повод нельзя назвать человеку — он не подходит",
+      "recoveryRule": "WAIT_UNTIL",
+      "priority": 10,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR2-013",
+      "fromId": "A3-016",
+      "outcomeCode": "NO_REASON",
+      "field": "real_reason",
+      "operator": "=",
+      "value": false,
+      "destinationType": "WAIT_UNTIL",
+      "destinationId": "",
+      "reason": "Не писать до появления реального контекста",
+      "stopRule": "Не генерировать предлог ради касания",
+      "recoveryRule": "DONE",
+      "priority": 20,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    }
+  ],
+  "packageTerminalRuleOverlay": {
+    "ruleId": "RR3-A3-016-STOP",
+    "fromId": "A3-016",
+    "outcomeCode": "CONTACT_STOPPED",
+    "field": "contact_allowed",
+    "operator": "=",
+    "value": false,
+    "destinationType": "DONE",
+    "destinationId": null,
+    "reason": "Явный запрет, отказ или эксплуатация уязвимой ситуации требуют завершить ветку, а не ждать нового предлога",
+    "stopRule": "Не предлагать другой канал, обход запрета, повторный контакт или способ замаскировать намерение",
+    "recoveryRule": null,
+    "priority": 1,
+    "owner": "Методолог + продукт + privacy",
+    "version": "3.0",
+    "status": "PILOT_DRAFT_TO_TEST"
+  },
+  "expectedCounts": {
+    "incomingDesignConnections": 4,
+    "incomingEffectiveConnections": 5,
+    "outgoingDesignConnections": 2,
+    "outgoingEffectiveConnections": 3,
+    "incomingRouteRules": 2,
+    "outgoingBaseRouteRules": 2,
+    "externalEntryRules": 0,
+    "packageTerminalRuleOverlays": 1,
+    "executableLegacyArchiveEdges": 0
+  },
+  "bindingNotes": [
+    "A2-008→A3-016 by RR2-009 and A3-002→A3-016 by RR2-015 are executable only under the existing access/rule policy.",
+    "A3-013, A3-015 and alias A6-027→A3-016 remain LOCKED_NEXT_ACTION_SLOT without structured incoming RouteRule.",
+    "RR2-012 returns to A3-002 only after the deterministic reason gate passes.",
+    "RR2-013 is WAIT_UNTIL and therefore does not create a track-to-track connection.",
+    "RR3-A3-016-STOP is a package terminal overlay; it creates no graph edge and must not mutate full graph v3.",
+    "TR-099→A4-001 and TR-100→A3-017 remain locked design directions."
+  ]
+}
