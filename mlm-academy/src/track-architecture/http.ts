@@ -8,7 +8,8 @@ import {
 import { decideContentAccess, decideInstanceCreation } from './access';
 import { overlayPublicCard, publicMetaResponse, toPublicTrackMeta } from './public-meta';
 import { resolveTrackId, canPublishAsStandaloneLesson } from './resolver';
-import { createTrackInstance, submitOutcome, RuntimeRejectedError } from './runtime';
+import { createTrackInstance, submitOutcome, submitSystemActionOutcome, RuntimeRejectedError } from './runtime';
+import { isA3008SystemActionRequest } from './tracks/a3-008';
 import { importArchitectureSource } from './importer';
 import { getArchitectureStore } from './seed';
 import { stripUnsafeFacts } from './privacy';
@@ -17,7 +18,7 @@ import { processPaymentEvent } from './payments';
 import { normalizeTrackId } from '../domain/routes';
 import { connectionsForTrack } from './store';
 import { ProductionRepositoryNotConfiguredError } from './postgres';
-import { isRegisteredBeta, safeReturnTo } from './beta';
+import { isRegisteredBeta, safeReturnTo, installedPackageOpenForBeta } from './beta';
 import { parseCookieValue, verifyRegisteredSession } from './session';
 import { buildCabinet, destinationCard, isMentorEvent, possibleContinuations } from './cabinet';
 import type { AccessContext, ArchitectureFlags, RouteDecision, RouteMode } from './types';
@@ -228,6 +229,43 @@ export async function handleArchitectureRequest(
     if (!access.userId || !(access.verified || access.registered)) return json({ ok: false, code: 'AUTH_REQUIRED' }, 401);
     const instanceId = path.split('/')[4];
     const body = await safeJson(request);
+    if (isA3008SystemActionRequest(body)) {
+      if (!isRegisteredBeta(access, flags)) {
+        return json({ ok: false, code: 'denied', lockReason: 'ENTITLEMENT_REQUIRED' }, 403);
+      }
+      const content = store.getContent('A3-008');
+      if (!content || !installedPackageOpenForBeta(content)) {
+        return json({ ok: false, code: 'denied', lockReason: 'CONTENT_UNAVAILABLE' }, 403);
+      }
+      try {
+        const result = submitSystemActionOutcome(store, {
+          userId: access.userId,
+          sourceInstanceId: instanceId,
+          body,
+          access,
+          flags,
+          mode: modeFromAccess(access, flags),
+        });
+        if (result.error) return json({ ok: false, code: result.error }, result.status || 400);
+        const instance = store.getInstance(instanceId);
+        return json({
+          ok: true,
+          duplicate: result.duplicate,
+          outcomeId: result.outcomeId,
+          decision: {
+            ...userDecisionView(result.decision, access),
+            next: destinationCard(
+              store,
+              result.decision.destinationId,
+              result.decision.destinationType,
+              instance?.trackId || String(body.sourceTrackId || ''),
+            ),
+          },
+        });
+      } catch {
+        return json({ ok: false, code: 'instance_not_found' }, 404);
+      }
+    }
     if (!body.clientEventId) return json({ ok: false, code: 'client_event_required' }, 400);
     try {
       const result = submitOutcome(store, {
@@ -240,18 +278,41 @@ export async function handleArchitectureRequest(
         flags,
         mode: modeFromAccess(access, flags),
       });
+      const instance = store.getInstance(instanceId);
       return json({
         ok: true,
         duplicate: result.duplicate,
         outcomeId: result.outcomeId,
         decision: {
           ...userDecisionView(result.decision, access),
-          next: destinationCard(store, result.decision.destinationId, result.decision.destinationType),
+          next: destinationCard(
+            store,
+            result.decision.destinationId,
+            result.decision.destinationType,
+            instance?.trackId || null,
+          ),
         },
       });
     } catch {
       return json({ ok: false, code: 'instance_not_found' }, 404);
     }
+  }
+
+  if (path.startsWith('/api/v1/system-actions/') && path.endsWith('/content') && method === 'GET') {
+    const id = normalizeTrackId(path.split('/')[4] || '');
+    if (!id || id !== 'A3-008') return json({ ok: false, code: 'unknown_system_action' }, 404);
+    if (!isRegisteredBeta(access, flags)) return json({ ok: false, code: 'denied', lockReason: 'AUTH_REQUIRED' }, 401);
+    const content = store.getContent('A3-008');
+    if (!content || !installedPackageOpenForBeta(content)) {
+      return json({ ok: false, code: 'denied', lockReason: 'CONTENT_UNAVAILABLE' }, 403);
+    }
+    return json({
+      ok: true,
+      systemActionId: id,
+      contentVersion: content.contentVersion,
+      body: content.body,
+      beta: true,
+    });
   }
 
   if (path === '/api/v1/me/cabinet' && method === 'GET') {

@@ -143,7 +143,12 @@ export function decideRoute(store: RouteEngineStore, context: RouteContext): Rou
     : undefined;
 
   let destinationUrl: string | null = null;
-  if (destinationId && destinationNeedsNavigation(destinationType) && (betaNav || paidNav)) {
+  if (
+    destinationId &&
+    destinationType !== 'SYSTEM_ACTION' &&
+    destinationNeedsNavigation(destinationType) &&
+    paidNav
+  ) {
     destinationUrl = trackUrl(destinationId);
   }
 

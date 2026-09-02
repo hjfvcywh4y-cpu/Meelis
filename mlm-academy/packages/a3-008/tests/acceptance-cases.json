@@ -1,0 +1,246 @@
+{
+  "version": "1.0",
+  "trackId": "A3-008",
+  "cases": [
+    {
+      "id": "A3-008-001",
+      "title": "Registry identity",
+      "assertion": "A3-008 resolves as SYSTEM_ACTION with publishSurface SYSTEM_UI; not as TRACK.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-002",
+      "title": "No standalone page",
+      "assertion": "Installing the package does not create a normal learning page or a new A3-008 track instance.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-003",
+      "title": "Source instance required",
+      "assertion": "Request without a valid owned source instance is rejected.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-004",
+      "title": "Server identity required",
+      "assertion": "Anonymous and tilda_unverified identities receive 403.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-005",
+      "title": "Entitlement AND",
+      "assertion": "Verified identity without entitlement or MLMA_FULL product grant receives 403.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-006",
+      "title": "Cross-user ownership",
+      "assertion": "A user cannot record an outcome for another user’s source instance.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-007",
+      "title": "PUBLIC_DEMO isolation",
+      "assertion": "Sandbox demo creates no instance, outcome event, decision or entitlement.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-008",
+      "title": "Client facts rejected",
+      "assertion": "Name, phone, email, message text, transcript and free text note are rejected or stripped before persistence/logging.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-009",
+      "title": "Meeting validation",
+      "assertion": "MEETING_CONFIRMED requires meeting_at and meeting_format_code.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-010",
+      "title": "Meeting routing",
+      "assertion": "RESULT_MEETING matches only RR2-026 and targets A3-010.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-011",
+      "title": "Later permission gate",
+      "assertion": "LATER without explicit follow_up_permission=true is rejected and cannot route to A5-010.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-012",
+      "title": "Later date gate",
+      "assertion": "LATER without next_action_at is rejected.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-013",
+      "title": "Later routing",
+      "assertion": "Valid RESULT_LATER matches RR2-027 and targets A5-010.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-014",
+      "title": "Refusal is final",
+      "assertion": "RESULT_REFUSAL matches RR2-028 and targets A5-014 without an objection-handling detour.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-015",
+      "title": "No reply waits",
+      "assertion": "RESULT_NO_REPLY matches RR2-029 and returns WAIT_UNTIL without a destination track URL.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-016",
+      "title": "Retry maximum",
+      "assertion": "NO_REPLY accepts retry_count 0 or 1 and rejects values above 1.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-017",
+      "title": "No automatic follow-up",
+      "assertion": "WAIT_UNTIL creates no outbound message or scheduled contact job.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-018",
+      "title": "Referral permission gate",
+      "assertion": "REFERRAL_WITH_PERMISSION requires referral_permission_confirmed=true.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-019",
+      "title": "Referral privacy",
+      "assertion": "Referral PII is client-only and does not appear in server body, logs or analytics.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-020",
+      "title": "Referral routing",
+      "assertion": "Valid RESULT_REFERRAL matches RR2-030 and targets A3-003.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-021",
+      "title": "Done terminal",
+      "assertion": "RESULT_DONE matches RR2-031 and returns DONE with no destination URL.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-022",
+      "title": "Idempotent replay",
+      "assertion": "Repeating the same scoped idempotency key returns the same outcome event and decision.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-023",
+      "title": "Concurrent idempotency",
+      "assertion": "Concurrent duplicate submissions create exactly one outcome event.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-024",
+      "title": "Idempotency isolation",
+      "assertion": "The same idempotency key under a different principal or source instance does not collide.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-025",
+      "title": "Atomic decision",
+      "assertion": "Outcome event cannot commit without its RouteDecision.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-026",
+      "title": "Correction append-only",
+      "assertion": "A permitted correction creates a superseding event and preserves history.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-027",
+      "title": "Consumed correction blocked",
+      "assertion": "Correction after a downstream live instance starts returns 409 OUTCOME_ALREADY_CONSUMED.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-028",
+      "title": "Paid navigation off",
+      "assertion": "With PAID_TRACK_NAVIGATION_ENABLED=false, a track decision is locked and destinationUrl is null.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-029",
+      "title": "Draft production clamp",
+      "assertion": "PILOT_DRAFT_TO_TEST rules do not execute in production mode.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-030",
+      "title": "Pilot rule execution",
+      "assertion": "In explicit non-production pilot mode, each of the six outcomes matches its intended draft rule.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-031",
+      "title": "Locked design outputs",
+      "assertion": "TR-083 to A3-013 and TR-084 to A6-010 stay invisible locked slots.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-032",
+      "title": "Inbound A3-002 adapter",
+      "assertion": "RR2-014 opens A3-008 after MESSAGE_SENT without preselecting the contact result.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-033",
+      "title": "Inbound A2-013 adapter",
+      "assertion": "RR2-017 opens A3-008 after REFERRAL_REQUEST_SENT without preselecting the contact result.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-034",
+      "title": "Inbound A3-003 adapter",
+      "assertion": "RR2-020 opens A3-008 after CALL_COMPLETED without preselecting the contact result.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-035",
+      "title": "Other inbound slots remain locked",
+      "assertion": "A3-004, A3-005, A4-016 and A6-029 do not open A3-008 without structured rules.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-036",
+      "title": "Analytics allowlist",
+      "assertion": "All analytics events contain only allowed coarse structured fields.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-037",
+      "title": "No AI transmission",
+      "assertion": "A3-008 performs deterministic validation/routing and sends no facts to an AI provider.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-038",
+      "title": "Production store fail closed",
+      "assertion": "Production without configured PostgreSQL repository returns 503 STORAGE_UNCONFIGURED.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-039",
+      "title": "Graph integrity",
+      "assertion": "Package install does not mutate 253 effective track connections or neighboring pages.",
+      "status": "MUST_PASS"
+    },
+    {
+      "id": "A3-008-040",
+      "title": "No production side effects",
+      "assertion": "No deploy, production migration, payment activation or paid-navigation activation occurs.",
+      "status": "MUST_PASS"
+    }
+  ]
+}

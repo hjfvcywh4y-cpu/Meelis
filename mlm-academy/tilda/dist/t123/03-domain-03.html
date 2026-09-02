@@ -1,4 +1,4 @@
-<!-- Блок T123: доменная логика 3/16 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: доменная логика 3/17 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
 /**
  * Репозитории кабинета. localStorage — временный fallback и источник миграции.
@@ -811,6 +811,13 @@
       outcomeCode: outcomeCode,
       facts: facts || {},
     }).catch(function () { return null; });
+  };
+  api.submitSystemActionOutcome = function (instanceId, payload) {
+    var repo = getRepo();
+    if (!repo || !repo.request) return Promise.resolve(null);
+    return repo.request('/v1/track-instances/' + encodeURIComponent(instanceId) + '/outcomes', payload).catch(function () {
+      return null;
+    });
   };
   api.enqueueOutbox = enqueue;
   api.LocalRepo = LocalRepo;

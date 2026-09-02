@@ -206,6 +206,8 @@ export interface TrackInstanceRecord {
   lastStepId?: string | null;
   lastStepLabel?: string | null;
   lastMentorEvent?: string | null;
+  pendingSystemActionId?: string | null;
+  lastDecisionTrackId?: string | null;
 }
 
 export interface TrackOutcomeRecord {

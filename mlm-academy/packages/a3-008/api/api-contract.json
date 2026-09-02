@@ -1,0 +1,69 @@
+{
+  "version": "1.0",
+  "principle": "Use the existing outcome endpoint; do not create a parallel public routing API.",
+  "endpoint": {
+    "method": "POST",
+    "path": "/api/v1/track-instances/:sourceInstanceId/outcomes",
+    "bodySchema": "../contracts/outcome-recorder.schema.json",
+    "responseSchema": "../contracts/route-decision.schema.json",
+    "authentication": "verified server session",
+    "authorization": [
+      "verified identity",
+      "entitlement",
+      "MLMA_FULL product grant",
+      "source instance ownership",
+      "published source-track content",
+      "live execution mode"
+    ],
+    "idempotencyScope": [
+      "principal_id",
+      "source_instance_id",
+      "idempotency_key"
+    ],
+    "transaction": [
+      "Resolve and verify the source instance and its owner.",
+      "Reject PUBLIC_DEMO/SANDBOX and non-LIVE source contexts without writing.",
+      "Validate body and strip any fields outside the allowlist.",
+      "Insert or replay one immutable outcome event by idempotency scope.",
+      "Call decideRoute() using the structured facts and existing RouteRule.",
+      "Persist the RouteDecision in the same transaction or fail closed.",
+      "Return the saved outcome event and decision; never return client-only facts."
+    ],
+    "statuses": {
+      "200": "Idempotent replay of an existing result",
+      "201": "Outcome and decision recorded",
+      "400": "Schema or conditional validation failed",
+      "401": "No verified server identity",
+      "403": "No entitlement/product grant, no ownership, or sandbox/live boundary violation",
+      "404": "Source instance or track not found",
+      "409": "Correction requested after downstream outcome was consumed",
+      "422": "Outcome is structurally valid but cannot satisfy the selected RouteRule",
+      "503": "Production repository is unavailable or unconfigured"
+    }
+  },
+  "fieldMapping": {
+    "systemActionId": "system_action_id",
+    "actionVersion": "action_version",
+    "sourceTrackId": "source_track_id",
+    "sourceInstanceId": "source_instance_id",
+    "sourceOutcomeCode": "source_outcome_code",
+    "contactCardRef": "contact_card_ref",
+    "contact.outcome": "contact.outcome",
+    "occurredAt": "occurred_at",
+    "meetingAt": "meeting_at",
+    "meetingFormatCode": "meeting_format_code",
+    "followUpPermission": "follow_up_permission",
+    "nextActionAt": "next_action_at",
+    "referralPermissionConfirmed": "referral_permission_confirmed",
+    "waitUntil": "wait_until",
+    "retryCount": "retry_count",
+    "stopCode": "stop_code",
+    "idempotencyKey": "idempotency_key",
+    "supersedesOutcomeId": "supersedes_outcome_id"
+  },
+  "forbiddenEndpoints": [
+    "No GET endpoint that exposes outcome history across users",
+    "No public POST /api/v1/system-actions/a3-008 that accepts a user id from the client",
+    "No endpoint that accepts name, phone, email, message text, transcript or free text note"
+  ]
+}

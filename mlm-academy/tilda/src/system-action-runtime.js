@@ -1,0 +1,187 @@
+/**
+ * Minimal system-action UI for A3-008 OutcomeRecorderPanel.
+ * Mounts on the source track page; does not create a standalone lesson page.
+ */
+(function (root) {
+  'use strict';
+
+  var D = root.MLMA;
+  if (!D) return;
+
+  function esc(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function contactRef(trackId) {
+    return 'cc-' + String(trackId || '').toLowerCase() + '-' + Date.now().toString(36);
+  }
+
+  function readField(form, name) {
+    var el = form.querySelector('[name="' + name + '"]');
+    if (!el) return undefined;
+    if (el.type === 'checkbox') return el.checked;
+    return el.value;
+  }
+
+  function renderConditional(def, outcome) {
+    var fields = (def.conditionalFields && def.conditionalFields[outcome]) || [];
+    var html = '';
+    for (var i = 0; i < fields.length; i += 1) {
+      var field = fields[i];
+      html += '<label class="mlma-meta" style="display:block;margin-top:12px">' + esc(field.label) + '</label>';
+      if (field.type === 'datetime') {
+        html += '<input class="mlma-field" type="datetime-local" name="' + esc(field.field) + '"' + (field.required ? ' required' : '') + '>';
+      } else if (field.type === 'confirmation') {
+        html +=
+          '<label style="display:flex;gap:8px;margin-top:8px"><input type="checkbox" name="' +
+          esc(field.field) +
+          '"' +
+          (field.required ? ' required' : '') +
+          '> ' +
+          esc(field.label) +
+          '</label>';
+      } else if (field.type === 'counter') {
+        html +=
+          '<input class="mlma-field" type="number" name="' +
+          esc(field.field) +
+          '" min="' +
+          esc(field.minimum) +
+          '" max="' +
+          esc(field.maximum) +
+          '" value="0"' +
+          (field.required ? ' required' : '') +
+          '>';
+      } else if (field.type === 'choice') {
+        html += '<select class="mlma-field" name="' + esc(field.field) + '"' + (field.required ? ' required' : '') + '>';
+        html += '<option value="">Выберите</option>';
+        ['ONLINE', 'PHONE', 'IN_PERSON', 'OTHER'].forEach(function (code) {
+          html += '<option value="' + code + '">' + code + '</option>';
+        });
+        ['NO_NEXT_ACTION', 'USER_STOPPED', 'CONTACT_BOUNDARY', 'NOT_RELEVANT', 'OTHER_STRUCTURED'].forEach(function (code) {
+          html += '<option value="' + code + '">' + code + '</option>';
+        });
+        html += '</select>';
+      } else {
+        html +=
+          '<input class="mlma-field" type="text" name="' +
+          esc(field.field) +
+          '" data-local-only="1"' +
+          (field.required ? ' required' : '') +
+          '>';
+      }
+    }
+    return html;
+  }
+
+  function renderPanel(def, ctx) {
+    var html =
+      '<section id="mlma-system-action" class="mlma-card mlma-pad" data-system-action="' +
+      esc(def.systemActionId) +
+      '"><h2 class="mlma-h3">' +
+      esc(def.heading) +
+      '</h2><p class="mlma-muted">' +
+      esc(def.intro) +
+      '</p><form id="mlma-system-action-form"><div class="mlma-actions" style="margin-top:16px;display:grid;gap:8px">';
+    for (var i = 0; i < (def.choices || []).length; i += 1) {
+      var choice = def.choices[i];
+      html +=
+        '<label style="display:flex;gap:8px;align-items:flex-start"><input type="radio" name="contactOutcome" value="' +
+        esc(choice.storedValue) +
+        '" data-outcome-code="' +
+        esc(choice.outcomeCode) +
+        '"> <span>' +
+        esc(choice.label) +
+        '</span></label>';
+    }
+    html += '</div><div id="mlma-system-action-fields" style="margin-top:12px"></div>';
+    html +=
+      '<div class="mlma-actions" style="margin-top:16px;display:grid;gap:8px"><button type="submit" class="mlma-btn mlma-btn-primary">Зафиксировать результат</button>' +
+      '<button type="button" class="mlma-btn" data-mlma-system-cancel> Вернуться без сохранения</button></div></form></section>';
+    return html;
+  }
+
+  function bindPanel(rootEl, def, ctx, onDone) {
+    var panel = rootEl.querySelector('#mlma-system-action');
+    if (!panel) return;
+    var form = panel.querySelector('#mlma-system-action-form');
+    var fieldsHost = panel.querySelector('#mlma-system-action-fields');
+    form.querySelectorAll('input[name="contactOutcome"]').forEach(function (radio) {
+      radio.addEventListener('change', function () {
+        fieldsHost.innerHTML = renderConditional(def, radio.value);
+      });
+    });
+    var cancel = panel.querySelector('[data-mlma-system-cancel]');
+    if (cancel) {
+      cancel.addEventListener('click', function () {
+        panel.remove();
+      });
+    }
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var selected = form.querySelector('input[name="contactOutcome"]:checked');
+      if (!selected) return;
+      var outcome = selected.value;
+      var payload = {
+        systemActionId: 'A3-008',
+        actionVersion: '0.1.0',
+        sourceTrackId: ctx.sourceTrackId,
+        sourceInstanceId: ctx.sourceInstanceId,
+        sourceOutcomeCode: ctx.sourceOutcomeCode || 'MESSAGE_SENT',
+        contactCardRef: ctx.contactCardRef || contactRef(ctx.sourceTrackId),
+        contact: { outcome: outcome },
+        occurredAt: new Date().toISOString(),
+        idempotencyKey: 'idem-' + ctx.sourceInstanceId + '-' + Date.now().toString(36),
+      };
+      ['meetingAt', 'meetingFormatCode', 'followUpPermission', 'nextActionAt', 'referralPermissionConfirmed', 'waitUntil', 'retryCount', 'stopCode'].forEach(function (key) {
+        var value = readField(form, key);
+        if (value !== undefined && value !== '') payload[key] = value;
+      });
+      if (payload.retryCount != null) payload.retryCount = Number(payload.retryCount);
+      if (D.submitSystemActionOutcome) {
+        D.submitSystemActionOutcome(ctx.sourceInstanceId, payload).then(function (res) {
+          if (onDone) onDone(res);
+        });
+      }
+    });
+  }
+
+  function openFromDecision(rootEl, decision, ctx, remount) {
+    if (!decision || decision.destinationType !== 'SYSTEM_ACTION' || decision.destinationId !== 'A3-008') return false;
+    var next = decision.next || {};
+    if (next.status === 'preparing' || next.preparing) return false;
+    var def = (D._systemActionDef && D._systemActionDef['A3-008']) || null;
+    if (!def) return false;
+    var host = rootEl.querySelector('#mlma-system-action-host') || rootEl;
+    var existing = host.querySelector('#mlma-system-action');
+    if (existing) existing.remove();
+    var mount = document.createElement('div');
+    mount.id = 'mlma-system-action-host';
+    mount.innerHTML = renderPanel(def, ctx);
+    host.appendChild(mount);
+    bindPanel(mount, def, ctx, function (res) {
+      var card = res && res.decision && res.decision.next;
+      if (card && card.status === 'done') window.location.href = '/my';
+      else if (card && card.href && card.status === 'ready') {
+        window.location.href = card.href + (String(card.href).indexOf('?') >= 0 ? '&' : '?') + 'run=1';
+      } else if (card && card.status === 'preparing') {
+        window.location.href = '/my';
+      } else if (remount) remount(rootEl);
+      else window.location.href = '/my';
+    });
+    return true;
+  }
+
+  D.systemActionRuntime = {
+    renderPanel: renderPanel,
+    bindPanel: bindPanel,
+    openFromDecision: openFromDecision,
+    setDefinition: function (id, def) {
+      D._systemActionDef = D._systemActionDef || {};
+      D._systemActionDef[id] = def;
+    },
+  };
+})(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);

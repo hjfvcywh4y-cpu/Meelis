@@ -810,6 +810,13 @@
       facts: facts || {},
     }).catch(function () { return null; });
   };
+  api.submitSystemActionOutcome = function (instanceId, payload) {
+    var repo = getRepo();
+    if (!repo || !repo.request) return Promise.resolve(null);
+    return repo.request('/v1/track-instances/' + encodeURIComponent(instanceId) + '/outcomes', payload).catch(function () {
+      return null;
+    });
+  };
   api.enqueueOutbox = enqueue;
   api.LocalRepo = LocalRepo;
   api.readPendingTrackId = readPendingTrackId;

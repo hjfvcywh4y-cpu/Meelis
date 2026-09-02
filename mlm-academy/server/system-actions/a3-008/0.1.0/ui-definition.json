@@ -1,0 +1,160 @@
+{
+  "version": "0.1.0",
+  "systemActionId": "A3-008",
+  "componentName": "OutcomeRecorderPanel",
+  "publishSurface": "SYSTEM_UI",
+  "createsStandaloneTrackPage": false,
+  "createsTrackInstance": false,
+  "requiresSourceTrackInstance": true,
+  "mountMode": "AFTER_FIELD_ACTION_OR_FROM_PENDING_ACTION",
+  "heading": "Что произошло?",
+  "intro": "Отметьте факт. Личные данные и текст разговора останутся у вас.",
+  "choices": [
+    {
+      "outcomeCode": "RESULT_MEETING",
+      "storedValue": "MEETING_CONFIRMED",
+      "label": "Встреча подтверждена",
+      "routeRuleId": "RR2-026"
+    },
+    {
+      "outcomeCode": "RESULT_LATER",
+      "storedValue": "LATER",
+      "label": "Попросил вернуться позже",
+      "routeRuleId": "RR2-027"
+    },
+    {
+      "outcomeCode": "RESULT_REFUSAL",
+      "storedValue": "REFUSAL",
+      "label": "Отказался",
+      "routeRuleId": "RR2-028"
+    },
+    {
+      "outcomeCode": "RESULT_NO_REPLY",
+      "storedValue": "NO_REPLY",
+      "label": "Пока не ответил",
+      "routeRuleId": "RR2-029"
+    },
+    {
+      "outcomeCode": "RESULT_REFERRAL",
+      "storedValue": "REFERRAL_WITH_PERMISSION",
+      "label": "Дал рекомендацию с разрешением",
+      "routeRuleId": "RR2-030"
+    },
+    {
+      "outcomeCode": "RESULT_DONE",
+      "storedValue": "NO_NEXT_ACTION",
+      "label": "Следующего действия нет",
+      "routeRuleId": "RR2-031"
+    }
+  ],
+  "conditionalFields": {
+    "MEETING_CONFIRMED": [
+      {
+        "field": "meetingAt",
+        "type": "datetime",
+        "required": true,
+        "label": "Когда встреча"
+      },
+      {
+        "field": "meetingFormatCode",
+        "type": "choice",
+        "required": true,
+        "label": "Формат"
+      },
+      {
+        "field": "meetingLocation",
+        "type": "local-only-text",
+        "required": false,
+        "label": "Где встреча — останется на устройстве"
+      }
+    ],
+    "LATER": [
+      {
+        "field": "followUpPermission",
+        "type": "confirmation",
+        "required": true,
+        "requiredValue": true,
+        "label": "Человек сам разрешил вернуться позже"
+      },
+      {
+        "field": "nextActionAt",
+        "type": "datetime",
+        "required": true,
+        "label": "Когда вернуться"
+      }
+    ],
+    "REFUSAL": [],
+    "NO_REPLY": [
+      {
+        "field": "waitUntil",
+        "type": "datetime",
+        "required": true,
+        "label": "До какого момента ждать"
+      },
+      {
+        "field": "retryCount",
+        "type": "counter",
+        "required": true,
+        "minimum": 0,
+        "maximum": 1,
+        "label": "Сколько корректных повторов уже было"
+      }
+    ],
+    "REFERRAL_WITH_PERMISSION": [
+      {
+        "field": "referralPermissionConfirmed",
+        "type": "confirmation",
+        "required": true,
+        "requiredValue": true,
+        "label": "Есть разрешение связаться с рекомендованным человеком"
+      },
+      {
+        "field": "referralDetails",
+        "type": "local-only-contact",
+        "required": false,
+        "label": "Данные рекомендации — только на устройстве"
+      }
+    ],
+    "NO_NEXT_ACTION": [
+      {
+        "field": "stopCode",
+        "type": "choice",
+        "required": true,
+        "label": "Почему ветка завершена"
+      }
+    ]
+  },
+  "actions": [
+    {
+      "id": "save",
+      "label": "Зафиксировать результат",
+      "behavior": "submit_existing_outcome_endpoint",
+      "primary": true
+    },
+    {
+      "id": "cancel",
+      "label": "Вернуться без сохранения",
+      "behavior": "close_panel",
+      "primary": false
+    }
+  ],
+  "afterSave": {
+    "paidNavigationDisabled": "Show a neutral saved state and locked next-action preview without URL.",
+    "routeTrack": "Show the next action; only expose a destination URL when server access and paid navigation flags allow it.",
+    "routeWait": "Show the wait-until state; do not contact automatically.",
+    "routeDone": "Show a completed branch with no upsell disguised as a next step."
+  },
+  "accessibility": [
+    "Keyboard reachable",
+    "Visible focus",
+    "Labels bound to controls",
+    "Error summary announced",
+    "No color-only status"
+  ],
+  "copyRules": [
+    "Do not call refusal an objection",
+    "Do not pressure after refusal",
+    "Do not imply that silence is consent",
+    "Do not suggest transferring referral data without permission"
+  ]
+}
