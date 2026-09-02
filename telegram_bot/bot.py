@@ -105,6 +105,11 @@ GROQ_FALLBACK_MODELS = [
 SYSTEM_PROMPT = ai_prompt.build_system_prompt(os.getenv("AI_SYSTEM_PROMPT", ""))
 MAX_HISTORY = int(os.getenv("AI_MAX_HISTORY", "20"))
 
+
+def ai_enabled() -> bool:
+    """Нейросети выключены, пока явно не включить AI_ENABLED=1."""
+    return os.getenv("AI_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}
+
 _histories: dict[int, deque[dict[str, str]]] = defaultdict(
     lambda: deque(maxlen=MAX_HISTORY)
 )
@@ -165,6 +170,8 @@ def get_groq_client() -> AsyncOpenAI | None:
 
 
 def provider_chains() -> list[tuple[str, AsyncOpenAI, list[str]]]:
+    if not ai_enabled():
+        return []
     chains: list[tuple[str, AsyncOpenAI, list[str]]] = []
     gemini = get_gemini_client()
     if gemini is not None:
@@ -1689,29 +1696,30 @@ async def finish_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     product = bad_quiz.score_product(goals, answers)
     why: str | None = None
 
-    if update.message:
-        await update.message.chat.send_action(ChatAction.TYPING)
-        sent_wait = await _tg_retry(
-            lambda: update.message.reply_text(
-                bad_quiz.RESULT_WAIT,
-                reply_markup=menus.main_keyboard(),
+    if ai_enabled() and provider_chains():
+        if update.message:
+            await update.message.chat.send_action(ChatAction.TYPING)
+            sent_wait = await _tg_retry(
+                lambda: update.message.reply_text(
+                    bad_quiz.RESULT_WAIT,
+                    reply_markup=menus.main_keyboard(),
+                )
             )
-        )
-        if update.effective_chat:
-            track_message(update.effective_chat.id, sent_wait.message_id)
+            if update.effective_chat:
+                track_message(update.effective_chat.id, sent_wait.message_id)
 
-    try:
-        item = bad_quiz.PRODUCTS[product]
-        raw = await ask_ai_once(
-            bad_quiz.AI_SYSTEM,
-            "Продукт уже выбран, менять нельзя: "
-            f"{item['name']} ({product}).\n"
-            f"О продукте: {item['blurb']}\n\n"
-            f"{bad_quiz.answers_for_ai(goals, answers)}",
-        )
-        why = bad_quiz.parse_ai_why(raw)
-    except Exception:
-        logger.exception("Quiz AI recommendation failed")
+        try:
+            item = bad_quiz.PRODUCTS[product]
+            raw = await ask_ai_once(
+                bad_quiz.AI_SYSTEM,
+                "Продукт уже выбран, менять нельзя: "
+                f"{item['name']} ({product}).\n"
+                f"О продукте: {item['blurb']}\n\n"
+                f"{bad_quiz.answers_for_ai(goals, answers)}",
+            )
+            why = bad_quiz.parse_ai_why(raw)
+        except Exception:
+            logger.exception("Quiz AI recommendation failed")
 
     await reply_html(
         update, bad_quiz.format_result(product, why), context, screen="main"
@@ -2131,10 +2139,11 @@ def main() -> None:
         sys.exit(1)
 
     providers = []
-    if get_gemini_client() is not None:
-        providers.append(f"gemini:{GEMINI_MODEL}")
-    if get_groq_client() is not None:
-        providers.append(f"groq:{GROQ_MODEL}")
+    if ai_enabled():
+        if get_gemini_client() is not None:
+            providers.append(f"gemini:{GEMINI_MODEL}")
+        if get_groq_client() is not None:
+            providers.append(f"groq:{GROQ_MODEL}")
 
     request = HTTPXRequest(
         connection_pool_size=8,
