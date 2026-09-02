@@ -40,14 +40,14 @@
 
   var SECTION_IDS = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6'];
   var TRACK_ID_RE = /^A[1-6]-\d{3}$/;
-  var ACCENT_INK = { A1: '#fffdf8', A2: '#fffdf8', A3: '#fffdf8', A4: '#1c1914', A5: '#fffdf8', A6: '#fffdf8' };
+  var ACCENT_INK = { A1: '#fffdf8', A2: '#fffdf8', A3: '#fffdf8', A4: '#171612', A5: '#fffdf8', A6: '#fffdf8' };
   var SECTION_COLORS = {
-    A1: '#C45F42',
-    A2: '#3D6B4F',
-    A3: '#2F4F8A',
-    A4: '#C4922A',
-    A5: '#6B4C8A',
-    A6: '#2A7A72',
+    A1: '#2F7D5B',
+    A2: '#267A75',
+    A3: '#2D5DA8',
+    A4: '#C68A18',
+    A5: '#7A4E78',
+    A6: '#315E50',
   };
 
   function svgCover(bg, ink, motif) {
@@ -6083,6 +6083,111 @@
   api.packageClient = { load: loadClient, save: saveClient, apiBase: apiBase, serverPayload: serverPayload };
   root.MLMA = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
+
+/* __MLMA_UI_SPLIT__ */
+
+/**
+ * DOM-привязка установленного track package (A3-002 и далее).
+ * Зависит от MLMA.packageClient, MLMA.submitTrackOutcome, MLMA._instanceId.
+ * Вызывается из ui.js после монтирования #mlma-package-runtime.
+ */
+(function (root) {
+  'use strict';
+
+  var D = root.MLMA;
+  if (!D) return;
+
+  function bindInstalledPackage(rootEl, remount) {
+    if (!rootEl || typeof remount !== 'function') return;
+    var pack = rootEl.querySelector('#mlma-package-runtime');
+    if (!pack || !D.packageClient) return;
+    var trackId = pack.getAttribute('data-mlma-package');
+    if (!trackId) return;
+
+    function persistLocal() {
+      var data = D.packageClient.load(trackId);
+      pack.querySelectorAll('[data-mlma-local]').forEach(function (field) {
+        data[field.getAttribute('data-mlma-local')] = field.value;
+      });
+      data.blocks = data.blocks || {};
+      pack.querySelectorAll('[data-mlma-block]').forEach(function (field) {
+        data.blocks[field.getAttribute('data-mlma-block')] = field.value;
+      });
+      D.packageClient.save(trackId, data);
+      return data;
+    }
+
+    pack.querySelectorAll('[data-mlma-pkg-next]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        persistLocal();
+        D._packageStepId = el.getAttribute('data-mlma-pkg-next');
+        remount(rootEl);
+      });
+    });
+
+    pack.querySelectorAll('[data-mlma-pkg-choice]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var data = persistLocal();
+        data.goal = el.getAttribute('data-mlma-pkg-choice');
+        D.packageClient.save(trackId, data);
+        D._packageStepId = 'reason_gate';
+        remount(rootEl);
+      });
+    });
+
+    pack.querySelectorAll('[data-mlma-pkg-tone]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var data = persistLocal();
+        data.tone = el.getAttribute('data-mlma-pkg-tone');
+        D.packageClient.save(trackId, data);
+      });
+    });
+
+    pack.querySelectorAll('[data-mlma-pkg-branch]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        persistLocal();
+        var outcome = el.getAttribute('data-outcome');
+        var next = el.getAttribute('data-next');
+        if (outcome && D.submitTrackOutcome && D._instanceId) {
+          D.submitTrackOutcome(D._instanceId, outcome, D.packageClient.serverPayload(trackId, outcome)).then(function (res) {
+            var nextCard = res && res.decision && res.decision.next;
+            if (nextCard && nextCard.href) {
+              window.location.href = nextCard.preparing
+                ? '/my'
+                : nextCard.href + (String(nextCard.href).indexOf('?') >= 0 ? '&' : '?') + 'run=1';
+            } else if (nextCard && nextCard.status === 'done') {
+              window.location.href = '/my';
+            }
+          });
+          return;
+        }
+        if (next) {
+          D._packageStepId = next;
+          remount(rootEl);
+        }
+      });
+    });
+
+    pack.querySelectorAll('[data-mlma-pkg-action]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        persistLocal();
+        var outcome = el.getAttribute('data-outcome');
+        if (!outcome) return;
+        var facts = D.packageClient.serverPayload(trackId, outcome);
+        if (D._instanceId && D.submitTrackOutcome) {
+          D.submitTrackOutcome(D._instanceId, outcome, facts).then(function (res) {
+            var nextCard = res && res.decision && res.decision.next;
+            if (nextCard && nextCard.status === 'done') window.location.href = '/my';
+            else if (nextCard && nextCard.preparing) window.location.href = nextCard.href || '/my';
+            else if (nextCard && nextCard.href) window.location.href = nextCard.href + '&run=1';
+          });
+        }
+      });
+    });
+  }
+
+  D.bindInstalledPackage = bindInstalledPackage;
 })(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
 
 /* __MLMA_UI_SPLIT__ */
