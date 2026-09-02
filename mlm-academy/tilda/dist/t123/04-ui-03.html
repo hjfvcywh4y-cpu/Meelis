@@ -1,4 +1,4 @@
-<!-- Блок T123: рендер оболочки 3/8 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: рендер оболочки 3/7 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
 (function (root) {
   'use strict';
@@ -91,8 +91,6 @@
     var genre = passport ? '<span class="mlma-genre mlma-genre-' + esc(passport.genreAccent || 'practice') + '">' + esc(passport.genreLabel) + '</span>' : '';
     var inactive = D.isInactive && D.isInactive(runtime);
     var loggedIn = !!(state.account && state.account.loggedIn);
-    var runtimeHtml = '';
-    var loginHref = D.membersLoginUrl('/track?id=' + String(track.trackId).toLowerCase());
     var continuations = (state.trackMeta && state.trackMeta.possibleContinuations) || [];
     var continuationHtml =
       '<p class="mlma-muted" style="margin-top:12px">Продолжение зависит от результата прохождения</p>' +
@@ -105,6 +103,8 @@
             .join('') +
           '</ul>'
         : '');
+    var loginHref = D.membersLoginUrl('/track?id=' + String(track.trackId).toLowerCase());
+    var runtimeHtml = '';
     if (status.itemKind === 'material') {
       runtimeHtml =
         '<section class="mlma-card mlma-pad"><span class="mlma-meta">Материал</span><p style="margin-top:10px">Это материал библиотеки: его можно открыть и использовать. Он не заменяет исполняемый трек с рабочим следом.</p></section>';
@@ -146,9 +146,20 @@
           : '') +
         '</div></section>';
     }
+    var trackCompleted = !!(runtime && (runtime.status === 'completed' || runtime.status === 'done'));
+    var hasConditionalExits = continuations.length > 0;
+    var hideUnconditionalNba = hasConditionalExits && !trackCompleted;
     var nbaHtml = '';
-    if (!loggedIn) {
+    if (!loggedIn || hideUnconditionalNba) {
       nbaHtml = '<p class="mlma-lead mlma-muted">Продолжение зависит от результата прохождения</p>';
+      if (continuations.length) {
+        nbaHtml += '<ul style="margin-top:12px;display:grid;gap:8px">';
+        for (var c = 0; c < continuations.length; c += 1) {
+          nbaHtml +=
+            '<li><a href="' + esc(R.track(continuations[c].id)) + '">' + esc(continuations[c].title || continuations[c].id) + '</a></li>';
+        }
+        nbaHtml += '</ul>';
+      }
     } else if (nba && nba.kind === 'open_track' && nba.track) {
       nbaHtml =
         recBlock({ track: nba.track, reason: nba.reason || 'explicit_next_edge', available: true }, state, true) +
@@ -197,6 +208,7 @@
       '</h1></div>' +
       '<div class="mlma-wrap mlma-split mlma-split-84" style="padding-bottom:48px">' +
       '<div style="display:grid;gap:20px">' +
+      (D._ui.trackCover ? D._ui.trackCover(track) : '') +
       '<section class="mlma-card mlma-pad"><span class="mlma-meta">Почему этот трек сейчас</span><p style="margin-top:10px;font-size:17px;line-height:1.45">' +
       esc(track.situation) +
       '</p></section>' +
@@ -204,16 +216,24 @@
       esc(track.outcome) +
       '</p></section>' +
       runtimeHtml +
-      '<section class="mlma-card mlma-pad-lg" style="padding:24px"><span class="mlma-eyebrow mlma-eyebrow-accent">Следующее лучшее действие</span><h2 class="mlma-h3" style="margin-top:12px">' +
-      (nba && nba.track ? nba.track.title : nba && nba.title ? nba.title : 'После рабочего следа') +
-      '</h2><div style="margin-top:16px">' +
-      nbaHtml +
-      relatedHtml +
-      '</div><div class="mlma-actions" style="margin-top:20px">' +
-      btn(R.section(track.sectionId), 'В раздел') +
-      btn(backHref, 'Вернуться к подборке') +
-      '</div></section></div>' +
-      '<aside style="display:grid;gap:16px;align-content:start">' +
+      (hideUnconditionalNba
+        ? '<section class="mlma-card mlma-pad-lg" style="padding:24px"><span class="mlma-eyebrow mlma-eyebrow-accent">Возможные направления</span><h2 class="mlma-h3" style="margin-top:12px">Продолжение зависит от результата</h2><div style="margin-top:16px">' +
+          nbaHtml +
+          '</div><div class="mlma-actions" style="margin-top:20px">' +
+          btn(R.section(track.sectionId), 'В раздел') +
+          btn(backHref, 'Вернуться к подборке') +
+          '</div></section>'
+        : '<section class="mlma-card mlma-pad-lg" style="padding:24px"><span class="mlma-eyebrow mlma-eyebrow-accent">Следующее лучшее действие</span><h2 class="mlma-h3" style="margin-top:12px">' +
+          (nba && nba.track ? nba.track.title : nba && nba.title ? nba.title : 'После рабочего следа') +
+          '</h2><div style="margin-top:16px">' +
+          nbaHtml +
+          relatedHtml +
+          '</div><div class="mlma-actions" style="margin-top:20px">' +
+          btn(R.section(track.sectionId), 'В раздел') +
+          btn(backHref, 'Вернуться к подборке') +
+          '</div></section>') +
+      '</div>' +
+      '<aside class="mlma-track-passport-wrap" style="display:grid;gap:16px;align-content:start">' +
       '<div class="mlma-card mlma-pad">' +
       (status.canStart && !running && canBody
         ? '<a class="mlma-btn mlma-btn-primary mlma-btn-block" href="' + esc(startHref) + '" data-mlma-run-start="' + esc(track.trackId) + '">Начать трек</a>'
@@ -242,7 +262,7 @@
               : state.account.storageMode === 'error'
                 ? 'Сервер недоступен. Локальная копия сохранена в этом браузере.'
                 : 'Пока сохраняется в этом браузере.')
-        : 'Описание можно читать без входа. После регистрации трек сразу окажется в маршруте.') +
+        : 'Описание можно читать без входа. После входа трек сразу окажется в маршруте.') +
       '</p></div>' +
       '<section class="mlma-card mlma-pad"><span class="mlma-meta">Паспорт</span><dl style="margin-top:12px">' +
       '<div class="mlma-row"><dt class="mlma-meta mlma-muted">Раздел</dt><dd style="margin-top:4px;font-weight:700">' +

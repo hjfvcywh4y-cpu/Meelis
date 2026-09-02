@@ -64,6 +64,17 @@ describe('registered beta worker', () => {
     assert.equal(cabinet.data.cabinet.nextStep.trackId, 'A3-002');
   });
 
+  it('новая регистрация после cutoff не получает beta content', async () => {
+    resetRateLimitForTests();
+    const env = memoryEnv();
+    env.BETA_COHORT_CUTOFF_ISO = '2026-09-02T00:00:00.000Z';
+    const bind = await call(env, '/api/session/bind', { method: 'POST', body: { maId: '99', email: 'new@test.c' } });
+    const cookie = sid(bind.cookie);
+    const content = await call(env, '/api/v1/tracks/A3-002/content', { cookie });
+    assert.equal(content.status, 403);
+    assert.equal(content.data.lockReason, 'BETA_COHORT_CLOSED');
+  });
+
   it('нет owner review URL в исходниках', () => {
     const ui = fs.readFileSync(path.join(__dirname, '../src/ui.js'), 'utf8');
     assert.equal(ui.includes('/my/review/tracks'), false);

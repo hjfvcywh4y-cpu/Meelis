@@ -1,4 +1,4 @@
-<!-- Блок T123: рендер оболочки 4/8 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: рендер оболочки 4/7 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
 (function (root) {
   'use strict';
@@ -81,7 +81,6 @@
         lastStarted = { track: startedTrack, run: run };
       }
     }
-    var nearestResult = account.artifacts && account.artifacts[0] ? account.artifacts[0] : null;
     var rec = D.recommendedAction
       ? D.recommendedAction({ account: account, profile: state.profile, tracks: state.tracks })
       : { title: 'Подобрать трек', why: '', href: R.start(), cta: 'Подобрать трек' };
@@ -229,14 +228,19 @@
       return html + '</ul>';
     }
     function routeRow(track, st, index, state, controls) {
-      var cover = D.sectionCoverUrl ? D.sectionCoverUrl(track.sectionId) : '';
+      var coverHtml =
+        D._ui && D._ui.visualPicture
+          ? '<div class="mlma-route-cover">' + D._ui.visualPicture(track.trackId || track.sectionId) + '</div>'
+          : D.sectionCoverUrl
+            ? '<img class="mlma-route-cover" src="' + esc(D.sectionCoverUrl(track.sectionId)) + '" alt="">'
+            : '<span class="mlma-route-cover mlma-route-cover-empty"></span>';
       return (
         '<li class="mlma-route-item mlma-card" style="' +
         D.styleAttr(track.sectionId) +
         '"><span class="mlma-route-num">' +
         (index + 1) +
         '</span>' +
-        (cover ? '<img class="mlma-route-cover" src="' + esc(cover) + '" alt="">' : '<span class="mlma-route-cover mlma-route-cover-empty"></span>') +
+        coverHtml +
         '<div class="mlma-route-body"><span class="mlma-meta">' +
         esc(track.trackId) +
         ' · ' +

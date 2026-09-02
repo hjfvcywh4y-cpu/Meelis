@@ -51,6 +51,7 @@ export function resolveArchitectureFlags(env: NodeJS.Dict<string> = process.env)
       : env.REGISTERED_BETA_ACCESS_ENABLED
         ? truthy(env.REGISTERED_BETA_ACCESS_ENABLED)
         : DEFAULT_ARCHITECTURE_FLAGS.REGISTERED_BETA_ACCESS_ENABLED,
+    BETA_COHORT_CUTOFF_ISO: env.BETA_COHORT_CUTOFF_ISO || undefined,
   };
 
   if (production) {

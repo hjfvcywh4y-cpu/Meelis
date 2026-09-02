@@ -10,6 +10,38 @@
   'use strict';
   var SIGNUP_ENABLED = false;
 
+  if (SIGNUP_ENABLED !== true) {
+    try {
+      var blockStyle = document.createElement('style');
+      blockStyle.id = 'mlma-signup-block-style';
+      blockStyle.textContent =
+        'a[href*="/members/signup"], a[href*="members/signup"], form[action*="/api/signup"], form[action*="signup"] { display: none !important; visibility: hidden !important; }';
+      (document.head || document.documentElement).appendChild(blockStyle);
+    } catch (err) {
+      /* ignore */
+    }
+  }
+
+  function isSignupPath() {
+    try {
+      return /\/members\/signup/i.test(String(location.pathname || ''));
+    } catch (err) {
+      return false;
+    }
+  }
+
+  if (SIGNUP_ENABLED !== true && isSignupPath()) {
+    try {
+      var redirect = '/members/login?signup=paused';
+      if (String(location.search || '').indexOf('redirecturl=') !== -1) {
+        redirect += '&' + String(location.search || '').replace(/^\?/, '');
+      }
+      location.replace(redirect);
+    } catch (err2) {
+      /* fallback to paused UI below */
+    }
+  }
+
   try {
     var link = document.createElement('link');
     link.rel = 'icon';
@@ -113,14 +145,6 @@
   var SIGNUP_NOTE =
     '<p class="mlma-signup-note" style="font-size:12px;line-height:1.45;margin:8px 0 16px;text-align:left">Создавая аккаунт, я принимаю правила использования бесплатных функций MLM Academy. При покупке продукта применяется редакция публичной оферты, которую я отдельно приму перед оплатой.</p>';
 
-  function isSignupPath() {
-    try {
-      return /\/members\/signup/i.test(String(location.pathname || ''));
-    } catch (err) {
-      return false;
-    }
-  }
-
   function findSignupForm() {
     var forms = document.querySelectorAll('form');
     for (var i = 0; i < forms.length; i += 1) {
@@ -142,6 +166,12 @@
       links[i].style.display = 'none';
       links[i].setAttribute('aria-hidden', 'true');
       links[i].setAttribute('tabindex', '-1');
+      if (links[i].parentNode && links[i].parentNode.tagName === 'P') {
+        var parentText = String(links[i].parentNode.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+        if (/ещё нет кабинета|don't have an account|создать кабинет|sign up|create account/.test(parentText)) {
+          links[i].parentNode.style.display = 'none';
+        }
+      }
     }
     var nodes = document.querySelectorAll('a, button, p, span, div');
     for (var j = 0; j < nodes.length; j += 1) {

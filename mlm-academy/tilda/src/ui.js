@@ -228,6 +228,39 @@
     return 'https://mlma-account.mlmacademy-search.workers.dev/v1/' + fileName;
   }
 
+  function visualStem(id) {
+    var section = String(id || '').slice(0, 2);
+    if (section === 'A1') return 'visual/track-start-green';
+    if (section === 'A2') return 'visual/track-people-teal';
+    if (section === 'A3') return 'visual/track-dialog-blue';
+    if (section === 'A4') return 'visual/track-solution-ochre';
+    if (section === 'A5') return 'visual/track-doubt-coral';
+    if (section === 'A6') return 'visual/track-team-plum';
+    return 'visual/track-start-green';
+  }
+
+  function generatedCover(url) {
+    return String(url || '').indexOf('data:image/svg') === 0;
+  }
+
+  function visualPicture(id) {
+    var stem = visualStem(id);
+    return (
+      '<picture>' +
+      '<source type="image/webp" srcset="' +
+      assetUrl(stem + '-640.webp') +
+      ' 640w, ' +
+      assetUrl(stem + '-960.webp') +
+      ' 960w, ' +
+      assetUrl(stem + '-1600.webp') +
+      ' 1600w" sizes="(max-width: 720px) 92vw, 420px">' +
+      '<img src="' +
+      assetUrl(stem + '-960.webp') +
+      '" alt="" width="960" height="540" loading="lazy" decoding="async">' +
+      '</picture>'
+    );
+  }
+
   function logoHtml() {
     return (
       '<img class="mlma-logo-img" src="' +
@@ -402,6 +435,9 @@
       '" style="' +
       D.styleAttr(section.sectionId) +
       '"><span class="mlma-section-bar" aria-hidden="true"></span>' +
+      '<span class="mlma-section-cover" aria-hidden="true">' +
+      visualPicture(section.sectionId) +
+      '</span>' +
       '<span class="mlma-meta">' +
       esc(section.sectionId) +
       '</span><h3 class="mlma-h3" style="margin-top:16px">' +
@@ -429,13 +465,19 @@
 
   function trackCover(track) {
     var url = (track && track.imageUrl) || (D.sectionCoverUrl ? D.sectionCoverUrl(track && track.sectionId) : '');
-    return (
+    var wrap =
       '<div class="mlma-track-cover-wrap mlma-cover-' +
       esc((track && track.sectionId) || 'A1') +
-      '"><img class="mlma-track-cover" src="' +
-      esc(url) +
-      '" alt="" width="640" height="360" loading="lazy" decoding="async"></div>'
-    );
+      '" aria-hidden="true">';
+    if (url && !generatedCover(url)) {
+      return (
+        wrap +
+        '<img class="mlma-track-cover" src="' +
+        esc(url) +
+        '" alt="" width="640" height="360" loading="lazy" decoding="async"></div>'
+      );
+    }
+    return wrap + visualPicture((track && (track.trackId || track.sectionId)) || 'A1') + '</div>';
   }
 
   function trackCard(track, section, R, opts) {
@@ -590,16 +632,28 @@
       '<div class="mlma-examples">' +
       exHtml +
       '</div></div>' +
+      '<div class="mlma-hero-aside">' +
+      '<div class="mlma-hero-cards" aria-hidden="true">' +
+      '<div class="mlma-hero-mini">' +
+      visualPicture('A1') +
+      '<div><small>Старт</small><p>Ситуация и первый ход</p></div></div>' +
+      '<div class="mlma-hero-mini">' +
+      visualPicture('A4') +
+      '<div><small>Решение</small><p>Собрать факты в шаг</p></div></div>' +
+      '<div class="mlma-hero-mini">' +
+      visualPicture('A3') +
+      '<div><small>Диалог</small><p>Написать человеку</p></div></div>' +
+      '</div>' +
       '<aside class="mlma-scheme" aria-label="Как устроен маршрут">' +
       '<p class="mlma-meta">Схема маршрута</p>' +
       '<ol class="mlma-scheme-list"><li>Ситуация</li><li>Подходящий трек</li><li>Действие</li><li>Следующий шаг</li></ol>' +
-      '<p class="mlma-muted" style="margin-top:16px;font-size:14px;line-height:1.45">Сначала узнаёте себя в описании. Потом берёте одно действие. После результата видите продолжение.</p></aside></div></section>' +
+      '<p class="mlma-muted" style="margin-top:16px;font-size:14px;line-height:1.45">Сначала узнаёте себя в описании. Потом берёте одно действие. После результата видите продолжение.</p></aside></div></div></section>' +
       '<section class="mlma-band" id="mlma-research-entry"><div class="mlma-wrap">' +
       '<div class="mlma-research-cta">' +
       '<span class="mlma-eyebrow">Исследование</span>' +
       '<h2 class="mlma-h2" style="margin-top:16px;max-width:22ch;color:inherit">Почему маркетинг-плана недостаточно</h2>' +
       '<p class="mlma-lead" style="margin-top:16px;max-width:70ch">Маркетинг-план показывает партнёру цель, условия и вознаграждение. Но между целью и результатом остаётся разрыв: что конкретно человек должен сделать сегодня.</p>' +
-      '<p style="margin-top:14px;max-width:70ch;font-size:16px;line-height:1.5;color:var(--mlma-on-ink-muted)">Мы изучили, как крупные MLM-компании соединяют маркетинг-план, ежедневные действия партнёра, follow-up, прогресс и работу наставника.</p>' +
+      '<p class="mlma-muted" style="margin-top:14px;max-width:70ch;font-size:16px;line-height:1.5">Мы изучили, как крупные MLM-компании соединяют маркетинг-план, ежедневные действия партнёра, follow-up, прогресс и работу наставника.</p>' +
       '<div class="mlma-actions" style="margin-top:24px">' +
       '<a class="mlma-btn mlma-btn-accent" href="' +
       esc(R.research ? R.research() : '/research/marketing-plan') +
@@ -653,7 +707,7 @@
       '<section class="mlma-band"><div class="mlma-wrap"><div class="mlma-card mlma-ink-card mlma-pad-lg" style="padding:32px">' +
       '<span class="mlma-eyebrow">Финальный вход</span>' +
       '<h2 class="mlma-h2" style="margin-top:16px;max-width:20ch;color:inherit">Достаточно описать, что происходит сейчас</h2>' +
-      '<p class="mlma-lead" style="margin-top:16px;max-width:62ch;color:var(--mlma-on-ink-muted)">Опишите, что происходит сейчас. Навигатор соберёт несколько подходящих действий и объяснит, с чего лучше начать.</p>' +
+      '<p class="mlma-lead mlma-muted" style="margin-top:16px;max-width:62ch">Опишите, что происходит сейчас. Навигатор соберёт несколько подходящих действий и объяснит, с чего лучше начать.</p>' +
       '<div class="mlma-actions" style="margin-top:28px">' +
       btn(R.start(), 'Описать ситуацию', 'accent') +
       '<a class="mlma-btn mlma-btn-ghost mlma-btn-on-ink" href="' +
@@ -793,6 +847,9 @@
     trackGrid: trackGrid,
     sectionCard: sectionCard,
     whyHtml: whyHtml,
+    assetUrl: assetUrl,
+    visualPicture: visualPicture,
+    trackCover: trackCover,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -1197,8 +1254,6 @@
     var genre = passport ? '<span class="mlma-genre mlma-genre-' + esc(passport.genreAccent || 'practice') + '">' + esc(passport.genreLabel) + '</span>' : '';
     var inactive = D.isInactive && D.isInactive(runtime);
     var loggedIn = !!(state.account && state.account.loggedIn);
-    var runtimeHtml = '';
-    var loginHref = D.membersLoginUrl('/track?id=' + String(track.trackId).toLowerCase());
     var continuations = (state.trackMeta && state.trackMeta.possibleContinuations) || [];
     var continuationHtml =
       '<p class="mlma-muted" style="margin-top:12px">Продолжение зависит от результата прохождения</p>' +
@@ -1211,6 +1266,8 @@
             .join('') +
           '</ul>'
         : '');
+    var loginHref = D.membersLoginUrl('/track?id=' + String(track.trackId).toLowerCase());
+    var runtimeHtml = '';
     if (status.itemKind === 'material') {
       runtimeHtml =
         '<section class="mlma-card mlma-pad"><span class="mlma-meta">Материал</span><p style="margin-top:10px">Это материал библиотеки: его можно открыть и использовать. Он не заменяет исполняемый трек с рабочим следом.</p></section>';
@@ -1252,9 +1309,20 @@
           : '') +
         '</div></section>';
     }
+    var trackCompleted = !!(runtime && (runtime.status === 'completed' || runtime.status === 'done'));
+    var hasConditionalExits = continuations.length > 0;
+    var hideUnconditionalNba = hasConditionalExits && !trackCompleted;
     var nbaHtml = '';
-    if (!loggedIn) {
+    if (!loggedIn || hideUnconditionalNba) {
       nbaHtml = '<p class="mlma-lead mlma-muted">Продолжение зависит от результата прохождения</p>';
+      if (continuations.length) {
+        nbaHtml += '<ul style="margin-top:12px;display:grid;gap:8px">';
+        for (var c = 0; c < continuations.length; c += 1) {
+          nbaHtml +=
+            '<li><a href="' + esc(R.track(continuations[c].id)) + '">' + esc(continuations[c].title || continuations[c].id) + '</a></li>';
+        }
+        nbaHtml += '</ul>';
+      }
     } else if (nba && nba.kind === 'open_track' && nba.track) {
       nbaHtml =
         recBlock({ track: nba.track, reason: nba.reason || 'explicit_next_edge', available: true }, state, true) +
@@ -1303,6 +1371,7 @@
       '</h1></div>' +
       '<div class="mlma-wrap mlma-split mlma-split-84" style="padding-bottom:48px">' +
       '<div style="display:grid;gap:20px">' +
+      (D._ui.trackCover ? D._ui.trackCover(track) : '') +
       '<section class="mlma-card mlma-pad"><span class="mlma-meta">Почему этот трек сейчас</span><p style="margin-top:10px;font-size:17px;line-height:1.45">' +
       esc(track.situation) +
       '</p></section>' +
@@ -1310,16 +1379,24 @@
       esc(track.outcome) +
       '</p></section>' +
       runtimeHtml +
-      '<section class="mlma-card mlma-pad-lg" style="padding:24px"><span class="mlma-eyebrow mlma-eyebrow-accent">Следующее лучшее действие</span><h2 class="mlma-h3" style="margin-top:12px">' +
-      (nba && nba.track ? nba.track.title : nba && nba.title ? nba.title : 'После рабочего следа') +
-      '</h2><div style="margin-top:16px">' +
-      nbaHtml +
-      relatedHtml +
-      '</div><div class="mlma-actions" style="margin-top:20px">' +
-      btn(R.section(track.sectionId), 'В раздел') +
-      btn(backHref, 'Вернуться к подборке') +
-      '</div></section></div>' +
-      '<aside style="display:grid;gap:16px;align-content:start">' +
+      (hideUnconditionalNba
+        ? '<section class="mlma-card mlma-pad-lg" style="padding:24px"><span class="mlma-eyebrow mlma-eyebrow-accent">Возможные направления</span><h2 class="mlma-h3" style="margin-top:12px">Продолжение зависит от результата</h2><div style="margin-top:16px">' +
+          nbaHtml +
+          '</div><div class="mlma-actions" style="margin-top:20px">' +
+          btn(R.section(track.sectionId), 'В раздел') +
+          btn(backHref, 'Вернуться к подборке') +
+          '</div></section>'
+        : '<section class="mlma-card mlma-pad-lg" style="padding:24px"><span class="mlma-eyebrow mlma-eyebrow-accent">Следующее лучшее действие</span><h2 class="mlma-h3" style="margin-top:12px">' +
+          (nba && nba.track ? nba.track.title : nba && nba.title ? nba.title : 'После рабочего следа') +
+          '</h2><div style="margin-top:16px">' +
+          nbaHtml +
+          relatedHtml +
+          '</div><div class="mlma-actions" style="margin-top:20px">' +
+          btn(R.section(track.sectionId), 'В раздел') +
+          btn(backHref, 'Вернуться к подборке') +
+          '</div></section>') +
+      '</div>' +
+      '<aside class="mlma-track-passport-wrap" style="display:grid;gap:16px;align-content:start">' +
       '<div class="mlma-card mlma-pad">' +
       (status.canStart && !running && canBody
         ? '<a class="mlma-btn mlma-btn-primary mlma-btn-block" href="' + esc(startHref) + '" data-mlma-run-start="' + esc(track.trackId) + '">Начать трек</a>'
@@ -1348,7 +1425,7 @@
               : state.account.storageMode === 'error'
                 ? 'Сервер недоступен. Локальная копия сохранена в этом браузере.'
                 : 'Пока сохраняется в этом браузере.')
-        : 'Описание можно читать без входа. После регистрации трек сразу окажется в маршруте.') +
+        : 'Описание можно читать без входа. После входа трек сразу окажется в маршруте.') +
       '</p></div>' +
       '<section class="mlma-card mlma-pad"><span class="mlma-meta">Паспорт</span><dl style="margin-top:12px">' +
       '<div class="mlma-row"><dt class="mlma-meta mlma-muted">Раздел</dt><dd style="margin-top:4px;font-weight:700">' +
@@ -1631,7 +1708,6 @@
         lastStarted = { track: startedTrack, run: run };
       }
     }
-    var nearestResult = account.artifacts && account.artifacts[0] ? account.artifacts[0] : null;
     var rec = D.recommendedAction
       ? D.recommendedAction({ account: account, profile: state.profile, tracks: state.tracks })
       : { title: 'Подобрать трек', why: '', href: R.start(), cta: 'Подобрать трек' };
@@ -1779,14 +1855,19 @@
       return html + '</ul>';
     }
     function routeRow(track, st, index, state, controls) {
-      var cover = D.sectionCoverUrl ? D.sectionCoverUrl(track.sectionId) : '';
+      var coverHtml =
+        D._ui && D._ui.visualPicture
+          ? '<div class="mlma-route-cover">' + D._ui.visualPicture(track.trackId || track.sectionId) + '</div>'
+          : D.sectionCoverUrl
+            ? '<img class="mlma-route-cover" src="' + esc(D.sectionCoverUrl(track.sectionId)) + '" alt="">'
+            : '<span class="mlma-route-cover mlma-route-cover-empty"></span>';
       return (
         '<li class="mlma-route-item mlma-card" style="' +
         D.styleAttr(track.sectionId) +
         '"><span class="mlma-route-num">' +
         (index + 1) +
         '</span>' +
-        (cover ? '<img class="mlma-route-cover" src="' + esc(cover) + '" alt="">' : '<span class="mlma-route-cover mlma-route-cover-empty"></span>') +
+        coverHtml +
         '<div class="mlma-route-body"><span class="mlma-meta">' +
         esc(track.trackId) +
         ' · ' +
@@ -3054,23 +3135,6 @@
     }
   }
 
-  D._ui.bindLibrary = bindLibrary;
-})(typeof window !== 'undefined' ? window : globalThis);
-
-/* __MLMA_UI_SPLIT__ */
-(function (root) {
-  'use strict';
-  var D = root.MLMA;
-  if (!D || !D._ui || !D._ui.pageBody) return;
-  var header = D._ui.header;
-  var footer = D._ui.footer;
-  var mobileNav = D._ui.mobileNav;
-  var readCatalog = D._ui.readCatalog;
-  var currentPage = D._ui.currentPage;
-  var queryParam = D._ui.queryParam;
-  var pageBody = D._ui.pageBody;
-  var bindLibrary = D._ui.bindLibrary;
-
   function bind(state, rootEl) {
     rootEl.querySelectorAll('[data-mlma-choose]').forEach(function (el) {
       el.addEventListener('click', function () {
@@ -3102,81 +3166,7 @@
         if (D.performMembersLogout) D.performMembersLogout(event);
       });
     });
-    (function bindPackage() {
-      var pack = rootEl.querySelector('#mlma-package-runtime');
-      if (!pack || !D.packageClient) return;
-      var trackId = pack.getAttribute('data-mlma-package');
-      function persistLocal() {
-        var data = D.packageClient.load(trackId);
-        pack.querySelectorAll('[data-mlma-local]').forEach(function (field) {
-          data[field.getAttribute('data-mlma-local')] = field.value;
-        });
-        data.blocks = data.blocks || {};
-        pack.querySelectorAll('[data-mlma-block]').forEach(function (field) {
-          data.blocks[field.getAttribute('data-mlma-block')] = field.value;
-        });
-        D.packageClient.save(trackId, data);
-        return data;
-      }
-      pack.querySelectorAll('[data-mlma-pkg-next]').forEach(function (el) {
-        el.addEventListener('click', function () {
-          persistLocal();
-          D._packageStepId = el.getAttribute('data-mlma-pkg-next');
-          mount(rootEl);
-        });
-      });
-      pack.querySelectorAll('[data-mlma-pkg-choice]').forEach(function (el) {
-        el.addEventListener('click', function () {
-          var data = persistLocal();
-          data.goal = el.getAttribute('data-mlma-pkg-choice');
-          D.packageClient.save(trackId, data);
-          D._packageStepId = 'reason_gate';
-          mount(rootEl);
-        });
-      });
-      pack.querySelectorAll('[data-mlma-pkg-tone]').forEach(function (el) {
-        el.addEventListener('click', function () {
-          var data = persistLocal();
-          data.tone = el.getAttribute('data-mlma-pkg-tone');
-          D.packageClient.save(trackId, data);
-        });
-      });
-      pack.querySelectorAll('[data-mlma-pkg-branch]').forEach(function (el) {
-        el.addEventListener('click', function () {
-          persistLocal();
-          var outcome = el.getAttribute('data-outcome');
-          var next = el.getAttribute('data-next');
-          if (outcome && D.submitTrackOutcome && D._instanceId) {
-            D.submitTrackOutcome(D._instanceId, outcome, D.packageClient.serverPayload(trackId, outcome)).then(function (res) {
-              var nextCard = res && res.decision && res.decision.next;
-              if (nextCard && nextCard.href) window.location.href = nextCard.preparing ? '/my' : nextCard.href + (String(nextCard.href).indexOf('?') >= 0 ? '&' : '?') + 'run=1';
-              else if (nextCard && nextCard.status === 'done') window.location.href = '/my';
-            });
-            return;
-          }
-          if (next) {
-            D._packageStepId = next;
-            mount(rootEl);
-          }
-        });
-      });
-      pack.querySelectorAll('[data-mlma-pkg-action]').forEach(function (el) {
-        el.addEventListener('click', function () {
-          persistLocal();
-          var outcome = el.getAttribute('data-outcome');
-          if (!outcome) return;
-          var facts = D.packageClient.serverPayload(trackId, outcome);
-          if (D._instanceId && D.submitTrackOutcome) {
-            D.submitTrackOutcome(D._instanceId, outcome, facts).then(function (res) {
-              var nextCard = res && res.decision && res.decision.next;
-              if (nextCard && nextCard.status === 'done') window.location.href = '/my';
-              else if (nextCard && nextCard.preparing) window.location.href = nextCard.href || '/my';
-              else if (nextCard && nextCard.href) window.location.href = nextCard.href + '&run=1';
-            });
-          }
-        });
-      });
-    })();
+    if (D.bindInstalledPackage) D.bindInstalledPackage(rootEl, mount);
     var cookieBox = rootEl.querySelector('#mlma-cookie');
     var cookieChoice = '';
     try {
