@@ -1,0 +1,292 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlm-academy.local/schema/a3-005-outcome-payload.json",
+  "title": "A3-005 minimal server outcome",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "trackId",
+    "contentVersion",
+    "outcomeCode",
+    "appointment",
+    "riskFlagCodes",
+    "aiUsed",
+    "occurredAt"
+  ],
+  "properties": {
+    "trackId": {
+      "const": "A3-005"
+    },
+    "contentVersion": {
+      "const": "0.1.0"
+    },
+    "outcomeCode": {
+      "enum": [
+        "MEETING_SCHEDULED",
+        "LATER",
+        "DECLINED",
+        "NO_FOLLOW_UP"
+      ]
+    },
+    "appointment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "CONFIRMED",
+            "LATER",
+            "DECLINED",
+            "CLOSED_NO_FOLLOWUP"
+          ]
+        },
+        "explicitConfirmation": {
+          "type": "boolean"
+        },
+        "startsAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "timezone": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "durationMinutes": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 120
+        },
+        "formatCode": {
+          "enum": [
+            "VOICE_CALL",
+            "VIDEO_CALL",
+            "IN_PERSON",
+            "OTHER_AGREED"
+          ]
+        },
+        "topicCode": {
+          "type": "string"
+        },
+        "calendarActionCode": {
+          "enum": [
+            "NONE",
+            "PERSONAL_REMINDER",
+            "DOWNLOAD_ICS",
+            "EXISTING_CALENDAR_CONNECTION"
+          ]
+        },
+        "followupAllowed": {
+          "type": "boolean"
+        },
+        "reviewAnchorCode": {
+          "enum": [
+            "DATE",
+            "EVENT",
+            "PERSON_INITIATES",
+            "NONE"
+          ]
+        },
+        "reviewAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "decisionSourceCode": {
+          "type": "string"
+        },
+        "noFollowupReasonCode": {
+          "type": "string"
+        }
+      }
+    },
+    "riskFlagCodes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "aiUsed": {
+      "type": "boolean"
+    },
+    "aiAdvisoryCodes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "outcomeCode": {
+            "const": "MEETING_SCHEDULED"
+          }
+        },
+        "required": [
+          "outcomeCode"
+        ]
+      },
+      "then": {
+        "properties": {
+          "appointment": {
+            "required": [
+              "status",
+              "explicitConfirmation",
+              "startsAt",
+              "timezone",
+              "durationMinutes",
+              "formatCode",
+              "topicCode",
+              "calendarActionCode"
+            ],
+            "properties": {
+              "status": {
+                "const": "CONFIRMED"
+              },
+              "explicitConfirmation": {
+                "const": true
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcomeCode": {
+            "const": "LATER"
+          }
+        },
+        "required": [
+          "outcomeCode"
+        ]
+      },
+      "then": {
+        "properties": {
+          "appointment": {
+            "required": [
+              "status",
+              "explicitConfirmation",
+              "followupAllowed",
+              "reviewAnchorCode"
+            ],
+            "properties": {
+              "status": {
+                "const": "LATER"
+              },
+              "explicitConfirmation": {
+                "const": true
+              },
+              "followupAllowed": {
+                "const": true
+              },
+              "reviewAnchorCode": {
+                "enum": [
+                  "DATE",
+                  "EVENT",
+                  "PERSON_INITIATES"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcomeCode": {
+            "const": "DECLINED"
+          }
+        },
+        "required": [
+          "outcomeCode"
+        ]
+      },
+      "then": {
+        "properties": {
+          "appointment": {
+            "required": [
+              "status",
+              "explicitConfirmation",
+              "decisionSourceCode"
+            ],
+            "properties": {
+              "status": {
+                "const": "DECLINED"
+              },
+              "explicitConfirmation": {
+                "const": true
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcomeCode": {
+            "const": "NO_FOLLOW_UP"
+          }
+        },
+        "required": [
+          "outcomeCode"
+        ]
+      },
+      "then": {
+        "properties": {
+          "appointment": {
+            "required": [
+              "status",
+              "noFollowupReasonCode"
+            ],
+            "properties": {
+              "status": {
+                "const": "CLOSED_NO_FOLLOWUP"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "appointment": {
+            "properties": {
+              "reviewAnchorCode": {
+                "const": "DATE"
+              }
+            },
+            "required": [
+              "reviewAnchorCode"
+            ]
+          }
+        },
+        "required": [
+          "appointment"
+        ]
+      },
+      "then": {
+        "properties": {
+          "appointment": {
+            "required": [
+              "reviewAt"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

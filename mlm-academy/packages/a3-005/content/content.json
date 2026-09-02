@@ -1,0 +1,178 @@
+{
+  "trackId": "A3-005",
+  "version": "0.1.0",
+  "status": "REVIEW",
+  "entityType": "TRACK",
+  "estimatedMinutes": 6,
+  "promise": "Превратить расплывчатое намерение в точную добровольную договорённость — или корректно не создавать встречу.",
+  "prerequisite": "Человек уже не отверг разговор и есть прозрачная тема, которую можно честно назвать.",
+  "steps": [
+    {
+      "id": "permission_gate",
+      "title": "Проверьте, есть ли согласие обсуждать встречу",
+      "type": "CONSENT_GATE",
+      "instruction": "«Когда-нибудь созвонимся» ещё не встреча. Уточните, хочет ли человек действительно выбрать время сейчас. Молчание, вежливость и отсутствие возражения не считаются согласием.",
+      "fields": [
+        "scheduleIntentCode"
+      ]
+    },
+    {
+      "id": "name_topic",
+      "title": "Назовите тему без маскировки",
+      "instruction": "Сформулируйте одним предложением, что именно будете обсуждать. Не называйте встречу «просто кофе», если планируется разговор о продукте или бизнес-возможности.",
+      "fields": [
+        "topicCode",
+        "topicText"
+      ],
+      "localOnly": [
+        "topicText"
+      ]
+    },
+    {
+      "id": "set_duration",
+      "title": "Обозначьте реалистичную длительность",
+      "instruction": "Выберите время, которого действительно достаточно. Не обещайте «пять минут», если нужен получасовой разговор.",
+      "fields": [
+        "durationMinutes"
+      ]
+    },
+    {
+      "id": "choose_format",
+      "title": "Согласуйте формат и контекст",
+      "instruction": "Предложите голосовой звонок, видео или личную встречу с учётом удобства человека. Место, ссылку и контактные детали храните локально. A6-030 остаётся отдельным shared reference и не переименовывается.",
+      "fields": [
+        "formatCode",
+        "locationText",
+        "meetingLink"
+      ],
+      "localOnly": [
+        "locationText",
+        "meetingLink"
+      ],
+      "sharedReferenceComponentId": "A6-030"
+    },
+    {
+      "id": "offer_real_slots",
+      "title": "Предложите один или два реальных слота",
+      "instruction": "Дайте максимум два доступных варианта и прямо разрешите предложить третий или отказаться. Это помощь в выборе, а не выбор без выбора.",
+      "fields": [
+        "slots",
+        "timezone"
+      ]
+    },
+    {
+      "id": "explicit_response",
+      "title": "Получите явный ответ",
+      "instruction": "Зафиксируйте только произнесённое или написанное подтверждение. «Посмотрим», реакция-эмодзи и молчание оставляют статус UNCONFIRMED. Для «позже» отдельно запишите разрешение и опору: дата, событие или инициатива самого человека; без этого follow-up не создаётся.",
+      "fields": [
+        "appointment.status",
+        "appointment.explicitConfirmation",
+        "appointment.decisionSourceCode",
+        "appointment.followupAllowed",
+        "appointment.reviewAnchorCode",
+        "appointment.reviewAt",
+        "appointment.noFollowupReasonCode"
+      ]
+    },
+    {
+      "id": "confirm_contract",
+      "title": "Повторите договорённость один раз",
+      "instruction": "Сверьте дату, время, часовой пояс, длительность, формат и тему. Добавьте простой способ перенести или отменить. Не собирайте серию «да».",
+      "fields": [
+        "appointment.startsAt",
+        "appointment.timezone",
+        "appointment.durationMinutes",
+        "appointment.formatCode",
+        "appointment.topicCode",
+        "confirmationText"
+      ],
+      "localOnly": [
+        "confirmationText"
+      ]
+    },
+    {
+      "id": "calendar_boundary",
+      "title": "Добавьте только личное напоминание",
+      "instruction": "После подтверждения пользователь может создать личное напоминание или скачать ICS. Не добавляйте участника и не отправляйте приглашение автоматически.",
+      "fields": [
+        "appointment.calendarActionCode"
+      ]
+    },
+    {
+      "id": "decision_gate",
+      "title": "Зафиксируйте исход",
+      "type": "DECISION_GATE",
+      "decisions": [
+        {
+          "code": "MEETING_SCHEDULED",
+          "label": "Разговор подтверждён",
+          "routeRuleId": "RR2-023"
+        },
+        {
+          "code": "LATER",
+          "label": "Разрешено вернуться позже",
+          "routeRuleId": "RR2-024"
+        },
+        {
+          "code": "DECLINED",
+          "label": "Разговор отклонён",
+          "routeRuleId": "RR2-025"
+        },
+        {
+          "code": "NO_FOLLOW_UP",
+          "label": "Нет разрешённого следующего касания",
+          "routeRuleId": "RR3-A3-005-NO-FOLLOW-UP"
+        }
+      ]
+    }
+  ],
+  "deterministicInvitationTemplate": "Предлагаю [формат] на [длительность], чтобы обсудить [тема]. Мне удобно [слот 1] или [слот 2]. Если не подходит — предложите своё время; если сейчас неактуально, всё нормально.",
+  "examples": {
+    "safe": [
+      {
+        "input": "Давайте на следующей неделе",
+        "response": "Да. Предлагаю 15 минут по видео, чтобы обсудить ваш вопрос о продукте. Мне удобно во вторник в 18:00 или в четверг в 12:30 по Новосибирску. Если не подходит — предложите своё время."
+      },
+      {
+        "input": "Когда-нибудь созвонимся",
+        "response": "Если тема вам действительно актуальна, можем сейчас выбрать время. Если пока не хотите планировать — не буду ставить встречу."
+      },
+      {
+        "input": "Напомните позже",
+        "response": "Хорошо. Когда корректно вернуться: в конкретную дату, после события или лучше оставить инициативу вам?"
+      }
+    ],
+    "unsafe": [
+      {
+        "pattern": "Вам удобнее во вторник или в четверг? — без возможности отказаться",
+        "risk": "FALSE_CHOICE"
+      },
+      {
+        "pattern": "Молчание или «угу» записано как подтверждение",
+        "risk": "IMPLIED_CONSENT"
+      },
+      {
+        "pattern": "Не дать человеку опомниться и говорить без паузы",
+        "risk": "PRESSURE_TACTIC"
+      },
+      {
+        "pattern": "Несколько подтверждений ради психологического якоря",
+        "risk": "COMPLIANCE_ENGINEERING"
+      },
+      {
+        "pattern": "Поставить встречу в календарь до явного согласия",
+        "risk": "UNAUTHORIZED_CALENDAR_WRITE"
+      },
+      {
+        "pattern": "Назвать коммерческий разговор «просто кофе»",
+        "risk": "HIDDEN_TOPIC"
+      }
+    ]
+  },
+  "finalArtifact": {
+    "name": "Карточка подтверждённого разговора",
+    "storage": "SERVER_MINIMUM_PLUS_CLIENT_LOCAL_DETAILS",
+    "handoff": "ROUTE_DECISION_AND_OPTIONAL_PERSONAL_CALENDAR",
+    "serverSummaryOnly": true
+  }
+}
