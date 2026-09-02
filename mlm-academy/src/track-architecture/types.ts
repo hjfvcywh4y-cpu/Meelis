@@ -89,6 +89,7 @@ export interface ArchitectureFlags {
   ADMIN_PREVIEW_ENABLED: boolean;
   ENTITLEMENT_BYPASS: boolean;
   REGISTERED_BETA_ACCESS_ENABLED: boolean;
+  BETA_COHORT_CUTOFF_ISO?: string;
 }
 
 export interface TrackDefinition {
@@ -273,6 +274,8 @@ export interface AccessContext {
   verified: boolean;
   /** HMAC server session for a registered Members account. */
   registered: boolean;
+  /** KV account.createdAt for beta cohort gating. */
+  accountCreatedAt?: string | null;
   entitlements: EntitlementGrant[];
 }
 

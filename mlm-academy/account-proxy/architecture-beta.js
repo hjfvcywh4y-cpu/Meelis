@@ -47,6 +47,22 @@ function isBetaOn(env) {
   return flags.REGISTERED_BETA_ACCESS_ENABLED && !flags.PAYMENTS_ENABLED && !flags.ENTITLEMENT_BYPASS && !flags.ALLOW_DRAFT_RULES;
 }
 
+function cohortCutoff(env) {
+  return env && env.BETA_COHORT_CUTOFF_ISO ? String(env.BETA_COHORT_CUTOFF_ISO) : '';
+}
+
+function inBetaCohort(row, env) {
+  const cutoff = cohortCutoff(env);
+  if (!cutoff) return true;
+  const created = row && row.createdAt ? String(row.createdAt) : '';
+  if (!created) return false;
+  return created < cutoff;
+}
+
+function denyCohort(origin, json) {
+  return json({ ok: false, code: 'denied', lockReason: 'BETA_COHORT_CLOSED' }, 403, origin);
+}
+
 function trackUrl(id) {
   return '/track?id=' + String(id).toLowerCase();
 }
@@ -224,6 +240,7 @@ export async function handleArchitectureBeta(request, env, ctx) {
     const auth = await requireUser(request, env, origin);
     if (auth.error) return json({ ok: false, code: 'denied', lockReason: 'AUTH_REQUIRED' }, 401, origin);
     if (!isBetaOn(env)) return json({ ok: false, code: 'denied', lockReason: 'FEATURE_DISABLED' }, 403, origin);
+    if (!inBetaCohort(auth.row, env)) return denyCohort(origin, json);
     if (BLOCKED[pack.content.contentStatus] || !BETA_STATUSES[pack.content.contentStatus]) {
       return json({ ok: false, code: 'denied', lockReason: 'CONTENT_UNAVAILABLE' }, 403, origin);
     }
@@ -234,6 +251,7 @@ export async function handleArchitectureBeta(request, env, ctx) {
     const auth = await requireUser(request, env, origin);
     if (auth.error) return auth.error;
     if (!isBetaOn(env)) return json({ ok: false, code: 'FEATURE_DISABLED' }, 403, origin);
+    if (!inBetaCohort(auth.row, env)) return denyCohort(origin, json);
     const state = await loadBeta(env, auth.session.userKey);
     return json({ ok: true, cabinet: cabinetOf(state), ownerReview: false, reviewUrl: null }, 200, origin);
   }
@@ -242,6 +260,7 @@ export async function handleArchitectureBeta(request, env, ctx) {
     const auth = await requireUser(request, env, origin);
     if (auth.error) return auth.error;
     if (!isBetaOn(env)) return json({ ok: false, code: 'FEATURE_DISABLED' }, 403, origin);
+    if (!inBetaCohort(auth.row, env)) return denyCohort(origin, json);
     const body = ctx.body || {};
     const trackId = catalogNormalize(body.trackId) || String(body.trackId || '').toUpperCase();
     if (!PACKAGES[trackId] || installedIds().indexOf(trackId) < 0) return json({ ok: false, code: 'unknown_track' }, 400, origin);
@@ -268,6 +287,7 @@ export async function handleArchitectureBeta(request, env, ctx) {
     const auth = await requireUser(request, env, origin);
     if (auth.error) return auth.error;
     if (!isBetaOn(env)) return json({ ok: false, code: 'FEATURE_DISABLED' }, 403, origin);
+    if (!inBetaCohort(auth.row, env)) return denyCohort(origin, json);
     const body = ctx.body || {};
     const state = await loadBeta(env, auth.session.userKey);
     const instance = state.instances.find((row) => row.instanceId === outcomeMatch[1] && row.userId === auth.session.userKey);

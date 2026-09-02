@@ -3,12 +3,23 @@ import type { AccessContext, ArchitectureFlags, ContentStatus, ContentVersionRec
 export const BETA_CONTENT_STATUSES = ['REVIEW', 'READY', 'PUBLISHED'] as const;
 export const BLOCKED_BETA_CONTENT_STATUSES = ['EMPTY', 'DRAFT', 'ARCHIVED'] as const;
 
+export function isBetaCohortEligible(
+  accountCreatedAt: string | null | undefined,
+  flags: ArchitectureFlags,
+): boolean {
+  const cutoff = flags.BETA_COHORT_CUTOFF_ISO;
+  if (!cutoff) return true;
+  if (!accountCreatedAt) return false;
+  return String(accountCreatedAt) < cutoff;
+}
+
 export function isRegisteredBeta(access: AccessContext, flags: ArchitectureFlags): boolean {
   return (
     flags.REGISTERED_BETA_ACCESS_ENABLED === true &&
     flags.PAYMENTS_ENABLED !== true &&
     access.registered === true &&
-    Boolean(access.userId)
+    Boolean(access.userId) &&
+    isBetaCohortEligible(access.accountCreatedAt, flags)
   );
 }
 
