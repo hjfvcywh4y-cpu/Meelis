@@ -42,7 +42,7 @@ describe('доступ и состояния', () => {
     assert.equal(MLMA.resolveUserState(guest), 'guest');
     assert.equal(MLMA.isEntitledToTrack(item, guest), false);
     assert.equal(MLMA.canOpenTrackBody(item, guest), false);
-    assert.equal(MLMA.cardAction(item, guest).key, 'login_save');
+    assert.equal(MLMA.cardAction(item, guest).key, 'login_start');
   });
 
   it('FREE видит кабинет, но платный старт закрыт пока нет содержания', () => {
@@ -56,7 +56,7 @@ describe('доступ и состояния', () => {
   it('опубликованный платный трек без complete не показывает покупку', () => {
     const item = track({ publicationStatus: 'published', contentStatus: 'published' });
     const account = { loggedIn: true, email: 'a@b.c', groups: ['FREE'], entitlements: [] };
-    assert.equal(MLMA.cardAction(item, account).key, 'preparing');
+    assert.equal(MLMA.cardAction(item, account).key, 'beta_start');
     assert.notEqual(MLMA.cardAction(item, account).key, 'buy');
   });
 
@@ -75,7 +75,7 @@ describe('доступ и состояния', () => {
     assert.equal(MLMA.hasGroup(spoofed, 'ADMIN'), false);
     assert.equal(MLMA.hasGroup(spoofed, 'FREE'), true);
     assert.equal(MLMA.isEntitledToTrack(item, spoofed), false);
-    assert.equal(MLMA.canOpenTrackBody(item, spoofed), false);
+    assert.equal(MLMA.canOpenTrackBody(item, spoofed), true);
     assert.equal(MLMA.resolveUserState(spoofed), 'registered');
   });
 

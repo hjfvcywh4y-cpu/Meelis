@@ -1,5 +1,3 @@
-<!-- Блок T123: доменная логика 14/15 Не публиковать. Не вставлять в общесайтовый HEAD. -->
-<script>
 /**
  * Универсальный renderer установленного track package.
  * Свободные тексты и контакты остаются в localStorage. На сервер — только коды.
@@ -187,5 +185,3 @@
   root.MLMA = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
-</script>
-

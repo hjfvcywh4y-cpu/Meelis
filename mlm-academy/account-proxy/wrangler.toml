@@ -10,6 +10,11 @@ account_id = "1097bdc74e5788fb297506389defcfea"
 PAYMENTS_ENABLED = "false"
 COMMERCE_PREVIEW_ENABLED = "false"
 TEST_MODE = "true"
+REGISTERED_BETA_ACCESS_ENABLED = "true"
+PAID_TRACK_NAVIGATION_ENABLED = "false"
+ALLOW_DRAFT_RULES = "false"
+ENTITLEMENT_BYPASS = "false"
+SIGNUP_ENABLED = "false"
 
 # Публичные Tilda assets v1. /api/* остаётся на Worker.
 # ASSET_BASE=https://mlma-account.mlmacademy-search.workers.dev

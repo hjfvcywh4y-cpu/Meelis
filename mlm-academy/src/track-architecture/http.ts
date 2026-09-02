@@ -1,5 +1,10 @@
 import { DEFAULT_ARCHITECTURE_FLAGS, resolveArchitectureFlags } from './flags';
-import { identityFromUntrustedClient, identityFromVerifiedSession, ANON_ACCESS } from './identity';
+import {
+  identityFromUntrustedClient,
+  identityFromVerifiedSession,
+  identityFromRegisteredSession,
+  ANON_ACCESS,
+} from './identity';
 import { decideContentAccess, decideInstanceCreation } from './access';
 import { overlayPublicCard, publicMetaResponse, toPublicTrackMeta } from './public-meta';
 import { resolveTrackId, canPublishAsStandaloneLesson } from './resolver';
@@ -12,6 +17,9 @@ import { processPaymentEvent } from './payments';
 import { normalizeTrackId } from '../domain/routes';
 import { connectionsForTrack } from './store';
 import { ProductionRepositoryNotConfiguredError } from './postgres';
+import { isRegisteredBeta, safeReturnTo } from './beta';
+import { parseCookieValue, verifyRegisteredSession } from './session';
+import { buildCabinet, destinationCard, isMentorEvent, possibleContinuations } from './cabinet';
 import type { AccessContext, ArchitectureFlags, RouteDecision, RouteMode } from './types';
 import type { ArchitectureStore } from './store';
 
@@ -30,9 +38,16 @@ function pathnameOf(request: Request): string {
 }
 
 export function readSession(request: Request, env: NodeJS.Dict<string> = process.env): AccessContext {
+  const cookieToken = parseCookieValue(request.headers.get('cookie') || request.headers.get('Cookie'), 'mlma_sid');
+  const fromCookie = verifyRegisteredSession(env.MLMA_SESSION_SECRET, cookieToken);
+  if (fromCookie) {
+    return identityFromRegisteredSession({ userId: fromCookie.userKey });
+  }
+
   if (env.NODE_ENV === 'production') {
     return ANON_ACCESS;
   }
+
   const raw = request.headers.get('x-mlma-test-session');
   if (!raw) return ANON_ACCESS;
   try {
@@ -40,6 +55,7 @@ export function readSession(request: Request, env: NodeJS.Dict<string> = process
       userId?: string;
       role?: AccessContext['role'];
       verified?: boolean;
+      registered?: boolean;
       entitlements?: AccessContext['entitlements'];
       maId?: string;
       email?: string;
@@ -51,15 +67,19 @@ export function readSession(request: Request, env: NodeJS.Dict<string> = process
         email: parsed.email,
         groups: parsed.groups,
       });
-      if (!parsed.userId || parsed.verified !== true) return untrusted;
+      if (!parsed.userId || (parsed.verified !== true && parsed.registered !== true)) return untrusted;
     }
     if (!parsed.userId) return ANON_ACCESS;
-    return identityFromVerifiedSession({
-      userId: parsed.userId,
-      role: parsed.role,
-      verified: parsed.verified === true,
-      entitlements: parsed.entitlements,
-    });
+    if (parsed.verified === true) {
+      return identityFromVerifiedSession({
+        userId: parsed.userId,
+        role: parsed.role,
+        verified: true,
+        registered: true,
+        entitlements: parsed.entitlements,
+      });
+    }
+    return identityFromRegisteredSession({ userId: parsed.userId });
   } catch {
     return ANON_ACCESS;
   }
@@ -68,20 +88,25 @@ export function readSession(request: Request, env: NodeJS.Dict<string> = process
 export function userDecisionView(decision: RouteDecision, access: AccessContext): Record<string, unknown> {
   const locked = decision.locked;
   const admin = access.role === 'ADMIN' && access.verified;
+  const beta = access.registered === true;
+  const reveal = admin || !locked || beta;
   return {
-    matchedRuleId: admin ? decision.matchedRuleId : locked ? null : decision.matchedRuleId,
-    destinationType: admin || !locked ? decision.destinationType : null,
-    destinationId: admin || !locked ? decision.destinationId : null,
-    destinationUrl: locked ? null : decision.destinationUrl,
+    matchedRuleId: admin ? decision.matchedRuleId : locked && !beta ? null : decision.matchedRuleId,
+    destinationType: reveal ? decision.destinationType : null,
+    destinationId: reveal ? decision.destinationId : null,
+    destinationUrl: locked && !decision.preparingDestination && !beta ? null : decision.destinationUrl,
     reasonCode: decision.reasonCode,
     locked: decision.locked,
     lockReason: decision.lockReason,
+    preparingDestination: decision.preparingDestination === true,
+    betaPilot: decision.betaPilot === true,
     recovery: admin ? decision.recovery : null,
   };
 }
 
 function modeFromAccess(access: AccessContext, flags: ArchitectureFlags): RouteMode {
   if (access.role === 'ADMIN' && flags.ADMIN_PREVIEW_ENABLED) return 'admin-preview';
+  if (isRegisteredBeta(access, flags)) return 'beta';
   if (access.role === 'PILOT') return 'pilot';
   return 'production';
 }
@@ -115,9 +140,17 @@ export async function handleArchitectureRequest(
     const content = store.getContent(resolved.canonicalId);
     const meta = toPublicTrackMeta(resolved.definition, content?.contentStatus === 'PUBLISHED');
     sanitizeArchitectureEvent('track_meta_viewed', { track_id: resolved.canonicalId });
+    const card = overlayPublicCard(resolved.canonicalId, publicMetaResponse(meta));
     return json({
       ok: true,
-      meta: overlayPublicCard(resolved.canonicalId, publicMetaResponse(meta)),
+      meta: {
+        ...card,
+        possibleContinuations: possibleContinuations(store, resolved.canonicalId),
+        continuationNote: 'Продолжение зависит от результата прохождения',
+        loginPrompt: 'Чтобы пройти этот трек, войдите в личный кабинет.',
+        loginCta: 'Войти и пройти трек',
+        returnTo: `/track?id=${resolved.canonicalId.toLowerCase()}`,
+      },
       redirectTo: resolved.redirect ? resolved.canonicalId : null,
     });
   }
@@ -142,7 +175,8 @@ export async function handleArchitectureRequest(
     });
     if (!decision.allowed) {
       sanitizeArchitectureEvent('track_access_denied', { track_id: resolved.canonicalId, reason: decision.lockReason });
-      return json({ ok: false, code: 'denied', lockReason: decision.lockReason, kind: decision.kind || null }, 403);
+      const status = decision.lockReason === 'AUTH_REQUIRED' ? 401 : 403;
+      return json({ ok: false, code: 'denied', lockReason: decision.lockReason, kind: decision.kind || null }, status);
     }
     return json({
       ok: true,
@@ -156,7 +190,7 @@ export async function handleArchitectureRequest(
   }
 
   if (path === '/api/v1/track-instances' && method === 'POST') {
-    if (!access.userId || !access.verified) return json({ ok: false, code: 'AUTH_REQUIRED' }, 401);
+    if (!access.userId || !(access.verified || access.registered)) return json({ ok: false, code: 'AUTH_REQUIRED' }, 401);
     const body = await safeJson(request);
     const trackId = normalizeTrackId(String(body.trackId || ''));
     const track = trackId ? store.getTrack(trackId) : undefined;
@@ -165,12 +199,13 @@ export async function handleArchitectureRequest(
       track,
       content: store.getContent(trackId) || null,
       access,
+      flags,
     });
     if (!allowed.allowed) {
       return json({ ok: false, code: allowed.lockReason, lockReason: allowed.lockReason }, allowed.lockReason === 'AUTH_REQUIRED' ? 401 : 403);
     }
     try {
-      const instance = createTrackInstance(store, { userId: access.userId, trackId, access });
+      const instance = createTrackInstance(store, { userId: access.userId, trackId, access, flags });
       sanitizeArchitectureEvent('track_started', { track_id: trackId });
       return json({ ok: true, instance }, 201);
     } catch (error) {
@@ -190,7 +225,7 @@ export async function handleArchitectureRequest(
   }
 
   if (path.startsWith('/api/v1/track-instances/') && path.endsWith('/outcomes') && method === 'POST') {
-    if (!access.userId || !access.verified) return json({ ok: false, code: 'AUTH_REQUIRED' }, 401);
+    if (!access.userId || !(access.verified || access.registered)) return json({ ok: false, code: 'AUTH_REQUIRED' }, 401);
     const instanceId = path.split('/')[4];
     const body = await safeJson(request);
     if (!body.clientEventId) return json({ ok: false, code: 'client_event_required' }, 400);
@@ -209,11 +244,24 @@ export async function handleArchitectureRequest(
         ok: true,
         duplicate: result.duplicate,
         outcomeId: result.outcomeId,
-        decision: userDecisionView(result.decision, access),
+        decision: {
+          ...userDecisionView(result.decision, access),
+          next: destinationCard(store, result.decision.destinationId, result.decision.destinationType),
+        },
       });
     } catch {
       return json({ ok: false, code: 'instance_not_found' }, 404);
     }
+  }
+
+  if (path === '/api/v1/me/cabinet' && method === 'GET') {
+    if (!access.userId || !access.registered) return json({ ok: false, code: 'AUTH_REQUIRED' }, 401);
+    return json({
+      ok: true,
+      cabinet: buildCabinet(store, access, flags),
+      ownerReview: false,
+      reviewUrl: null,
+    });
   }
 
   if (path === '/api/v1/me/route' && method === 'GET') {

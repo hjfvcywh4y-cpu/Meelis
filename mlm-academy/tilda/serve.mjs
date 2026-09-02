@@ -37,7 +37,7 @@ const server = http.createServer(async (req, res) => {
   if (
     pathname === '/api/health' ||
     pathname === '/health' ||
-    pathname.indexOf('/api/session/') === 0 ||
+    pathname.indexOf('/api/v1/') === 0 ||
     pathname.indexOf('/api/account/') === 0 ||
     pathname === '/api/analytics' ||
     pathname.indexOf('/api/checkout/') === 0 ||
@@ -54,7 +54,7 @@ const server = http.createServer(async (req, res) => {
     for (const [key, value] of Object.entries(req.headers)) {
       if (value) headers.set(key, Array.isArray(value) ? value.join(',') : String(value));
     }
-    const request = new Request('http://127.0.0.1' + pathname, {
+    const request = new Request('http://127.0.0.1' + pathname + url.search, {
       method: req.method || 'GET',
       headers,
       body: req.method === 'POST' || req.method === 'PUT' || req.method === 'OPTIONS' ? body : undefined,

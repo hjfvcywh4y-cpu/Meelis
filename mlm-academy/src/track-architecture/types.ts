@@ -54,7 +54,7 @@ export type ActivationMode = (typeof ACTIVATION_MODES)[number];
 export const OPERATORS = ['=', '!=', '>', '>=', '<', '<=', 'IN', 'NOT_IN', 'EXISTS'] as const;
 export type OperatorCode = (typeof OPERATORS)[number];
 
-export type RouteMode = 'production' | 'pilot' | 'admin-preview';
+export type RouteMode = 'production' | 'pilot' | 'admin-preview' | 'beta';
 
 export type AccessRole = 'ANON' | 'FREE' | 'START' | 'FULL' | 'PILOT' | 'ADMIN';
 
@@ -88,6 +88,7 @@ export interface ArchitectureFlags {
   ALLOW_DRAFT_RULES: boolean;
   ADMIN_PREVIEW_ENABLED: boolean;
   ENTITLEMENT_BYPASS: boolean;
+  REGISTERED_BETA_ACCESS_ENABLED: boolean;
 }
 
 export interface TrackDefinition {
@@ -201,6 +202,9 @@ export interface TrackInstanceRecord {
   startedAt: string;
   completedAt: string | null;
   waitUntil: string | null;
+  lastStepId?: string | null;
+  lastStepLabel?: string | null;
+  lastMentorEvent?: string | null;
 }
 
 export interface TrackOutcomeRecord {
@@ -265,7 +269,10 @@ export interface AccessContext {
   userId: string | null;
   role: AccessRole;
   userRight: UserRight;
+  /** Payment / entitlement identity. Never granted by Tilda bind. */
   verified: boolean;
+  /** HMAC server session for a registered Members account. */
+  registered: boolean;
   entitlements: EntitlementGrant[];
 }
 
@@ -327,6 +334,8 @@ export interface RouteDecision {
   recovery?: { type: DestinationType; id?: string } | null;
   locked: boolean;
   lockReason?: LockReason;
+  preparingDestination?: boolean;
+  betaPilot?: boolean;
   ruleSnapshot?: RouteRuleRecord | null;
 }
 

@@ -3,6 +3,7 @@ import { stripUnsafeFacts } from './privacy';
 import { sanitizeArchitectureEvent, type ArchitectureEvent } from './events';
 import { newId, nowIso, type ArchitectureStore } from './store';
 import { decideInstanceCreation } from './access';
+import { isMentorEvent } from './cabinet';
 import type { AccessContext, ArchitectureFlags, RouteContext, RouteDecision, RouteMode } from './types';
 
 export class RuntimeRejectedError extends Error {
@@ -24,6 +25,7 @@ export function createTrackInstance(
     parentRouteId?: string | null;
     now?: string;
     access?: AccessContext;
+    flags?: ArchitectureFlags;
   },
 ) {
   const track = store.getTrack(input.trackId);
@@ -34,9 +36,10 @@ export function createTrackInstance(
     role: 'FULL' as const,
     userRight: 'FULL' as const,
     verified: true,
+    registered: true,
     entitlements: [],
   };
-  const allowed = decideInstanceCreation({ track, content: content || null, access });
+  const allowed = decideInstanceCreation({ track, content: content || null, access, flags: input.flags });
   if (!allowed.allowed) {
     throw new RuntimeRejectedError(allowed.lockReason, allowed.lockReason);
   }
@@ -105,7 +108,12 @@ export function submitOutcome(
   const track = store.getTrack(instance.trackId);
   const content = store.getContent(instance.trackId);
   if (track) {
-    const live = decideInstanceCreation({ track, content: content || null, access: input.access });
+    const live = decideInstanceCreation({
+      track,
+      content: content || null,
+      access: input.access,
+      flags: input.flags,
+    });
     if (!live.allowed) {
       const decision: RouteDecision = {
         matchedRuleId: null,
@@ -160,10 +168,27 @@ export function submitOutcome(
   });
 
   if (decision.destinationType === 'WAIT_UNTIL') {
-    store.upsertInstance({ ...instance, instanceStatus: 'waiting', waitUntil: nowIso(input.now) });
+    store.upsertInstance({
+      ...instance,
+      instanceStatus: 'waiting',
+      waitUntil: nowIso(input.now),
+      lastMentorEvent: 'wait_until',
+    });
   }
   if (decision.destinationType === 'DONE') {
-    store.upsertInstance({ ...instance, instanceStatus: 'completed', completedAt: nowIso(input.now) });
+    store.upsertInstance({
+      ...instance,
+      instanceStatus: 'completed',
+      completedAt: nowIso(input.now),
+      lastMentorEvent: 'done',
+    });
+  } else if (decision.destinationType !== 'WAIT_UNTIL') {
+    const mentor = isMentorEvent(safeFacts.mentor_event) ? String(safeFacts.mentor_event) : 'result_recorded';
+    store.upsertInstance({
+      ...instance,
+      lastMentorEvent: mentor,
+      lastStepId: typeof safeFacts.step_id === 'string' ? safeFacts.step_id : instance.lastStepId,
+    });
   }
 
   const events: ArchitectureEvent[] = [

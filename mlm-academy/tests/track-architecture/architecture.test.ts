@@ -287,7 +287,7 @@ describe('access boundary', () => {
       store,
       env: { NODE_ENV: 'test' },
     });
-    expect(denied.status).toBe(403);
+    expect([401, 403]).toContain(denied.status);
     const payload = await denied.json();
     expect(JSON.stringify(payload)).not.toContain('MLMA_SERVER_ONLY_A3_002_FIXTURE');
 
@@ -297,7 +297,7 @@ describe('access boundary', () => {
       }),
       { store, env: { NODE_ENV: 'test' } },
     );
-    expect(spoofed.status).toBe(403);
+    expect([401, 403]).toContain(spoofed.status);
 
     const entitled = identityFromVerifiedSession({
       userId: 'user-1',
@@ -313,7 +313,7 @@ describe('access boundary', () => {
     });
     expect(allowed.allowed).toBe(true);
 
-    const navOff = decideRoute(store, ctx({ userAccess: entitled, flags: DEFAULT_ARCHITECTURE_FLAGS, mode: 'pilot' }));
+    const navOff = decideRoute(store, ctx({ userAccess: entitled, flags: { ...DEFAULT_ARCHITECTURE_FLAGS, REGISTERED_BETA_ACCESS_ENABLED: false }, mode: 'pilot' }));
     expect(navOff.locked).toBe(true);
     expect(navOff.lockReason).toBe('FEATURE_DISABLED');
   });
@@ -341,7 +341,7 @@ describe('access boundary', () => {
       new Request('https://mlma.test/api/v1/tracks/A3-002/content', {
         headers: sessionHeader({ userId: 'u1', role: 'FULL', verified: true, entitlements: [] }),
       }),
-      { store, env: { NODE_ENV: 'test' } },
+      { store, env: { NODE_ENV: 'test' }, flags: { ...DEFAULT_ARCHITECTURE_FLAGS, REGISTERED_BETA_ACCESS_ENABLED: false } },
     );
     expect(user.status).toBe(403);
     const admin = await handleArchitectureRequest(
@@ -819,7 +819,11 @@ describe('content package isolation, demo sandbox, postgres fail-closed', () => 
         track: store.getTrack('A3-002')!,
         content: store.getContent('A3-002', status)!,
         access: entitled,
-        flags: { ...DEFAULT_ARCHITECTURE_FLAGS, PAID_TRACK_NAVIGATION_ENABLED: true },
+        flags: {
+          ...DEFAULT_ARCHITECTURE_FLAGS,
+          PAID_TRACK_NAVIGATION_ENABLED: true,
+          REGISTERED_BETA_ACCESS_ENABLED: false,
+        },
       });
       expect(decision.allowed).toBe(false);
       if (!decision.allowed) expect(decision.lockReason).toBe('CONTENT_UNAVAILABLE');

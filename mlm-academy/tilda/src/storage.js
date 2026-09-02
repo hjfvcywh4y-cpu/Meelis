@@ -431,6 +431,25 @@
       });
     });
   };
+  HttpRepo.prototype.getJson = function (path) {
+    if (typeof fetch !== 'function') return Promise.reject(new Error('no_fetch'));
+    return fetch(this.base + path, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      credentials: 'include',
+    }).then((res) => {
+      return res.json().catch(function () { return {}; }).then((data) => {
+        if (!res.ok) {
+          this.lastError = (data && (data.lockReason || data.reason)) || ('api_' + res.status);
+          var err = new Error(this.lastError);
+          err.status = res.status;
+          err.data = data;
+          throw err;
+        }
+        return data;
+      });
+    });
+  };
   HttpRepo.prototype.bind = function (session) {
     return this.request('/session/bind', {
       maId: session.maId || '',
@@ -752,6 +771,45 @@
   api.getRepo = getRepo;
   api.hydrateAccount = hydrateAccount;
   api.hydrateAccountFromServer = hydrateAccountFromServer;
+  api.fetchCabinet = function () {
+    var repo = getRepo();
+    if (!repo || !repo.getJson) return Promise.resolve(null);
+    return repo.getJson('/v1/me/cabinet').then(function (data) {
+      return data && data.cabinet ? data.cabinet : null;
+    }).catch(function () { return null; });
+  };
+  api.fetchTrackMeta = function (trackId) {
+    var repo = getRepo();
+    if (!repo || !repo.getJson) return Promise.resolve(null);
+    return repo.getJson('/v1/tracks/' + encodeURIComponent(trackId) + '/meta').then(function (data) {
+      return data && data.meta ? data.meta : null;
+    }).catch(function () { return null; });
+  };
+  api.fetchTrackContent = function (trackId) {
+    var repo = getRepo();
+    if (!repo || !repo.getJson) return Promise.resolve({ ok: false, status: 0 });
+    return repo.getJson('/v1/tracks/' + encodeURIComponent(trackId) + '/content').then(function (data) {
+      return { ok: true, data: data };
+    }).catch(function (err) {
+      return { ok: false, status: err && err.status, data: err && err.data };
+    });
+  };
+  api.startTrackInstance = function (trackId) {
+    var repo = getRepo();
+    if (!repo || !repo.request) return Promise.resolve(null);
+    return repo.request('/v1/track-instances', { trackId: trackId }).then(function (data) {
+      return data && data.instance ? data.instance : null;
+    }).catch(function () { return null; });
+  };
+  api.submitTrackOutcome = function (instanceId, outcomeCode, facts) {
+    var repo = getRepo();
+    if (!repo || !repo.request) return Promise.resolve(null);
+    return repo.request('/v1/track-instances/' + encodeURIComponent(instanceId) + '/outcomes', {
+      clientEventId: 'ce-' + Date.now(),
+      outcomeCode: outcomeCode,
+      facts: facts || {},
+    }).catch(function () { return null; });
+  };
   api.enqueueOutbox = enqueue;
   api.LocalRepo = LocalRepo;
   api.readPendingTrackId = readPendingTrackId;

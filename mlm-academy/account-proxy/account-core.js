@@ -415,6 +415,7 @@ export function allowedMethod(path, method) {
   if (path === '/api/me/entitlements') return method === 'GET' || method === 'POST';
   if (path === '/api/commerce/preview') return method === 'GET' || method === 'POST';
   if (path === '/api/webhooks/yookassa') return method === 'POST';
+  if (path.indexOf('/api/v1/') === 0) return method === 'GET' || method === 'POST' || method === 'OPTIONS';
   return method === 'POST';
 }
 

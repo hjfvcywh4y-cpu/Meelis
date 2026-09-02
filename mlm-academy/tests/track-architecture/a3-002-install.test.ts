@@ -215,7 +215,7 @@ describe('A3-002 acceptance cases', () => {
       track,
       content,
       access: verifiedNoGrant,
-      flags: DEFAULT_ARCHITECTURE_FLAGS,
+      flags: { ...DEFAULT_ARCHITECTURE_FLAGS, REGISTERED_BETA_ACCESS_ENABLED: false },
     });
     expect(noEnt.allowed).toBe(false);
 
@@ -236,7 +236,7 @@ describe('A3-002 acceptance cases', () => {
           },
         ],
       }),
-      flags: DEFAULT_ARCHITECTURE_FLAGS,
+      flags: { ...DEFAULT_ARCHITECTURE_FLAGS, REGISTERED_BETA_ACCESS_ENABLED: false },
     });
     expect(entitledReview.allowed).toBe(false);
 

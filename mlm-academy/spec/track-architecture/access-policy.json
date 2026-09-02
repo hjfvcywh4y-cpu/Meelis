@@ -8,7 +8,8 @@
     "PAYMENTS_ENABLED": false,
     "ALLOW_DRAFT_RULES": false,
     "ADMIN_PREVIEW_ENABLED": true,
-    "ENTITLEMENT_BYPASS": false
+    "ENTITLEMENT_BYPASS": false,
+    "REGISTERED_BETA_ACCESS_ENABLED": true
   },
   "roles": {
     "ANON": {

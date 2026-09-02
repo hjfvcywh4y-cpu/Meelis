@@ -1,4 +1,4 @@
-<!-- Блок T123: рендер оболочки 3/7 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<!-- Блок T123: рендер оболочки 3/8 Не публиковать. Не вставлять в общесайтовый HEAD. -->
 <script>
 (function (root) {
   'use strict';
@@ -90,11 +90,44 @@
     var startHref = R.track(track.trackId) + (R.track(track.trackId).indexOf('?') === -1 ? '?' : '&') + 'run=1';
     var genre = passport ? '<span class="mlma-genre mlma-genre-' + esc(passport.genreAccent || 'practice') + '">' + esc(passport.genreLabel) + '</span>' : '';
     var inactive = D.isInactive && D.isInactive(runtime);
+    var loggedIn = !!(state.account && state.account.loggedIn);
     var runtimeHtml = '';
+    var loginHref = D.membersLoginUrl('/track?id=' + String(track.trackId).toLowerCase());
+    var continuations = (state.trackMeta && state.trackMeta.possibleContinuations) || [];
+    var continuationHtml =
+      '<p class="mlma-muted" style="margin-top:12px">Продолжение зависит от результата прохождения</p>' +
+      (continuations.length
+        ? '<ul style="margin-top:8px">' +
+          continuations
+            .map(function (row) {
+              return '<li><a href="' + esc(R.track(row.id)) + '">' + esc(row.title || row.id) + '</a></li>';
+            })
+            .join('') +
+          '</ul>'
+        : '');
     if (status.itemKind === 'material') {
       runtimeHtml =
         '<section class="mlma-card mlma-pad"><span class="mlma-meta">Материал</span><p style="margin-top:10px">Это материал библиотеки: его можно открыть и использовать. Он не заменяет исполняемый трек с рабочим следом.</p></section>';
-    } else if (running && status.canStart) {
+    } else if (!loggedIn) {
+      runtimeHtml =
+        '<section class="mlma-card mlma-pad-lg" style="padding:28px"><span class="mlma-eyebrow">Доступ к треку</span><h2 class="mlma-h3" style="margin-top:12px">Чтобы пройти этот трек, войдите в личный кабинет.</h2>' +
+        '<p class="mlma-lead" style="margin-top:12px">' +
+        esc(track.situation) +
+        '</p><p style="margin-top:8px">Результат: ' +
+        esc(track.outcome) +
+        '</p>' +
+        continuationHtml +
+        '<div class="mlma-actions" style="margin-top:20px">' +
+        btn(loginHref, 'Войти и пройти трек', 'primary') +
+        '</div></section>';
+    } else if (state.packageDenied) {
+      runtimeHtml =
+        '<section class="mlma-card mlma-pad"><span class="mlma-eyebrow">Готовится</span><h2 class="mlma-h3" style="margin-top:12px">' +
+        esc(track.title) +
+        '</h2><p class="mlma-muted" style="margin-top:12px">Рабочий пакет этого трека ещё не установлен.</p></section>';
+    } else if (running && state.packageBody && D.renderInstalledPackage) {
+      runtimeHtml = D.renderInstalledPackage({ trackId: track.trackId, body: state.packageBody, stepId: state.packageStepId });
+    } else if (running && canBody) {
       runtimeHtml = renderTrackRuntime(track, passport, runtime, nba, R, inactive);
     } else {
       runtimeHtml =
@@ -103,33 +136,20 @@
         '" aria-label="Контур трека"><span class="mlma-eyebrow mlma-eyebrow-dark">Контур прохождения</span><h2 class="mlma-h3" style="margin-top:12px">' +
         esc((passport && passport.genrePattern) || 'Состояние → действие → след → следующее действие') +
         '</h2>' +
-        '<ol class="mlma-runtime-steps" style="margin-top:16px">' +
-        '<li><span class="mlma-meta">Исходное состояние</span><p>' + esc(track.situation) + '</p></li>' +
-        '<li><span class="mlma-meta">Действие</span><p>' + esc(track.title) + '</p></li>' +
-        '<li><span class="mlma-meta">Рабочий след</span><p>' + esc(track.outcome) + '</p></li>' +
-        '<li><span class="mlma-meta">Дальше</span><p>Следующее лучшее действие, не похожий материал.</p></li></ol>' +
+        continuationHtml +
         (inactive ? '<p class="mlma-lead" style="margin-top:16px">Есть незавершённая попытка. Можно продолжить с того же шага.</p>' : '') +
         '<div class="mlma-actions" style="margin-top:20px">' +
-        (status.canStart && canBody
-          ? '<a class="mlma-btn mlma-btn-primary" href="' + esc(startHref) + '" data-mlma-run-start="' + esc(track.trackId) + '">Начать трек</a>'
+        (canBody
+          ? '<a class="mlma-btn mlma-btn-primary" href="' + esc(startHref) + '" data-mlma-run-start="' + esc(track.trackId) + '">' +
+            (inactive ? 'Продолжить' : 'Начать трек') +
+            '</a>'
           : '') +
         '</div></section>';
     }
-    var wouldStart = D.getTrackStatusView(track, { entitled: true }).canStart;
-    if (!entitled && D.normalizeAccess && D.normalizeAccess(track.access) === 'paid' && wouldStart) {
-      runtimeHtml =
-        '<section class="mlma-card mlma-pad-lg" style="padding:28px"><span class="mlma-eyebrow">Доступ к треку</span><h2 class="mlma-h3" style="margin-top:12px">Платный полный маршрут ещё готовится</h2>' +
-        '<p class="mlma-lead" style="margin-top:12px">' + esc(track.situation) + '</p>' +
-        '<p style="margin-top:8px">Результат: ' + esc(track.outcome) + '</p>' +
-        '<p class="mlma-muted" style="margin-top:12px">Пока в карточке описание материала. Купить нельзя, пока содержание не наполнено.</p>' +
-        '<div class="mlma-actions" style="margin-top:20px">' +
-        (state.account && state.account.loggedIn
-          ? btn((R.pricing && R.pricing()) || '/pricing', 'Готовится к запуску', 'primary')
-          : btn(D.membersLoginUrl(pathName()), 'Войти, чтобы сохранить', 'primary') + btn((R.pricing && R.pricing()) || '/pricing', 'Смотреть тарифы')) +
-        '</div></section>';
-    }
     var nbaHtml = '';
-    if (nba && nba.kind === 'open_track' && nba.track) {
+    if (!loggedIn) {
+      nbaHtml = '<p class="mlma-lead mlma-muted">Продолжение зависит от результата прохождения</p>';
+    } else if (nba && nba.kind === 'open_track' && nba.track) {
       nbaHtml =
         recBlock({ track: nba.track, reason: nba.reason || 'explicit_next_edge', available: true }, state, true) +
         '<p class="mlma-muted" style="margin-top:12px;font-size:14px">' +

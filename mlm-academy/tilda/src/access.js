@@ -234,6 +234,10 @@
 
   function canOpenTrackBody(track, account) {
     if (!track) return false;
+    if (api.SIGNUP_ENABLED === undefined) {
+      /* keep */
+    }
+    if (account && account.loggedIn && !(api.PAYMENTS_ENABLED === true)) return true;
     var view = api.getTrackStatusView(track, { entitled: isEntitledToTrack(track, account) });
     return !!view.canStart && isEntitledToTrack(track, account);
   }
@@ -247,10 +251,17 @@
       return { key: 'renew', label: 'Как будет устроен доступ', href: '/pricing' };
     }
     if (!account || !account.loggedIn) {
+      if (access === 'public' || access === 'promo' || track.publicationStatus === 'promo') {
+        return {
+          key: 'login_save',
+          label: view.canStart ? 'Войти, чтобы сохранить' : 'Открыть описание',
+          href: view.canStart ? api.membersLoginUrl('/track?id=' + String(track.trackId).toLowerCase()) : api.routes().track(track.trackId),
+        };
+      }
       return {
-        key: 'login_save',
-        label: view.canStart ? 'Войти, чтобы сохранить' : 'Открыть описание',
-        href: view.canStart ? api.membersLoginUrl('/track?id=' + String(track.trackId).toLowerCase()) : api.routes().track(track.trackId),
+        key: 'login_start',
+        label: 'Войти и пройти трек',
+        href: api.membersLoginUrl('/track?id=' + String(track.trackId).toLowerCase()),
       };
     }
     if (runtime && runtime.status && runtime.status !== 'preview' && entitled) {
@@ -261,6 +272,15 @@
     }
     if (access === 'public' || access === 'promo' || track.publicationStatus === 'promo') {
       return { key: 'open_free', label: 'Открыть бесплатно', href: api.routes().track(track.trackId) };
+    }
+    if (!entitled && access === 'paid' && account && account.loggedIn && api.PAYMENTS_ENABLED !== true) {
+      if (track.publicationStatus === 'published' || track.contentStatus === 'published' || track.contentStatus === 'complete') {
+        return {
+          key: 'beta_start',
+          label: 'Начать трек',
+          href: api.routes().track(track.trackId),
+        };
+      }
     }
     if (!entitled && access === 'paid') {
       return {
@@ -301,6 +321,17 @@
     }
     if (state === 'expired') {
       return { kind: 'renew', title: 'Доступ закончился', why: 'Профиль, история и результаты на месте. Платные треки готовятся к запуску.', href: '/pricing', cta: 'Смотреть условия' };
+    }
+    if (account && account.loggedIn && account.cabinet && account.cabinet.nextStep) {
+      var next = account.cabinet.nextStep;
+      return {
+        kind: next.kind || 'open_track',
+        title: next.title,
+        why: next.why || 'Почему это сейчас',
+        href: next.href,
+        cta: next.cta || 'Продолжить',
+        trackId: next.trackId,
+      };
     }
     if (!(profile.savedTrackIds && profile.savedTrackIds.length)) {
       return {

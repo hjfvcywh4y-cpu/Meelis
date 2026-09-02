@@ -1,3 +1,4 @@
+import { installedPackageOpenForBeta, isRegisteredBeta } from './beta';
 import type {
   AccessContext,
   AccessTier,
@@ -104,6 +105,10 @@ export function decideContentAccess(input: {
     return { allowed: true, kind: 'DEMO' };
   }
 
+  if (isRegisteredBeta(access, flags) && installedPackageOpenForBeta(content) && executionMode !== 'SANDBOX') {
+    return { allowed: true, kind: 'PAID' };
+  }
+
   if (!isPublishedContentStatus(content.contentStatus) || !content.privateContentRef) {
     return { allowed: false, lockReason: 'CONTENT_UNAVAILABLE', kind: 'PAID' };
   }
@@ -131,8 +136,18 @@ export function decideInstanceCreation(input: {
   track: TrackDefinition;
   content: ContentVersionRecord | null;
   access: AccessContext;
+  flags?: ArchitectureFlags;
 }): { allowed: true } | { allowed: false; lockReason: 'AUTH_REQUIRED' | 'ENTITLEMENT_REQUIRED' | 'DATA_BLOCKED' | 'SANDBOX_NO_LIVE_INSTANCE' } {
   const { track, content, access } = input;
+  const flags = input.flags;
+  if (flags && isRegisteredBeta(access, flags) && installedPackageOpenForBeta(content)) {
+    const tier = effectiveAccessTier(track, content);
+    const executionMode = effectiveExecutionMode(track, content);
+    if (tier === 'PUBLIC_DEMO' || executionMode === 'SANDBOX') {
+      return { allowed: false, lockReason: 'SANDBOX_NO_LIVE_INSTANCE' };
+    }
+    return { allowed: true };
+  }
   if (!access.userId || !access.verified) {
     return { allowed: false, lockReason: access.userId ? 'ENTITLEMENT_REQUIRED' : 'AUTH_REQUIRED' };
   }
@@ -153,4 +168,8 @@ export function canUsePaidNavigation(access: AccessContext, flags: ArchitectureF
   if (access.role === 'ADMIN' && flags.ADMIN_PREVIEW_ENABLED && access.verified) return true;
   if (!access.verified || !access.userId) return false;
   return (access.entitlements || []).some((item) => item.status === 'active');
+}
+
+export function canUseBetaNavigation(access: AccessContext, flags: ArchitectureFlags): boolean {
+  return isRegisteredBeta(access, flags) && flags.ROUTE_ENGINE_ENABLED === true;
 }

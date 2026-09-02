@@ -9,6 +9,7 @@ export const DEFAULT_ARCHITECTURE_FLAGS: ArchitectureFlags = {
   ALLOW_DRAFT_RULES: false,
   ADMIN_PREVIEW_ENABLED: true,
   ENTITLEMENT_BYPASS: false,
+  REGISTERED_BETA_ACCESS_ENABLED: true,
 };
 
 function truthy(value: string | undefined): boolean {
@@ -45,6 +46,11 @@ export function resolveArchitectureFlags(env: NodeJS.Dict<string> = process.env)
         ? truthy(env.ADMIN_PREVIEW_ENABLED)
         : DEFAULT_ARCHITECTURE_FLAGS.ADMIN_PREVIEW_ENABLED,
     ENTITLEMENT_BYPASS: truthy(env.ENTITLEMENT_BYPASS),
+    REGISTERED_BETA_ACCESS_ENABLED: falsey(env.REGISTERED_BETA_ACCESS_ENABLED)
+      ? false
+      : env.REGISTERED_BETA_ACCESS_ENABLED
+        ? truthy(env.REGISTERED_BETA_ACCESS_ENABLED)
+        : DEFAULT_ARCHITECTURE_FLAGS.REGISTERED_BETA_ACCESS_ENABLED,
   };
 
   if (production) {

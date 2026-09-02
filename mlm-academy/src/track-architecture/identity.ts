@@ -13,6 +13,7 @@ export const ANON_ACCESS: AccessContext = {
   role: 'ANON',
   userRight: 'NONE',
   verified: false,
+  registered: false,
   entitlements: [],
 };
 
@@ -24,18 +25,33 @@ export function identityFromVerifiedSession(input: {
   userId: string;
   role?: AccessRole;
   verified?: boolean;
+  registered?: boolean;
   entitlements?: EntitlementGrant[];
   userRight?: UserRight;
 }): AccessContext {
   const verified = input.verified === true;
   const requested = input.role || 'FREE';
   const role: AccessRole = verified ? requested : requested === 'ANON' ? 'ANON' : 'FREE';
+  const registered = input.registered === true || Boolean(input.userId);
   return {
     userId: input.userId,
     role,
     userRight: input.userRight || userRightFromRole(role, verified),
     verified,
+    registered,
     entitlements: verified ? input.entitlements || [] : [],
+  };
+}
+
+/** HMAC cookie session of a registered Members account. Not a payment entitlement. */
+export function identityFromRegisteredSession(input: { userId: string }): AccessContext {
+  return {
+    userId: input.userId,
+    role: 'FREE',
+    userRight: 'NONE',
+    verified: false,
+    registered: true,
+    entitlements: [],
   };
 }
 

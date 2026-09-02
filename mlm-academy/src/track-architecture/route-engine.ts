@@ -1,8 +1,10 @@
 import { trackUrl } from '../domain/routes';
-import { canUsePaidNavigation } from './access';
+import { canUseBetaNavigation, canUsePaidNavigation } from './access';
+import { isBetaContentStatus, isRegisteredBeta } from './beta';
 import { evaluateCondition } from './evaluator';
 import { resolveTrackId } from './resolver';
 import type {
+  ContentVersionRecord,
   DestinationType,
   RouteContext,
   RouteDecision,
@@ -13,14 +15,24 @@ import type {
 export interface RouteEngineStore {
   getTrack(id: string): TrackDefinition | undefined;
   listRules(): RouteRuleRecord[];
+  getContent?(trackId: string, version?: string): ContentVersionRecord | undefined;
 }
 
-function runnableStatus(rule: RouteRuleRecord, mode: RouteContext['mode']): boolean {
+function runnableStatus(
+  rule: RouteRuleRecord,
+  mode: RouteContext['mode'],
+  context: RouteContext,
+  store: RouteEngineStore,
+): boolean {
   if (rule.ruleStatus === 'DISABLED' || rule.ruleStatus === 'ARCHIVED') return false;
   if (rule.ruleStatus === 'VALIDATED_RULE') return true;
   if (rule.ruleStatus === 'PILOT_DRAFT_TO_TEST') {
-    if (mode === 'production') return false;
     if (mode === 'pilot' || mode === 'admin-preview') return true;
+    if (mode === 'beta' && isRegisteredBeta(context.userAccess, context.flags) && !context.flags.ALLOW_DRAFT_RULES) {
+      const content = store.getContent?.(rule.fromTrackId);
+      return isBetaContentStatus(content?.contentStatus);
+    }
+    return false;
   }
   return false;
 }
@@ -72,7 +84,7 @@ export function decideRoute(store: RouteEngineStore, context: RouteContext): Rou
   const candidates = store
     .listRules()
     .filter((rule) => rule.fromTrackId === fromId && rule.outcomeCode === outcomeCode)
-    .filter((rule) => runnableStatus(rule, context.mode))
+    .filter((rule) => runnableStatus(rule, context.mode, context, store))
     .filter((rule) => evaluateCondition(context.facts || {}, rule.fieldPath, rule.operatorCode, rule.expectedValue))
     .slice()
     .sort((a, b) => a.priority - b.priority || a.ruleId.localeCompare(b.ruleId));
@@ -113,19 +125,25 @@ export function decideRoute(store: RouteEngineStore, context: RouteContext): Rou
   const destinationType = matched.destinationType;
   const destinationId = matched.destinationId;
   const paidNav = canUsePaidNavigation(context.userAccess, context.flags);
-  const locked = !paidNav;
+  const betaNav = canUseBetaNavigation(context.userAccess, context.flags);
+  const destContent = destinationId && store.getContent ? store.getContent(destinationId) : undefined;
+  const destInstalled = destinationType === 'DONE' || destinationType === 'WAIT_UNTIL' || destinationType === 'EXPERT' || destinationType === 'PROCESS_OWNER' || isBetaContentStatus(destContent?.contentStatus);
+  const preparingDestination = Boolean(betaNav && destinationNeedsNavigation(destinationType) && destinationId && !destInstalled);
+  const locked = preparingDestination ? true : !(paidNav || (betaNav && destInstalled));
   const lockReason = locked
-    ? !context.flags.PAID_TRACK_NAVIGATION_ENABLED
-      ? 'FEATURE_DISABLED'
-      : !context.userAccess.verified
-        ? context.userAccess.userId
-          ? 'ENTITLEMENT_REQUIRED'
-          : 'AUTH_REQUIRED'
-        : 'ENTITLEMENT_REQUIRED'
+    ? preparingDestination
+      ? 'CONTENT_UNAVAILABLE'
+      : !context.flags.PAID_TRACK_NAVIGATION_ENABLED && !betaNav
+        ? 'FEATURE_DISABLED'
+        : !context.userAccess.verified && !context.userAccess.registered
+          ? context.userAccess.userId
+            ? 'ENTITLEMENT_REQUIRED'
+            : 'AUTH_REQUIRED'
+          : 'ENTITLEMENT_REQUIRED'
     : undefined;
 
   let destinationUrl: string | null = null;
-  if (!locked && destinationId && destinationNeedsNavigation(destinationType)) {
+  if (destinationId && destinationNeedsNavigation(destinationType) && (betaNav || paidNav)) {
     destinationUrl = trackUrl(destinationId);
   }
 
@@ -139,6 +157,8 @@ export function decideRoute(store: RouteEngineStore, context: RouteContext): Rou
     recovery: matched.recovery,
     locked,
     lockReason,
+    preparingDestination,
+    betaPilot: betaNav || context.mode === 'beta',
     ruleSnapshot: matched,
   };
 }
