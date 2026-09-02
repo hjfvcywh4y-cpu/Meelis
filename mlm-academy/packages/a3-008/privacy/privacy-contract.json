@@ -1,0 +1,93 @@
+{
+  "version": "1.0",
+  "governingPrinciple": "Server stores only structured service facts needed to route; identity and conversation content remain client-only.",
+  "serverAllowedFields": [
+    "system_action_id",
+    "action_version",
+    "source_track_id",
+    "source_instance_id",
+    "source_outcome_code",
+    "contact_card_ref",
+    "contact.outcome",
+    "occurred_at",
+    "follow_up_permission",
+    "next_action_at",
+    "meeting_at",
+    "meeting_format_code",
+    "referral_permission_confirmed",
+    "wait_until",
+    "retry_count",
+    "stop_code",
+    "idempotency_key",
+    "supersedes_outcome_id",
+    "route_decision_id"
+  ],
+  "clientOnlyFields": [
+    "contact_name",
+    "phone",
+    "email",
+    "messenger_handle",
+    "profile_url",
+    "message_text",
+    "response_text",
+    "call_transcript",
+    "exact_words",
+    "free_text_note",
+    "meeting_location",
+    "meeting_address",
+    "referral_name",
+    "referral_phone",
+    "referral_email",
+    "referral_profile_url"
+  ],
+  "analyticsAllowedFields": [
+    "system_action_id",
+    "action_version",
+    "source_track_id",
+    "outcome_code",
+    "destination_type",
+    "destination_id",
+    "permission_present",
+    "retry_count_bucket",
+    "duration_bucket",
+    "record_status",
+    "lock_reason"
+  ],
+  "logDeniedFields": [
+    "contact_name",
+    "phone",
+    "email",
+    "messenger_handle",
+    "profile_url",
+    "message_text",
+    "response_text",
+    "call_transcript",
+    "exact_words",
+    "free_text_note",
+    "meeting_location",
+    "meeting_address",
+    "referral_name",
+    "referral_phone",
+    "referral_email",
+    "referral_profile_url"
+  ],
+  "aiPolicy": {
+    "aiRequired": false,
+    "sendToAi": [],
+    "note": "A3-008 is deterministic. No external AI call is needed to classify or route an outcome."
+  },
+  "stripPolicy": {
+    "rejectUnknownFields": true,
+    "stripBeforeLogs": true,
+    "stripBeforeAnalytics": true,
+    "stripBeforePersistence": true,
+    "opaqueContactCardRefRequired": true
+  },
+  "ethicalRules": [
+    "An explicit refusal terminates persuasion; it is not converted into an objection-handling branch.",
+    "A later contact requires explicit permission and a date.",
+    "Silence creates waiting, not consent.",
+    "A referral route requires permission; referral PII stays on the client.",
+    "The source phrase about gaining a moral right to dictate conditions is deliberately excluded as incompatible with freedom of choice."
+  ]
+}

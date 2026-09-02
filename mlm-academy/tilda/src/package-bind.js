@@ -62,7 +62,19 @@
         var next = el.getAttribute('data-next');
         if (outcome && D.submitTrackOutcome && D._instanceId) {
           D.submitTrackOutcome(D._instanceId, outcome, D.packageClient.serverPayload(trackId, outcome)).then(function (res) {
-            var nextCard = res && res.decision && res.decision.next;
+            var decision = res && res.decision;
+            if (decision && decision.destinationType === 'SYSTEM_ACTION' && D.systemActionRuntime) {
+              if (
+                D.systemActionRuntime.openFromDecision(rootEl, decision, {
+                  sourceTrackId: trackId,
+                  sourceInstanceId: D._instanceId,
+                  sourceOutcomeCode: outcome,
+                }, remount)
+              ) {
+                return;
+              }
+            }
+            var nextCard = decision && decision.next;
             if (nextCard && nextCard.href) {
               window.location.href = nextCard.preparing
                 ? '/my'
@@ -88,7 +100,19 @@
         var facts = D.packageClient.serverPayload(trackId, outcome);
         if (D._instanceId && D.submitTrackOutcome) {
           D.submitTrackOutcome(D._instanceId, outcome, facts).then(function (res) {
-            var nextCard = res && res.decision && res.decision.next;
+            var decision = res && res.decision;
+            if (decision && decision.destinationType === 'SYSTEM_ACTION' && D.systemActionRuntime) {
+              if (
+                D.systemActionRuntime.openFromDecision(rootEl, decision, {
+                  sourceTrackId: trackId,
+                  sourceInstanceId: D._instanceId,
+                  sourceOutcomeCode: outcome,
+                }, remount)
+              ) {
+                return;
+              }
+            }
+            var nextCard = decision && decision.next;
             if (nextCard && nextCard.status === 'done') window.location.href = '/my';
             else if (nextCard && nextCard.preparing) window.location.href = nextCard.href || '/my';
             else if (nextCard && nextCard.href) window.location.href = nextCard.href + '&run=1';

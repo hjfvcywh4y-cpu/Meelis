@@ -1,0 +1,62 @@
+{
+  "version": "1.0",
+  "reuseExistingArchitectureStore": true,
+  "noParallelDatabase": true,
+  "logicalRecords": {
+    "outcomeEvent": {
+      "immutable": true,
+      "fields": [
+        "system_action_id",
+        "action_version",
+        "source_track_id",
+        "source_instance_id",
+        "source_outcome_code",
+        "contact_card_ref",
+        "contact.outcome",
+        "occurred_at",
+        "follow_up_permission",
+        "next_action_at",
+        "meeting_at",
+        "meeting_format_code",
+        "referral_permission_confirmed",
+        "wait_until",
+        "retry_count",
+        "stop_code",
+        "idempotency_key",
+        "supersedes_outcome_id"
+      ],
+      "uniqueScope": [
+        "principal_id",
+        "source_instance_id",
+        "idempotency_key"
+      ],
+      "correctionPolicy": "Append a new event with supersedes_outcome_id; never mutate the old event."
+    },
+    "routeDecision": {
+      "fields": [
+        "decision_id",
+        "outcome_event_id",
+        "matched_rule_id",
+        "destination_type",
+        "destination_id",
+        "wait_until",
+        "locked",
+        "lock_reason",
+        "created_at"
+      ],
+      "relationship": "Exactly one saved decision per accepted outcome event."
+    }
+  },
+  "transactionGuarantees": [
+    "Outcome event and RouteDecision commit together.",
+    "A repeated idempotency key returns the same event and decision.",
+    "Concurrent requests with the same idempotency scope cannot create duplicates.",
+    "Production without a configured PostgreSQL repository returns STORAGE_UNCONFIGURED."
+  ],
+  "correctionRules": [
+    "A correction before downstream consumption creates a superseding event and a new decision.",
+    "If the prior decision already created or started a downstream live instance, reject automatic correction with 409 OUTCOME_ALREADY_CONSUMED.",
+    "Never delete downstream instances or history automatically."
+  ],
+  "migrationBoundary": "A local migration may be added only if the current schema cannot represent these logical records. Do not apply production migrations in this iteration."
+}

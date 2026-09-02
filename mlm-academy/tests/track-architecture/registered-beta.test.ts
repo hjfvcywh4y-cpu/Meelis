@@ -131,7 +131,7 @@ describe('registered beta access', () => {
     expect(headerIgnored).toEqual(ANON_ACCESS);
   });
 
-  it('четыре outcome дают beta RouteDecision; неустановленный следующий — Готовится', () => {
+  it('четыре outcome дают beta RouteDecision; A3-008 после установки — system action', () => {
     const store = createSeededStore();
     importTrackPackage(store, loadReadyPackage().source, { dryRun: false });
     const sent = decideRoute(store, ctx());
@@ -139,6 +139,16 @@ describe('registered beta access', () => {
     expect(sent.destinationId).toBe('A3-008');
     expect(sent.preparingDestination).toBe(true);
     expect(sent.betaPilot).toBe(true);
+
+    const a3008Pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'packages/a3-008/package.json'), 'utf8'));
+    const a3008Body = {
+      ...JSON.parse(fs.readFileSync(path.join(ROOT, 'server/system-actions/a3-008/0.1.0/content.json'), 'utf8')),
+      uiDefinition: JSON.parse(fs.readFileSync(path.join(ROOT, 'server/system-actions/a3-008/0.1.0/ui-definition.json'), 'utf8')),
+    };
+    importTrackPackage(store, { filename: 'package.json', text: JSON.stringify(a3008Pkg), json: a3008Pkg, contentBody: a3008Body }, { dryRun: false });
+    const sentInstalled = decideRoute(store, ctx());
+    expect(sentInstalled.preparingDestination).toBe(false);
+    expect(sentInstalled.destinationUrl).toBeNull();
     const stopped = decideRoute(store, ctx({ outcomeCode: 'MESSAGE_STOPPED', facts: { 'message.status': 'STOPPED' } }));
     expect(stopped.matchedRuleId).toBe('RR3-A3-002-STOP');
     expect(stopped.destinationType).toBe('DONE');

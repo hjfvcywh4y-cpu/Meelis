@@ -51,6 +51,7 @@ export function installedTracks(store: ArchitectureStore) {
   return store
     .listContent()
     .filter((row) => isBetaContentStatus(row.contentStatus) && row.privateContentRef)
+    .filter((row) => store.getTrack(row.trackId)?.entityType !== 'SYSTEM_ACTION')
     .map((row) => {
       const track = store.getTrack(row.trackId);
       return {
@@ -82,15 +83,28 @@ export function buildCabinet(store: ArchitectureStore, access: AccessContext, fl
   let next: Record<string, unknown>;
   if (inProgress) {
     const track = store.getTrack(inProgress.trackId);
-    next = {
-      question: 'Что мне делать сейчас?',
-      title: track?.title || inProgress.trackId,
-      trackId: inProgress.trackId,
-      why: 'Почему это сейчас: есть незавершённое прохождение. Сначала закройте его, затем система скорректирует маршрут.',
-      cta: inProgress.instanceStatus === 'waiting' ? 'Вернуться с результатом' : 'Продолжить',
-      href: trackUrl(inProgress.trackId),
-      kind: 'continue',
-    };
+    if (inProgress.pendingSystemActionId) {
+      next = {
+        question: 'Что мне делать сейчас?',
+        title: 'Зафиксировать результат',
+        trackId: inProgress.trackId,
+        why: 'Почему это сейчас: после контакта нужно зафиксировать факт, прежде чем система предложит следующий шаг.',
+        cta: 'Зафиксировать результат',
+        href: trackUrl(inProgress.trackId) + '?systemAction=a3-008',
+        kind: 'system_action',
+        systemActionId: inProgress.pendingSystemActionId,
+      };
+    } else {
+      next = {
+        question: 'Что мне делать сейчас?',
+        title: track?.title || inProgress.trackId,
+        trackId: inProgress.trackId,
+        why: 'Почему это сейчас: есть незавершённое прохождение. Сначала закройте его, затем система скорректирует маршрут.',
+        cta: inProgress.instanceStatus === 'waiting' ? 'Вернуться с результатом' : 'Продолжить',
+        href: trackUrl(inProgress.trackId),
+        kind: 'continue',
+      };
+    }
   } else if (defaultTrack) {
     next = {
       question: 'Что мне делать сейчас?',
@@ -164,8 +178,28 @@ export function destinationCard(
   store: ArchitectureStore,
   destinationId: string | null,
   destinationType: string,
-): { status: 'ready' | 'preparing' | 'done'; title: string; href: string | null } {
+  sourceTrackId?: string | null,
+): {
+  status: 'ready' | 'preparing' | 'done' | 'system_action';
+  title: string;
+  href: string | null;
+  systemActionId?: string;
+  sourceTrackId?: string;
+} {
   if (destinationType === 'DONE') return { status: 'done', title: 'Маршрут корректно завершён', href: '/my' };
+  if (destinationType === 'WAIT_UNTIL') {
+    return { status: 'ready', title: 'Ожидание до даты', href: '/my' };
+  }
+  if (destinationType === 'SYSTEM_ACTION' && destinationId) {
+    const installed = isBetaContentStatus(store.getContent(destinationId)?.contentStatus);
+    return {
+      status: installed ? 'system_action' : 'preparing',
+      title: installed ? 'Зафиксировать результат' : 'Готовится',
+      href: null,
+      systemActionId: destinationId,
+      sourceTrackId: sourceTrackId || undefined,
+    };
+  }
   if (!destinationId) return { status: 'preparing', title: 'Готовится', href: null };
   const installed = isBetaContentStatus(store.getContent(destinationId)?.contentStatus);
   return {

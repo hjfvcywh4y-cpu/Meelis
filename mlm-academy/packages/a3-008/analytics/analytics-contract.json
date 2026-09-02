@@ -1,0 +1,95 @@
+{
+  "version": "1.0",
+  "events": [
+    {
+      "name": "system_action_opened",
+      "fields": [
+        "system_action_id",
+        "action_version",
+        "source_track_id"
+      ]
+    },
+    {
+      "name": "outcome_option_selected",
+      "fields": [
+        "system_action_id",
+        "source_track_id",
+        "outcome_code"
+      ]
+    },
+    {
+      "name": "outcome_validation_failed",
+      "fields": [
+        "system_action_id",
+        "source_track_id",
+        "outcome_code",
+        "validation_code"
+      ]
+    },
+    {
+      "name": "outcome_recorded",
+      "fields": [
+        "system_action_id",
+        "action_version",
+        "source_track_id",
+        "outcome_code",
+        "record_status",
+        "duration_bucket"
+      ]
+    },
+    {
+      "name": "route_decision_received",
+      "fields": [
+        "system_action_id",
+        "outcome_code",
+        "destination_type",
+        "destination_id",
+        "lock_reason"
+      ]
+    },
+    {
+      "name": "outcome_idempotent_replay",
+      "fields": [
+        "system_action_id",
+        "source_track_id",
+        "outcome_code"
+      ]
+    },
+    {
+      "name": "outcome_correction_rejected",
+      "fields": [
+        "system_action_id",
+        "source_track_id",
+        "outcome_code",
+        "rejection_code"
+      ]
+    }
+  ],
+  "globallyForbidden": [
+    "contact_name",
+    "phone",
+    "email",
+    "messenger_handle",
+    "profile_url",
+    "message_text",
+    "response_text",
+    "call_transcript",
+    "exact_words",
+    "free_text_note",
+    "meeting_location",
+    "meeting_address",
+    "referral_name",
+    "referral_phone",
+    "referral_email",
+    "referral_profile_url",
+    "occurred_at",
+    "meeting_at",
+    "next_action_at",
+    "wait_until",
+    "contact_card_ref",
+    "source_instance_id",
+    "idempotency_key"
+  ],
+  "retention": "Use the product-wide analytics retention policy; no separate contact-level history.",
+  "testRequirement": "Every emitted event must pass an allowlist assertion before dispatch."
+}

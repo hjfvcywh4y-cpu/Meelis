@@ -1,0 +1,268 @@
+{
+  "packageVersion": "1.0",
+  "track": {
+    "id": "A3-008",
+    "canonicalId": "A3-008",
+    "entityType": "SYSTEM_ACTION",
+    "section": "A3",
+    "domain": "FIRST_CONTACT",
+    "title": "Зафиксировать результат разговора и следующий контакт",
+    "situation": "После сообщения, просьбы о рекомендации или звонка договорённости растворяются и маршрут не знает, что делать дальше",
+    "result": "Структурированно зафиксированы факт, исход, дата и следующий шаг без передачи чужих персональных данных и текста разговора",
+    "audience": "Партнёр сразу после полевого контакта"
+  },
+  "graphBinding": {
+    "mode": "AUTO_BY_TRACK_ID",
+    "graphVersion": "3.0",
+    "editNeighborPages": false,
+    "unboundConnectionPolicy": "KEEP_AS_LOCKED_NEXT_ACTION_SLOT"
+  },
+  "content": {
+    "version": "0.1.0",
+    "status": "REVIEW",
+    "format": "system-ui",
+    "serverOnly": true,
+    "sourcePath": "server/system-actions/a3-008/0.1.0",
+    "checksum": "GENERATE_DURING_IMPORT",
+    "releaseNotes": "Первая полная реализация A3-008 как общей системной операции: outcome recorder, privacy, idempotency, route decision и sandbox isolation"
+  },
+  "access": {
+    "policy": "ENTITLED",
+    "productCodes": [
+      "MLMA_FULL"
+    ]
+  },
+  "outcomes": [
+    {
+      "code": "RESULT_MEETING",
+      "label": "Встреча подтверждена",
+      "observableFact": "Человек явно подтвердил встречу, а пользователь указал время и формат",
+      "requiredFacts": [
+        "contact.outcome",
+        "occurred_at",
+        "meeting_at",
+        "meeting_format_code"
+      ]
+    },
+    {
+      "code": "RESULT_LATER",
+      "label": "Попросил вернуться позже",
+      "observableFact": "Человек сам согласовал повторный контакт и его дату",
+      "requiredFacts": [
+        "contact.outcome",
+        "occurred_at",
+        "follow_up_permission",
+        "next_action_at"
+      ]
+    },
+    {
+      "code": "RESULT_REFUSAL",
+      "label": "Отказался",
+      "observableFact": "Получен явный отказ, который не маскируется под возражение",
+      "requiredFacts": [
+        "contact.outcome",
+        "occurred_at"
+      ]
+    },
+    {
+      "code": "RESULT_NO_REPLY",
+      "label": "Пока не ответил",
+      "observableFact": "Ответа пока нет; система фиксирует ожидание, а не выдумывает решение человека",
+      "requiredFacts": [
+        "contact.outcome",
+        "occurred_at",
+        "wait_until",
+        "retry_count"
+      ]
+    },
+    {
+      "code": "RESULT_REFERRAL",
+      "label": "Дал рекомендацию с разрешением",
+      "observableFact": "Человек дал рекомендацию и явно разрешил следующий контакт; персональные данные остаются на устройстве пользователя",
+      "requiredFacts": [
+        "contact.outcome",
+        "occurred_at",
+        "referral_permission_confirmed"
+      ]
+    },
+    {
+      "code": "RESULT_DONE",
+      "label": "Следующего действия нет",
+      "observableFact": "Пользователь честно завершает ветку без искусственной активности",
+      "requiredFacts": [
+        "contact.outcome",
+        "occurred_at",
+        "stop_code"
+      ]
+    }
+  ],
+  "routeRules": [
+    {
+      "ruleId": "RR2-026",
+      "fromId": "A3-008",
+      "outcomeCode": "RESULT_MEETING",
+      "field": "contact.outcome",
+      "operator": "=",
+      "value": "MEETING_CONFIRMED",
+      "destinationType": "TRACK",
+      "destinationId": "A3-010",
+      "reason": "Подготовить назначенную встречу",
+      "stopRule": "Хранить только минимальные служебные данные",
+      "recoveryRule": "WAIT_UNTIL",
+      "priority": 10,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR2-027",
+      "fromId": "A3-008",
+      "outcomeCode": "RESULT_LATER",
+      "field": "contact.outcome",
+      "operator": "=",
+      "value": "LATER",
+      "destinationType": "TRACK",
+      "destinationId": "A5-010",
+      "reason": "Нужен разрешённый follow-up с датой",
+      "stopRule": "Без разрешения завершить ветку",
+      "recoveryRule": "DONE",
+      "priority": 20,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR2-028",
+      "fromId": "A3-008",
+      "outcomeCode": "RESULT_REFUSAL",
+      "field": "contact.outcome",
+      "operator": "=",
+      "value": "REFUSAL",
+      "destinationType": "TRACK",
+      "destinationId": "A5-014",
+      "reason": "Нужно корректно закрыть попытку",
+      "stopRule": "Отказ не является поводом для обхода возражения",
+      "recoveryRule": "DONE",
+      "priority": 30,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR2-029",
+      "fromId": "A3-008",
+      "outcomeCode": "RESULT_NO_REPLY",
+      "field": "contact.outcome",
+      "operator": "=",
+      "value": "NO_REPLY",
+      "destinationType": "WAIT_UNTIL",
+      "destinationId": "",
+      "reason": "Подождать до допустимой даты повторного контакта",
+      "stopRule": "Одна повторная попытка; затем DONE",
+      "recoveryRule": "DONE",
+      "priority": 40,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR2-030",
+      "fromId": "A3-008",
+      "outcomeCode": "RESULT_REFERRAL",
+      "field": "contact.outcome",
+      "operator": "=",
+      "value": "REFERRAL_WITH_PERMISSION",
+      "destinationType": "TRACK",
+      "destinationId": "A3-003",
+      "reason": "Есть разрешённая рекомендация для нового контакта",
+      "stopRule": "Без согласия не переносить персональные данные",
+      "recoveryRule": "A2-013",
+      "priority": 50,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR2-031",
+      "fromId": "A3-008",
+      "outcomeCode": "RESULT_DONE",
+      "field": "contact.outcome",
+      "operator": "=",
+      "value": "NO_NEXT_ACTION",
+      "destinationType": "DONE",
+      "destinationId": "",
+      "reason": "У контакта нет уместного следующего действия",
+      "stopRule": "Не создавать действие только ради активности",
+      "recoveryRule": "",
+      "priority": 60,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    }
+  ],
+  "privacy": {
+    "serverAllowedFields": [
+      "system_action_id",
+      "action_version",
+      "source_track_id",
+      "source_instance_id",
+      "source_outcome_code",
+      "contact_card_ref",
+      "contact.outcome",
+      "occurred_at",
+      "follow_up_permission",
+      "next_action_at",
+      "meeting_at",
+      "meeting_format_code",
+      "referral_permission_confirmed",
+      "wait_until",
+      "retry_count",
+      "stop_code",
+      "idempotency_key",
+      "supersedes_outcome_id",
+      "route_decision_id"
+    ],
+    "clientOnlyFields": [
+      "contact_name",
+      "phone",
+      "email",
+      "messenger_handle",
+      "profile_url",
+      "message_text",
+      "response_text",
+      "call_transcript",
+      "exact_words",
+      "free_text_note",
+      "meeting_location",
+      "meeting_address",
+      "referral_name",
+      "referral_phone",
+      "referral_email",
+      "referral_profile_url"
+    ],
+    "analyticsAllowedFields": [
+      "system_action_id",
+      "action_version",
+      "source_track_id",
+      "outcome_code",
+      "destination_type",
+      "destination_id",
+      "permission_present",
+      "retry_count_bucket",
+      "duration_bucket",
+      "record_status",
+      "lock_reason"
+    ]
+  },
+  "source": {
+    "files": [
+      "Рыбкин.pdf: 10.3.5–10.3.6, страницы 272–274 PDF",
+      "MLM_Academy_Track_Matrix_112_v2.xlsx: A3-008, RR2-026–RR2-031, очередь W1 №3",
+      "Библиотека_онтологии_и_конструкций_треков_v2.xlsx: SYSTEM_ACTION, RouteRule, terminal states",
+      "БТ_на_трекеры_v2.docx: приложения A.5–A.7",
+      "full-graph-112-v3.json: connectionIndex A3-008"
+    ],
+    "owner": "Методолог MLM Academy",
+    "approvedAt": null
+  }
+}
