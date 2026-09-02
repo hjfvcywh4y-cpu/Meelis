@@ -1,0 +1,21 @@
+{
+  "trackId": "A3-014",
+  "kind": "PUBLIC_DEMO",
+  "accessTier": "PUBLIC_DEMO",
+  "executionMode": "SANDBOX",
+  "liveInstance": false,
+  "writesAllowed": false,
+  "routeEngineExecutionAllowed": false,
+  "entitlementCreated": false,
+  "aiMode": "PRECOMPUTED_ONLY",
+  "sample": {
+    "situation": "Пользователь откладывает короткое сообщение после одного прошлого отказа.",
+    "factPredictionExample": {
+      "fact": "Один человек отказался в другой ситуации",
+      "prediction": "Теперь откажут все",
+      "evidenceCode": "PAST_EVENT_GENERALIZED"
+    },
+    "supportExample": "Одна нейтральная первая фраза и одна репетиция",
+    "ending": "Показать, что платный трек назначит следующий ход; не создавать instance и не исполнять переход."
+  }
+}

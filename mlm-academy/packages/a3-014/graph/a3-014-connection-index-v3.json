@@ -1,0 +1,234 @@
+{
+  "snapshotVersion": "1.0",
+  "sourceGraphVersion": "3.0",
+  "sourceGeneratedAt": "2026-08-31T05:42:47.251Z",
+  "node": {
+    "id": "A3-014",
+    "section": "A3",
+    "title": "Снизить тревогу перед разговором",
+    "situation": "Знаю, что делать, но откладываю встречу",
+    "result": "Выявлен конкретный страх, подготовлена опора и назначено реальное действие",
+    "legacyPriority": "P1",
+    "entityType": "REMEDIATION",
+    "publishSurface": "ON_DEMAND_TRACK",
+    "canonicalId": "A3-014",
+    "domain": "FIRST_CONTACT",
+    "audience": "Партнёр перед первым сообщением, звонком или договорённостью",
+    "implementationStatus": "BACKLOG_RETYPE",
+    "canonicalUrl": "https://mlmacademy.ru/track?id=a3-014",
+    "sourceCode": "11.4–11.4.4",
+    "sourcePages": "292–299",
+    "legacyNextIds": "A3-013, A6-020"
+  },
+  "connectionIndex": {
+    "id": "A3-014",
+    "canonicalId": "A3-014",
+    "entityType": "REMEDIATION",
+    "publishSurface": "ON_DEMAND_TRACK",
+    "domain": "FIRST_CONTACT",
+    "implementationStatus": "BACKLOG_RETYPE",
+    "incomingDesignConnections": [],
+    "outgoingDesignConnections": [
+      {
+        "connectionId": "TR-095",
+        "toId": "A3-013",
+        "toCanonicalId": "A3-013",
+        "rank": 1,
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Собрать карту первой встречи",
+        "conditionHint": "Если после результата «Выявлен конкретный страх, подготовлена опора и назначено реальное действие» актуальна ситуация: «Не понимаю, как вести разговор от начала до завершения».",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": []
+      },
+      {
+        "connectionId": "TR-096",
+        "toId": "A6-020",
+        "toCanonicalId": "A6-020",
+        "rank": 2,
+        "relationType": "SYSTEM_FOLLOWUP",
+        "userLabel": "Разобрать страх конкретного действия",
+        "conditionHint": "Если после результата «Выявлен конкретный страх, подготовлена опора и назначено реальное действие» актуальна ситуация: «Боюсь камеры, звонка, отказа или публичности».",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": []
+      }
+    ],
+    "incomingEffectiveConnections": [
+      {
+        "connectionId": "V3-RR2-016",
+        "fromId": "A3-002",
+        "fromCanonicalId": "A3-002",
+        "relationType": "STRUCTURED_ROUTE_ADDITION",
+        "userLabel": "Снизить тревогу перед разговором",
+        "activationMode": "ROUTE_RULE",
+        "matchedRouteRuleIds": [
+          "RR2-016"
+        ],
+        "sourceLayer": "STRUCTURED_ROUTE_RULE_V2"
+      }
+    ],
+    "outgoingEffectiveConnections": [
+      {
+        "connectionId": "TR-095",
+        "toId": "A3-013",
+        "toCanonicalId": "A3-013",
+        "rank": 1,
+        "relationType": "OPTIONAL_DEEPENING",
+        "userLabel": "Собрать карту первой встречи",
+        "conditionHint": "Если после результата «Выявлен конкретный страх, подготовлена опора и назначено реальное действие» актуальна ситуация: «Не понимаю, как вести разговор от начала до завершения».",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": [],
+        "sourceLayer": "BASE_DESIGN_GRAPH_V2"
+      },
+      {
+        "connectionId": "TR-096",
+        "toId": "A6-020",
+        "toCanonicalId": "A6-020",
+        "rank": 2,
+        "relationType": "SYSTEM_FOLLOWUP",
+        "userLabel": "Разобрать страх конкретного действия",
+        "conditionHint": "Если после результата «Выявлен конкретный страх, подготовлена опора и назначено реальное действие» актуальна ситуация: «Боюсь камеры, звонка, отказа или публичности».",
+        "activationMode": "LOCKED_NEXT_ACTION_SLOT",
+        "matchedRouteRuleIds": [],
+        "sourceLayer": "BASE_DESIGN_GRAPH_V2"
+      }
+    ],
+    "outgoingRouteRuleIds": [],
+    "incomingRouteRuleIds": [
+      "RR2-016"
+    ],
+    "externalEntryRuleIds": [],
+    "placementStatus": "PLACED_IN_GRAPH",
+    "installBehavior": {
+      "registerAllIncomingConnections": true,
+      "registerAllOutgoingConnections": true,
+      "createLockedSlotsForUnboundConnections": true,
+      "activateOnlyByAccessAndRulePolicy": true,
+      "neverInferFromTrackNumber": true
+    }
+  },
+  "inboundRouteRules": [
+    {
+      "ruleId": "RR2-016",
+      "fromId": "A3-002",
+      "outcomeCode": "MESSAGE_NOT_SENT_ANXIETY",
+      "field": "message.status",
+      "operator": "=",
+      "value": "BLOCKED_ANXIETY",
+      "destinationType": "TRACK",
+      "destinationId": "A3-014",
+      "reason": "Подтверждён конкретный барьер действия",
+      "stopRule": "Не превращать нормальное волнение в обязательную терапевтизацию",
+      "recoveryRule": "FIELD_ACTION",
+      "priority": 30,
+      "owner": "Методолог + продукт",
+      "version": "2.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    }
+  ],
+  "outboundBaseRouteRules": [],
+  "packageRouteRuleOverlay": [
+    {
+      "ruleId": "RR3-A3-014-OUT-OF-SCOPE",
+      "fromId": "A3-014",
+      "outcomeCode": "OUT_OF_SCOPE_SUPPORT",
+      "field": "readiness_gate_code",
+      "operator": "=",
+      "value": "OUT_OF_SCOPE",
+      "destinationType": "EXPERT",
+      "destinationId": null,
+      "reason": "Пользователь сам отметил состояние, выходящее за рамки короткой рабочей подготовки",
+      "stopRule": "Не продолжать контактный сценарий, не ставить диагноз и не обещать, что трек заменяет профессиональную помощь",
+      "recoveryRule": "DONE",
+      "priority": 1,
+      "owner": "Методолог + продукт + safety",
+      "version": "3.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR3-A3-014-WAIT",
+      "fromId": "A3-014",
+      "outcomeCode": "WAIT_FOR_RESOURCE",
+      "field": "readiness_gate_code",
+      "operator": "=",
+      "value": "PAUSE",
+      "destinationType": "WAIT_UNTIL",
+      "destinationId": null,
+      "reason": "Сейчас не хватает рабочего ресурса; пауза безопаснее вынужденного контакта",
+      "stopRule": "Не создавать автоматическое касание без выбранной даты, события или нового решения пользователя",
+      "recoveryRule": "DONE",
+      "priority": 5,
+      "owner": "Методолог + продукт",
+      "version": "3.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR3-A3-014-MEETING-MAP",
+      "fromId": "A3-014",
+      "outcomeCode": "SUPPORT_REQUIRED",
+      "field": "next_need_code",
+      "operator": "=",
+      "value": "MEETING_MAP",
+      "destinationType": "TRACK",
+      "destinationId": "A3-013",
+      "reason": "Тревога связана с отсутствием понятной структуры первой встречи",
+      "stopRule": "Не заменять подготовку требованием обязательно убедить человека",
+      "recoveryRule": "WAIT_UNTIL",
+      "priority": 10,
+      "owner": "Методолог + продукт",
+      "version": "3.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR3-A3-014-SPECIFIC-FEAR",
+      "fromId": "A3-014",
+      "outcomeCode": "SUPPORT_REQUIRED",
+      "field": "next_need_code",
+      "operator": "=",
+      "value": "SPECIFIC_FEAR",
+      "destinationType": "TRACK",
+      "destinationId": "A6-020",
+      "reason": "Подтверждён устойчивый страх конкретного действия, который не снимается короткой подготовкой",
+      "stopRule": "Не терапевтизировать нормальное волнение и не назначать углубление только по оценке AI",
+      "recoveryRule": "WAIT_UNTIL",
+      "priority": 20,
+      "owner": "Методолог + продукт",
+      "version": "3.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    },
+    {
+      "ruleId": "RR3-A3-014-RETURN",
+      "fromId": "A3-014",
+      "outcomeCode": "ACTION_READY",
+      "field": "next_need_code",
+      "operator": "=",
+      "value": "RETURN_TO_ORIGIN",
+      "destinationType": "RETURN_TO_ROUTE",
+      "destinationId": null,
+      "reason": "Подготовлена рабочая опора; пользователь возвращается в родительский маршрут (при входе по RR2-016 — в A3-002)",
+      "stopRule": "Готовность означает право попробовать, а не обязанность получить согласие или продолжить вопреки отказу",
+      "recoveryRule": "WAIT_UNTIL",
+      "priority": 30,
+      "owner": "Методолог + продукт",
+      "version": "3.0",
+      "status": "PILOT_DRAFT_TO_TEST"
+    }
+  ],
+  "expectedCounts": {
+    "incomingDesignConnections": 0,
+    "incomingEffectiveConnections": 1,
+    "outgoingDesignConnections": 2,
+    "outgoingEffectiveConnections": 2,
+    "incomingRouteRules": 1,
+    "outgoingBaseRouteRules": 0,
+    "externalEntryRules": 0,
+    "packageRouteRuleOverlays": 5,
+    "executableLegacyArchiveEdges": 0
+  },
+  "bindingNotes": [
+    "A3-002→A3-014 enters by RR2-016 only when message.status=BLOCKED_ANXIETY.",
+    "TR-095→A3-013 and TR-096→A6-020 are existing locked design directions until the package rules pass pilot validation and policy allows activation.",
+    "RR3-A3-014-RETURN uses RETURN_TO_ROUTE; when entry was RR2-016, the runtime parent is A3-002. No neighbor page is edited.",
+    "WAIT_UNTIL and EXPERT overlays are terminal/system destinations and create no track-to-track edge.",
+    "The package must not rewrite full graph v3, neighbor pages, payments, entitlements or paid-navigation flags."
+  ]
+}

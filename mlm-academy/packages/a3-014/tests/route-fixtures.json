@@ -1,0 +1,177 @@
+{
+  "version": "1.0",
+  "trackId": "A3-014",
+  "cases": [
+    {
+      "id": "IN-01",
+      "fromId": "A3-002",
+      "outcomeCode": "MESSAGE_NOT_SENT_ANXIETY",
+      "facts": {
+        "message.status": "BLOCKED_ANXIETY"
+      },
+      "expected": {
+        "ruleId": "RR2-016",
+        "destinationType": "TRACK",
+        "destinationId": "A3-014"
+      }
+    },
+    {
+      "id": "IN-02",
+      "fromId": "A3-002",
+      "outcomeCode": "MESSAGE_NOT_SENT_ANXIETY",
+      "facts": {
+        "message.status": "DRAFT"
+      },
+      "expected": {
+        "decision": "NO_MATCHING_RULE"
+      }
+    },
+    {
+      "id": "OUT-01",
+      "fromId": "A3-014",
+      "outcomeCode": "ACTION_READY",
+      "facts": {
+        "next_need_code": "RETURN_TO_ORIGIN"
+      },
+      "expected": {
+        "ruleId": "RR3-A3-014-RETURN",
+        "destinationType": "RETURN_TO_ROUTE",
+        "destinationId": null
+      }
+    },
+    {
+      "id": "OUT-02",
+      "fromId": "A3-014",
+      "outcomeCode": "SUPPORT_REQUIRED",
+      "facts": {
+        "next_need_code": "MEETING_MAP"
+      },
+      "expected": {
+        "ruleId": "RR3-A3-014-MEETING-MAP",
+        "destinationType": "TRACK",
+        "destinationId": "A3-013"
+      }
+    },
+    {
+      "id": "OUT-03",
+      "fromId": "A3-014",
+      "outcomeCode": "SUPPORT_REQUIRED",
+      "facts": {
+        "next_need_code": "SPECIFIC_FEAR"
+      },
+      "expected": {
+        "ruleId": "RR3-A3-014-SPECIFIC-FEAR",
+        "destinationType": "TRACK",
+        "destinationId": "A6-020"
+      }
+    },
+    {
+      "id": "OUT-04",
+      "fromId": "A3-014",
+      "outcomeCode": "WAIT_FOR_RESOURCE",
+      "facts": {
+        "readiness_gate_code": "PAUSE"
+      },
+      "expected": {
+        "ruleId": "RR3-A3-014-WAIT",
+        "destinationType": "WAIT_UNTIL",
+        "destinationId": null
+      }
+    },
+    {
+      "id": "OUT-05",
+      "fromId": "A3-014",
+      "outcomeCode": "OUT_OF_SCOPE_SUPPORT",
+      "facts": {
+        "readiness_gate_code": "OUT_OF_SCOPE"
+      },
+      "expected": {
+        "ruleId": "RR3-A3-014-OUT-OF-SCOPE",
+        "destinationType": "EXPERT",
+        "destinationId": null
+      }
+    },
+    {
+      "id": "NEG-01",
+      "fromId": "A3-014",
+      "outcomeCode": "ACTION_READY",
+      "facts": {
+        "next_need_code": "MEETING_MAP"
+      },
+      "expected": {
+        "decision": "NO_MATCHING_RULE"
+      }
+    },
+    {
+      "id": "NEG-02",
+      "fromId": "A3-014",
+      "outcomeCode": "SUPPORT_REQUIRED",
+      "facts": {
+        "next_need_code": "RETURN_TO_ORIGIN"
+      },
+      "expected": {
+        "decision": "NO_MATCHING_RULE"
+      }
+    },
+    {
+      "id": "NEG-03",
+      "fromId": "A3-014",
+      "outcomeCode": "WAIT_FOR_RESOURCE",
+      "facts": {
+        "readiness_gate_code": "CONTINUE"
+      },
+      "expected": {
+        "decision": "NO_MATCHING_RULE"
+      }
+    },
+    {
+      "id": "LOCK-01",
+      "fromId": "A3-014",
+      "outcomeCode": "UNKNOWN",
+      "facts": {},
+      "expected": {
+        "decision": "NO_MATCHING_RULE",
+        "mustNotUseConnectionId": "TR-095"
+      }
+    },
+    {
+      "id": "LOCK-02",
+      "fromId": "A3-014",
+      "outcomeCode": "UNKNOWN",
+      "facts": {},
+      "expected": {
+        "decision": "NO_MATCHING_RULE",
+        "mustNotUseConnectionId": "TR-096"
+      }
+    },
+    {
+      "id": "ACCESS-01",
+      "fromId": "A3-014",
+      "outcomeCode": "ACTION_READY",
+      "facts": {
+        "next_need_code": "RETURN_TO_ORIGIN"
+      },
+      "context": {
+        "paidNavigationEnabled": false
+      },
+      "expected": {
+        "locked": true,
+        "destinationUrl": null
+      }
+    },
+    {
+      "id": "DEMO-01",
+      "fromId": "A3-014",
+      "outcomeCode": "ACTION_READY",
+      "facts": {
+        "next_need_code": "RETURN_TO_ORIGIN"
+      },
+      "context": {
+        "executionMode": "SANDBOX"
+      },
+      "expected": {
+        "decision": "SANDBOX_NO_LIVE_INSTANCE"
+      }
+    }
+  ]
+}

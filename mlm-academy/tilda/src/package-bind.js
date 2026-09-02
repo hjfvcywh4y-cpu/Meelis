@@ -50,12 +50,22 @@
       if (outcome === 'REASON_FOUND' && D.packageClient.handoffReasonCardToA3002) {
         D.packageClient.handoffReasonCardToA3002(clientData || D.packageClient.load(trackId));
       }
+      if (
+        (outcome === 'ACTION_READY' || (decision && decision.destinationType === 'RETURN_TO_ROUTE')) &&
+        D.packageClient.handoffReturnToOrigin
+      ) {
+        D.packageClient.handoffReturnToOrigin(clientData || D.packageClient.load(trackId));
+      }
       if (nextCard && nextCard.status === 'done') window.location.href = '/my';
+      else if (nextCard && nextCard.status === 'expert') window.location.href = '/my';
       else if (nextCard && nextCard.preparing) window.location.href = '/my';
       else if (nextCard && nextCard.href) {
         window.location.href = nextCard.href + (String(nextCard.href).indexOf('?') >= 0 ? '&' : '?') + 'run=1';
       } else if (outcome === 'REASON_FOUND') {
         window.location.href = '/track?id=a3-002&run=1';
+      } else if (outcome === 'ACTION_READY' || (decision && decision.destinationType === 'RETURN_TO_ROUTE')) {
+        var origin = (clientData && clientData.originTrackId) || 'A3-002';
+        window.location.href = '/track?id=' + String(origin).toLowerCase() + '&run=1';
       } else {
         window.location.href = '/my';
       }
@@ -138,11 +148,44 @@
       });
     });
 
+    pack.querySelectorAll('[data-mlma-readiness-gate]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var data = persistLocal();
+        var gate = el.getAttribute('data-mlma-readiness-gate');
+        data.readinessGateCode = gate;
+        D.packageClient.save(trackId, data);
+        var outcome = el.getAttribute('data-outcome');
+        if (outcome && D._instanceId && D.submitTrackOutcome) {
+          var facts = D.packageClient.serverPayload(trackId, outcome, data);
+          D.submitTrackOutcome(D._instanceId, outcome, facts).then(function (res) {
+            afterDecision(res, data, outcome);
+          });
+          return;
+        }
+        var next = el.getAttribute('data-mlma-pkg-next');
+        if (next) {
+          D._packageStepId = next;
+          remount(rootEl);
+        }
+      });
+    });
+
     pack.querySelectorAll('[data-mlma-remediation-decision]').forEach(function (el) {
       el.addEventListener('click', function () {
         var data = persistLocal();
         var outcome = el.getAttribute('data-mlma-remediation-decision');
+        var nextNeed = el.getAttribute('data-next-need');
+        if (nextNeed) data.nextNeedCode = nextNeed;
         if (!outcome || !D._instanceId || !D.submitTrackOutcome) return;
+        if (outcome === 'WAIT_FOR_RESOURCE' && !data.reviewTriggerCode) {
+          data.reviewTriggerCode = data.reviewTriggerCode || 'AGREED_DATE';
+          data.dueCode = data.dueCode || 'DATE_SET';
+          D.packageClient.save(trackId, data);
+        }
+        if (outcome === 'OUT_OF_SCOPE_SUPPORT' && !data.supportHandoffCode) {
+          data.supportHandoffCode = 'HUMAN_SUPPORT';
+          D.packageClient.save(trackId, data);
+        }
         if (outcome === 'NO_REASON' && !data.noReasonCode) {
           var code = window.prompt('Код причины отсутствия повода (ONLY_MY_SALES_PLAN / PURPOSE_HIDDEN / TIMING_INAPPROPRIATE / NO_SHARED_CONTEXT)');
           if (!code) return;

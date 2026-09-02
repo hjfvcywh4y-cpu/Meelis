@@ -140,6 +140,12 @@
       html += '</div>';
     } else if (step.kind === 'remediation_form') {
       if (step.instruction) html += '<p class="mlma-muted" style="margin-top:8px">' + esc(step.instruction) + '</p>';
+      if (step.gateBranches) {
+        html +=
+          '<div class="mlma-actions" style="margin-top:16px;display:grid;gap:8px"><button type="button" class="mlma-btn mlma-btn-primary" data-mlma-readiness-gate="CONTINUE" data-mlma-pkg-next="' +
+          esc(step.nextStepId || '') +
+          '">Продолжить подготовку</button><button type="button" class="mlma-btn" data-mlma-readiness-gate="PAUSE" data-outcome="WAIT_FOR_RESOURCE">Сделать паузу</button><button type="button" class="mlma-btn" data-mlma-readiness-gate="OUT_OF_SCOPE" data-outcome="OUT_OF_SCOPE_SUPPORT">Нужна человеческая поддержка</button></div>';
+      }
       for (i = 0; i < (step.fields || []).length; i += 1) {
         var field = step.fields[i];
         html += '<label class="mlma-meta" style="margin-top:12px;display:block">' + esc(field.label) + '</label>';
@@ -166,7 +172,7 @@
             '</textarea>';
         }
       }
-      if (step.nextStepId) {
+      if (step.nextStepId && !step.gateBranches) {
         html +=
           '<button type="button" class="mlma-btn mlma-btn-primary" style="margin-top:16px" data-mlma-pkg-next="' +
           esc(step.nextStepId) +
@@ -239,15 +245,59 @@
         esc(step.nextStepId || 'decision_gate') +
         '">К решению</button>';
     } else if (step.kind === 'remediation_decision') {
+      if (step.waitFields) {
+        for (i = 0; i < step.waitFields.length; i += 1) {
+          field = step.waitFields[i];
+          html += '<label class="mlma-meta" style="margin-top:12px;display:block">' + esc(field.label) + ' (для паузы)</label>';
+          if (field.type === 'select') {
+            html += '<select class="mlma-field" data-mlma-local="' + esc(field.key) + '"><option value="">Выберите</option>';
+            for (j = 0; j < (field.options || []).length; j += 1) {
+              opt = field.options[j];
+              html +=
+                '<option value="' +
+                esc(opt.code) +
+                '"' +
+                (client[field.key] === opt.code ? ' selected' : '') +
+                '>' +
+                esc(opt.label) +
+                '</option>';
+            }
+            html += '</select>';
+          }
+        }
+      }
+      if (step.supportFields) {
+        for (i = 0; i < step.supportFields.length; i += 1) {
+          field = step.supportFields[i];
+          html += '<label class="mlma-meta" style="margin-top:12px;display:block">' + esc(field.label) + '</label>';
+          if (field.type === 'select') {
+            html += '<select class="mlma-field" data-mlma-local="' + esc(field.key) + '"><option value="">Выберите</option>';
+            for (j = 0; j < (field.options || []).length; j += 1) {
+              opt = field.options[j];
+              html +=
+                '<option value="' +
+                esc(opt.code) +
+                '"' +
+                (client[field.key] === opt.code ? ' selected' : '') +
+                '>' +
+                esc(opt.label) +
+                '</option>';
+            }
+            html += '</select>';
+          }
+        }
+      }
       html += '<div class="mlma-actions" style="margin-top:16px;display:grid;gap:8px">';
       for (i = 0; i < (step.decisions || []).length; i += 1) {
         var dec = step.decisions[i];
         html +=
           '<button type="button" class="mlma-btn' +
-          (dec.outcomeCode === 'REASON_FOUND' ? ' mlma-btn-primary' : '') +
+          (dec.outcomeCode === 'ACTION_READY' || dec.outcomeCode === 'REASON_FOUND' ? ' mlma-btn-primary' : '') +
           '" data-mlma-remediation-decision="' +
           esc(dec.outcomeCode) +
-          '">' +
+          '"' +
+          (dec.nextNeedCode ? ' data-next-need="' + esc(dec.nextNeedCode) + '"' : '') +
+          '>' +
           esc(dec.label) +
           '</button>';
       }
@@ -331,6 +381,44 @@
       }
       return facts;
     }
+    if (String(trackId).toUpperCase() === 'A3-014') {
+      client = client || loadClient(trackId);
+      var oc = String(outcomeCode || '').toUpperCase();
+      var facts014 = {
+        track_id: trackId,
+        outcome_code: oc,
+        origin_track_id: client.originTrackId || 'A3-002',
+        readiness_gate_code: client.readinessGateCode || 'CONTINUE',
+        fear_event_code: client.fearEventCode || 'UNKNOWN',
+        evidence_code: client.evidenceCode || 'UNKNOWN',
+        next_need_code: client.nextNeedCode || 'RETURN_TO_ORIGIN',
+        risk_flag_codes: [],
+        ai_used: false,
+        mentor_event: 'result_recorded',
+        step_id: 'decision_gate',
+      };
+      if (oc === 'ACTION_READY') {
+        facts014.readiness_gate_code = 'CONTINUE';
+        facts014.target_action_code = client.targetActionCode;
+        facts014.support_code = client.supportCode;
+        facts014.micro_step_code = client.microStepCode;
+        facts014.next_need_code = 'RETURN_TO_ORIGIN';
+        facts014.due_code = client.dueCode;
+      } else if (oc === 'SUPPORT_REQUIRED') {
+        facts014.readiness_gate_code = 'CONTINUE';
+        facts014.next_need_code = client.nextNeedCode || 'MEETING_MAP';
+      } else if (oc === 'WAIT_FOR_RESOURCE') {
+        facts014.readiness_gate_code = 'PAUSE';
+        facts014.next_need_code = 'WAIT';
+        facts014.review_trigger_code = client.reviewTriggerCode;
+        facts014.due_code = client.dueCode;
+      } else if (oc === 'OUT_OF_SCOPE_SUPPORT') {
+        facts014.readiness_gate_code = 'OUT_OF_SCOPE';
+        facts014.next_need_code = 'HUMAN_SUPPORT';
+        facts014.support_handoff_code = client.supportHandoffCode || 'HUMAN_SUPPORT';
+      }
+      return facts014;
+    }
     return {
       track_id: trackId,
       outcome_code: outcomeCode,
@@ -338,6 +426,26 @@
       mentor_event: 'result_recorded',
       step_id: 'field_action',
     };
+  }
+
+  function handoffReturnToOrigin(client) {
+    var origin = String((client && client.originTrackId) || 'A3-002').toUpperCase();
+    if (origin !== 'A3-002') return;
+    var target = {
+      stepId: 'field_action',
+      anxietyPrepared: true,
+      readinessCard: {
+        targetActionCode: client.targetActionCode,
+        fearEventCode: client.fearEventCode,
+        supportCode: client.supportCode,
+        microStepCode: client.microStepCode,
+      },
+    };
+    try {
+      localStorage.setItem('mlma.a3-002.client.v1', JSON.stringify(target));
+    } catch (err) {
+      /* ignore */
+    }
   }
 
   function handoffReasonCardToA3002(client) {
@@ -370,6 +478,7 @@
     apiBase: apiBase,
     serverPayload: serverPayload,
     handoffReasonCardToA3002: handoffReasonCardToA3002,
+    handoffReturnToOrigin: handoffReturnToOrigin,
   };
   root.MLMA = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

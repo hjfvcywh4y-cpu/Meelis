@@ -1,0 +1,101 @@
+{
+  "version": "1.0",
+  "trackId": "A3-014",
+  "purpose": "Measure flow quality without measuring mental-health status or persuasion success.",
+  "events": [
+    {
+      "name": "track_started",
+      "fields": [
+        "track_id",
+        "content_version",
+        "origin_track_id"
+      ]
+    },
+    {
+      "name": "readiness_gate_completed",
+      "fields": [
+        "readiness_gate_code"
+      ]
+    },
+    {
+      "name": "barrier_coded",
+      "fields": [
+        "fear_event_code",
+        "evidence_code"
+      ]
+    },
+    {
+      "name": "support_selected",
+      "fields": [
+        "support_code",
+        "micro_step_code"
+      ]
+    },
+    {
+      "name": "ai_mirror_used",
+      "fields": [
+        "ai_used",
+        "ai_advisory_codes"
+      ]
+    },
+    {
+      "name": "track_completed",
+      "fields": [
+        "outcome_code",
+        "next_need_code",
+        "due_code",
+        "duration_bucket"
+      ]
+    },
+    {
+      "name": "route_decided",
+      "fields": [
+        "destination_type",
+        "destination_id",
+        "outcome_code"
+      ]
+    }
+  ],
+  "forbiddenMetrics": [
+    "anxiety_score",
+    "mental_health_score",
+    "diagnosis_probability",
+    "conversion_probability",
+    "persuasion_score",
+    "contact_value",
+    "agent_weakness_rank"
+  ],
+  "forbiddenFields": [
+    "contact_name",
+    "phone",
+    "email",
+    "messenger_handle",
+    "profile_url",
+    "company_name",
+    "contact_card",
+    "message_draft",
+    "conversation_quote",
+    "fear_text",
+    "predicted_consequence_text",
+    "past_experience_text",
+    "support_note",
+    "opening_line",
+    "rehearsal_text",
+    "scheduled_at",
+    "free_text_note",
+    "health_detail",
+    "diagnosis",
+    "medication",
+    "therapy_note",
+    "sanitized_fear_statement"
+  ],
+  "qualityMetrics": [
+    "completion_rate_by_origin",
+    "pause_rate",
+    "return_to_origin_rate",
+    "meeting_map_route_rate",
+    "specific_fear_route_rate",
+    "manual_route_override_rate",
+    "pii_rejection_count"
+  ]
+}

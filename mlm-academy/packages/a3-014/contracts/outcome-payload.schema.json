@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlm-academy.local/schema/a3-014-outcome-payload.json",
+  "title": "A3-014 minimal server outcome",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "trackId",
+    "contentVersion",
+    "outcomeCode",
+    "originTrackId",
+    "readinessGateCode",
+    "fearEventCode",
+    "evidenceCode",
+    "nextNeedCode",
+    "riskFlagCodes",
+    "aiUsed",
+    "occurredAt"
+  ],
+  "properties": {
+    "trackId": {
+      "const": "A3-014"
+    },
+    "contentVersion": {
+      "const": "0.1.0"
+    },
+    "outcomeCode": {
+      "enum": [
+        "ACTION_READY",
+        "SUPPORT_REQUIRED",
+        "WAIT_FOR_RESOURCE",
+        "OUT_OF_SCOPE_SUPPORT"
+      ]
+    },
+    "originTrackId": {
+      "enum": [
+        "A3-002",
+        "SELF_ENTRY",
+        "OTHER_ROUTE"
+      ]
+    },
+    "readinessGateCode": {
+      "enum": [
+        "CONTINUE",
+        "PAUSE",
+        "OUT_OF_SCOPE"
+      ]
+    },
+    "targetActionCode": {
+      "type": "string"
+    },
+    "fearEventCode": {
+      "type": "string"
+    },
+    "evidenceCode": {
+      "type": "string"
+    },
+    "supportCode": {
+      "type": "string"
+    },
+    "microStepCode": {
+      "type": "string"
+    },
+    "nextNeedCode": {
+      "enum": [
+        "RETURN_TO_ORIGIN",
+        "MEETING_MAP",
+        "SPECIFIC_FEAR",
+        "WAIT",
+        "HUMAN_SUPPORT"
+      ]
+    },
+    "dueCode": {
+      "type": "string"
+    },
+    "reviewTriggerCode": {
+      "type": "string"
+    },
+    "supportHandoffCode": {
+      "type": "string"
+    },
+    "riskFlagCodes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "aiUsed": {
+      "type": "boolean"
+    },
+    "aiAdvisoryCodes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "outcomeCode": {
+            "const": "ACTION_READY"
+          }
+        },
+        "required": [
+          "outcomeCode"
+        ]
+      },
+      "then": {
+        "required": [
+          "targetActionCode",
+          "supportCode",
+          "microStepCode",
+          "dueCode"
+        ],
+        "properties": {
+          "readinessGateCode": {
+            "const": "CONTINUE"
+          },
+          "nextNeedCode": {
+            "const": "RETURN_TO_ORIGIN"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcomeCode": {
+            "const": "SUPPORT_REQUIRED"
+          }
+        },
+        "required": [
+          "outcomeCode"
+        ]
+      },
+      "then": {
+        "properties": {
+          "readinessGateCode": {
+            "const": "CONTINUE"
+          },
+          "nextNeedCode": {
+            "enum": [
+              "MEETING_MAP",
+              "SPECIFIC_FEAR"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcomeCode": {
+            "const": "WAIT_FOR_RESOURCE"
+          }
+        },
+        "required": [
+          "outcomeCode"
+        ]
+      },
+      "then": {
+        "required": [
+          "reviewTriggerCode"
+        ],
+        "properties": {
+          "readinessGateCode": {
+            "const": "PAUSE"
+          },
+          "nextNeedCode": {
+            "const": "WAIT"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcomeCode": {
+            "const": "OUT_OF_SCOPE_SUPPORT"
+          }
+        },
+        "required": [
+          "outcomeCode"
+        ]
+      },
+      "then": {
+        "required": [
+          "supportHandoffCode"
+        ],
+        "properties": {
+          "readinessGateCode": {
+            "const": "OUT_OF_SCOPE"
+          },
+          "nextNeedCode": {
+            "const": "HUMAN_SUPPORT"
+          }
+        }
+      }
+    }
+  ]
+}

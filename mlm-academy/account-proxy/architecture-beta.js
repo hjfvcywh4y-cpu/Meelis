@@ -11,6 +11,9 @@ import packageA3008 from '../packages/a3-008/package.json' with { type: 'json' }
 import contentA3016 from '../server/content/tracks/a3-016/0.1.0/content.json' with { type: 'json' };
 import packageA3016 from '../packages/a3-016/package.json' with { type: 'json' };
 import publicMetaA3016 from '../server/content/tracks/a3-016/public-meta.json' with { type: 'json' };
+import contentA3014 from '../server/content/tracks/a3-014/0.1.0/content.json' with { type: 'json' };
+import packageA3014 from '../packages/a3-014/package.json' with { type: 'json' };
+import publicMetaA3014 from '../server/content/tracks/a3-014/public-meta.json' with { type: 'json' };
 import { normalizeTrackId as catalogNormalize } from './account-core.js';
 
 const BETA_STATUSES = { REVIEW: true, READY: true, PUBLISHED: true };
@@ -51,6 +54,12 @@ const PACKAGES = {
     content: contentA3016,
     pkg: packageA3016,
     publicMeta: publicMetaA3016,
+  },
+  'A3-014': {
+    entityType: 'REMEDIATION',
+    content: contentA3014,
+    pkg: packageA3014,
+    publicMeta: publicMetaA3014,
   },
 };
 
@@ -136,7 +145,7 @@ function matchRule(trackId, outcomeCode, facts) {
   return null;
 }
 
-function destinationView(rule, sourceTrackId) {
+function destinationView(rule, sourceTrackId, facts) {
   if (!rule) return { destinationType: 'DONE', destinationId: null, preparing: false, href: '/my' };
   const destinationId = rule.destinationId || null;
   const destinationType = rule.destinationType;
@@ -145,6 +154,28 @@ function destinationView(rule, sourceTrackId) {
   }
   if (destinationType === 'WAIT_UNTIL') {
     return { destinationType, destinationId: null, preparing: false, href: '/my', status: 'ready', title: 'Ожидание до даты' };
+  }
+  if (destinationType === 'EXPERT') {
+    return {
+      destinationType,
+      destinationId: null,
+      preparing: false,
+      href: '/my',
+      status: 'expert',
+      title: 'Нужна человеческая поддержка',
+    };
+  }
+  if (destinationType === 'RETURN_TO_ROUTE') {
+    const origin = String((facts && facts.origin_track_id) || sourceTrackId || 'A3-002').toUpperCase();
+    const installed = origin && installedIds().indexOf(origin) >= 0;
+    return {
+      destinationType,
+      destinationId: origin,
+      preparing: !installed,
+      href: installed ? trackUrl(origin) : '/my',
+      status: installed ? 'return' : 'preparing',
+      title: 'Вернуться к исходному действию',
+    };
   }
   if (destinationType === 'SYSTEM_ACTION') {
     const installed = systemActionInstalled(destinationId);
@@ -401,7 +432,7 @@ export async function handleArchitectureBeta(request, env, ctx) {
         stop_code: body.stopCode,
       };
       const rule = matchRule('A3-008', outcomeCode, facts);
-      const dest = destinationView(rule, instance.trackId);
+      const dest = destinationView(rule, instance.trackId, facts);
       const decision = {
         matchedRuleId: rule ? rule.ruleId : null,
         destinationType: dest.destinationType,
@@ -424,12 +455,12 @@ export async function handleArchitectureBeta(request, env, ctx) {
     }
 
     const facts = body.facts && typeof body.facts === 'object' ? body.facts : {};
-    ['contact_name', 'phone', 'email', 'message_draft', 'real_reason_text', 'message_text', 'response_text'].forEach((key) => {
+    ['contact_name', 'phone', 'email', 'message_draft', 'real_reason_text', 'message_text', 'response_text', 'fear_text', 'predicted_consequence_text', 'past_experience_text', 'support_note', 'opening_line', 'rehearsal_text', 'health_detail', 'diagnosis', 'therapy_note', 'conversation_quote', 'free_text_note'].forEach((key) => {
       delete facts[key];
     });
     const outcomeCode = String(body.outcomeCode || '').toUpperCase();
     const rule = matchRule(instance.trackId, outcomeCode, facts);
-    const dest = destinationView(rule, instance.trackId);
+    const dest = destinationView(rule, instance.trackId, facts);
     const decision = {
       matchedRuleId: rule ? rule.ruleId : null,
       destinationType: dest.destinationType,
