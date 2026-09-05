@@ -43,18 +43,27 @@ def ru_days(n: int) -> str:
     return f"{n} дней"
 
 
-def week_progress_text(days: int, *_unused: Any) -> str:
+def week_progress_text(days: int, target: Any = None, *_unused: Any) -> str:
     days = int(days)
     if days <= 0:
         return EMPTY_WEEK
     marked = "отмечен" if ru_days(days).endswith("день") else "отмечено"
-    return f"На этой неделе {marked} {ru_days(days)}."
+    line = f"На этой неделе {marked} {ru_days(days)}"
+    if target not in (None, ""):
+        try:
+            int(target)
+        except (TypeError, ValueError):
+            return line + "."
+        return f"{line} действий из выбранных {target}."
+    return line + "."
 
 
-def today_summary_text(today_count: int, week_days: int, *_unused: Any) -> str:
-    if int(week_days) <= 0 and int(today_count) <= 0:
+def today_summary_text(today_count: int, week_days: int, target: int = 3, *_unused: Any) -> str:
+    if int(week_days) <= 0:
         return EMPTY_WEEK
-    return week_progress_text(week_days)
+    if not today_count:
+        return f"На этой неделе вы действовали {ru_days(week_days)} из выбранных {target}."
+    return f"Сегодня уже есть {today_count} запис. На этой неделе {ru_days(week_days)} из выбранных {target}."
 
 
 def progress_change_if_any(before_days: int, after_days: int) -> str:
