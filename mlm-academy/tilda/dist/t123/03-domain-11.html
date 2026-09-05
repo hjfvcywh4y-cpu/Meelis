@@ -1,0 +1,593 @@
+<!-- Блок T123: доменная логика 11/14 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<script>
+(function (root) {
+  'use strict';
+  var api = root.MLMA;
+  if (!api) return;
+  var TRACK_ALIASES = api.TRACK_ALIASES;
+  var CANDIDATE_LIMIT = 20;
+  var deriveMeta = api.deriveMeta;
+  var rankTracks = api.rankTracks;
+  var analyzeQuery = api.analyzeQuery;
+  var applyFacets = api.applyFacets;
+  var emptyLibraryState = api.emptyLibraryState;
+  var buildChips = api.buildChips;
+  var foundLabel = api.foundLabel;
+  var hasActiveFilters = api.hasActiveFilters;
+  var parseLibraryState = api.parseLibraryState;
+  var emptyWhy = api.emptyWhy;
+  var humanWhy = api.humanWhy;
+  var defaultClarify = api.defaultClarify;
+
+  function tracksById(tracks) {
+    var map = {};
+    for (var i = 0; i < tracks.length; i += 1) map[tracks[i].trackId] = tracks[i];
+    return map;
+  }
+
+  function searchDocument(track) {
+    var aliases = (TRACK_ALIASES[track.trackId] || []).slice();
+    var meta = deriveMeta ? deriveMeta(track) : null;
+    if (meta && meta.aliases && meta.aliases.length) aliases = meta.aliases.slice();
+    var fields = api.searchFields ? api.searchFields(track) : null;
+    return {
+      trackId: track.trackId,
+      title: track.title || '',
+      situations: [track.situation || ''].filter(Boolean),
+      goals: [track.outcome || ''].filter(Boolean),
+      painSignals: aliases.slice(0, 12),
+      audiences: [],
+      stage: [track.sectionId || '', track.stage || ''].filter(Boolean),
+      actions: [track.title || '', (fields && fields.mainTask) || ''].filter(Boolean),
+      outcome: track.outcome || '',
+      aliases: aliases,
+      negativeSignals: [],
+    };
+  }
+
+  function compactSearchRow(track) {
+    var doc = searchDocument(track);
+    return {
+      trackId: doc.trackId,
+      title: doc.title,
+      situation: (doc.situations && doc.situations[0]) || '',
+      result: doc.outcome,
+      sectionId: track.sectionId,
+      aliases: doc.aliases.slice(0, 10),
+      tags: doc.aliases.slice(0, 8),
+    };
+  }
+
+  function ensureIntentRows(ranked, tracks, analysis) {
+    var have = {};
+    for (var i = 0; i < ranked.length; i += 1) have[ranked[i].track.trackId] = true;
+    var index = tracksById(tracks);
+    var intents = (analysis && analysis.intents) || [];
+    var extra = [];
+    for (var n = 0; n < intents.length; n += 1) {
+      var ids = (intents[n].featuredIds || []).concat(intents[n].boostIds || []);
+      for (var k = 0; k < ids.length; k += 1) {
+        if (have[ids[k]] || !index[ids[k]]) continue;
+        have[ids[k]] = true;
+        extra.push({
+          track: index[ids[k]],
+          score: 260 - k * 8,
+          why: api.emptyWhy ? api.emptyWhy() : { literal: [], situation: [], intent: [intents[n].goal || ''] },
+        });
+      }
+    }
+    return extra.concat(ranked);
+  }
+
+  function mergeCandidates(ranked, tracks, analysis) {
+    var seen = {};
+    var out = [];
+    function push(row) {
+      var track = row.track || row;
+      if (!track || !track.trackId || seen[track.trackId]) return;
+      seen[track.trackId] = true;
+      out.push(row.track ? row : { track: track, score: row.score || 0, why: row.why });
+    }
+    var intents = (analysis && analysis.intents) || [];
+    var index = tracksById(tracks);
+    for (var n = 0; n < intents.length; n += 1) {
+      var ids = (intents[n].featuredIds || []).concat(intents[n].boostIds || []);
+      for (var k = 0; k < ids.length; k += 1) if (index[ids[k]]) push({ track: index[ids[k]], score: 280 - k * 6 });
+    }
+    for (var r = 0; r < ranked.length; r += 1) push(ranked[r]);
+    if (out.length < 12) {
+      var sectionHint = '';
+      if (intents.length && intents[0].boostIds && intents[0].boostIds[0] && index[intents[0].boostIds[0]]) {
+        sectionHint = index[intents[0].boostIds[0]].sectionId;
+      }
+      for (var t = 0; t < tracks.length && out.length < 12; t += 1) {
+        if (sectionHint && tracks[t].sectionId !== sectionHint) continue;
+        push({ track: tracks[t], score: 20 });
+      }
+    }
+    return out.slice(0, CANDIDATE_LIMIT);
+  }
+
+  function inAcademyTheme(analysis) {
+    if (!analysis) return false;
+    if (analysis.outOfScope) return false;
+    if (analysis.adjacentScope) return true;
+    if (analysis.intents && analysis.intents.length) return true;
+    var blob = String(analysis.norm || '');
+    return /(mlm|продаж|клиент|контакт|партн|команд|продукт|план|новичк|старт|сообщен|написа|звон|встреч|отказ|дорог|рекоменд|баз|ритм|дисципл|настав|лидер|роль|заработ|диалог|разговор|потребност|возраст|пауз|повтор|систем|порядок|хаотич|успева)/.test(blob);
+  }
+  var rankTracks = api.rankTracks;
+  var analyzeQuery = api.analyzeQuery;
+  var applyFacets = api.applyFacets;
+  var emptyLibraryState = api.emptyLibraryState;
+  var buildChips = api.buildChips;
+  var foundLabel = api.foundLabel;
+  var hasActiveFilters = api.hasActiveFilters;
+  var parseLibraryState = api.parseLibraryState;
+  var emptyWhy = api.emptyWhy;
+  var humanWhy = api.humanWhy;
+  var defaultClarify = api.defaultClarify;
+
+  function attachWhyText(why, track, analysis, aiReason) {
+    var next = why && !Array.isArray(why) ? why : emptyWhy();
+    next.text = humanWhy(track, analysis, next, aiReason);
+    return next;
+  }
+
+  function splitDisplay(ranked, analysis, state) {
+    var featured = [];
+    var other = [];
+    var whyMap = {};
+    var scores = {};
+    var items = [];
+    if (!state.q) {
+      for (var b = 0; b < ranked.length; b += 1) {
+        items.push(ranked[b].track);
+        scores[ranked[b].track.trackId] = ranked[b].score;
+      }
+      return { items: items, featured: [], other: items, whyMap: whyMap, scores: scores };
+    }
+    var intents = (analysis && analysis.intents) || [];
+    var boost = {};
+    var teamOnly = false;
+    var featuredIds = [];
+    for (var n = 0; n < intents.length; n += 1) {
+      if (intents[n].teamOnly) teamOnly = true;
+      var ids = intents[n].boostIds || [];
+      for (var k = 0; k < ids.length; k += 1) boost[ids[k]] = true;
+      if (!featuredIds.length && intents[n].featuredIds && intents[n].featuredIds.length) {
+        featuredIds = intents[n].featuredIds.slice();
+      }
+    }
+    var byId = {};
+    for (var b = 0; b < ranked.length; b += 1) byId[ranked[b].track.trackId] = ranked[b];
+    if (featuredIds.length) {
+      for (var fi = 0; fi < featuredIds.length && featured.length < 3; fi += 1) {
+        var forced = byId[featuredIds[fi]];
+        if (!forced) continue;
+        featured.push(forced.track);
+        scores[forced.track.trackId] = forced.score;
+        whyMap[forced.track.trackId] = attachWhyText(forced.why, forced.track, analysis);
+      }
+    }
+    var strong = [];
+    var relax = !!(state && state._relaxInFilter);
+    for (var i = 0; i < ranked.length; i += 1) {
+      var row = ranked[i];
+      var id = row.track.trackId;
+      var meta = deriveMeta(row.track);
+      if (teamOnly && !boost[id] && meta.sit !== 'team' && !relax) continue;
+      if (intents.length && !boost[id] && row.score < (relax ? 70 : 220)) continue;
+      if (!intents.length && row.score < 70) continue;
+      strong.push(row);
+    }
+    for (var f = 0; f < strong.length && featured.length < 3; f += 1) {
+      var minFeat = boost[strong[f].track.trackId] ? 80 : 100;
+      if (strong[f].score < minFeat) continue;
+      if (featured.indexOf(strong[f].track) !== -1) continue;
+      featured.push(strong[f].track);
+      scores[strong[f].track.trackId] = strong[f].score;
+      whyMap[strong[f].track.trackId] = attachWhyText(strong[f].why, strong[f].track, analysis);
+    }
+    for (var r = 0; r < strong.length && other.length < 5; r += 1) {
+      var rel = strong[r];
+      if (featured.indexOf(rel.track) !== -1) continue;
+      var minRel = boost[rel.track.trackId] ? 60 : 80;
+      if (rel.score < minRel) continue;
+      other.push(rel.track);
+      scores[rel.track.trackId] = rel.score;
+      whyMap[rel.track.trackId] = attachWhyText(rel.why, rel.track, analysis);
+    }
+    items = featured.concat(other);
+    return { items: items, featured: featured, other: other, whyMap: whyMap, scores: scores };
+  }
+
+  function searchCatalog(tracks, state) {
+    state = state || emptyLibraryState();
+    var analysis = analyzeQuery(state.q || '');
+    var chips = buildChips(state);
+    if (state.q && analysis.kind === 'need_more') {
+      var more = defaultClarify();
+      return { kind: 'need_more', items: [], featured: [], other: [], whyMap: {}, analysis: analysis, chips: chips, relaxedKey: null, close: [], total: tracks.length, label: 'Нужна более конкретная формулировка', clarifyingQuestion: more.question, clarifyingOptions: more.options, source: 'local' };
+    }
+    if (state.q && analysis.outOfScope) {
+      return {
+        kind: 'zero',
+        items: [],
+        featured: [],
+        other: [],
+        whyMap: {},
+        scores: {},
+        analysis: analysis,
+        chips: chips,
+        relaxedKey: null,
+        close: [],
+        candidates: [],
+        clarifyingQuestion: analysis.outOfScope.question,
+        clarifyingOptions: analysis.outOfScope.options || defaultClarify().options,
+        source: 'local',
+        total: tracks.length,
+        matchType: 'out_of_scope',
+        label: 'Точного трека пока нет',
+      };
+    }
+    var index = tracksById(tracks);
+    if (state.q && analysis.adjacentScope && analysis.adjacentScope.trackIds) {
+      var adj = analysis.adjacentScope;
+      var featuredAdj = [];
+      var whyAdj = {};
+      for (var a = 0; a < adj.trackIds.length && featuredAdj.length < 3; a += 1) {
+        if (!index[adj.trackIds[a]]) continue;
+        featuredAdj.push(index[adj.trackIds[a]]);
+        whyAdj[adj.trackIds[a]] = attachWhyText(emptyWhy(), index[adj.trackIds[a]], analysis, adj.reason);
+      }
+      var adjCandidates = mergeCandidates(
+        featuredAdj.map(function (track) { return { track: track, score: 200, why: emptyWhy() }; }),
+        tracks,
+        analysis,
+      );
+      return {
+        kind: 'ok',
+        items: featuredAdj,
+        featured: featuredAdj,
+        other: [],
+        whyMap: whyAdj,
+        scores: {},
+        analysis: analysis,
+        chips: chips,
+        relaxedKey: null,
+        close: [],
+        candidates: adjCandidates,
+        clarifyingQuestion: adj.question,
+        clarifyingOptions: adj.options || [],
+        source: 'local',
+        total: tracks.length,
+        matchType: 'adjacent',
+        label: 'Можно начать с этих треков',
+        expandCatalog: true,
+      };
+    }
+    var faceted = applyFacets(tracks, state);
+    var ranked = ensureIntentRows(rankTracks(faceted, analysis, state.sort), faceted, analysis);
+    var candidatePool = faceted.length ? faceted : tracks;
+    var candidates = mergeCandidates(ranked, candidatePool, analysis);
+    if (inAcademyTheme(analysis) && !candidates.length) {
+      candidates = tracks.slice(0, CANDIDATE_LIMIT).map(function (track) {
+        return { track: track, score: 1, why: emptyWhy() };
+      });
+    }
+    var split = splitDisplay(ranked, analysis, state);
+    if (!state.q) {
+      return {
+        kind: 'ok',
+        items: split.items,
+        featured: [],
+        other: split.other,
+        whyMap: {},
+        scores: split.scores,
+        analysis: analysis,
+        chips: chips,
+        relaxedKey: null,
+        close: [],
+        candidates: [],
+        clarifyingQuestion: null,
+        clarifyingOptions: [],
+        source: 'local',
+        total: tracks.length,
+        label: foundLabel(split.items.length, tracks.length, state),
+      };
+    }
+    if (!(split.featured.length || split.other.length) && hasActiveFilters(Object.assign({}, state, { q: '' })) && ranked.length) {
+      split = splitDisplay(ranked, analysis, Object.assign({}, state, { _relaxInFilter: true }));
+    }
+    if (!(split.featured.length || split.other.length) && inAcademyTheme(analysis) && ranked.length) {
+      split = splitDisplay(ranked, analysis, Object.assign({}, state, { _relaxInFilter: true }));
+    }
+    var leadIntent = (analysis.intents && analysis.intents[0]) || null;
+    var matchType = leadIntent && leadIntent.matchType
+      ? leadIntent.matchType
+      : (split.featured.length ? 'strong' : (split.other.length ? 'adjacent' : ''));
+    var clarifyQ = (leadIntent && leadIntent.clarification) || null;
+    if (split.featured.length || split.other.length) {
+      return {
+        kind: 'ok',
+        items: split.items,
+        featured: split.featured,
+        other: split.other,
+        whyMap: split.whyMap,
+        scores: split.scores,
+        analysis: analysis,
+        chips: chips,
+        relaxedKey: null,
+        close: [],
+        candidates: candidates,
+        clarifyingQuestion: clarifyQ,
+        clarifyingOptions: [],
+        source: 'local',
+        total: tracks.length,
+        matchType: matchType,
+        label: matchType === 'adjacent' || (leadIntent && leadIntent.wide)
+          ? 'Можно начать с этих треков'
+          : (split.featured.length ? 'Подходит лучше всего' : 'Можно начать с этих треков'),
+        expandCatalog: split.featured.length < 2,
+      };
+    }
+    if (!hasActiveFilters(state) && !state.q) {
+      return { kind: 'ok', items: [], featured: [], other: [], whyMap: {}, scores: {}, analysis: analysis, chips: chips, relaxedKey: null, close: [], candidates: [], clarifyingQuestion: null, clarifyingOptions: [], source: 'local', total: tracks.length, label: foundLabel(0, tracks.length, state) };
+    }
+    if (inAcademyTheme(analysis) && candidates.length) {
+      var fallbackFeat = [];
+      var fallbackWhy = {};
+      for (var c = 0; c < candidates.length && fallbackFeat.length < 3; c += 1) {
+        fallbackFeat.push(candidates[c].track);
+        fallbackWhy[candidates[c].track.trackId] = attachWhyText(candidates[c].why, candidates[c].track, analysis);
+      }
+      return {
+        kind: 'ok',
+        items: fallbackFeat,
+        featured: fallbackFeat,
+        other: [],
+        whyMap: fallbackWhy,
+        scores: {},
+        analysis: analysis,
+        chips: chips,
+        relaxedKey: null,
+        close: [],
+        candidates: candidates,
+        clarifyingQuestion: defaultClarify().question,
+        clarifyingOptions: defaultClarify().options,
+        source: 'local',
+        total: tracks.length,
+        matchType: 'adjacent',
+        label: 'Можно начать с этих треков',
+        expandCatalog: true,
+      };
+    }
+    var clarify = defaultClarify();
+    return {
+      kind: 'zero',
+      items: [],
+      featured: [],
+      other: [],
+      whyMap: {},
+      scores: {},
+      analysis: analysis,
+      chips: chips,
+      relaxedKey: null,
+      close: [],
+      candidates: candidates,
+      clarifyingQuestion: clarify.question,
+      clarifyingOptions: clarify.options,
+      source: 'local',
+      total: tracks.length,
+      matchType: 'out_of_scope',
+      label: 'Точного трека пока нет',
+    };
+  }
+
+  function matchesQuery(track, query) {
+    query = query || {};
+    var state = parseLibraryState('', {
+      q: query.query || query.q || '',
+      stage: query.sectionId || query.stage || null,
+      format: query.format || null,
+      goal: query.goal || null,
+      situation: query.situation || null,
+    });
+    if (query.availability === 'available' && track.publicationStatus !== 'published') return false;
+    if (query.availability === 'preparing' && track.publicationStatus === 'published') return false;
+    var result = searchCatalog([track], state);
+    return result.kind === 'ok' && result.items.length > 0;
+  }
+
+  function filterTracks(tracks, query) {
+    query = query || {};
+    var state = parseLibraryState('', {
+      q: query.query || query.q || '',
+      stage: query.sectionId || query.stage || null,
+      format: query.format || null,
+      goal: query.goal || null,
+      situation: query.situation || null,
+      type: query.type || null,
+      experience: query.experience || null,
+    });
+    var filtered = [];
+    for (var i = 0; i < tracks.length; i += 1) {
+      var track = tracks[i];
+      if (query.availability === 'available' && track.publicationStatus !== 'published') continue;
+      if (query.availability === 'preparing' && track.publicationStatus === 'published') continue;
+      filtered.push(track);
+    }
+    var result = searchCatalog(filtered, state);
+    if (result.kind === 'need_more') return [];
+    return result.items;
+  }
+
+  function rerankPayload(result, query, allTracks) {
+    var rows = (result && result.candidates) || [];
+    var candidates = [];
+    var seen = {};
+    function pushTrack(track, score) {
+      if (!track || !track.trackId || seen[track.trackId]) return;
+      seen[track.trackId] = true;
+      var doc = searchDocument(track);
+      candidates.push({
+        trackId: doc.trackId,
+        title: doc.title,
+        situation: (doc.situations && doc.situations[0]) || '',
+        result: doc.outcome,
+        sectionId: track.sectionId,
+        aliases: doc.aliases.slice(0, 10),
+        tags: doc.aliases.slice(0, 8),
+        score: score || 0,
+      });
+    }
+    for (var i = 0; i < rows.length && candidates.length < CANDIDATE_LIMIT; i += 1) {
+      pushTrack(rows[i].track || rows[i], rows[i].score || 0);
+    }
+    var catalog = [];
+    var list = allTracks || [];
+    for (var t = 0; t < list.length && catalog.length < 112; t += 1) {
+      catalog.push(compactSearchRow(list[t]));
+    }
+    var weakLocal = !candidates.length || candidates.length < 8 || (result && (result.matchType === 'adjacent' || result.expandCatalog));
+    if (weakLocal && catalog.length) {
+      for (var c = 0; c < catalog.length && candidates.length < CANDIDATE_LIMIT; c += 1) {
+        var row = catalog[c];
+        if (seen[row.trackId]) continue;
+        seen[row.trackId] = true;
+        candidates.push(row);
+      }
+    }
+    return {
+      query: String(query || ''),
+      candidates: candidates,
+      catalog: weakLocal ? catalog : undefined,
+    };
+  }
+
+  function applyRerankResponse(local, data, allTracks) {
+    if (!local || !data || typeof data !== 'object') return local;
+    var catalog = {};
+    var source = (local.candidates && local.candidates.length ? local.candidates : []).concat(
+      (local.items || []).map(function (track) { return { track: track }; }),
+    );
+    var byId = {};
+    function remember(track) {
+      if (!track || !track.trackId) return;
+      catalog[track.trackId] = true;
+      byId[track.trackId] = track;
+    }
+    for (var i = 0; i < source.length; i += 1) remember(source[i].track || source[i]);
+    for (var t = 0; t < (local.items || []).length; t += 1) remember(local.items[t]);
+    if (allTracks && allTracks.length) {
+      for (var a = 0; a < allTracks.length; a += 1) remember(allTracks[a]);
+    }
+    var topIn = Array.isArray(data.topMatches) ? data.topMatches : [];
+    var relIn = Array.isArray(data.relatedMatches) ? data.relatedMatches : [];
+    if (!topIn.length && !relIn.length && Array.isArray(data.results)) {
+      topIn = data.results.slice(0, 3);
+      relIn = data.results.slice(3, 8);
+    }
+    var confidence = Number(data.confidence);
+    if (!isFinite(confidence)) confidence = topIn[0] && typeof topIn[0].confidence === 'number' ? topIn[0].confidence : 0;
+    var clarify = data.clarification || data.clarifyingQuestion || null;
+    var matchType = data.matchType || (confidence >= 0.7 ? 'exact' : confidence >= 0.45 ? 'strong' : confidence >= 0.2 ? 'adjacent' : 'out_of_scope');
+    function take(rows, limit, minConf) {
+      var out = [];
+      var whyMap = {};
+      for (var r = 0; r < rows.length && out.length < limit; r += 1) {
+        var row = rows[r] || {};
+        var id = String(row.trackId || '');
+        if (!catalog[id] || !byId[id]) continue;
+        if (typeof row.confidence === 'number' && row.confidence < minConf) continue;
+        out.push(byId[id]);
+        whyMap[id] = attachWhyText(emptyWhy(), byId[id], local.analysis, row.reason || data.reason);
+      }
+      return { items: out, whyMap: whyMap };
+    }
+    if (matchType === 'out_of_scope' && confidence < 0.2 && !topIn.length && !relIn.length) {
+      var low = Object.assign({}, local);
+      low.kind = 'zero';
+      low.items = [];
+      low.featured = [];
+      low.other = [];
+      low.close = [];
+      low.whyMap = {};
+      low.pendingAi = false;
+      low.matchType = 'out_of_scope';
+      low.clarifyingQuestion = clarify || (defaultClarify().question);
+      low.clarifyingOptions = local.clarifyingOptions && local.clarifyingOptions.length ? local.clarifyingOptions : defaultClarify().options;
+      low.source = 'ai';
+      low.label = 'Точного трека пока нет';
+      return low;
+    }
+    var wide = false;
+    var intents = (local.analysis && local.analysis.intents) || [];
+    for (var wi = 0; wi < intents.length; wi += 1) if (intents[wi].wide) wide = true;
+    var scopedAdj = !!(local.analysis && local.analysis.adjacentScope);
+    if (scopedAdj || wide) {
+      matchType = 'adjacent';
+      if (local.clarifyingQuestion) clarify = local.clarifyingQuestion;
+    }
+    function hasTrack(list, id) {
+      for (var h = 0; h < list.length; h += 1) if (list[h] && list[h].trackId === id) return true;
+      return false;
+    }
+    var minTop = confidence >= 0.7 ? 0.45 : 0.2;
+    var top = take(topIn, 3, minTop);
+    var related = take(relIn, 5, 0.2);
+    var featured = top.items.slice();
+    var other = [];
+    for (var ri = 0; ri < related.items.length; ri += 1) {
+      if (!hasTrack(featured, related.items[ri].trackId)) other.push(related.items[ri]);
+    }
+    if (!featured.length && other.length) {
+      featured = other.slice(0, 3);
+      other = other.slice(3);
+    }
+    if (scopedAdj && local.featured && local.featured.length) {
+      featured = local.featured.slice(0, 3);
+      other = [];
+    } else if (featured.length < 3 && local.featured && local.featured.length) {
+      for (var lf = 0; lf < local.featured.length && featured.length < 3; lf += 1) {
+        if (hasTrack(featured, local.featured[lf].trackId)) continue;
+        featured.push(local.featured[lf]);
+      }
+    }
+    other = other.filter(function (item) { return !hasTrack(featured, item.trackId); });
+    if (!featured.length && !other.length) {
+      var keep = Object.assign({}, local, { pendingAi: false, source: local.source || 'local' });
+      if (clarify) keep.clarifyingQuestion = clarify;
+      return keep;
+    }
+    var whyMap = Object.assign({}, local.whyMap || {}, top.whyMap, related.whyMap);
+    var label = 'Можно начать с этих треков';
+    if (matchType === 'exact' || matchType === 'strong') label = 'Подходит лучше всего';
+    else if (matchType === 'adjacent') label = 'Можно начать с этих треков';
+    return Object.assign({}, local, {
+      kind: 'ok',
+      items: featured.concat(other),
+      featured: featured,
+      other: other,
+      whyMap: whyMap,
+      clarifyingQuestion: clarify || local.clarifyingQuestion || null,
+      recognizedSituation: data.recognizedSituation || data.reason || '',
+      source: 'ai',
+      pendingAi: false,
+      matchType: matchType,
+      label: label,
+    });
+  }
+
+  api.searchCatalog = searchCatalog;
+  api.rerankPayload = rerankPayload;
+  api.applyRerankResponse = applyRerankResponse;
+  api.searchDocument = searchDocument;
+  api.matchesQuery = matchesQuery;
+  api.filterTracks = filterTracks;
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+

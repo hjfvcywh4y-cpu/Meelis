@@ -1,0 +1,3373 @@
+{
+  "version": "0.5",
+  "generatedFrom": "MLM_Academy_содержание_библиотеки_v0.2_полный_PDF.xlsx",
+  "tracks": [
+    {
+      "order": 1,
+      "sectionId": "A1",
+      "module": "Профессиональная позиция",
+      "trackId": "A1-001",
+      "title": "Продавать без стыда и впаривания",
+      "situation": "Мне неловко предлагать продукт: кажется, что я навязываюсь",
+      "outcome": "Сформулирована собственная этичная позиция и три границы допустимого",
+      "priority": "P0",
+      "format": "Самодиагностика + формулировка",
+      "nextTrackIds": [
+        "A1-004",
+        "A1-006",
+        "A2-006"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a1-001",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "1.1; 2.2.4; 4.2.1",
+        "originalTitle": "О культуре отношения к Технике Продаж; миф «продажи — низкая неприятная работа»; стратегия «Выигрыш–Выигрыш»",
+        "pages": "19–39; 56; 66",
+        "adaptationDecision": "Освежить этику и язык"
+      }
+    },
+    {
+      "order": 2,
+      "sectionId": "A1",
+      "module": "Профессиональная позиция",
+      "trackId": "A1-002",
+      "title": "Отделить чужие мифы от своей работы",
+      "situation": "Окружающие обесценивают MLM и профессию партнера",
+      "outcome": "Собраны чужие установки, собственные факты и спокойный ответ без оправданий",
+      "priority": "P1",
+      "format": "Карта убеждений",
+      "nextTrackIds": [
+        "A1-001",
+        "A1-004"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a1-002",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "2.1–2.2.4",
+        "originalTitle": "Работа с мнением окружающих; негативные мифы о профессии продавца",
+        "pages": "50–56",
+        "adaptationDecision": "Пересобрать для MLM"
+      }
+    },
+    {
+      "order": 3,
+      "sectionId": "A1",
+      "module": "Профессиональная позиция",
+      "trackId": "A1-003",
+      "title": "Проверить сделку на выигрыш для обеих сторон",
+      "situation": "Я не уверен, что предложение действительно полезно человеку",
+      "outcome": "Заполнен фильтр win-win и принято решение: предлагать, изменить предложение или не предлагать",
+      "priority": "P1",
+      "format": "Чек-лист решения",
+      "nextTrackIds": [
+        "A1-011",
+        "A1-014"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a1-003",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "4.2.1",
+        "originalTitle": "Стратегия «Выигрыш–Выигрыш»",
+        "pages": "66",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 4,
+      "sectionId": "A1",
+      "module": "Роль и направление",
+      "trackId": "A1-004",
+      "title": "Выбрать свою роль в MLM на ближайшие 30 дней",
+      "situation": "Я пытаюсь одновременно быть клиентом, продавцом, рекрутером, блогером и лидером",
+      "outcome": "Выбрана одна ведущая роль, границы ответственности и ближайший результат",
+      "priority": "P0",
+      "format": "Выбор роли",
+      "nextTrackIds": [
+        "A1-006",
+        "A1-010",
+        "A1-011"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a1-004",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "1.2; 5.1",
+        "originalTitle": "Для кого написана книга; главные вопросы к продавцу",
+        "pages": "40; 101–105",
+        "adaptationDecision": "Дополнить MLM-контекстом"
+      }
+    },
+    {
+      "order": 5,
+      "sectionId": "A1",
+      "module": "Роль и направление",
+      "trackId": "A1-005",
+      "title": "Сформулировать личную миссию консультанта",
+      "situation": "Я повторяю слова компании и не понимаю, какую пользу лично несу",
+      "outcome": "Собрана короткая миссия через аудиторию, пользу и способ работы",
+      "priority": "P1",
+      "format": "Конструктор формулировки",
+      "nextTrackIds": [
+        "A1-003",
+        "A1-011"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a1-005",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "4.2.2",
+        "originalTitle": "Личная миссия консультанта",
+        "pages": "71",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 6,
+      "sectionId": "A1",
+      "module": "Роль и направление",
+      "trackId": "A1-006",
+      "title": "Понять, зачем мне вообще этим заниматься",
+      "situation": "Делаю действия рывками, потому что цель чужая или размытая",
+      "outcome": "Зафиксирована личная причина, результат на 90 дней и критерий «мне это подходит»",
+      "priority": "P0",
+      "format": "Рефлексия + решение",
+      "nextTrackIds": [
+        "A1-010",
+        "A1-011"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a1-006",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "5.1.1–5.2",
+        "originalTitle": "Зачем мне надо заниматься продажами; что хотим изменить; «Третья колонка»",
+        "pages": "103–107",
+        "adaptationDecision": "Пересобрать для партнера MLM"
+      }
+    },
+    {
+      "order": 7,
+      "sectionId": "A1",
+      "module": "Роль и направление",
+      "trackId": "A1-007",
+      "title": "Перевести желание в наблюдаемую цель",
+      "situation": "Хочу «больше зарабатывать», но не знаю, что должно измениться в действиях",
+      "outcome": "Цель разложена на результат, срок, действия и признаки прогресса",
+      "priority": "P1",
+      "format": "Планировщик",
+      "nextTrackIds": [
+        "A1-010",
+        "A6-012"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a1-007",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "5.2–5.3",
+        "originalTitle": "Учимся ставить реальные цели; составляем Жизненный План",
+        "pages": "107–110",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 8,
+      "sectionId": "A1",
+      "module": "Личная бизнес-система",
+      "trackId": "A1-008",
+      "title": "Собрать личный план жизни и бизнеса без фантазий",
+      "situation": "План компании не связан с моей реальной жизнью, временем и деньгами",
+      "outcome": "Собран реалистичный контур: ограничения, ресурсы, режим и цель",
+      "priority": "P1",
+      "format": "Планировщик",
+      "nextTrackIds": [
+        "A1-010",
+        "A6-011"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a1-008",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "5.3; 6.1",
+        "originalTitle": "Составляем Жизненный План; выбор метода достижения целей",
+        "pages": "110–115",
+        "adaptationDecision": "Освежить примеры"
+      }
+    },
+    {
+      "order": 9,
+      "sectionId": "A1",
+      "module": "Личная бизнес-система",
+      "trackId": "A1-009",
+      "title": "Выбрать рабочую модель действий",
+      "situation": "Копирую чужого лидера, хотя у меня другая аудитория и ресурс",
+      "outcome": "Выбрана персональная модель: канал, частота, аудитория, формат контакта",
+      "priority": "P1",
+      "format": "Конструктор модели",
+      "nextTrackIds": [
+        "A1-010",
+        "A2-009"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a1-009",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Глубокая",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "6.1–6.3",
+        "originalTitle": "Два пути «прихода» в продажи; выбор организации и направления деятельности",
+        "pages": "113–126",
+        "adaptationDecision": "Сильно пересобрать для MLM"
+      }
+    },
+    {
+      "order": 10,
+      "sectionId": "A1",
+      "module": "Личная бизнес-система",
+      "trackId": "A1-010",
+      "title": "Собрать план действий на ближайшие 30 дней",
+      "situation": "Есть большая цель, но нет ритма ежедневной работы",
+      "outcome": "Создан план: действия, нормы, контрольные точки и недельный обзор",
+      "priority": "P0",
+      "format": "Планировщик + календарь",
+      "nextTrackIds": [
+        "A2-006",
+        "A2-008",
+        "A6-011"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a1-010",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "6.5; 4.3.3–4.4.3",
+        "originalTitle": "Личный бизнес-план; самоорганизация, планирование и стимулирующий контроль",
+        "pages": "83–90; 136",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 11,
+      "sectionId": "A1",
+      "module": "Продуктовый фокус",
+      "trackId": "A1-011",
+      "title": "Выбрать один продукт для первого фокуса",
+      "situation": "Я пытаюсь рассказывать обо всем ассортименте и теряюсь",
+      "outcome": "Выбран один продукт, одна аудитория и один понятный результат клиента",
+      "priority": "P0",
+      "format": "Матрица выбора",
+      "nextTrackIds": [
+        "A1-012",
+        "A2-001"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a1-011",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "6.4",
+        "originalTitle": "Выбор продукта",
+        "pages": "126–134",
+        "adaptationDecision": "Пересобрать для продуктовой линейки MLM"
+      }
+    },
+    {
+      "order": 12,
+      "sectionId": "A1",
+      "module": "Продуктовый фокус",
+      "trackId": "A1-012",
+      "title": "Собрать честную карточку продукта",
+      "situation": "Я знаю рекламные фразы, но не умею объяснить продукт по-человечески",
+      "outcome": "Заполнены: аудитория, принцип действия, характеристики, ограничения, цена и обслуживание",
+      "priority": "P1",
+      "format": "Карточка продукта",
+      "nextTrackIds": [
+        "A1-013",
+        "A2-001"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a1-012",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Проверить",
+      "transformationType": "Проверка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "6.4.1–6.4.7",
+        "originalTitle": "Название; назначение; принцип действия; характеристики; ограничения; цена/скидки; условия эксплуатации",
+        "pages": "126–134",
+        "adaptationDecision": "Проверить формулировки с продуктовым экспертом"
+      }
+    },
+    {
+      "order": 13,
+      "sectionId": "A1",
+      "module": "Продуктовый фокус",
+      "trackId": "A1-013",
+      "title": "Предвидеть вопросы и сомнения по продукту",
+      "situation": "На простом вопросе клиента я теряюсь или начинаю обещать лишнее",
+      "outcome": "Собрана карта вероятных вопросов, безопасных ответов и точек эскалации эксперту",
+      "priority": "P1",
+      "format": "Карта вопросов",
+      "nextTrackIds": [
+        "A5-001",
+        "A5-006"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a1-013",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Проверить",
+      "transformationType": "Проверка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "6.4.8",
+        "originalTitle": "Предполагаемые возражения, связанные со спецификой продукта/услуги",
+        "pages": "134",
+        "adaptationDecision": "Дополнить compliance-правилами"
+      }
+    },
+    {
+      "order": 14,
+      "sectionId": "A1",
+      "module": "Продуктовый фокус",
+      "trackId": "A1-014",
+      "title": "Проверить продукт фильтром «мне не стыдно это рекомендовать»",
+      "situation": "Я сомневаюсь в продукте, компании или обещаниях",
+      "outcome": "Зафиксировано, что проверено, что неизвестно и что нельзя обещать",
+      "priority": "P1",
+      "format": "Risk gate",
+      "nextTrackIds": [
+        "A1-003",
+        "A1-011"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a1-014",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "6.4.10",
+        "originalTitle": "Продавайте то, за что не придется краснеть!",
+        "pages": "134",
+        "adaptationDecision": "Сохраняем принцип, добавляем доказательность"
+      }
+    },
+    {
+      "order": 15,
+      "sectionId": "A1",
+      "module": "Личная бизнес-система",
+      "trackId": "A1-015",
+      "title": "Посчитать план первых поступлений",
+      "situation": "Цель по доходу есть, но нет связи с клиентами, повторами и действиями",
+      "outcome": "Цель переведена в число клиентов, повторов, контактов и недельных действий",
+      "priority": "P1",
+      "format": "Калькулятор",
+      "nextTrackIds": [
+        "A2-009",
+        "A6-012"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a1-015",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "6.5",
+        "originalTitle": "Составление личного бизнес-плана (плана поступлений)",
+        "pages": "136",
+        "adaptationDecision": "Пересобрать под реальную экономику MLM"
+      }
+    },
+    {
+      "order": 16,
+      "sectionId": "A1",
+      "module": "Профессиональная позиция",
+      "trackId": "A1-016",
+      "title": "Создать свой стандарт хорошей рекомендации",
+      "situation": "Каждый разговор проходит случайно и зависит от настроения",
+      "outcome": "Собран личный стандарт: подготовка, вопросы, границы, завершение и запись результата",
+      "priority": "P1",
+      "format": "Конструктор стандарта",
+      "nextTrackIds": [
+        "A3-013",
+        "A6-013"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a1-016",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "4.2.3–4.2.4",
+        "originalTitle": "Принцип системности; знать стандарты продаж",
+        "pages": "72–74",
+        "adaptationDecision": "Дополнить нашим стандартом трека"
+      }
+    },
+    {
+      "order": 17,
+      "sectionId": "A2",
+      "module": "Клиент и решение",
+      "trackId": "A2-001",
+      "title": "Описать человека, которому действительно подходит продукт",
+      "situation": "Я пишу всем подряд и получаю случайную реакцию",
+      "outcome": "Создан профиль человека по ситуации, задаче и уместности предложения",
+      "priority": "P1",
+      "format": "Профиль клиента",
+      "nextTrackIds": [
+        "A2-003",
+        "A2-007"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a2-001",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "7.1–7.1.2",
+        "originalTitle": "Характеристики потенциального клиента: главные и дополнительные",
+        "pages": "137–151",
+        "adaptationDecision": "Убрать оценку «ценности человека», оставить уместность"
+      }
+    },
+    {
+      "order": 18,
+      "sectionId": "A2",
+      "module": "Клиент и решение",
+      "trackId": "A2-002",
+      "title": "Понять, чего человек хочет на самом деле",
+      "situation": "Я вижу интерес к продукту, но не понимаю ведущий мотив",
+      "outcome": "Зафиксированы желаемый результат и язык, которым человек его описывает",
+      "priority": "P1",
+      "format": "Карта мотива",
+      "nextTrackIds": [
+        "A4-003",
+        "A4-008"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a2-002",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "7.2.1",
+        "originalTitle": "Фактор «Желания». Идеальный ценностный фильтр",
+        "pages": "155",
+        "adaptationDecision": "Освежить психологический язык"
+      }
+    },
+    {
+      "order": 19,
+      "sectionId": "A2",
+      "module": "Клиент и решение",
+      "trackId": "A2-003",
+      "title": "Проверить уместность разговора без оценки кошелька",
+      "situation": "Хочу заранее решить за человека, может ли он купить",
+      "outcome": "Проверены обстоятельства, ограничения и готовность обсуждать — без ярлыка платежеспособности",
+      "priority": "P1",
+      "format": "Чек уместности",
+      "nextTrackIds": [
+        "A3-002",
+        "A4-001"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a2-003",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Глубокая",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": "Не превращать в скоринг человеческой ценности",
+      "source": {
+        "sourceCode": "7.2.2",
+        "originalTitle": "Фактор «Возможности». Базовый ценностный фильтр",
+        "pages": "160",
+        "adaptationDecision": "Этическая пересборка"
+      }
+    },
+    {
+      "order": 20,
+      "sectionId": "A2",
+      "module": "Клиент и решение",
+      "trackId": "A2-004",
+      "title": "Увидеть, кто еще влияет на решение",
+      "situation": "Человек заинтересован, но решение принимает не один",
+      "outcome": "Определены участники решения и честный способ включить их в разговор",
+      "priority": "P1",
+      "format": "Карта участников",
+      "nextTrackIds": [
+        "A4-011",
+        "A5-009"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a2-004",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "7.2.4",
+        "originalTitle": "Фактор «Мнение значимых других». Актуальный ценностный фильтр",
+        "pages": "161",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 21,
+      "sectionId": "A2",
+      "module": "Клиент и решение",
+      "trackId": "A2-005",
+      "title": "Определить, на какой стадии решения человек находится",
+      "situation": "Я предлагаю купить слишком рано или продолжаю объяснять после готовности",
+      "outcome": "Выбрана стадия: интерес, исследование, выбор, решение или пауза",
+      "priority": "P1",
+      "format": "Диагностика стадии",
+      "nextTrackIds": [
+        "A3-002",
+        "A4-001"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a2-005",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "7.3–7.3.2",
+        "originalTitle": "Алгоритм принятия решения о покупке",
+        "pages": "167–169",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 22,
+      "sectionId": "A2",
+      "module": "Рабочая база",
+      "trackId": "A2-006",
+      "title": "Провести аудит своей клиентской базы",
+      "situation": "Контактов много, но я не понимаю, с кем и о чем продолжать",
+      "outcome": "Контакты собраны в один реестр, удалены дубли, отмечены история и следующий шаг",
+      "priority": "P0",
+      "format": "Мини-CRM",
+      "nextTrackIds": [
+        "A2-007",
+        "A2-008",
+        "A6-010"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a2-006",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "9.5.1; 17.2.5",
+        "originalTitle": "Клиентская база; работа с базами данных",
+        "pages": "236; 508",
+        "adaptationDecision": "Дополнить CRM-статусами"
+      }
+    },
+    {
+      "order": 23,
+      "sectionId": "A2",
+      "module": "Рабочая база",
+      "trackId": "A2-007",
+      "title": "Разделить базу по ситуациям, а не по ярлыкам",
+      "situation": "Все контакты лежат одним списком",
+      "outcome": "Созданы рабочие сегменты по ситуации, отношениям, интересу и следующему действию",
+      "priority": "P0",
+      "format": "Сегментатор",
+      "nextTrackIds": [
+        "A2-008",
+        "A2-010"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a2-007",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "9.2.2; 17.2.5",
+        "originalTitle": "Планомерное создание и расширение клиентской базы; работа с базами данных",
+        "pages": "203; 508",
+        "adaptationDecision": "Добавить современную сегментацию"
+      }
+    },
+    {
+      "order": 24,
+      "sectionId": "A2",
+      "module": "Рабочая база",
+      "trackId": "A2-008",
+      "title": "Выбрать пять людей для следующего действия",
+      "situation": "Я бесконечно составляю списки и никому не пишу",
+      "outcome": "Выбраны пять уместных контактов и по каждому определен следующий шаг",
+      "priority": "P0",
+      "format": "Ранжирование + недельный спринт",
+      "nextTrackIds": [
+        "A3-002",
+        "A3-003"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a2-008",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "published",
+      "visibility": "catalog",
+      "access": "free",
+      "contentStatus": "complete",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Синтез",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "9.5.1",
+        "originalTitle": "Формирование первичной клиентской базы; анализ существующих связей",
+        "pages": "236–238",
+        "adaptationDecision": "Синтез: вместо списка 20–40 имен и фильтра ХПК — пять уместных следующих действий"
+      }
+    },
+    {
+      "order": 25,
+      "sectionId": "A2",
+      "module": "Рабочая база",
+      "trackId": "A2-009",
+      "title": "Собрать персональный план поиска на неделю",
+      "situation": "Поиск людей происходит случайно и только когда есть настроение",
+      "outcome": "Заданы источники контактов, нормы, время и критерий результата",
+      "priority": "P1",
+      "format": "Недельный план",
+      "nextTrackIds": [
+        "A2-008",
+        "A6-011"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a2-009",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "9.5.3",
+        "originalTitle": "Персональный план поиска (ППП)",
+        "pages": "239",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 26,
+      "sectionId": "A2",
+      "module": "Поиск людей",
+      "trackId": "A2-010",
+      "title": "Нарисовать карту теплых кругов",
+      "situation": "Кажется, что мне больше некому написать",
+      "outcome": "Собрана карта контекстов: семья, работа, интересы, сообщества, клиенты и рекомендации",
+      "priority": "P0",
+      "format": "Карта кругов",
+      "nextTrackIds": [
+        "A2-008",
+        "A2-013"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a2-010",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "9.4.5",
+        "originalTitle": "Перспективные круги потенциальных клиентов",
+        "pages": "214",
+        "adaptationDecision": "Освежить и убрать эксплуатацию отношений"
+      }
+    },
+    {
+      "order": 27,
+      "sectionId": "A2",
+      "module": "Поиск людей",
+      "trackId": "A2-011",
+      "title": "Найти новые контакты через реальные контексты",
+      "situation": "Теплый список закончился, а холодные рассылки не подходят",
+      "outcome": "Выбраны три естественных контекста знакомства и первое действие",
+      "priority": "P1",
+      "format": "Маршрут поиска",
+      "nextTrackIds": [
+        "A2-013",
+        "A3-002"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a2-011",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Глубокая",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "9.3; 9.4",
+        "originalTitle": "Методы системного поиска; поиск с использованием рекомендаций",
+        "pages": "204–234",
+        "adaptationDecision": "Сильно адаптировать к цифровой среде"
+      }
+    },
+    {
+      "order": 28,
+      "sectionId": "A2",
+      "module": "Поиск людей",
+      "trackId": "A2-012",
+      "title": "Проверить, нужен ли мне холодный поиск",
+      "situation": "Мне предлагают писать незнакомым людям, но я не понимаю, подходит ли это моей модели",
+      "outcome": "Принято решение по каналу с учетом аудитории, ресурса, этики и рисков",
+      "priority": "P2",
+      "format": "Decision gate",
+      "nextTrackIds": [
+        "A2-011",
+        "A3-001"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a2-012",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Проверить",
+      "transformationType": "Проверка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "9.3.1–9.3.3",
+        "originalTitle": "Варианты, сложности и тактики работы «вхолодную»",
+        "pages": "205–208",
+        "adaptationDecision": "Проверить актуальность главы"
+      }
+    },
+    {
+      "order": 29,
+      "sectionId": "A2",
+      "module": "Рекомендации",
+      "trackId": "A2-013",
+      "title": "Попросить рекомендацию естественно",
+      "situation": "Я боюсь просить познакомить меня с кем-то",
+      "outcome": "Подготовлена уместная просьба с причиной, границей и легким отказом",
+      "priority": "P0",
+      "format": "Конструктор сообщения",
+      "nextTrackIds": [
+        "A3-003",
+        "A6-008"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a2-013",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "9.4.1–9.4.6",
+        "originalTitle": "Зачем получать рекомендации; инструменты выхода; кто проведет; схема получения рекомендаций",
+        "pages": "209–223",
+        "adaptationDecision": "Освежить язык"
+      }
+    },
+    {
+      "order": 30,
+      "sectionId": "A2",
+      "module": "Рекомендации",
+      "trackId": "A2-014",
+      "title": "Понять, кто может вас представить",
+      "situation": "Есть нужный человек, но прямой холодный вход слабый",
+      "outcome": "Найден возможный связующий контакт и подготовлено корректное обращение",
+      "priority": "P1",
+      "format": "Карта связей",
+      "nextTrackIds": [
+        "A2-013",
+        "A3-003"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a2-014",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "9.4.4",
+        "originalTitle": "Кто нас «проведет» к клиенту?",
+        "pages": "212",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 31,
+      "sectionId": "A2",
+      "module": "Рекомендации",
+      "trackId": "A2-015",
+      "title": "Получить рекомендацию после хорошего результата",
+      "situation": "Клиент доволен, но разговор на этом заканчивается",
+      "outcome": "Собрана просьба о знакомстве, привязанная к реальному клиентскому эффекту",
+      "priority": "P1",
+      "format": "Конструктор просьбы",
+      "nextTrackIds": [
+        "A6-001",
+        "A6-008"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a2-015",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "9.4.7",
+        "originalTitle": "Получение рекомендаций при закрытой сделке",
+        "pages": "224",
+        "adaptationDecision": "Заменить термин «закрытая сделка»"
+      }
+    },
+    {
+      "order": 32,
+      "sectionId": "A2",
+      "module": "Рекомендации",
+      "trackId": "A2-016",
+      "title": "Попросить рекомендацию после паузы без давления",
+      "situation": "Человек пока не купил, но разговор был полезным",
+      "outcome": "Определено, уместно ли просить знакомство, и подготовлена мягкая формулировка",
+      "priority": "P2",
+      "format": "Decision gate + текст",
+      "nextTrackIds": [
+        "A5-011",
+        "A2-013"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a2-016",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Проверить",
+      "transformationType": "Проверка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "9.4.8–9.4.9",
+        "originalTitle": "Получение рекомендаций при отложенной сделке",
+        "pages": "232–234",
+        "adaptationDecision": "Этическая проверка обязательна"
+      }
+    },
+    {
+      "order": 33,
+      "sectionId": "A3",
+      "module": "Первый выход",
+      "trackId": "A3-001",
+      "title": "Выбрать канал первого контакта",
+      "situation": "Не понимаю, писать, звонить, встречаться или отправлять материал",
+      "outcome": "Канал выбран по отношениям, поводу, срочности и удобству человека",
+      "priority": "P1",
+      "format": "Выбор канала",
+      "nextTrackIds": [
+        "A3-002",
+        "A3-003"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a3-001",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "9.4.3; 10.1",
+        "originalTitle": "Инструменты «выхода на клиента»; виды телефонного контакта по рекомендации",
+        "pages": "211; 243",
+        "adaptationDecision": "Дополнить мессенджерами и соцсетями"
+      }
+    },
+    {
+      "order": 34,
+      "sectionId": "A3",
+      "module": "Первый выход",
+      "trackId": "A3-002",
+      "title": "Написать первое сообщение теплому контакту",
+      "situation": "Есть человек, но я не знаю, как начать без рекламной простыни",
+      "outcome": "Готово короткое сообщение: настоящий повод, уважение к отношениям и простой следующий шаг",
+      "priority": "P0",
+      "format": "Конструктор сообщения",
+      "nextTrackIds": [
+        "A3-016",
+        "A3-008"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a3-002",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Инверсия",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "9.4; 10.2",
+        "originalTitle": "Поиск с использованием рекомендаций; структура первичного телефонного контакта",
+        "pages": "209–234; 244–256",
+        "adaptationDecision": "Инверсия: убрать обход отказа и «трансовые» клише; оставить прозрачный повод, разрешение и право на нет"
+      }
+    },
+    {
+      "order": 35,
+      "sectionId": "A3",
+      "module": "Первый выход",
+      "trackId": "A3-003",
+      "title": "Позвонить человеку по рекомендации",
+      "situation": "Меня представили, но я боюсь испортить доверие общего знакомого",
+      "outcome": "Подготовлен и совершен звонок с прозрачной ссылкой на рекомендацию",
+      "priority": "P0",
+      "format": "Подготовка + действие",
+      "nextTrackIds": [
+        "A3-004",
+        "A3-008"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a3-003",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "10.1–10.2.2",
+        "originalTitle": "Телефонный контакт по рекомендации; структура первичного контакта; назначение встречи",
+        "pages": "243–252",
+        "adaptationDecision": "Освежить сценарий"
+      }
+    },
+    {
+      "order": 36,
+      "sectionId": "A3",
+      "module": "Телефонный контакт",
+      "trackId": "A3-004",
+      "title": "Собрать структуру короткого первого звонка",
+      "situation": "На звонке начинаю долго рассказывать о продукте",
+      "outcome": "Собрана опора: представиться, назвать повод, проверить время, согласовать цель и следующий шаг",
+      "priority": "P0",
+      "format": "Карта разговора",
+      "nextTrackIds": [
+        "A3-006",
+        "A3-008"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a3-004",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "10.2.1–10.2.3",
+        "originalTitle": "Из чего состоит представление; назначение встречи; работа с возражениями по телефону",
+        "pages": "246–256",
+        "adaptationDecision": "Освежить язык"
+      }
+    },
+    {
+      "order": 37,
+      "sectionId": "A3",
+      "module": "Телефонный контакт",
+      "trackId": "A3-005",
+      "title": "Назначить время и формат разговора",
+      "situation": "Человек отвечает «когда-нибудь созвонимся»",
+      "outcome": "Зафиксированы конкретные дата, время, формат и тема разговора",
+      "priority": "P1",
+      "format": "Мини-сценарий",
+      "nextTrackIds": [
+        "A3-008",
+        "A3-013"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a3-005",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "10.2.2",
+        "originalTitle": "Назначение времени и места встречи",
+        "pages": "252",
+        "adaptationDecision": "Добавить онлайн-форматы"
+      }
+    },
+    {
+      "order": 38,
+      "sectionId": "A3",
+      "module": "Телефонный контакт",
+      "trackId": "A3-006",
+      "title": "Не превращать телефонное сомнение в презентацию",
+      "situation": "На «а о чем речь?» я начинаю продавать по телефону",
+      "outcome": "Сомнение принято, рамка разговора сохранена, следующий шаг согласован",
+      "priority": "P1",
+      "format": "Развилка",
+      "nextTrackIds": [
+        "A5-001",
+        "A3-005"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a3-006",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Глубокая",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "10.2.3; 10.3",
+        "originalTitle": "Работа с возражениями по телефону; техника работы по телефону",
+        "pages": "256–274",
+        "adaptationDecision": "Пересобрать без манипуляции"
+      }
+    },
+    {
+      "order": 39,
+      "sectionId": "A3",
+      "module": "Телефонный контакт",
+      "trackId": "A3-007",
+      "title": "Подготовиться к звонку за три минуты",
+      "situation": "Перед звонком долго собираюсь или звоню хаотично",
+      "outcome": "Заполнена мини-карта: человек, повод, цель, границы, возможные ответы",
+      "priority": "P1",
+      "format": "Чек-лист",
+      "nextTrackIds": [
+        "A3-004",
+        "A3-003"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a3-007",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "10.3.3–10.3.4",
+        "originalTitle": "Что необходимо сделать перед звонком; техники контакта в процессе разговора",
+        "pages": "265–268",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 40,
+      "sectionId": "A3",
+      "module": "Телефонный контакт",
+      "trackId": "A3-008",
+      "title": "Зафиксировать результат разговора и следующий контакт",
+      "situation": "После звонка договоренности растворяются",
+      "outcome": "Записаны слова человека, результат, дата и конкретное следующее действие",
+      "priority": "P0",
+      "format": "Форма результата",
+      "nextTrackIds": [
+        "A3-013",
+        "A6-010"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a3-008",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "10.3.5–10.3.6",
+        "originalTitle": "Что нужно сделать при окончании и после окончания разговора",
+        "pages": "268–274",
+        "adaptationDecision": "Дополнить CRM-событием"
+      }
+    },
+    {
+      "order": 41,
+      "sectionId": "A3",
+      "module": "Подготовка встречи",
+      "trackId": "A3-009",
+      "title": "Определить цель первой встречи",
+      "situation": "Хочу сразу продать, рассказать бизнес и показать всю компанию",
+      "outcome": "Выбрана одна реалистичная цель и допустимые результаты разговора",
+      "priority": "P1",
+      "format": "Выбор цели",
+      "nextTrackIds": [
+        "A3-013",
+        "A4-001"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a3-009",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "11.2",
+        "originalTitle": "Цели, задачи и виды подготовки к личной встрече",
+        "pages": "278",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 42,
+      "sectionId": "A3",
+      "module": "Подготовка встречи",
+      "trackId": "A3-010",
+      "title": "Подготовить встречу по существу, а не по скрипту",
+      "situation": "Есть текст презентации, но нет понимания человека и ситуации",
+      "outcome": "Собраны гипотезы, вопросы, факты и границы неизвестного",
+      "priority": "P1",
+      "format": "Рабочая карта",
+      "nextTrackIds": [
+        "A3-011",
+        "A3-012"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a3-010",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "11.3.1–11.3.2",
+        "originalTitle": "Алгоритм и первичная содержательная подготовка",
+        "pages": "280–281",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 43,
+      "sectionId": "A3",
+      "module": "Подготовка встречи",
+      "trackId": "A3-011",
+      "title": "Занять экспертную позицию без игры в эксперта",
+      "situation": "Боюсь вопросов или компенсирую это самоуверенностью",
+      "outcome": "Определено, что нужно знать, что уточнять и когда подключать эксперта",
+      "priority": "P1",
+      "format": "Карта компетентности",
+      "nextTrackIds": [
+        "A1-012",
+        "A3-012"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a3-011",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Проверить",
+      "transformationType": "Проверка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "11.3.3",
+        "originalTitle": "Какие знания нужны продавцу для экспертной позиции?",
+        "pages": "281",
+        "adaptationDecision": "Добавить compliance и эскалацию"
+      }
+    },
+    {
+      "order": 44,
+      "sectionId": "A3",
+      "module": "Подготовка встречи",
+      "trackId": "A3-012",
+      "title": "Подготовить индивидуальное предложение",
+      "situation": "Показываю всем один и тот же набор продуктов и аргументов",
+      "outcome": "Собран черновик предложения из ситуации, цели, ограничений и допустимых вариантов",
+      "priority": "P1",
+      "format": "Конструктор",
+      "nextTrackIds": [
+        "A3-013",
+        "A4-009"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a3-012",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "11.3.4",
+        "originalTitle": "Подготовка индивидуального предложения для клиента",
+        "pages": "285",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 45,
+      "sectionId": "A3",
+      "module": "Подготовка встречи",
+      "trackId": "A3-013",
+      "title": "Собрать карту первой встречи",
+      "situation": "Не понимаю, как вести разговор от начала до завершения",
+      "outcome": "Создана карта: открыть → исследовать → подтвердить → предложить → согласовать шаг",
+      "priority": "P0",
+      "format": "Карта разговора",
+      "nextTrackIds": [
+        "A3-016",
+        "A4-001"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a3-013",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "11.3.5–11.3.6",
+        "originalTitle": "Тактика первой встречи; план первой встречи",
+        "pages": "286–291",
+        "adaptationDecision": "Пересобрать под диалог, не сценарий"
+      }
+    },
+    {
+      "order": 46,
+      "sectionId": "A3",
+      "module": "Подготовка встречи",
+      "trackId": "A3-014",
+      "title": "Снизить тревогу перед разговором",
+      "situation": "Знаю, что делать, но откладываю встречу",
+      "outcome": "Выявлен конкретный страх, подготовлена опора и назначено реальное действие",
+      "priority": "P1",
+      "format": "Подготовка + действие",
+      "nextTrackIds": [
+        "A3-013",
+        "A6-020"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a3-014",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "11.4–11.4.4",
+        "originalTitle": "Психологическая подготовка; позитивная настройка; микросамонастрой",
+        "pages": "292–299",
+        "adaptationDecision": "Освежить психологические утверждения"
+      }
+    },
+    {
+      "order": 47,
+      "sectionId": "A3",
+      "module": "Подготовка встречи",
+      "trackId": "A3-015",
+      "title": "Настроить внешний образ без маски",
+      "situation": "Пытаюсь выглядеть «успешно» и чувствую себя неестественно",
+      "outcome": "Выбран уместный, аккуратный и аутентичный образ под контекст встречи",
+      "priority": "P2",
+      "format": "Чек-лист",
+      "nextTrackIds": [
+        "A3-016",
+        "A6-017"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a3-015",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Глубокая",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "11.5–11.5.5",
+        "originalTitle": "Создание «работающего» имиджа продавца",
+        "pages": "300–311",
+        "adaptationDecision": "Сильно осовременить"
+      }
+    },
+    {
+      "order": 48,
+      "sectionId": "A3",
+      "module": "Начало разговора",
+      "trackId": "A3-016",
+      "title": "Открыть разговор через настоящий повод",
+      "situation": "Начинаю с заученной презентации или неловкого small talk",
+      "outcome": "Сформулировано и произнесено естественное открытие разговора",
+      "priority": "P0",
+      "format": "Практика реплики",
+      "nextTrackIds": [
+        "A4-001",
+        "A3-017"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a3-016",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "12.1–12.1.3",
+        "originalTitle": "Эпизод 1 «Разогрев». Есть контакт",
+        "pages": "316–317",
+        "adaptationDecision": "Глубокая пересборка: вместо управления дистанцией, комплиментов и «разогрева» — контекст, согласие на тему и общая рамка разговора"
+      }
+    },
+    {
+      "order": 49,
+      "sectionId": "A3",
+      "module": "Начало разговора",
+      "trackId": "A3-017",
+      "title": "Создать доверие без попытки понравиться любой ценой",
+      "situation": "Стараюсь произвести впечатление и перестаю слышать человека",
+      "outcome": "Определены признаки профессионального доверия и действия, которые его поддерживают",
+      "priority": "P0",
+      "format": "Самопроверка + действие",
+      "nextTrackIds": [
+        "A4-001",
+        "A4-002"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a3-017",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "8.2–8.2.6",
+        "originalTitle": "Управление контактом; эффективный контакт; профессиональное и личное доверие",
+        "pages": "175–184",
+        "adaptationDecision": "Убрать язык «управления человеком»"
+      }
+    },
+    {
+      "order": 50,
+      "sectionId": "A4",
+      "module": "Исследование ситуации",
+      "trackId": "A4-001",
+      "title": "Перейти от рассказа о продукте к исследованию человека",
+      "situation": "Я слишком рано начинаю презентовать",
+      "outcome": "Разговор переведен в исследование ситуации одним уместным вопросом",
+      "priority": "P0",
+      "format": "Микропрактика",
+      "nextTrackIds": [
+        "A4-002",
+        "A4-003"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a4-001",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "12.2",
+        "originalTitle": "Эпизод 2 «Исследование». Есть проблема",
+        "pages": "326–331",
+        "adaptationDecision": "Заменить проблематизацию на исследование задачи"
+      }
+    },
+    {
+      "order": 51,
+      "sectionId": "A4",
+      "module": "Исследование ситуации",
+      "trackId": "A4-002",
+      "title": "Задать один вопрос и дать человеку договорить",
+      "situation": "Задаю серию вопросов и сам же на них отвечаю",
+      "outcome": "Проведен фрагмент разговора с одним вопросом, паузой и точной фиксацией ответа",
+      "priority": "P0",
+      "format": "Тренажер + аудио",
+      "nextTrackIds": [
+        "A4-003",
+        "A4-005"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a4-002",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "12.2.3; приложение 12",
+        "originalTitle": "Торговое интервью-исследование; алгоритм активного слушания",
+        "pages": "328; 715",
+        "adaptationDecision": "Глубокая пересборка: взять слушание, исключить допрос, «разогрев проблемы» и коррекцию неудобных ответов"
+      }
+    },
+    {
+      "order": 52,
+      "sectionId": "A4",
+      "module": "Исследование ситуации",
+      "trackId": "A4-003",
+      "title": "Найти задачу, которую человек сам считает важной",
+      "situation": "Я предлагаю решение своей гипотезы, а не реальной ситуации",
+      "outcome": "Слова человека сведены в одну подтвержденную значимую задачу",
+      "priority": "P0",
+      "format": "Карта разговора",
+      "nextTrackIds": [
+        "A4-005",
+        "A4-008"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a4-003",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Инверсия",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "12.2.1",
+        "originalTitle": "Порядок исследования значимой проблемы",
+        "pages": "326",
+        "adaptationDecision": "Инверсия роли: значимость определяет человек, а не продавец; при несовпадении разговор останавливается"
+      }
+    },
+    {
+      "order": 53,
+      "sectionId": "A4",
+      "module": "Исследование ситуации",
+      "trackId": "A4-004",
+      "title": "Проверить, совпадают ли ваши приоритеты",
+      "situation": "Мне кажется, что продукт нужен, но для человека сейчас важно другое",
+      "outcome": "Приоритет человека подтвержден или разговор корректно остановлен",
+      "priority": "P1",
+      "format": "Decision gate",
+      "nextTrackIds": [
+        "A4-005",
+        "A5-014"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a4-004",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "12.2.2",
+        "originalTitle": "Совпадение в приоритетности решения",
+        "pages": "328",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 54,
+      "sectionId": "A4",
+      "module": "Исследование ситуации",
+      "trackId": "A4-005",
+      "title": "Собрать карту потребностей без медицинской диагностики",
+      "situation": "Хочу понять потребность, но боюсь уйти в давление или диагноз",
+      "outcome": "Потребности зафиксированы в бытовом и наблюдаемом языке",
+      "priority": "P0",
+      "format": "Карта потребностей",
+      "nextTrackIds": [
+        "A4-008",
+        "A4-009"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a4-005",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Проверить",
+      "transformationType": "Проверка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "Приложение 6; 12.2",
+        "originalTitle": "Определение потребностей; торговое интервью-исследование",
+        "pages": "326–331; 707",
+        "adaptationDecision": "Обязательная продуктовая и юридическая проверка"
+      }
+    },
+    {
+      "order": 55,
+      "sectionId": "A4",
+      "module": "Исследование ситуации",
+      "trackId": "A4-006",
+      "title": "Отделить слова человека от своих догадок",
+      "situation": "Я слышу ответ и сразу додумываю мотив",
+      "outcome": "Заполнены три поля: слова → гипотеза → подтверждение",
+      "priority": "P1",
+      "format": "Форма разбора",
+      "nextTrackIds": [
+        "A4-002",
+        "A4-003"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a4-006",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Синтез",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "12.2.1–12.2.3",
+        "originalTitle": "Исследование значимой проблемы и торговое интервью",
+        "pages": "326–331",
+        "adaptationDecision": "Наш методический слой"
+      }
+    },
+    {
+      "order": 56,
+      "sectionId": "A4",
+      "module": "Сборка решения",
+      "trackId": "A4-007",
+      "title": "Собрать несколько допустимых вариантов решения",
+      "situation": "Я веду человека к единственному заранее выбранному продукту",
+      "outcome": "Собраны 2–3 варианта, включая вариант ничего не покупать сейчас",
+      "priority": "P1",
+      "format": "Конструктор вариантов",
+      "nextTrackIds": [
+        "A4-008",
+        "A4-009"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a4-007",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Глубокая",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "12.3.1–12.3.4",
+        "originalTitle": "Продолжение исследования; заявленные и реальные выгоды; варианты решения",
+        "pages": "349–351",
+        "adaptationDecision": "Этическая пересборка"
+      }
+    },
+    {
+      "order": 57,
+      "sectionId": "A4",
+      "module": "Сборка решения",
+      "trackId": "A4-008",
+      "title": "Определить ведущий мотив человека",
+      "situation": "У продукта много выгод, и я перечисляю все подряд",
+      "outcome": "Выбран один подтвержденный ведущий мотив на языке человека",
+      "priority": "P0",
+      "format": "Выбор мотива",
+      "nextTrackIds": [
+        "A4-009",
+        "A4-010"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a4-008",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "12.3.5; 7.3.1",
+        "originalTitle": "Подтверждение ведущего мотива; формирование интереса и мотива приобретения",
+        "pages": "167; 352",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 58,
+      "sectionId": "A4",
+      "module": "Сборка решения",
+      "trackId": "A4-009",
+      "title": "Перевести характеристики продукта в важные человеку выгоды",
+      "situation": "Рассказываю состав, технологию и баллы, но человек не видит смысла",
+      "outcome": "Собрана связка «характеристика → эффект → значение для этого человека»",
+      "priority": "P0",
+      "format": "Конструктор выгод",
+      "nextTrackIds": [
+        "A4-010",
+        "A4-013"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a4-009",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Проверить",
+      "transformationType": "Проверка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "12.3.6–12.3.7; приложение 7",
+        "originalTitle": "Анализ ценностных представлений; «цепочка» важных выгод; «круговорот» подбора выгод",
+        "pages": "352–354; 708",
+        "adaptationDecision": "Проверить продуктовые обещания"
+      }
+    },
+    {
+      "order": 59,
+      "sectionId": "A4",
+      "module": "Сборка решения",
+      "trackId": "A4-010",
+      "title": "Предложить решение словами самого человека",
+      "situation": "Презентация звучит как рекламный текст",
+      "outcome": "Создано короткое предложение, связанное с подтвержденной задачей и мотивом",
+      "priority": "P0",
+      "format": "Конструктор предложения",
+      "nextTrackIds": [
+        "A4-013",
+        "A4-016"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a4-010",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "12.3.8–12.3.10",
+        "originalTitle": "Создание образа услуги; продолжать управлять контактом; технология эпизода 3",
+        "pages": "354–355",
+        "adaptationDecision": "Осовременить: сохранить фокус на 1–2 важных выгодах, убрать «неотразимый образ» и добавить доказательства и ограничения"
+      }
+    },
+    {
+      "order": 60,
+      "sectionId": "A4",
+      "module": "Презентация",
+      "trackId": "A4-011",
+      "title": "Объяснить, зачем вообще нужна категория продукта",
+      "situation": "Человек не видит саму проблему и поэтому не сравнивает решения",
+      "outcome": "Собрана образовательная мини-презентация категории без запугивания",
+      "priority": "P2",
+      "format": "Мини-презентация",
+      "nextTrackIds": [
+        "A4-005",
+        "A4-012"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a4-011",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "15.1–15.2.2",
+        "originalTitle": "Виды и структура дополнительных презентаций; презентация о необходимости",
+        "pages": "463–467",
+        "adaptationDecision": "Высокий риск устаревшего/давящего содержания"
+      }
+    },
+    {
+      "order": 61,
+      "sectionId": "A4",
+      "module": "Презентация",
+      "trackId": "A4-012",
+      "title": "Представить компанию за две минуты",
+      "situation": "Рассказываю всю историю компании или ухожу в лозунги",
+      "outcome": "Собрана короткая версия: кто мы, что даем, чем подтверждаем и что предлагаем сделать",
+      "priority": "P1",
+      "format": "Конструктор презентации",
+      "nextTrackIds": [
+        "A4-013",
+        "A4-016"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a4-012",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Глубокая",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "15.2.3",
+        "originalTitle": "Презентация «Представление компании»",
+        "pages": "468",
+        "adaptationDecision": "Полностью создать заново для компании"
+      }
+    },
+    {
+      "order": 62,
+      "sectionId": "A4",
+      "module": "Цена и решение",
+      "trackId": "A4-013",
+      "title": "Спокойно перейти к цене",
+      "situation": "После хорошего разговора я мнуcь перед озвучиванием стоимости",
+      "outcome": "Цена названа прямо, контекст выгоды сохранен, реакция человека услышана",
+      "priority": "P0",
+      "format": "Практика реплики",
+      "nextTrackIds": [
+        "A5-001",
+        "A4-016"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a4-013",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "12.4–12.4.2",
+        "originalTitle": "Эпизод 4 «Деньги»; структура завершения сделки; сложности завершения",
+        "pages": "355–371",
+        "adaptationDecision": "Освежить язык закрытия"
+      }
+    },
+    {
+      "order": 63,
+      "sectionId": "A4",
+      "module": "Цена и решение",
+      "trackId": "A4-014",
+      "title": "Дать человеку реальный выбор, а не выбор без выбора",
+      "situation": "Использую альтернативный вопрос как скрытое давление",
+      "outcome": "Сформулированы честные варианты, включая паузу и отказ",
+      "priority": "P1",
+      "format": "Конструктор выбора",
+      "nextTrackIds": [
+        "A4-016",
+        "A5-014"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a4-014",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Глубокая",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "20.3.3; 12.4",
+        "originalTitle": "Управление свободой выбора; завершение сделки",
+        "pages": "355–374; 608",
+        "adaptationDecision": "Этическая пересборка"
+      }
+    },
+    {
+      "order": 64,
+      "sectionId": "A4",
+      "module": "Цена и решение",
+      "trackId": "A4-015",
+      "title": "Помочь человеку примерить результат до покупки",
+      "situation": "Человек понимает предложение головой, но не связывает его со своей жизнью",
+      "outcome": "Проведена короткая визуализация использования без обещаний гарантированного эффекта",
+      "priority": "P2",
+      "format": "Вопросы воображения",
+      "nextTrackIds": [
+        "A4-013",
+        "A4-016"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a4-015",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Глубокая",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "20.3.8",
+        "originalTitle": "Работа с воображением; «мысленная покупка»",
+        "pages": "634",
+        "adaptationDecision": "Проверить на манипуляцию и обещания"
+      }
+    },
+    {
+      "order": 65,
+      "sectionId": "A4",
+      "module": "Цена и решение",
+      "trackId": "A4-016",
+      "title": "Завершить разговор конкретным следующим шагом",
+      "situation": "Разговор прошел хорошо, но ничем не закончился",
+      "outcome": "Согласовано одно из действий: покупка, пауза, дополнительная информация, следующий контакт или завершение",
+      "priority": "P0",
+      "format": "Фиксация next step",
+      "nextTrackIds": [
+        "A3-008",
+        "A5-001",
+        "A5-014"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a4-016",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Инверсия",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "12.4.1–12.4.4",
+        "originalTitle": "Структура завершения сделки; сигналы; технология эпизода 4",
+        "pages": "370–374",
+        "adaptationDecision": "Инверсия: вместо подразумеваемого согласия и закрытия — явный выбор, включая паузу и окончательное нет"
+      }
+    },
+    {
+      "order": 66,
+      "sectionId": "A4",
+      "module": "Рекомендации",
+      "trackId": "A4-017",
+      "title": "Закончить продажу началом следующего цикла",
+      "situation": "После покупки я исчезаю до следующего предложения",
+      "outcome": "Назначены сопровождение, проверка результата и будущий контакт",
+      "priority": "P1",
+      "format": "План сопровождения",
+      "nextTrackIds": [
+        "A6-001",
+        "A6-006"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a4-017",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "12.5–12.5.4",
+        "originalTitle": "Эпизод 5 «Основа новых продаж». Есть рекомендация",
+        "pages": "374–381",
+        "adaptationDecision": "Пересобрать в клиентский цикл"
+      }
+    },
+    {
+      "order": 67,
+      "sectionId": "A5",
+      "module": "Диагностика сомнения",
+      "trackId": "A5-001",
+      "title": "Отличить вопрос, сомнение, условие и отказ",
+      "situation": "Любое «дорого» или «подумаю» воспринимаю как возражение, которое надо победить",
+      "outcome": "Реплика классифицирована, выбран корректный тип ответа или остановка",
+      "priority": "P0",
+      "format": "Диагностика",
+      "nextTrackIds": [
+        "A5-006",
+        "A5-009",
+        "A5-014"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a5-001",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "14.1–14.2.1",
+        "originalTitle": "Уверенность клиента в выборе; система обработки и типы возражений",
+        "pages": "397–399",
+        "adaptationDecision": "Глубокая пересборка: сохранить поиск недостающей информации, исключить ярлыки «отговорка» и «отыгрыш» без подтверждения"
+      }
+    },
+    {
+      "order": 68,
+      "sectionId": "A5",
+      "module": "Диагностика сомнения",
+      "trackId": "A5-002",
+      "title": "Не отвечать на слова-клише автоматически",
+      "situation": "Слышу знакомую фразу и запускаю заученный ответ",
+      "outcome": "Сначала уточнено, что конкретно человек вкладывает в слова",
+      "priority": "P1",
+      "format": "Развилка",
+      "nextTrackIds": [
+        "A5-006",
+        "A5-007"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a5-002",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "14.2.2–14.2.4",
+        "originalTitle": "Клише возражений; схемы ответов; ответы на основные возражения",
+        "pages": "405–406",
+        "adaptationDecision": "Освежить примеры"
+      }
+    },
+    {
+      "order": 69,
+      "sectionId": "A5",
+      "module": "Сохранение контакта",
+      "trackId": "A5-003",
+      "title": "Сохранить контакт, когда человек сомневается",
+      "situation": "Я начинаю спорить или холодно отступаю",
+      "outcome": "Сомнение принято без согласия с неверным выводом; диалог остался безопасным",
+      "priority": "P1",
+      "format": "Практика ответа",
+      "nextTrackIds": [
+        "A5-005",
+        "A5-006"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a5-003",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Глубокая",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "14.3.1",
+        "originalTitle": "Приемы удержания контакта в возражениях",
+        "pages": "446",
+        "adaptationDecision": "Пересобрать без манипуляции"
+      }
+    },
+    {
+      "order": 70,
+      "sectionId": "A5",
+      "module": "Сохранение контакта",
+      "trackId": "A5-004",
+      "title": "Поддержать человека, не обесценивая сомнение",
+      "situation": "Пытаюсь успокоить фразой «не переживайте»",
+      "outcome": "Сформулирована поддержка, признающая право человека проверять и выбирать",
+      "priority": "P1",
+      "format": "Конструктор фразы",
+      "nextTrackIds": [
+        "A5-006",
+        "A5-014"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a5-004",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "14.3.2",
+        "originalTitle": "Приемы поддержки",
+        "pages": "449",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 71,
+      "sectionId": "A5",
+      "module": "Исследование причины",
+      "trackId": "A5-005",
+      "title": "Проверить, что стоит за первой репликой",
+      "situation": "Отвечаю на цену, хотя реальная причина — доверие, срок или опыт",
+      "outcome": "Получен конкретный ответ о причине сомнения",
+      "priority": "P1",
+      "format": "Вопрос-уточнение",
+      "nextTrackIds": [
+        "A5-007",
+        "A5-014"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a5-005",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "14.3.4",
+        "originalTitle": "Техника активного исследования причины возражений",
+        "pages": "453",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 72,
+      "sectionId": "A5",
+      "module": "Исследование причины",
+      "trackId": "A5-006",
+      "title": "Разобрать настоящее сомнение до ответа",
+      "situation": "Хочу быстро дать аргумент и потерять контакт",
+      "outcome": "Зафиксированы слова, причина, значимость и допустимый ответ",
+      "priority": "P0",
+      "format": "Карта разбора",
+      "nextTrackIds": [
+        "A5-014",
+        "A4-010"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a5-006",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "14.2.5–14.2.6; 14.3.4",
+        "originalTitle": "Стратегия и тактика работы с возражениями; выбор ответа с учетом типа; исследование причины",
+        "pages": "426–453",
+        "adaptationDecision": "Освежить модель"
+      }
+    },
+    {
+      "order": 73,
+      "sectionId": "A5",
+      "module": "Ответ",
+      "trackId": "A5-007",
+      "title": "Выбрать ответ под причину, а не под ключевое слово",
+      "situation": "У меня один универсальный скрипт на все возражения",
+      "outcome": "Выбран тип ответа: уточнить, дать факт, показать вариант, подключить эксперта или завершить",
+      "priority": "P1",
+      "format": "Decision tree",
+      "nextTrackIds": [
+        "A4-010",
+        "A4-016"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a5-007",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Проверить",
+      "transformationType": "Проверка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "14.2.6; 14.3.4–14.3.5",
+        "originalTitle": "Выбор адекватного ответа; техники возвращения ответа; специальные приемы",
+        "pages": "428; 456–460",
+        "adaptationDecision": "Проверить конкретные приемы"
+      }
+    },
+    {
+      "order": 74,
+      "sectionId": "A5",
+      "module": "Пауза",
+      "trackId": "A5-008",
+      "title": "Ответить на «мне надо посоветоваться»",
+      "situation": "Пытаюсь обойти другого участника решения",
+      "outcome": "Уточнено, с кем и что нужно обсудить; согласован удобный способ продолжения",
+      "priority": "P1",
+      "format": "Развилка",
+      "nextTrackIds": [
+        "A5-011",
+        "A2-004"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a5-008",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "16.3.1; 7.2.4",
+        "originalTitle": "Надо посоветоваться с…; мнение значимых других",
+        "pages": "161; 480",
+        "adaptationDecision": "Сохраняем свободу выбора"
+      }
+    },
+    {
+      "order": 75,
+      "sectionId": "A5",
+      "module": "Пауза",
+      "trackId": "A5-009",
+      "title": "Разобрать «не срочно» без искусственной срочности",
+      "situation": "Хочется напугать последствиями или придумать дефицит",
+      "outcome": "Понято, есть ли реальный срок; согласован честный следующий контакт или завершение",
+      "priority": "P0",
+      "format": "Диагностика + next step",
+      "nextTrackIds": [
+        "A5-011",
+        "A5-014"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a5-009",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Глубокая",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "16.2–16.3.2",
+        "originalTitle": "Поводы для переноса; клиент откладывает по причине «не срочно»",
+        "pages": "479–481",
+        "adaptationDecision": "Сильная этическая пересборка"
+      }
+    },
+    {
+      "order": 76,
+      "sectionId": "A5",
+      "module": "Follow-up",
+      "trackId": "A5-010",
+      "title": "Назначить follow-up, который не выглядит преследованием",
+      "situation": "Пишу «ну что решили?» или пропадаю совсем",
+      "outcome": "Назначен контакт с поводом, датой, ценностью и легким выходом",
+      "priority": "P1",
+      "format": "Конструктор follow-up",
+      "nextTrackIds": [
+        "A6-010",
+        "A5-012"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a5-010",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "16.5; 17.2.1",
+        "originalTitle": "Возвращайтесь к клиенту; повторные продажи и периодичность",
+        "pages": "490–504",
+        "adaptationDecision": "Пересобрать частоту и границы"
+      }
+    },
+    {
+      "order": 77,
+      "sectionId": "A5",
+      "module": "Follow-up",
+      "trackId": "A5-011",
+      "title": "Собрать план продолжения после паузы",
+      "situation": "Есть несколько отложенных разговоров, но нет системы",
+      "outcome": "Все согласованные паузы занесены в реестр с причиной, датой и следующим действием",
+      "priority": "P0",
+      "format": "Мини-CRM",
+      "nextTrackIds": [
+        "A6-010",
+        "A6-006",
+        "A5-014"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a5-011",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Инверсия",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "16.5; 17.2.5",
+        "originalTitle": "Работа с отложенным решением; работа с базами данных",
+        "pages": "490–493; 508",
+        "adaptationDecision": "Инверсия: вместо минимум пяти закрытий и рекомендаций «в компенсацию» — один согласованный follow-up, реальный повод и stop-rule"
+      }
+    },
+    {
+      "order": 78,
+      "sectionId": "A5",
+      "module": "Границы",
+      "trackId": "A5-012",
+      "title": "Понять, когда продолжать больше не нужно",
+      "situation": "Боюсь упустить продажу и продолжаю писать после отказа",
+      "outcome": "Определены стоп-сигналы, уважительно закрыт контакт и сохранена запись",
+      "priority": "P1",
+      "format": "Risk gate",
+      "nextTrackIds": [
+        "A5-014",
+        "A6-013"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a5-012",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "16.3.4",
+        "originalTitle": "Если завершить не удается, проверьте…",
+        "pages": "493",
+        "adaptationDecision": "Создать современные stop-rules"
+      }
+    },
+    {
+      "order": 79,
+      "sectionId": "A5",
+      "module": "Отклонение маршрута",
+      "trackId": "A5-013",
+      "title": "Понять, где разговор свернул не туда",
+      "situation": "Встреча развалилась, но я не понимаю в какой момент",
+      "outcome": "Найден участок: вход, исследование, предложение, доверие, цена или завершение",
+      "priority": "P1",
+      "format": "Диагностика",
+      "nextTrackIds": [
+        "A6-013",
+        "A6-016"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a5-013",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "Глава 13",
+        "originalTitle": "Работа с отклонением клиента от технологического маршрута решения проблем",
+        "pages": "381–394",
+        "adaptationDecision": "Убрать идею единственно правильного маршрута"
+      }
+    },
+    {
+      "order": 80,
+      "sectionId": "A5",
+      "module": "Границы",
+      "trackId": "A5-014",
+      "title": "Завершить отказ корректно и понять следующий шаг",
+      "situation": "Получил «нет» и воспринимаю это как личный провал",
+      "outcome": "Отказ принят, границы соблюдены, извлечен факт и выбран следующий контакт из базы",
+      "priority": "P0",
+      "format": "Форма завершения",
+      "nextTrackIds": [
+        "A6-013",
+        "A2-008"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a5-014",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Синтез",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "14; 16; авторский слой MLM Academy",
+        "originalTitle": "Возражения и откладывание сделки",
+        "pages": "397–493",
+        "adaptationDecision": "Наш завершающий стандарт"
+      }
+    },
+    {
+      "order": 81,
+      "sectionId": "A6",
+      "module": "Сопровождение",
+      "trackId": "A6-001",
+      "title": "Проверить качество клиентского опыта",
+      "situation": "Продажа совершена, но я не знаю, доволен ли человек",
+      "outcome": "Проведен короткий контакт по использованию, вопросам и следующей потребности",
+      "priority": "P1",
+      "format": "Follow-up карта",
+      "nextTrackIds": [
+        "A6-003",
+        "A6-006"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-001",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "17.1.1–17.1.2",
+        "originalTitle": "Анализировать качество обслуживания; держать руку на пульсе",
+        "pages": "497–499",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 82,
+      "sectionId": "A6",
+      "module": "Сопровождение",
+      "trackId": "A6-002",
+      "title": "Обозначить границы своей ответственности",
+      "situation": "Клиент ожидает от меня то, что должен делать врач, сервис или компания",
+      "outcome": "Зафиксировано, что делает партнер, клиент, компания и эксперт",
+      "priority": "P1",
+      "format": "Карта ролей",
+      "nextTrackIds": [
+        "A6-001",
+        "A1-014"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-002",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Проверить",
+      "transformationType": "Проверка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "17.1.6",
+        "originalTitle": "Границы ответственности и обязанности",
+        "pages": "503",
+        "adaptationDecision": "Дополнить юридическими ролями"
+      }
+    },
+    {
+      "order": 83,
+      "sectionId": "A6",
+      "module": "Сопровождение",
+      "trackId": "A6-003",
+      "title": "Помочь клиенту встроить продукт в реальную жизнь",
+      "situation": "Человек купил, но продукт стоит на полке",
+      "outcome": "Согласован безопасный бытовой ритуал использования и контрольная точка",
+      "priority": "P1",
+      "format": "План применения",
+      "nextTrackIds": [
+        "A6-001",
+        "A6-006"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-003",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "17.1.3",
+        "originalTitle": "Культура постоянного использования продукции",
+        "pages": "500",
+        "adaptationDecision": "Не превращать в принуждение к потреблению"
+      }
+    },
+    {
+      "order": 84,
+      "sectionId": "A6",
+      "module": "Сопровождение",
+      "trackId": "A6-004",
+      "title": "Увидеть новую задачу после изменений у клиента",
+      "situation": "Предлагаю повтор автоматически, не проверяя новую ситуацию",
+      "outcome": "Ситуация обновлена и принято решение: повтор, другой вариант или пауза",
+      "priority": "P1",
+      "format": "Повторная диагностика",
+      "nextTrackIds": [
+        "A6-006",
+        "A6-007"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-004",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "17.1.4",
+        "originalTitle": "Исследовать новые возможности, связанные с переменами",
+        "pages": "501",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 85,
+      "sectionId": "A6",
+      "module": "Повтор и рост",
+      "trackId": "A6-005",
+      "title": "Поддерживать профессиональную репутацию между покупками",
+      "situation": "Вспоминаю о клиенте только когда хочу что-то продать",
+      "outcome": "Выбран полезный формат касаний без постоянных предложений",
+      "priority": "P1",
+      "format": "План касаний",
+      "nextTrackIds": [
+        "A6-001",
+        "A6-017"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-005",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "17.1.5",
+        "originalTitle": "Поддерживать профессиональную репутацию",
+        "pages": "503",
+        "adaptationDecision": "Дополнить контентом и сервисом"
+      }
+    },
+    {
+      "order": 86,
+      "sectionId": "A6",
+      "module": "Повтор и рост",
+      "trackId": "A6-006",
+      "title": "Назначить уместную дату повторного контакта",
+      "situation": "Повторная покупка происходит случайно или слишком поздно",
+      "outcome": "Для клиента зафиксирован ориентир повторного контакта и его реальный повод",
+      "priority": "P0",
+      "format": "План повторов",
+      "nextTrackIds": [
+        "A6-010",
+        "A6-007"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-006",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "17.2.1",
+        "originalTitle": "Повторные продажи и отслеживание периодичности",
+        "pages": "504",
+        "adaptationDecision": "Дополнить подписками и CRM"
+      }
+    },
+    {
+      "order": 87,
+      "sectionId": "A6",
+      "module": "Повтор и рост",
+      "trackId": "A6-007",
+      "title": "Предложить другой продукт только при новой задаче",
+      "situation": "Допродаю каталог вместо решения",
+      "outcome": "Выявлена новая ситуация и подготовлена релевантная рекомендация",
+      "priority": "P1",
+      "format": "Повторная диагностика",
+      "nextTrackIds": [
+        "A6-004",
+        "A4-009"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-007",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "17.2.2",
+        "originalTitle": "Продажи новых продуктов реальным клиентам. Циклы продажи",
+        "pages": "505",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 88,
+      "sectionId": "A6",
+      "module": "Рекомендации",
+      "trackId": "A6-008",
+      "title": "Получить восходящую рекомендацию через доказанную пользу",
+      "situation": "Хочу выйти на более сильный круг контактов, но нечем подтвердить ценность",
+      "outcome": "Собран кейс результата и корректная просьба о знакомстве",
+      "priority": "P1",
+      "format": "Кейс + сообщение",
+      "nextTrackIds": [
+        "A2-013",
+        "A6-017"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-008",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "17.2.3",
+        "originalTitle": "Получение «восходящих» рекомендаций",
+        "pages": "507",
+        "adaptationDecision": "Убрать статусную иерархию людей"
+      }
+    },
+    {
+      "order": 89,
+      "sectionId": "A6",
+      "module": "Рабочая база",
+      "trackId": "A6-009",
+      "title": "Определить приоритет следующего контакта этично",
+      "situation": "Времени мало, а база большая",
+      "outcome": "Контакты приоритизированы по уместности действия, сроку и вероятности пользы — не по «цене человека»",
+      "priority": "P2",
+      "format": "Приоритизатор",
+      "nextTrackIds": [
+        "A6-010",
+        "A2-007"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-009",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Глубокая",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "17.2.4",
+        "originalTitle": "Оценка перспективности (прибыльности) клиентов",
+        "pages": "507",
+        "adaptationDecision": "Сильная этическая пересборка"
+      }
+    },
+    {
+      "order": 90,
+      "sectionId": "A6",
+      "module": "Рабочая база",
+      "trackId": "A6-010",
+      "title": "Навести порядок в статусах и следующих действиях",
+      "situation": "В базе есть имена, но нет управляемого процесса",
+      "outcome": "Каждому активному контакту присвоены стадия, дата и next action",
+      "priority": "P0",
+      "format": "Мини-CRM",
+      "nextTrackIds": [
+        "A6-013",
+        "A6-011"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-010",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "9.5.1; 17.2.5",
+        "originalTitle": "Клиентская база; работа с базами данных",
+        "pages": "236–239; 508–510",
+        "adaptationDecision": "Глубокая пересборка: взять фиксацию и планирование, исключить оценку людей по прибыльности; добавить согласие и минимизацию данных"
+      }
+    },
+    {
+      "order": 91,
+      "sectionId": "A6",
+      "module": "Планирование",
+      "trackId": "A6-011",
+      "title": "Выделить рабочее время без ощущения второй смены",
+      "situation": "Партнерская работа расползается по всему дню",
+      "outcome": "Созданы короткие рабочие окна под базу, контакты, сопровождение и обзор",
+      "priority": "P1",
+      "format": "Планировщик недели",
+      "nextTrackIds": [
+        "A1-010",
+        "A6-012"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-011",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "17.2.6; 4.4.2",
+        "originalTitle": "Планирование времени; планировать с удовольствием",
+        "pages": "84; 510",
+        "adaptationDecision": "Освежить для частичной занятости"
+      }
+    },
+    {
+      "order": 92,
+      "sectionId": "A6",
+      "module": "Планирование",
+      "trackId": "A6-012",
+      "title": "Собрать план роста из управляемых действий",
+      "situation": "Цель по объему есть, но я могу влиять только на действия",
+      "outcome": "Цель разложена на базу, контакты, встречи, продажи, повторы и обучение",
+      "priority": "P1",
+      "format": "Калькулятор действий",
+      "nextTrackIds": [
+        "A1-010",
+        "A6-013"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-012",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "17.2.7; 6.5",
+        "originalTitle": "Планирование повышения объемов продаж; личный бизнес-план",
+        "pages": "136; 511",
+        "adaptationDecision": "Связать с метриками"
+      }
+    },
+    {
+      "order": 93,
+      "sectionId": "A6",
+      "module": "Разбор практики",
+      "trackId": "A6-013",
+      "title": "Разобрать разговор без самобичевания",
+      "situation": "После отказа думаю «я не умею продавать»",
+      "outcome": "Разговор разобран по фактам: действие, клиент, результат, технология и следующий эксперимент",
+      "priority": "P0",
+      "format": "Форма разбора",
+      "nextTrackIds": [
+        "A6-017",
+        "A1-010"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-013",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "18.1–18.2.4",
+        "originalTitle": "«Разбор полетов». Структура системного анализа",
+        "pages": "513–519",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 94,
+      "sectionId": "A6",
+      "module": "Разбор практики",
+      "trackId": "A6-014",
+      "title": "Отделить свою работу от состояния клиента",
+      "situation": "Любой результат приписываю только себе",
+      "outcome": "Разделены факторы продавца, клиента, контекста и предложения",
+      "priority": "P1",
+      "format": "Карта факторов",
+      "nextTrackIds": [
+        "A6-013",
+        "A6-016"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-014",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "18.2.1–18.2.2",
+        "originalTitle": "Анализ «по Продавцу» и «по Клиенту»",
+        "pages": "514–516",
+        "adaptationDecision": "Освежить терминологию"
+      }
+    },
+    {
+      "order": 95,
+      "sectionId": "A6",
+      "module": "Разбор практики",
+      "trackId": "A6-015",
+      "title": "Сравнить цель разговора с реальным результатом",
+      "situation": "Считаю успехом только покупку",
+      "outcome": "Зафиксированы цель, допустимые результаты и фактически согласованный шаг",
+      "priority": "P1",
+      "format": "Форма результата",
+      "nextTrackIds": [
+        "A6-013",
+        "A4-016"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-015",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "18.2.3",
+        "originalTitle": "Анализ по целям и достигнутому результату",
+        "pages": "517",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 96,
+      "sectionId": "A6",
+      "module": "Разбор практики",
+      "trackId": "A6-016",
+      "title": "Проверить не человека, а примененную технологию",
+      "situation": "После неудачи меняю настроение, но не способ действия",
+      "outcome": "Найден конкретный участок метода для следующего эксперимента",
+      "priority": "P1",
+      "format": "Диагностика",
+      "nextTrackIds": [
+        "A3-013",
+        "A4-002"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-016",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "18.2.4",
+        "originalTitle": "Анализ «по применяемой технологии»",
+        "pages": "519",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 97,
+      "sectionId": "A6",
+      "module": "Личное мастерство",
+      "trackId": "A6-017",
+      "title": "Собрать личный бренд из реальной полезности",
+      "situation": "Пытаюсь выглядеть экспертом вместо того, чтобы понять свою сильную роль",
+      "outcome": "Сформулированы опыт, сильная тема, аудитория и доказательство пользы",
+      "priority": "P0",
+      "format": "Карта личного бренда",
+      "nextTrackIds": [
+        "A3-017",
+        "A6-018"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-017",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Глубокая",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "19.2.1–19.2.2",
+        "originalTitle": "Собственная значимость и фамилия как личный бренд; соединение талантов",
+        "pages": "531–533",
+        "adaptationDecision": "Полностью осовременить"
+      }
+    },
+    {
+      "order": 98,
+      "sectionId": "A6",
+      "module": "Личное мастерство",
+      "trackId": "A6-018",
+      "title": "Превратить сильные стороны в свой способ работы",
+      "situation": "Копирую чужую манеру общения",
+      "outcome": "Выбраны три сильные стороны и способ применять их в контакте и контенте",
+      "priority": "P1",
+      "format": "Карта сильных сторон",
+      "nextTrackIds": [
+        "A6-017",
+        "A1-009"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-018",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "19.2.2–19.2.4",
+        "originalTitle": "Прошлый опыт; сильные и слабые стороны",
+        "pages": "532–534",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 99,
+      "sectionId": "A6",
+      "module": "Личное мастерство",
+      "trackId": "A6-019",
+      "title": "Найти повторяющуюся профессиональную ошибку",
+      "situation": "Каждый раз наступаю на одно место, но называю это невезением",
+      "outcome": "Выбрана одна наблюдаемая ошибка и эксперимент по ее изменению",
+      "priority": "P1",
+      "format": "Диагностика + эксперимент",
+      "nextTrackIds": [
+        "A6-013",
+        "A6-021"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-019",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "19.2.5–19.2.6",
+        "originalTitle": "Характерные профессиональные ошибки; отработка нюансов",
+        "pages": "534–537",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 100,
+      "sectionId": "A6",
+      "module": "Личное мастерство",
+      "trackId": "A6-020",
+      "title": "Разобрать страх конкретного действия",
+      "situation": "Боюсь камеры, звонка, отказа или публичности",
+      "outcome": "Страх разложен на событие, прогноз, защиту и минимальный безопасный шаг",
+      "priority": "P0",
+      "format": "Микроэкспозиция",
+      "nextTrackIds": [
+        "A1-001",
+        "A6-021"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-020",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "19.2.8–19.2.10",
+        "originalTitle": "Профессиональные страхи и личные ограничения; управление страхами",
+        "pages": "540–541",
+        "adaptationDecision": "Освежить психологическую модель"
+      }
+    },
+    {
+      "order": 101,
+      "sectionId": "A6",
+      "module": "Личное мастерство",
+      "trackId": "A6-021",
+      "title": "Спланировать одно личное изменение",
+      "situation": "Хочу стать увереннее, дисциплинированнее и энергичнее сразу",
+      "outcome": "Выбрано одно поведение, срок, триггер, действие и проверка",
+      "priority": "P1",
+      "format": "План изменения",
+      "nextTrackIds": [
+        "A1-010",
+        "A6-019"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-021",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "19.3.1–19.3.7",
+        "originalTitle": "Намерение, цели, самодисциплина, энергия и самонастрой",
+        "pages": "559–566",
+        "adaptationDecision": "Разделить на будущие микротреки"
+      }
+    },
+    {
+      "order": 102,
+      "sectionId": "A6",
+      "module": "Мастерство контакта",
+      "trackId": "A6-022",
+      "title": "Настроиться на человека по обратной связи",
+      "situation": "Иду по заготовке, хотя реакция человека изменилась",
+      "outcome": "Замечен сигнал, обновлена гипотеза и скорректирован следующий вопрос",
+      "priority": "P1",
+      "format": "Тренажер наблюдения",
+      "nextTrackIds": [
+        "A4-002",
+        "A6-013"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-022",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "20.2–20.2.4",
+        "originalTitle": "Технология управления контактом по обратной связи",
+        "pages": "573–582",
+        "adaptationDecision": "Заменить «управление человеком» на адаптацию диалога"
+      }
+    },
+    {
+      "order": 103,
+      "sectionId": "A6",
+      "module": "Мастерство контакта",
+      "trackId": "A6-023",
+      "title": "Говорить через ценности клиента, не присваивая их",
+      "situation": "Использую свои аргументы и не проверяю, что важно другому",
+      "outcome": "Ценность названа словами человека и подтверждена вопросом",
+      "priority": "P1",
+      "format": "Карта ценностей",
+      "nextTrackIds": [
+        "A4-008",
+        "A4-010"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-023",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "20.3.1",
+        "originalTitle": "Методы работы с ценностями клиента",
+        "pages": "591",
+        "adaptationDecision": "Освежить этику"
+      }
+    },
+    {
+      "order": 104,
+      "sectionId": "A6",
+      "module": "Мастерство контакта",
+      "trackId": "A6-024",
+      "title": "Подать информацию в понятном человеку виде",
+      "situation": "Говорю слишком технически, долго или абстрактно",
+      "outcome": "Одна и та же мысль адаптирована под пример, схему или короткое объяснение",
+      "priority": "P1",
+      "format": "Переформулировщик",
+      "nextTrackIds": [
+        "A4-009",
+        "A4-010"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-024",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "20.3.2",
+        "originalTitle": "Управление контактом «по мышлению». Подача информации",
+        "pages": "599",
+        "adaptationDecision": "Убрать типологические ярлыки"
+      }
+    },
+    {
+      "order": 105,
+      "sectionId": "A6",
+      "module": "Мастерство контакта",
+      "trackId": "A6-025",
+      "title": "Сохранить свободу выбора человека",
+      "situation": "Хочу «правильно подвести» человека к нужному мне ответу",
+      "outcome": "В разговор встроены разрешение отказаться, честные варианты и проверка добровольности",
+      "priority": "P1",
+      "format": "Risk gate",
+      "nextTrackIds": [
+        "A4-014",
+        "A5-014"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-025",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Глубокая",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "20.3.3",
+        "originalTitle": "Управление свободой выбора в контакте",
+        "pages": "608",
+        "adaptationDecision": "Сильная этическая пересборка"
+      }
+    },
+    {
+      "order": 106,
+      "sectionId": "A6",
+      "module": "Мастерство контакта",
+      "trackId": "A6-026",
+      "title": "Работать с эмоцией через эмпатию, а не нажим",
+      "situation": "Игнорирую состояние человека или пытаюсь его раскачать",
+      "outcome": "Эмоция замечена, названа осторожно и учтена в темпе разговора",
+      "priority": "P1",
+      "format": "Тренажер",
+      "nextTrackIds": [
+        "A3-017",
+        "A5-003"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-026",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "20.3.4",
+        "originalTitle": "Управление эмоциями. Работа с личными симпатиями клиента",
+        "pages": "612",
+        "adaptationDecision": "Пересобрать как эмпатию"
+      }
+    },
+    {
+      "order": 107,
+      "sectionId": "A6",
+      "module": "Мастерство контакта",
+      "trackId": "A6-027",
+      "title": "Сделать уместный комплимент без лести",
+      "situation": "Комплимент звучит искусственно или как прием",
+      "outcome": "Сформулировано конкретное наблюдение без скрытого требования",
+      "priority": "P2",
+      "format": "Практика формулировки",
+      "nextTrackIds": [
+        "A3-016",
+        "A6-026"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-027",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "20.3.5; приложение 13",
+        "originalTitle": "Технология выполнения комплиментов; темы для комплиментов",
+        "pages": "622; 716",
+        "adaptationDecision": "Освежить язык"
+      }
+    },
+    {
+      "order": 108,
+      "sectionId": "A6",
+      "module": "Мастерство контакта",
+      "trackId": "A6-028",
+      "title": "Удерживать внимание без раздражителей и трюков",
+      "situation": "Перегружаю человека материалами, фактами и эффектами",
+      "outcome": "Сообщение сокращено до одного смысла, одного примера и одного действия",
+      "priority": "P2",
+      "format": "Редактор сообщения",
+      "nextTrackIds": [
+        "A4-010",
+        "A6-024"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-028",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Глубокая",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "20.3.6",
+        "originalTitle": "Управление вниманием через «раздражители»",
+        "pages": "625",
+        "adaptationDecision": "Не использовать манипулятивные приемы"
+      }
+    },
+    {
+      "order": 109,
+      "sectionId": "A6",
+      "module": "Мастерство контакта",
+      "trackId": "A6-029",
+      "title": "Сделать важную мысль запоминаемой честно",
+      "situation": "После разговора человек не помнит, о чем договорились",
+      "outcome": "Создано ясное резюме и письменная фиксация следующего шага",
+      "priority": "P2",
+      "format": "Резюме разговора",
+      "nextTrackIds": [
+        "A3-008",
+        "A4-016"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-029",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "20.3.7",
+        "originalTitle": "Управление процессами памяти. Мнемонические «якоря»",
+        "pages": "630",
+        "adaptationDecision": "Заменить психологические «якоря» на ясность и фиксацию"
+      }
+    },
+    {
+      "order": 110,
+      "sectionId": "A6",
+      "module": "Мастерство контакта",
+      "trackId": "A6-030",
+      "title": "Выбрать правильные место, темп и длительность разговора",
+      "situation": "Содержательно все верно, но разговор происходит не вовремя и не там",
+      "outcome": "Контекст разговора настроен под чувствительность темы и ресурс человека",
+      "priority": "P2",
+      "format": "Чек контекста",
+      "nextTrackIds": [
+        "A3-001",
+        "A3-005"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-030",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Базовая",
+      "transformationType": "Извлечение механики",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "20.3.9–20.3.11",
+        "originalTitle": "Физическое и психологическое пространство и время контакта",
+        "pages": "637–647",
+        "adaptationDecision": "Сохраняем смысл"
+      }
+    },
+    {
+      "order": 111,
+      "sectionId": "A6",
+      "module": "Мастерство контакта",
+      "trackId": "A6-031",
+      "title": "Передавать инициативу человеку",
+      "situation": "Я тащу весь разговор и сам назначаю все следующие шаги",
+      "outcome": "Человек сформулировал свое решение или следующий вопрос своими словами",
+      "priority": "P1",
+      "format": "Практика вопроса",
+      "nextTrackIds": [
+        "A4-016",
+        "A5-014"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-031",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Осовременить",
+      "transformationType": "Осовременивание",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "20.3.12",
+        "originalTitle": "Технология и приемы управления инициативой",
+        "pages": "649",
+        "adaptationDecision": "Пересобрать как передачу субъектности"
+      }
+    },
+    {
+      "order": 112,
+      "sectionId": "A6",
+      "module": "Мастерство контакта",
+      "trackId": "A6-032",
+      "title": "Сделать разговор хорошим опытом независимо от покупки",
+      "situation": "Оцениваю встречу только по деньгам",
+      "outcome": "Определены признаки полезного, уважительного и ясного контакта для обеих сторон",
+      "priority": "P1",
+      "format": "Чек клиентского опыта",
+      "nextTrackIds": [
+        "A6-001",
+        "A6-013"
+      ],
+      "legacyPublicUrl": "https://mlmacademy.ru/track/a6-032",
+      "pageStatusRaw": "Не создана",
+      "publicationStatus": "planned",
+      "visibility": "catalog",
+      "access": "undecided",
+      "contentStatus": "metadata_only",
+      "adaptationLevel": "Глубокая",
+      "transformationType": "Глубокая пересборка",
+      "internalNote": null,
+      "source": {
+        "sourceCode": "20.3.13",
+        "originalTitle": "Работа над образом контакта. «Продажа как праздник»",
+        "pages": "660",
+        "adaptationDecision": "Сохраняем идею, полностью меняем выражение"
+      }
+    }
+  ]
+}

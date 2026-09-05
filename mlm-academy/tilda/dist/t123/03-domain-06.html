@@ -1,0 +1,114 @@
+<!-- Блок T123: доменная логика 6/14 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<script>
+/**
+ * Юридические документы MLM Academy.
+ * Единый источник реквизитов: Осипов Роман Георгиевич, плательщик НПД.
+ * Банковские и паспортные данные сюда не класть. Оплата и ЮKassa не подключены.
+ */
+(function (root) {
+  'use strict';
+  var api = root.MLMA;
+  if (!api) return;
+
+  var OPERATOR = {
+    fullName: 'Осипов Роман Георгиевич',
+    name: 'Осипов Роман Георгиевич',
+    legalStatus: 'Налогоплательщик налога на профессиональный доход (самозанятый, не является индивидуальным предпринимателем)',
+    inn: '532013301192',
+    email: 'o_053@mail.ru',
+    phone: '+7 996 545-21-31',
+    phoneE164: '+79965452131',
+    site: 'https://mlmacademy.ru',
+    brand: 'MLM Academy',
+    approvedAt: '30 августа 2026 г.',
+    version: '1.2',
+    documentDate: '2026-08-30',
+  };
+
+  var YUKASSA_PUBLIC_REQUISITES_URL = 'https://mlmacademy.ru/requisites';
+
+  var PUBLIC_DOCUMENTS = [
+    { id: 'requisites', path: '/requisites', title: 'Реквизиты исполнителя', lead: 'Сведения об исполнителе и контакты MLM Academy.' },
+    { id: 'offer', path: '/offer', title: 'Публичная оферта', lead: 'Абонентский доступ к информационно-аналитической платформе на оплаченный период.' },
+    { id: 'privacy', path: '/privacy', title: 'Политика конфиденциальности', lead: 'Как MLM Academy собирает, использует, хранит и защищает персональные данные.' },
+    { id: 'consent', path: '/consent', title: 'Согласие на обработку персональных данных', lead: 'Отдельное согласие на обработку данных при регистрации и работе кабинета.' },
+    { id: 'marketing-consent', path: '/marketing-consent', title: 'Согласие на получение рекламных сообщений', lead: 'Необязательное согласие на новости и специальные предложения.' },
+    { id: 'cookies', path: '/cookies', title: 'Использование cookies', lead: 'Какие cookies и ключи браузера нужны для входа, сессии и маршрута.' },
+    { id: 'payment-and-access', path: '/payment-and-access', title: 'Оплата, доступ и возврат', lead: 'Как оплачивается период доступа, как отменить автопродление и как запросить возврат.' },
+  ];
+
+  var STORAGE_KEYS = [
+    'mlma_sid',
+    'mlma.profile.v1',
+    'mlma.progress.v1',
+    'mlma.runtime.v1',
+    'mlma.account.v1',
+    'mlma.outbox.v1',
+    'mlma.library.v1',
+    'mlma.pendingTrackId',
+    'mlma.pendingTracks.v1',
+    'mlma.migrated.v1',
+    'mlma.cookieChoice.v1',
+    'mlma.search.chain.v1',
+  ];
+
+  function isPersonInn(value) {
+    var inn = String(value || '');
+    if (!/^\d{12}$/.test(inn)) return false;
+    var d = [];
+    var i;
+    for (i = 0; i < 12; i += 1) d.push(Number(inn.charAt(i)));
+    var w1 = [7, 2, 4, 10, 3, 5, 9, 4, 6, 8];
+    var w2 = [3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8];
+    var s1 = 0;
+    var s2 = 0;
+    for (i = 0; i < 10; i += 1) s1 += w1[i] * d[i];
+    for (i = 0; i < 11; i += 1) s2 += w2[i] * d[i];
+    return s1 % 11 % 10 === d[10] && s2 % 11 % 10 === d[11];
+  }
+
+  function meta() {
+    return {
+      eyebrow: 'Документ · версия ' + OPERATOR.version + ' · ' + OPERATOR.approvedAt,
+      version: OPERATOR.version,
+      approvedAt: OPERATOR.approvedAt,
+    };
+  }
+
+  function requisites() {
+    var m = meta();
+    return {
+      eyebrow: m.eyebrow,
+      title: 'Реквизиты исполнителя',
+      lead: 'Сведения об исполнителе и контакты MLM Academy. Документ действует с даты публикации. Дата последнего обновления: ' + OPERATOR.approvedAt + '.',
+      crumb: 'Реквизиты',
+      version: m.version,
+      sections: [
+        { title: 'Исполнитель', rows: [
+          ['Исполнитель', OPERATOR.fullName],
+          ['Статус', OPERATOR.legalStatus],
+          ['ИНН', OPERATOR.inn],
+          ['Электронная почта', OPERATOR.email],
+          ['Телефон', OPERATOR.phone],
+          ['Сайт', OPERATOR.site],
+        ] },
+        { title: 'Услуги', text: 'Исполнитель предоставляет абонентский доступ к информационно-аналитической платформе MLM Academy на выбранный оплаченный период: личный кабинет, библиотека треков, материалы и функции платформы. Это не продажа отдельных треков и не образовательная услуга.' },
+        { title: 'Обращения', text: 'Для обращений по доступу, оплате, возврату и персональным данным используйте электронную почту ' + OPERATOR.email + '. В теме письма укажите характер обращения: «Доступ», «Оплата», «Возврат» или «Персональные данные».' },
+        { title: 'Документы', text: 'Центр документов: ' + OPERATOR.site + '/documents. Публичная оферта: ' + OPERATOR.site + '/offer. Политика конфиденциальности: ' + OPERATOR.site + '/privacy. Согласие на обработку персональных данных: ' + OPERATOR.site + '/consent. Согласие на рекламные сообщения: ' + OPERATOR.site + '/marketing-consent. Cookies: ' + OPERATOR.site + '/cookies. Оплата, доступ и возврат: ' + OPERATOR.site + '/payment-and-access.' },
+        { title: 'ЮKassa', text: 'Публичная ссылка для платёжного партнёра: ' + YUKASSA_PUBLIC_REQUISITES_URL + '. Банковские реквизиты и паспортные данные на сайте не публикуются.' },
+      ],
+    };
+  }
+
+  api.LEGAL_OPERATOR = OPERATOR;
+  api.YUKASSA_PUBLIC_REQUISITES_URL = YUKASSA_PUBLIC_REQUISITES_URL;
+  api.isPersonInn = isPersonInn;
+  api.LEGAL_STORAGE_KEYS = STORAGE_KEYS.slice();
+  api.publicDocuments = function () {
+    return PUBLIC_DOCUMENTS.slice();
+  };
+  api._legalRequisites = requisites;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+

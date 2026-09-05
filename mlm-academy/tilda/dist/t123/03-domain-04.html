@@ -1,0 +1,201 @@
+<!-- Блок T123: доменная логика 4/14 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<script>
+/**
+ * Абстракция оплаты. Реальные списания выключены.
+ * Секрет вебхука живёт только на сервере, не в Tilda и не в этом файле.
+ */
+(function (root) {
+  'use strict';
+  var api = root.MLMA;
+  if (!api) return;
+
+  var PAYMENT_STATUSES = ['created', 'pending', 'paid', 'failed', 'cancelled', 'refunded', 'expired'];
+  var TEST_MODE = true;
+  var PAYMENTS_ENABLED = false;
+  var COMMERCE_PREVIEW_ENABLED = false;
+
+  var TILDA_PAYMENT_OPTIONS = [
+    { id: 'tilda', name: 'Tilda Payments / ЮKassa через Tilda', members: 'Да, встроенная выдача группы', recurrences: 'Подписка Tilda — отдельно согласовывать', note: 'Проще всего для Members. Вебхук и идемпотентность ограничены кабинетом Tilda.' },
+    { id: 'yookassa', name: 'ЮKassa напрямую', members: 'Нужен свой вебхук → группа Members', recurrences: 'Рекуррент не включать без согласования', note: 'Гибкий вебхук, подпись, однократная запись платежа.' },
+    { id: 'cloudpayments', name: 'CloudPayments', members: 'Свой вебхук', recurrences: 'Не включать без согласования', note: 'Карты РФ/СНГ, виджет, подпись уведомлений.' },
+    { id: 'stripe', name: 'Stripe', members: 'Свой вебхук', recurrences: 'Не включать без согласования', note: 'Удобен для международной карты. Для РФ ограничен.' },
+    { id: 'paypal', name: 'PayPal', members: 'Свой вебхук', recurrences: 'Не включать без согласования', note: 'Международные платежи, слабее для РФ.' },
+  ];
+
+  function newId(prefix) {
+    return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  function productById(id) {
+    if (api.getProductByCode) {
+      var found = api.getProductByCode(id) || api.getProductByCode('B2C-TRACK-001');
+      if (found) return found;
+    }
+    var list = api.PRODUCTS || [];
+    for (var i = 0; i < list.length; i += 1) {
+      if (list[i].id === id || list[i].product_code === id) return list[i];
+    }
+    return { product_code: 'B2C-TRACK-001', publication_status: 'gated', title: 'Один трек' };
+  }
+
+  function createOrder(input) {
+    input = input || {};
+    var product = productById(input.productId || 'start');
+    return {
+      orderId: input.orderId || newId('ord'),
+      productId: product.product_code || product.id,
+      group: product.entitlement_type || product.group || '',
+      trackId: input.trackId || product.bound_track_id || '',
+      email: input.email || '',
+      maId: input.maId || '',
+      amount: 0,
+      currency: 'RUB',
+      status: 'blocked',
+      test: true,
+      reason: 'payments_disabled',
+      createdAt: new Date().toISOString(),
+      legalAcceptance: input.legalAcceptance || null,
+    };
+  }
+
+  function TestGateway() {}
+  TestGateway.prototype.createPayment = function (order) {
+    return {
+      paymentId: newId('pay'),
+      orderId: order.orderId,
+      status: 'pending',
+      checkoutUrl: '/pricing',
+      test: true,
+    };
+  };
+  TestGateway.prototype.parseWebhook = function (payload) {
+    payload = payload || {};
+    return {
+      paymentId: payload.paymentId || payload.id || '',
+      orderId: payload.orderId || '',
+      status: payload.status || 'failed',
+      idempotencyKey: payload.idempotencyKey || payload.paymentId || payload.id || '',
+      email: payload.email || '',
+      signatureValid: payload.signatureValid !== false,
+    };
+  };
+
+  function findById(list, key, value) {
+    for (var i = 0; i < list.length; i += 1) {
+      if (list[i][key] === value) return list[i];
+    }
+    return null;
+  }
+
+  function applyWebhook(account, event, order) {
+    account = account || { entitlements: [], payments: [], orders: [], groups: [] };
+    event = event || {};
+    if (!event.signatureValid) {
+      return { ok: false, reason: 'invalid_signature', account: account };
+    }
+    if (event.status === 'paid' && (!account || account.identityLevel !== 'verified')) {
+      return { ok: false, reason: 'verified_required', account: account };
+    }
+    var payments = (account.payments || []).slice();
+    var existing = findById(payments, 'idempotencyKey', event.idempotencyKey) || findById(payments, 'paymentId', event.paymentId);
+    if (existing && (existing.status === 'paid' || existing.status === event.status)) {
+      return { ok: true, duplicate: true, account: account, payment: existing };
+    }
+    var payment = {
+      paymentId: event.paymentId || newId('pay'),
+      orderId: event.orderId || (order && order.orderId) || '',
+      status: event.status,
+      idempotencyKey: event.idempotencyKey || event.paymentId,
+      email: event.email || (order && order.email) || '',
+      test: true,
+      updatedAt: new Date().toISOString(),
+    };
+    if (existing) {
+      existing.status = payment.status;
+      existing.updatedAt = payment.updatedAt;
+      payment = existing;
+    } else {
+      payments.push(payment);
+    }
+    account.payments = payments;
+    var orders = (account.orders || []).slice();
+    if (order) {
+      order.status = event.status === 'paid' ? 'paid' : event.status;
+      var found = false;
+      for (var o = 0; o < orders.length; o += 1) {
+        if (orders[o].orderId === order.orderId) {
+          orders[o] = order;
+          found = true;
+        }
+      }
+      if (!found) orders.push(order);
+    }
+    account.orders = orders;
+    if (event.status === 'paid' && order) {
+      var entitlements = (account.entitlements || []).slice();
+      var same = null;
+      for (var e = 0; e < entitlements.length; e += 1) {
+        if (entitlements[e].orderId === order.orderId && entitlements[e].status === 'active') same = entitlements[e];
+      }
+      if (!same) {
+        entitlements.push({
+          id: newId('ent'),
+          productId: order.productId,
+          group: order.group,
+          trackId: order.trackId || '',
+          status: 'active',
+          orderId: order.orderId,
+          startsAt: new Date().toISOString(),
+          expiresAt: '',
+        });
+        account.entitlements = entitlements;
+        account.groups = account.groups || [];
+        if (order.group && account.groups.indexOf(order.group) === -1) account.groups.push(order.group);
+        if (account.groups.indexOf('FREE') === -1) account.groups.push('FREE');
+      }
+    }
+    if (event.status === 'refunded' || event.status === 'expired') {
+      var list = account.entitlements || [];
+      for (var r = 0; r < list.length; r += 1) {
+        if (order && list[r].orderId === order.orderId) {
+          list[r].status = event.status === 'refunded' ? 'revoked' : 'expired';
+        }
+      }
+    }
+    return { ok: true, duplicate: false, account: account, payment: payment };
+  }
+
+  function checkoutHref() {
+    return '/pricing';
+  }
+
+  var YUKASSA_PUBLIC_REQUISITES_URL = 'https://mlmacademy.ru/requisites';
+
+  function yookassaPublicUrls() {
+    return {
+      sellerInfo: YUKASSA_PUBLIC_REQUISITES_URL,
+      offer: 'https://mlmacademy.ru/offer',
+      paymentAndAccess: 'https://mlmacademy.ru/payment-and-access',
+    };
+  }
+
+  api.PAYMENT_STATUSES = PAYMENT_STATUSES;
+  api.TILDA_PAYMENT_OPTIONS = TILDA_PAYMENT_OPTIONS;
+  api.PAYMENT_TEST_MODE = TEST_MODE;
+  api.PAYMENTS_ENABLED = PAYMENTS_ENABLED;
+  api.COMMERCE_PREVIEW_ENABLED = COMMERCE_PREVIEW_ENABLED;
+  api.createOrder = createOrder;
+  api.TestGateway = TestGateway;
+  api.createPaymentGateway = function () {
+    return new TestGateway();
+  };
+  api.applyWebhook = applyWebhook;
+  api.checkoutHref = checkoutHref;
+  api.productById = productById;
+  api.YUKASSA_PUBLIC_REQUISITES_URL = YUKASSA_PUBLIC_REQUISITES_URL;
+  api.yookassaPublicUrls = yookassaPublicUrls;
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+

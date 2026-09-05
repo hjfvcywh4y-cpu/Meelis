@@ -1,0 +1,58 @@
+/* Стили входа Tilda Members в палитре MLM Academy.
+   Вставлять только в настройки Members / доп. CSS сайта, не в общесайтовый HEAD публичных страниц B2B.
+   Шрифт Onest подключить отдельно в настройках сайта, если Members его ещё не грузит.
+   Не считать это доказательством, что живая страница входа уже переоформлена. */
+
+html, body, .t-records, .t-body {
+  background: #f4f0e8 !important;
+  color: #1c1914 !important;
+  font-family: Onest, Arial, Helvetica, sans-serif !important;
+}
+input, button, a, label, p, h1, h2, h3 {
+  font-family: Onest, Arial, Helvetica, sans-serif !important;
+}
+button, .t-btn, input[type="submit"] {
+  background: #C45F42 !important;
+  color: #fffdf8 !important;
+  border: 1px solid #1c1914 !important;
+  border-radius: 6px !important;
+  font-weight: 800 !important;
+}
+a { color: #C45F42 !important; }
+input[type="email"],
+input[type="password"],
+input[type="text"] {
+  border: 1px solid #1c1914 !important;
+  border-radius: 6px !important;
+  background: #fffdf8 !important;
+}
+
+.mlma-members-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #1c1914;
+  text-decoration: none;
+}
+.mlma-signup-paused {
+  max-width: 36rem;
+  margin: 24px auto;
+  padding: 24px;
+  background: #fffcf7;
+  border: 1px solid #1c1914;
+  border-radius: 12px;
+  color: #1c1914;
+  font-family: Onest, Arial, Helvetica, sans-serif;
+  line-height: 1.45;
+}
+.mlma-signup-paused-title {
+  font-weight: 800;
+  font-size: 22px;
+  margin: 0 0 12px;
+}
+.mlma-signup-paused-actions {
+  margin: 16px 0 0;
+}
+.mlma-signup-paused a { color: #C45F42 !important; }

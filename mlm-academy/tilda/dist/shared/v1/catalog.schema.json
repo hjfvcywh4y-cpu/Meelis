@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlmacademy.ru/schema/mlma.catalog.public.v1.json",
+  "title": "MLM Academy public catalog",
+  "type": "object",
+  "required": ["schema", "assetsVersion", "version", "tracks", "sections"],
+  "additionalProperties": true,
+  "properties": {
+    "schema": { "const": "mlma.catalog.public.v1" },
+    "assetsVersion": { "type": "string", "pattern": "^v[0-9]+$" },
+    "version": { "type": "string", "minLength": 1 },
+    "config": { "type": "object" },
+    "sections": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6
+    },
+    "tracks": {
+      "type": "array",
+      "minItems": 112,
+      "maxItems": 112,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "required": ["id", "s", "t"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^A[1-6]-[0-9]{3}$" },
+          "s": { "type": "string", "enum": ["A1", "A2", "A3", "A4", "A5", "A6"] },
+          "t": { "type": "string", "minLength": 4 }
+        }
+      }
+    }
+  }
+}

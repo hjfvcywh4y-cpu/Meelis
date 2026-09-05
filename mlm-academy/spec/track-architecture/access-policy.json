@@ -1,0 +1,101 @@
+{
+  "version": "1.0",
+  "currentMode": "PREPAYMENT_ARCHITECTURE_ONLY",
+  "featureFlags": {
+    "TRACK_REGISTRY_ENABLED": true,
+    "ROUTE_ENGINE_ENABLED": true,
+    "PAID_TRACK_NAVIGATION_ENABLED": false,
+    "PAYMENTS_ENABLED": false,
+    "ALLOW_DRAFT_RULES": false,
+    "ADMIN_PREVIEW_ENABLED": true,
+    "ENTITLEMENT_BYPASS": false
+  },
+  "roles": {
+    "ANON": {
+      "publicMetadata": true,
+      "publicSearch": true,
+      "freeContent": false,
+      "paidContent": false,
+      "routeRuntime": false,
+      "draftPreview": false
+    },
+    "FREE": {
+      "publicMetadata": true,
+      "publicSearch": true,
+      "freeContent": true,
+      "paidContent": false,
+      "routeRuntime": false,
+      "draftPreview": false
+    },
+    "START": {
+      "publicMetadata": true,
+      "publicSearch": true,
+      "freeContent": true,
+      "paidContent": "REQUIRES_ACTIVE_ENTITLEMENT_AND_GLOBAL_FLAG",
+      "routeRuntime": "REQUIRES_ACTIVE_ENTITLEMENT_AND_GLOBAL_FLAG",
+      "draftPreview": false
+    },
+    "FULL": {
+      "publicMetadata": true,
+      "publicSearch": true,
+      "freeContent": true,
+      "paidContent": "REQUIRES_ACTIVE_ENTITLEMENT_AND_GLOBAL_FLAG",
+      "routeRuntime": "REQUIRES_ACTIVE_ENTITLEMENT_AND_GLOBAL_FLAG",
+      "draftPreview": false
+    },
+    "PILOT": {
+      "publicMetadata": true,
+      "publicSearch": true,
+      "freeContent": true,
+      "paidContent": "REQUIRES_ACTIVE_ENTITLEMENT_AND_GLOBAL_FLAG",
+      "routeRuntime": "REQUIRES_ACTIVE_ENTITLEMENT_AND_GLOBAL_FLAG",
+      "draftPreview": "REQUIRES_SERVER_VERIFIED_PILOT_ROLE"
+    },
+    "ADMIN": {
+      "publicMetadata": true,
+      "publicSearch": true,
+      "freeContent": true,
+      "paidContent": "ADMIN_PREVIEW_ONLY",
+      "routeRuntime": "ADMIN_PREVIEW_ONLY",
+      "draftPreview": "REQUIRES_SERVER_VERIFIED_ADMIN_ROLE"
+    }
+  },
+  "contentStatuses": [
+    "PLANNED",
+    "DRAFT",
+    "REVIEW",
+    "PUBLISHED",
+    "PAUSED",
+    "ARCHIVED"
+  ],
+  "entitlementRule": "feature_enabled AND server_session_verified AND entitlement_active AND product_grants_track_version AND content_status_permits_access",
+  "neverGrantsAccess": [
+    "query_string",
+    "local_storage",
+    "client_supplied_member_id",
+    "client_supplied_email",
+    "payment_success_page",
+    "unverified_frontend_group",
+    "guessed_track_url"
+  ],
+  "publicFields": [
+    "id",
+    "title",
+    "situation",
+    "result",
+    "section",
+    "domain",
+    "catalogVisibility",
+    "availabilityLabel"
+  ],
+  "privateFields": [
+    "fullContent",
+    "contentAssets",
+    "routeFacts",
+    "draftRules",
+    "transitionPayload",
+    "progress",
+    "entitlementDetails"
+  ]
+}
+

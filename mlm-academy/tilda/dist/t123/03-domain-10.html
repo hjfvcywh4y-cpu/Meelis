@@ -1,0 +1,947 @@
+<!-- Блок T123: доменная логика 10/14 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<script>
+(function (root) {
+  'use strict';
+  var api = root.MLMA;
+  if (!api) return;
+  var STOP_WORDS = api.STOP_WORDS;
+  var TYPOS = api.TYPOS || {};
+  var SYNONYMS = api.SYNONYMS;
+  var INTENTS = api.INTENTS;
+  var CLARIFY_QUESTION = api.CLARIFY_QUESTION || 'Вам нужно найти людей, начать разговор, продолжить после паузы или организовать команду?';
+  var CLARIFY_OPTIONS = api.CLARIFY_OPTIONS || [];
+  var OUT_OF_SCOPE = api.OUT_OF_SCOPE || [];
+  var ADJACENT_SCOPE = api.ADJACENT_SCOPE || [];
+  var TRACK_ALIASES = api.TRACK_ALIASES;
+  var SECTION_ALIASES = api.SECTION_ALIASES;
+  var GOALS = api.GOALS;
+  var SIT_FILTERS = api.SIT_FILTERS;
+  var FMT_FILTERS = api.FMT_FILTERS;
+  var CH_FILTERS = api.CH_FILTERS;
+  var LVL_FILTERS = api.LVL_FILTERS;
+  var AVAIL_FILTERS = api.AVAIL_FILTERS;
+  var EXPERIENCE = api.EXPERIENCE;
+  var PRESETS = api.PRESETS;
+  var TIME_FILTERS = api.TIME_FILTERS || [];
+  var GOAL_SECTIONS = api.GOAL_SECTIONS || {};
+  var FIELD_WEIGHTS = api.FIELD_WEIGHTS;
+
+  var metaCache = {};
+  var MIN_HIT = 36;
+  var MIN_CLOSE = 70;
+
+  function correctTypos(tokens) {
+    var out = [];
+    var seen = {};
+    function add(token) {
+      if (!token || seen[token]) return;
+      seen[token] = true;
+      out.push(token);
+    }
+    for (var i = 0; i < tokens.length; i += 1) {
+      var token = tokens[i];
+      add(token);
+      if (TYPOS[token] && TYPOS[token] !== token) add(api.normalizeSearchText(TYPOS[token]));
+    }
+    return out;
+  }
+
+  function stem(word) {
+    var value = String(word || '');
+    if (value.length < 4) return value;
+    var suffixes = [
+      'ться', 'тся', 'ешь', 'ишь', 'ать', 'ять', 'ить', 'ость', 'ение', 'ание',
+      'ого', 'ему', 'ами', 'ями', 'ому', 'ыми', 'ими', 'ией',
+      'ов', 'ев', 'ах', 'ях', 'ой', 'ый', 'ий', 'ая', 'ое', 'ые', 'ия', 'ие',
+      'ей', 'ью', 'ью',
+      'ть', 'ся', 'сь', 'ам', 'ям', 'ом', 'ем', 'ую', 'ей',
+      'а', 'у', 'е', 'и', 'ы', 'я', 'ю', 'о',
+    ];
+    for (var i = 0; i < suffixes.length; i += 1) {
+      var sfx = suffixes[i];
+      if (value.length - sfx.length >= 3 && value.slice(-sfx.length) === sfx) {
+        return value.slice(0, -sfx.length);
+      }
+    }
+    return value;
+  }
+
+  function tokenize(value) {
+    var normalized = api.normalizeSearchText(value);
+    if (!normalized) return [];
+    return correctTypos(normalized.split(' ').filter(Boolean));
+  }
+
+  function isStopWord(token) {
+    return token.length < 2 || !!STOP_WORDS[token];
+  }
+
+  function usefulTokens(tokens) {
+    var out = [];
+    for (var i = 0; i < tokens.length; i += 1) {
+      if (!isStopWord(tokens[i])) out.push(tokens[i]);
+    }
+    return out;
+  }
+
+  function expandToken(token) {
+    var out = [token];
+    var stemmed = stem(token);
+    if (stemmed.length >= 4) out.push(stemmed);
+    var extras = SYNONYMS[token];
+    if (extras) {
+      for (var i = 0; i < extras.length; i += 1) {
+        out.push(extras[i]);
+        out.push(stem(extras[i]));
+      }
+    }
+    var seen = {};
+    var uniq = [];
+    for (var j = 0; j < out.length; j += 1) {
+      if (out[j] && !seen[out[j]]) {
+        seen[out[j]] = true;
+        uniq.push(out[j]);
+      }
+    }
+    return uniq;
+  }
+
+  function analyzeQuery(raw) {
+    var original = String(raw || '').trim();
+    var tokens = tokenize(original);
+    var useful = usefulTokens(tokens);
+    if (original && useful.length === 0) {
+      return { kind: 'need_more', original: original, tokens: tokens, useful: [], expanded: [], norm: '', intents: [] };
+    }
+    var expanded = [];
+    var seen = {};
+    for (var i = 0; i < useful.length; i += 1) {
+      var pack = expandToken(useful[i]);
+      for (var j = 0; j < pack.length; j += 1) {
+        if (!seen[pack[j]]) {
+          seen[pack[j]] = true;
+          expanded.push(pack[j]);
+        }
+      }
+    }
+    var norm = tokens.join(' ') || api.normalizeSearchText(original);
+    var intents = matchIntents(norm);
+    var scoped = detectOutOfScope(norm);
+    var adjacent = detectAdjacentScope(norm);
+    return {
+      kind: scoped ? 'out_of_scope' : 'ok',
+      original: original,
+      tokens: tokens,
+      useful: useful,
+      expanded: expanded,
+      norm: norm,
+      intents: intents,
+      negated: collectNegated(norm),
+      outOfScope: scoped,
+      adjacentScope: adjacent,
+    };
+  }
+
+  var NEGATION_KEEP = [
+    'не понимаю', 'не знаю', 'некому', 'некого', 'не отвечает', 'недоволен',
+    'неловко', 'не стыдно', 'не по карману', 'не сейчас', 'не хочу впаривать',
+    'не хочу продавать', 'незнакомому', 'незнакомым', 'незнакомец',
+    'не делают', 'не делает', 'ничего не делают', 'не надо продавать',
+    'не знаю как', 'не знаю что', 'не понимаю что', 'не понимаю кому',
+    'не понимаю с кем',
+  ];
+
+  function collectNegated(norm) {
+    var work = ' ' + String(norm || '') + ' ';
+    for (var i = 0; i < NEGATION_KEEP.length; i += 1) {
+      work = work.split(NEGATION_KEEP[i]).join(' ');
+    }
+    var topics = [];
+    var seen = {};
+    var parts = work.split(' ').filter(Boolean);
+    for (var p = 0; p < parts.length; p += 1) {
+      if (parts[p] !== 'не' && parts[p] !== 'нет') continue;
+      for (var k = 1; k <= 2; k += 1) {
+        var next = parts[p + k];
+        if (!next || next.length < 3 || isStopWord(next)) continue;
+        var stemmed = stem(next);
+        if (stemmed && !seen[stemmed]) {
+          seen[stemmed] = true;
+          topics.push(stemmed);
+        }
+      }
+    }
+    return topics;
+  }
+
+  function intentBlocked(intent, negated) {
+    if (!negated || !negated.length) return false;
+    var blob = api.normalizeSearchText((intent.phrases || []).concat(intent.why || []).concat([intent.goal || '', intent.id || '']).join(' '));
+    for (var i = 0; i < negated.length; i += 1) {
+      if (negated[i].length >= 4 && blob.indexOf(negated[i]) !== -1) return true;
+    }
+    return false;
+  }
+
+  function matchIntents(norm) {
+    var hits = [];
+    if (!norm) return hits;
+    var negated = collectNegated(norm);
+    for (var i = 0; i < INTENTS.length; i += 1) {
+      var intent = INTENTS[i];
+      var matched = false;
+      for (var p = 0; p < intent.phrases.length; p += 1) {
+        var phrase = api.normalizeSearchText(intent.phrases[p]);
+        if (phrase && norm.indexOf(phrase) !== -1) {
+          matched = true;
+          break;
+        }
+      }
+      if (!matched || intentBlocked(intent, negated)) continue;
+      hits.push(intent);
+    }
+    var ids = {};
+    for (var h = 0; h < hits.length; h += 1) ids[hits[h].id] = true;
+    if (ids['silent-message'] || ids['lost-client'] || ids['price'] || ids['team'] || ids['no-people']) {
+      hits = hits.filter(function (item) { return item.id !== 'first-write'; });
+    }
+    if (ids.team) {
+      hits = hits.filter(function (item) { return item.id !== 'first-result' && item.id !== 'just-started'; });
+    }
+    if (ids['crm-head'] || ids.price || ids['cold-call'] || ids['silent-message'] || ids['lost-client'] || ids['first-write'] || ids['no-people'] || ids.team) {
+      hits = hits.filter(function (item) { return item.id !== 'planning'; });
+    }
+    return hits;
+  }
+
+  function detectOutOfScope(norm) {
+    for (var i = 0; i < OUT_OF_SCOPE.length; i += 1) {
+      if (OUT_OF_SCOPE[i].test && OUT_OF_SCOPE[i].test.test(norm)) return OUT_OF_SCOPE[i];
+    }
+    return null;
+  }
+
+  function detectAdjacentScope(norm) {
+    for (var i = 0; i < ADJACENT_SCOPE.length; i += 1) {
+      if (ADJACENT_SCOPE[i].test && ADJACENT_SCOPE[i].test.test(norm)) return ADJACENT_SCOPE[i];
+    }
+    return null;
+  }
+
+  function defaultClarify() {
+    return { question: CLARIFY_QUESTION, options: CLARIFY_OPTIONS.slice() };
+  }
+
+  function humanWhy(track, analysis, why, aiReason) {
+    var text = String(aiReason || '').replace(/\s+/g, ' ').trim();
+    if (text.length >= 12) {
+      if (!/^подходит/i.test(text)) text = 'Подходит, потому что ' + text.charAt(0).toLowerCase() + text.slice(1);
+      return text;
+    }
+    var intents = (analysis && analysis.intents) || [];
+    for (var i = 0; i < intents.length; i += 1) {
+      if (intents[i].boostIds && intents[i].boostIds.indexOf(track.trackId) !== -1 && intents[i].reason) {
+        return intents[i].reason;
+      }
+    }
+    if (why && why.intent && why.intent.length) {
+      return 'Подходит, потому что ' + String(why.intent[0]).replace(/\s+/g, ' ').trim() + '.';
+    }
+    if (track && track.situation) {
+      var sit = String(track.situation).replace(/\s+/g, ' ').trim();
+      if (sit.length > 110) sit = sit.slice(0, 107) + '…';
+      return 'Подходит, потому что это про вашу ситуацию: ' + sit;
+    }
+    return '';
+  }
+
+  function fieldHas(haystack, variants) {
+    if (!haystack) return false;
+    var words = haystack.split(' ').filter(Boolean);
+    for (var i = 0; i < variants.length; i += 1) {
+      var needle = variants[i];
+      if (!needle || needle.length < 3) continue;
+      var needleStem = stem(needle);
+      var prefixLen = needle.length >= 5 ? 5 : 4;
+      var prefix = needle.length >= 4 ? needle.slice(0, prefixLen) : '';
+      for (var w = 0; w < words.length; w += 1) {
+        var word = words[w];
+        if (word === needle) return true;
+        if (needle.length >= 4 && word.indexOf(needle) === 0) return true;
+        if (needleStem.length >= 4 && stem(word) === needleStem) return true;
+        if (prefix && word.length >= prefix.length && word.slice(0, prefix.length) === prefix) return true;
+      }
+    }
+    return false;
+  }
+
+  function formatGroup(format) {
+    var s = api.normalizeSearchText(format);
+    if (/сообщен|конструктор сообщения|текст переписк/.test(s)) return 'message';
+    if (/список/.test(s)) return 'list';
+    if (/карт/.test(s)) return 'map';
+    if (/план/.test(s)) return 'plan';
+    if (/чек/.test(s)) return 'checklist';
+    if (/разговор|диалог|встреч/.test(s)) return 'conversation';
+    if (/калькул|посчитать/.test(s)) return 'calculator';
+    if (/решен|фильтр/.test(s)) return 'decision';
+    if (/фиксац|результат/.test(s)) return 'result';
+    return 'other';
+  }
+
+  function channelOf(track) {
+    var s = api.normalizeSearchText(track.title + ' ' + track.format + ' ' + track.situation);
+    if (/звонок|телефон|позвон/.test(s)) return 'call';
+    if (/встреч/.test(s)) return 'meeting';
+    if (/сообщен|переписк|написать|мессендж|чат/.test(s)) return 'chat';
+    if (/контент|пост|видео|ролик/.test(s)) return 'content';
+    if (/crm|баз|статус/.test(s)) return 'crm';
+    return 'any';
+  }
+
+  function sitOf(track) {
+    var s = api.normalizeSearchText(track.title + ' ' + track.situation + ' ' + track.module);
+    if (track.sectionId === 'A1' && /команд|настав|стандарт/.test(s)) return 'team';
+    if (track.sectionId === 'A1') return 'start';
+    if (/аудит|баз|сегмент|статус/.test(s) && track.sectionId === 'A2') return 'base';
+    if (/пять людей|кругов|контекст|поиск|профиль|рекомендац/.test(s) && track.sectionId === 'A2') return 'people';
+    if (track.sectionId === 'A2') return 'people';
+    if (/сообщен|позвон|канал|перв/.test(s) && track.sectionId === 'A3') return 'contact';
+    if (/встреч|разговор|повод/.test(s) && track.sectionId === 'A3') return 'talk';
+    if (track.sectionId === 'A3') return 'contact';
+    if (track.sectionId === 'A4') return /предлож|цен|выбор|заверш/.test(s) ? 'offer' : 'talk';
+    if (/отказ/.test(s) && track.sectionId === 'A5') return 'refuse';
+    if (/follow|повтор|пауз|не отвечает/.test(s) && track.sectionId === 'A5') return 'followup';
+    if (track.sectionId === 'A5') return 'doubt';
+    if (/команд|настав|ритм|разбор|план роста/.test(s) && track.sectionId === 'A6') return 'team';
+    if (/повтор|клиентск|встроить|дата/.test(s) && track.sectionId === 'A6') return 'repeat';
+    if (track.sectionId === 'A6') return 'followup';
+    return 'start';
+  }
+
+  function levelOf(track) {
+    var s = api.normalizeSearchText(track.title + ' ' + track.situation + ' ' + track.module);
+    if (/настав|команд|передач стандарт|самостоятельност/.test(s)) return 'mentor';
+    if (track.sectionId === 'A6' || /систем|ритм|план роста/.test(s)) return 'system';
+    if (track.sectionId === 'A1' || /перв|старт|начал|пять людей|первое сообщение/.test(s)) return 'beginner';
+    return 'working';
+  }
+
+  function timeOf(track) {
+    var f = api.normalizeSearchText(track.format || '');
+    if (/чек|решен|калькулятор|gate|микро/.test(f)) return 10;
+    if (/сообщен|практик|реплик|сценари/.test(f)) return 15;
+    if (/конструктор|план|карт|диагност|crm/.test(f)) return 25;
+    return 20;
+  }
+
+  function deriveMeta(track) {
+    var cacheKey = track.trackId + '\n' + track.title + '\n' + track.situation + '\n' + track.format;
+    if (metaCache[cacheKey]) return metaCache[cacheKey];
+    var aliases = (TRACK_ALIASES[track.trackId] || []).concat(SECTION_ALIASES[track.sectionId] || []);
+    var fmt = formatGroup(track.format);
+    var meta = {
+      trackId: track.trackId,
+      sectionId: track.sectionId,
+      fmt: fmt,
+      ch: channelOf(track),
+      sit: sitOf(track),
+      lvl: levelOf(track),
+      aliases: aliases,
+      playable: !!(api.derivePassport ? api.derivePassport(track).executable : false),
+      kind: api.itemKind ? api.itemKind(track) : 'track',
+      time: timeOf(track),
+      fields: {
+        title: api.normalizeSearchText(track.title),
+        situation: api.normalizeSearchText(track.situation),
+        outcome: api.normalizeSearchText(track.outcome),
+        module: api.normalizeSearchText(track.module),
+        format: api.normalizeSearchText(track.format),
+        aliases: api.normalizeSearchText(aliases.join(' ')),
+        section: api.normalizeSearchText(track.sectionId + ' ' + (SECTION_ALIASES[track.sectionId] || []).join(' ')),
+        id: api.normalizeSearchText(track.trackId),
+      },
+    };
+    if (api.searchFields) {
+      var extra = api.searchFields(track);
+      meta.fields.trigger = extra.trigger;
+      meta.fields.inputState = extra.inputState;
+      meta.fields.targetState = extra.targetState;
+      meta.fields.mainTask = extra.mainTask;
+      meta.fields.mechanic = extra.mechanic;
+      meta.fields.artifact = extra.artifact;
+      meta.fields.evidence = extra.evidence;
+    }
+    metaCache[cacheKey] = meta;
+    return meta;
+  }
+
+  function emptyWhy() {
+    return { literal: [], situation: [], intent: [] };
+  }
+
+  function pushWhy(why, bucket, text) {
+    if (!text || !why || !why[bucket]) return;
+    if (why[bucket].indexOf(text) !== -1) return;
+    if (why[bucket].length >= 3) return;
+    why[bucket].push(text);
+  }
+
+  function whyList(why) {
+    if (!why) return [];
+    if (Array.isArray(why)) return why;
+    return (why.literal || []).concat(why.situation || []).concat(why.intent || []);
+  }
+
+  function queryHasWrite(analysis) {
+    var blob = (analysis.norm || '') + ' ' + (analysis.useful || []).join(' ');
+    return /написа|сообщен|переписк|текст/.test(blob);
+  }
+
+  function queryHasCall(analysis) {
+    return /позвон|звонок|телефон/.test(analysis.norm || '');
+  }
+
+  function queryMentions(analysis, text) {
+    var hay = ' ' + (analysis.norm || '') + ' ' + (analysis.useful || []).join(' ') + ' ';
+    var parts = String(text || '').split(' ').filter(Boolean);
+    if (!parts.length) return false;
+    for (var i = 0; i < parts.length; i += 1) {
+      if (hay.indexOf(' ' + parts[i] + ' ') === -1) return false;
+    }
+    return true;
+  }
+
+  function scoreTrack(track, analysis, mode) {
+    if (!analysis || analysis.kind !== 'ok' || !analysis.useful.length) return { score: 0, why: emptyWhy() };
+    var meta = deriveMeta(track);
+    var fields = meta.fields;
+    var queryNorm = analysis.norm;
+    var score = 0;
+    var why = emptyWhy();
+    var matchedUseful = 0;
+    if (queryNorm && fields.title === queryNorm) score += FIELD_WEIGHTS.titleExact;
+
+    for (var i = 0; i < analysis.useful.length; i += 1) {
+      var token = analysis.useful[i];
+      var variants = expandToken(token);
+      var hits = 0;
+      if (fieldHas(fields.title, variants)) {
+        score += FIELD_WEIGHTS.title;
+        hits += 1;
+        if (queryMentions(analysis, token)) pushWhy(why, 'literal', token);
+      }
+      if (fieldHas(fields.situation, variants)) {
+        score += FIELD_WEIGHTS.situation;
+        hits += 1;
+        if (queryMentions(analysis, token)) pushWhy(why, 'literal', token);
+      }
+      if (fieldHas(fields.aliases, variants)) {
+        score += FIELD_WEIGHTS.aliases;
+        hits += 1;
+        if (queryMentions(analysis, token)) pushWhy(why, 'literal', token);
+      }
+      if (fieldHas(fields.outcome, variants)) {
+        score += FIELD_WEIGHTS.outcome;
+        hits += 1;
+      }
+      if (fieldHas(fields.module, variants) || fieldHas(fields.format, variants)) {
+        score += FIELD_WEIGHTS.format;
+        hits += 1;
+      }
+      if (fieldHas(fields.mechanic, variants) || fieldHas(fields.artifact, variants) || fieldHas(fields.evidence, variants)) {
+        score += FIELD_WEIGHTS.mechanic || 18;
+        hits += 1;
+      }
+      if (fieldHas(fields.mainTask, variants) && !fieldHas(fields.title, variants)) {
+        score += FIELD_WEIGHTS.mainTask || 40;
+        hits += 1;
+      }
+      if (fieldHas(fields.section, variants)) {
+        score += FIELD_WEIGHTS.section;
+        hits += 1;
+      }
+      if (fieldHas(fields.id, variants)) {
+        score += FIELD_WEIGHTS.id;
+        hits += 1;
+        pushWhy(why, 'literal', track.trackId);
+      }
+      if (hits) matchedUseful += 1;
+      if (hits > 1) score += FIELD_WEIGHTS.multi * (hits - 1);
+    }
+
+    if (queryNorm.length >= 8) {
+      if (fields.title.indexOf(queryNorm) !== -1) {
+        score += FIELD_WEIGHTS.phrase * 2;
+      } else if (fields.situation.indexOf(queryNorm) !== -1) {
+        score += FIELD_WEIGHTS.phrase * 1.6;
+      } else if (fields.aliases.indexOf(queryNorm) !== -1) {
+        score += FIELD_WEIGHTS.phrase;
+      }
+    }
+    var parts = queryNorm.split(' ');
+    if (parts.length >= 2) {
+      for (var p = 0; p < parts.length - 1; p += 1) {
+        var gram = parts[p] + ' ' + parts[p + 1];
+        if (gram.length < 7) continue;
+        if (fields.situation.indexOf(gram) !== -1) {
+          score += FIELD_WEIGHTS.phrase;
+          if (queryMentions(analysis, gram)) pushWhy(why, 'literal', gram);
+        } else if (fields.title.indexOf(gram) !== -1 || fields.aliases.indexOf(gram) !== -1) {
+          score += Math.floor(FIELD_WEIGHTS.phrase * 0.7);
+          if (queryMentions(analysis, gram)) pushWhy(why, 'literal', gram);
+        }
+      }
+    }
+
+    var writeQ = queryHasWrite(analysis);
+    var callQ = queryHasCall(analysis);
+    var whoWrite = writeQ && /кому/.test(queryNorm);
+    if (writeQ && !callQ && !whoWrite) {
+      if (meta.ch === 'call' && fields.title.indexOf('написа') === -1 && fields.aliases.indexOf('первое сообщение') === -1) {
+        score -= 140;
+      }
+      if (fields.title.indexOf('написа') !== -1 || fields.aliases.indexOf('первое сообщение') !== -1) {
+        score += 70;
+      }
+    }
+    if (callQ && !writeQ) {
+      if (meta.ch === 'call' || /звон|телефон|позвон/.test(fields.title + ' ' + fields.aliases)) score += 80;
+    }
+    if (whoWrite && track.sectionId === 'A2') score += 90;
+    if (whoWrite && track.sectionId === 'A3') score -= 40;
+
+    var intents = analysis.intents || [];
+    var intentHit = false;
+    for (var n = 0; n < intents.length; n += 1) {
+      var intent = intents[n];
+      if (whoWrite && intent.id === 'first-write') continue;
+      if (intent.boostIds.indexOf(track.trackId) !== -1) {
+        var boostIndex = intent.boostIds.indexOf(track.trackId);
+        score += FIELD_WEIGHTS.intent + Math.max(0, 48 - n * 8) + Math.max(0, 32 - boostIndex * 8);
+        intentHit = true;
+        for (var w = 0; w < intent.why.length; w += 1) pushWhy(why, 'situation', intent.why[w]);
+        pushWhy(why, 'intent', intent.goal || intent.why[0] || intent.id);
+      } else if (intent.teamOnly && track.sectionId === 'A6' && intent.boostIds.indexOf(track.trackId) === -1) {
+        score -= 80;
+      } else if (intent.writeBias && meta.ch === 'call') {
+        score -= 90;
+      }
+    }
+    if (/боюсь|страш|стыд|неловк/.test(queryNorm) && /боюсь|страш|стыд|неловк|навяз/.test(fields.situation + ' ' + fields.aliases)) {
+      score += FIELD_WEIGHTS.emotion;
+    }
+    for (var si = 0; si < intents.length; si += 1) {
+      if (intents[si].id === 'silent-message' && intents[si].boostIds.indexOf(track.trackId) === -1) {
+        score -= 200;
+      }
+    }
+
+    var negated = analysis.negated || [];
+    if (negated.length) {
+      var negBlob = fields.title + ' ' + fields.situation + ' ' + fields.aliases;
+      for (var ng = 0; ng < negated.length; ng += 1) {
+        if (negated[ng].length >= 4 && negBlob.indexOf(negated[ng]) !== -1) {
+          score -= 180;
+        }
+      }
+    }
+
+    if (matchedUseful && analysis.useful.length) {
+      score = Math.floor(score * (0.55 + 0.45 * (matchedUseful / analysis.useful.length)));
+    }
+    if (!intentHit && matchedUseful === 0) return { score: 0, why: emptyWhy() };
+    if (!intentHit && matchedUseful === 1 && analysis.useful.length >= 2 && score < 140) {
+      return { score: 0, why: emptyWhy() };
+    }
+    if (!intentHit && matchedUseful === 1 && analysis.useful.length >= 4 && score < MIN_HIT * 2) {
+      score = Math.floor(score * 0.5);
+    }
+    if (score < MIN_HIT && !intentHit) return { score: 0, why: emptyWhy() };
+    if (mode === 'soft' && score > 0) return { score: score, why: why };
+    return { score: score, why: why };
+  }
+
+  function getPreset(id) {
+    for (var i = 0; i < PRESETS.length; i += 1) {
+      if (PRESETS[i].id === id) return PRESETS[i];
+    }
+    return null;
+  }
+
+  function getGoal(id) {
+    for (var i = 0; i < GOALS.length; i += 1) {
+      if (GOALS[i].id === id) return GOALS[i];
+    }
+    return null;
+  }
+
+  function getSituation(id) {
+    for (var i = 0; i < SIT_FILTERS.length; i += 1) {
+      if (SIT_FILTERS[i].id === id) return SIT_FILTERS[i];
+    }
+    return null;
+  }
+
+  function getExperience(id) {
+    for (var i = 0; i < EXPERIENCE.length; i += 1) {
+      if (EXPERIENCE[i].id === id) return EXPERIENCE[i];
+    }
+    return null;
+  }
+
+  function splitCsv(value) {
+    if (!value) return [];
+    return String(value)
+      .split(',')
+      .map(function (item) { return item.trim(); })
+      .filter(Boolean);
+  }
+
+  function emptyLibraryState() {
+    return {
+      q: '',
+      stage: null,
+      stages: [],
+      goal: null,
+      situation: null,
+      sit: [],
+      type: null,
+      format: null,
+      fmt: [],
+      ch: [],
+      lvl: [],
+      avail: null,
+      skill: null,
+      experience: null,
+      time: null,
+      sort: null,
+      preset: null,
+    };
+  }
+
+  function parseLibraryState(search, extra) {
+    extra = extra || {};
+    var params;
+    try {
+      params = typeof search === 'string' ? new URLSearchParams(search.replace(/^\?/, '')) : new URLSearchParams();
+    } catch (err) {
+      params = new URLSearchParams();
+    }
+    var state = emptyLibraryState();
+    var q = (params.get('q') || extra.q || '').trim();
+    if (q) state.q = q;
+    var stageRaw = params.get('stage') || params.get('section') || extra.stage || '';
+    var stages = splitCsv(stageRaw).map(function (item) { return api.normalizeSectionId(item); }).filter(Boolean);
+    if (stages.length === 1) state.stage = stages[0];
+    if (stages.length) state.stages = stages;
+    var goal = params.get('goal') || extra.goal || '';
+    if (goal && getGoal(goal)) state.goal = goal;
+    var situation = params.get('situation') || extra.situation || '';
+    var sit = splitCsv(params.get('sit') || situation);
+    if (sit.length) {
+      state.sit = sit.filter(function (id) { return !!getSituation(id); });
+      if (state.sit.length === 1) state.situation = state.sit[0];
+    }
+    var type = params.get('type') || extra.type || '';
+    if (type) state.type = type;
+    var format = params.get('format') || extra.format || '';
+    var fmt = splitCsv(params.get('fmt') || format);
+    if (fmt.length) state.fmt = fmt;
+    if (format && fmt.length === 0) state.format = format;
+    var ch = splitCsv(params.get('ch') || '');
+    if (ch.length) state.ch = ch;
+    var lvl = splitCsv(params.get('lvl') || '');
+    if (lvl.length) state.lvl = lvl;
+    var avail = params.get('avail') || extra.avail || '';
+    if (avail && (avail === 'description' || avail === 'playable')) state.avail = avail;
+    var skill = params.get('skill') || extra.skill || '';
+    if (skill) state.skill = skill;
+    var experience = params.get('experience') || extra.experience || '';
+    if (experience && getExperience(experience)) {
+      state.experience = experience;
+      var exp = getExperience(experience);
+      if (exp.level && state.lvl.indexOf(exp.level) === -1) state.lvl.push(exp.level);
+    }
+    var time = params.get('time') || extra.time || '';
+    if (time && (time === '10' || time === '20' || time === '30')) state.time = time;
+    var sort = params.get('sort') || extra.sort || '';
+    if (sort && sort !== 'relevance') state.sort = sort;
+    var preset = params.get('preset') || extra.preset || '';
+    if (preset && getPreset(preset)) state.preset = preset;
+    return state;
+  }
+
+  function serializeLibraryState(state) {
+    state = state || emptyLibraryState();
+    var params = new URLSearchParams();
+    if (state.q) params.set('q', state.q);
+    var stages = state.stages && state.stages.length ? state.stages : (state.stage ? [state.stage] : []);
+    if (stages.length) params.set('stage', stages.map(function (id) { return String(id).toLowerCase(); }).join(','));
+    if (state.goal) params.set('goal', state.goal);
+    if (state.sit && state.sit.length) params.set('sit', state.sit.join(','));
+    else if (state.situation) params.set('situation', state.situation);
+    if (state.type) params.set('type', state.type);
+    if (state.fmt && state.fmt.length) params.set('fmt', state.fmt.join(','));
+    else if (state.format) params.set('format', state.format);
+    if (state.ch && state.ch.length) params.set('ch', state.ch.join(','));
+    if (state.lvl && state.lvl.length) params.set('lvl', state.lvl.join(','));
+    if (state.avail) params.set('avail', state.avail);
+    if (state.skill) params.set('skill', state.skill);
+    if (state.experience) params.set('experience', state.experience);
+    if (state.time) params.set('time', state.time);
+    if (state.sort && state.sort !== 'relevance') params.set('sort', state.sort);
+    if (state.preset) params.set('preset', state.preset);
+    return params.toString();
+  }
+
+  function libraryHref(state) {
+    var qs = serializeLibraryState(state);
+    return qs ? '/library?' + qs : '/library';
+  }
+
+  function hasActiveFilters(state) {
+    if (!state) return false;
+    return !!(
+      state.q ||
+      state.stage ||
+      (state.stages && state.stages.length) ||
+      state.goal ||
+      state.situation ||
+      (state.sit && state.sit.length) ||
+      (state.type && state.type !== 'track') ||
+      state.format ||
+      (state.fmt && state.fmt.length) ||
+      (state.ch && state.ch.length) ||
+      (state.lvl && state.lvl.length) ||
+      state.avail ||
+      state.skill ||
+      state.experience ||
+      state.time ||
+      state.preset
+    );
+  }
+
+  function inGroup(values, value) {
+    if (!values || !values.length) return true;
+    return values.indexOf(value) !== -1;
+  }
+
+  function applyFacets(tracks, state) {
+    state = state || emptyLibraryState();
+    var preset = state.preset ? getPreset(state.preset) : null;
+    var allowed = null;
+    if (preset && preset.trackIds && preset.trackIds.length) {
+      allowed = {};
+      for (var a = 0; a < preset.trackIds.length; a += 1) allowed[preset.trackIds[a]] = true;
+    }
+    var stages = state.stages && state.stages.length ? state.stages : (state.stage ? [state.stage] : []);
+    var sit = state.sit && state.sit.length ? state.sit : (state.situation ? [state.situation] : []);
+    var fmt = state.fmt && state.fmt.length ? state.fmt : [];
+    var out = [];
+    for (var i = 0; i < tracks.length; i += 1) {
+      var track = tracks[i];
+      if (allowed && !allowed[track.trackId]) continue;
+      var meta = deriveMeta(track);
+      if (state.type === 'material' && meta.kind !== 'material') continue;
+      if (state.type === 'track' && meta.kind === 'material') continue;
+      if (stages.length && stages.indexOf(track.sectionId) === -1) continue;
+      if (sit.length && sit.indexOf(meta.sit) === -1) continue;
+      if (fmt.length && fmt.indexOf(meta.fmt) === -1) continue;
+      if (state.format && track.format !== state.format && fmt.length === 0) continue;
+      if (!inGroup(state.ch, meta.ch)) continue;
+      if (!inGroup(state.lvl, meta.lvl)) continue;
+      if (state.goal && GOAL_SECTIONS[state.goal] && GOAL_SECTIONS[state.goal].indexOf(track.sectionId) === -1) continue;
+      if (state.time === '10' && meta.time > 10) continue;
+      if (state.time === '20' && meta.time > 20) continue;
+      if (state.time === '30' && meta.time < 20) continue;
+      if (state.avail === 'playable' && !meta.playable) continue;
+      if (state.avail === 'description' && meta.playable) continue;
+      if (state.skill) {
+        var skillNeedle = api.normalizeSearchText(state.skill);
+        if (!skillNeedle || (meta.fields.format + ' ' + meta.fields.situation + ' ' + meta.fields.title).indexOf(skillNeedle) === -1) continue;
+      }
+      out.push(track);
+    }
+    return out;
+  }
+
+  function rankTracks(tracks, analysis, sort, mode) {
+    if (!analysis || analysis.kind !== 'ok' || !analysis.useful.length) {
+      var copy = tracks.slice();
+      if (sort === 'title') {
+        copy.sort(function (a, b) {
+          return a.title.localeCompare(b.title, 'ru');
+        });
+      }
+      return copy.map(function (track) {
+        return { track: track, score: 0, why: emptyWhy() };
+      });
+    }
+    var scored = [];
+    for (var i = 0; i < tracks.length; i += 1) {
+      var result = scoreTrack(tracks[i], analysis, mode);
+      if (result.score > 0) scored.push({ track: tracks[i], score: result.score, why: result.why });
+    }
+    scored.sort(function (a, b) {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.track.trackId.localeCompare(b.track.trackId);
+    });
+    return scored;
+  }
+
+  function chipLabel(key, value) {
+    if (key === 'q') return '«' + value + '»';
+    if (key === 'stage' || key === 'stages') return value;
+    if (key === 'goal') {
+      var goal = getGoal(value);
+      return goal ? goal.title : value;
+    }
+    if (key === 'situation' || key === 'sit') {
+      var sit = getSituation(value);
+      return sit ? sit.title : value;
+    }
+    if (key === 'type') return value === 'material' ? 'Материал' : 'Трек';
+    if (key === 'format') return value;
+    if (key === 'fmt') {
+      for (var f = 0; f < FMT_FILTERS.length; f += 1) if (FMT_FILTERS[f].id === value) return FMT_FILTERS[f].title;
+      return value;
+    }
+    if (key === 'ch') {
+      for (var c = 0; c < CH_FILTERS.length; c += 1) if (CH_FILTERS[c].id === value) return CH_FILTERS[c].title;
+      return value;
+    }
+    if (key === 'lvl') {
+      for (var l = 0; l < LVL_FILTERS.length; l += 1) if (LVL_FILTERS[l].id === value) return LVL_FILTERS[l].title;
+      return value;
+    }
+    if (key === 'avail') {
+      for (var a = 0; a < AVAIL_FILTERS.length; a += 1) if (AVAIL_FILTERS[a].id === value) return AVAIL_FILTERS[a].title;
+      return value;
+    }
+    if (key === 'experience') {
+      var exp = getExperience(value);
+      return exp ? exp.title : value;
+    }
+    if (key === 'time') {
+      for (var tm = 0; tm < TIME_FILTERS.length; tm += 1) if (TIME_FILTERS[tm].id === value) return TIME_FILTERS[tm].title;
+      return value;
+    }
+    if (key === 'preset') {
+      var preset = getPreset(value);
+      return preset ? preset.title : value;
+    }
+    return String(value);
+  }
+
+  function pushChip(chips, key, value) {
+    if (!value) return;
+    chips.push({ key: key, value: value, label: chipLabel(key, value) });
+  }
+
+  function buildChips(state) {
+    var chips = [];
+    if (state.q) pushChip(chips, 'q', state.q);
+    var stages = state.stages && state.stages.length ? state.stages : (state.stage ? [state.stage] : []);
+    for (var s = 0; s < stages.length; s += 1) pushChip(chips, 'stage', stages[s]);
+    if (state.goal) pushChip(chips, 'goal', state.goal);
+    var sit = state.sit && state.sit.length ? state.sit : (state.situation ? [state.situation] : []);
+    for (var i = 0; i < sit.length; i += 1) pushChip(chips, 'sit', sit[i]);
+    if (state.type && state.type !== 'all') pushChip(chips, 'type', state.type);
+    if (state.fmt && state.fmt.length) {
+      for (var f = 0; f < state.fmt.length; f += 1) pushChip(chips, 'fmt', state.fmt[f]);
+    } else if (state.format) pushChip(chips, 'format', state.format);
+    if (state.ch) for (var c = 0; c < state.ch.length; c += 1) pushChip(chips, 'ch', state.ch[c]);
+    if (state.lvl) for (var l = 0; l < state.lvl.length; l += 1) pushChip(chips, 'lvl', state.lvl[l]);
+    if (state.avail) pushChip(chips, 'avail', state.avail);
+    if (state.experience) pushChip(chips, 'experience', state.experience);
+    if (state.time) pushChip(chips, 'time', state.time);
+    if (state.preset) pushChip(chips, 'preset', state.preset);
+    return chips;
+  }
+
+  function foundLabel(count, total, state) {
+    var filtered = hasActiveFilters(state);
+    if (!filtered && count === total) return 'Показаны все ' + total + ' ' + api.pluralTracks(total);
+    if (state.preset && !state.q && (!state.stage && !(state.sit && state.sit.length))) {
+      return 'В этой подборке ' + count + ' ' + api.pluralTracks(count);
+    }
+    var verb = count % 10 === 1 && count % 100 !== 11 ? 'Найден' : 'Найдено';
+    return verb + ' ' + count + ' ' + api.pluralTracks(count) + ' из ' + total;
+  }
+
+  function relaxOrder() {
+    return ['avail', 'fmt', 'ch', 'lvl', 'sit', 'experience', 'stage', 'preset', 'q'];
+  }
+
+  function clearKey(state, key) {
+    var next = Object.assign({}, state);
+    if (key === 'q') next.q = '';
+    else if (key === 'stage') {
+      next.stage = null;
+      next.stages = [];
+    } else if (key === 'sit') {
+      next.sit = [];
+      next.situation = null;
+    } else if (key === 'fmt') {
+      next.fmt = [];
+      next.format = null;
+    } else if (key === 'ch') next.ch = [];
+    else if (key === 'lvl') next.lvl = [];
+    else next[key] = null;
+    if (key !== 'q') next.preset = key === 'preset' ? null : next.preset;
+    return next;
+  }
+
+  function relaxSearch(tracks, state, analysis) {
+    var order = relaxOrder();
+    for (var i = 0; i < order.length; i += 1) {
+      var key = order[i];
+      var active = key === 'q' ? state.q : key === 'stage' ? state.stage || (state.stages && state.stages.length) : key === 'sit' ? (state.sit && state.sit.length) || state.situation : key === 'fmt' ? (state.fmt && state.fmt.length) || state.format : Array.isArray(state[key]) ? state[key].length : state[key];
+      if (!active) continue;
+      var next = clearKey(state, key);
+      var faceted = applyFacets(tracks, next);
+      var ranked = rankTracks(faceted, next.q ? analysis : { kind: 'ok', useful: [] }, next.sort, 'soft');
+      var closeHits = [];
+      for (var r = 0; r < ranked.length && closeHits.length < 6; r += 1) {
+        if (next.q && ranked[r].score < MIN_CLOSE) continue;
+        if (!next.q) break;
+        closeHits.push(ranked[r]);
+      }
+      if (closeHits.length) {
+        return { key: key, items: closeHits.map(function (row) { return row.track; }), close: closeHits };
+      }
+    }
+    var fallback = rankTracks(tracks, analysis && analysis.useful && analysis.useful.length ? analysis : { kind: 'ok', useful: [] }, state.sort, 'soft');
+    var close = [];
+    for (var c = 0; c < fallback.length && close.length < 6; c += 1) {
+      if (fallback[c].score >= MIN_CLOSE) close.push(fallback[c]);
+    }
+    return { key: 'all', items: close.map(function (row) { return row.track; }), close: close };
+  }
+
+  api.analyzeQuery = analyzeQuery;
+  api.parseLibraryState = parseLibraryState;
+  api.serializeLibraryState = serializeLibraryState;
+  api.libraryHref = libraryHref;
+  api.emptyLibraryState = emptyLibraryState;
+  api.getPreset = getPreset;
+  api.getGoal = getGoal;
+  api.getSituation = getSituation;
+  api.getExperience = getExperience;
+  api.buildChips = buildChips;
+  api.hasActiveFilters = hasActiveFilters;
+  api.deriveMeta = deriveMeta;
+  api.foundLabel = foundLabel;
+  api.clearFilterKey = clearKey;
+  api.rankTracks = rankTracks;
+  api.whyList = whyList;
+  api.humanWhy = humanWhy;
+  api.emptyWhy = emptyWhy;
+  api.defaultClarify = defaultClarify;
+  api.applyFacets = applyFacets;
+  api.relaxSearch = relaxSearch;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+

@@ -1,0 +1,46 @@
+{
+  "name": "mlm-academy",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "node .next/standalone/server.js",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "tracks:validate": "node --no-warnings scripts/tracks-cli.mjs validate",
+    "tracks:import": "node --no-warnings scripts/tracks-cli.mjs import",
+    "track:check": "node --no-warnings scripts/tracks-cli.mjs check",
+    "e2e": "playwright test",
+    "e2e:install": "playwright install --with-deps chromium",
+    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm e2e",
+    "postbuild": "node scripts/prepare-standalone.mjs",
+    "tilda:generate": "node tilda/generate.mjs",
+    "tilda:test": "node tilda/generate.mjs && node --test tilda/tests/*.test.mjs",
+    "tilda:serve": "node tilda/generate.mjs && node tilda/serve.mjs",
+    "tilda:smoke": "node tilda/tests/preview-smoke.mjs"
+  },
+  "dependencies": {
+    "next": "16.3.3",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "server-only": "0.0.1",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "4.1.11",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.3",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "4.1.11"
+  },
+  "packageManager": "pnpm@10.33.3"
+}

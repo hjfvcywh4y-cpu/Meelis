@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MLM Academy — визуальный референс оболочки</title>
+  <style>
+    :root {
+      --paper: #f3efe6;
+      --surface: #fffdf8;
+      --ink: #111111;
+      --muted: #6d6961;
+      --soft: rgba(17, 17, 17, 0.14);
+      --grid: rgba(17, 17, 17, 0.075);
+      --a1: #3157ff;
+      --a2: #d5ff43;
+      --a3: #ff6b35;
+      --a4: #64d8ff;
+      --a5: #ff5364;
+      --a6: #b892ff;
+      --success: #0b7a53;
+      --max: 1440px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background-color: var(--paper);
+      background-image: repeating-linear-gradient(
+        to right,
+        transparent 0,
+        transparent calc((100vw - 64px) / 12 - 1px),
+        var(--grid) calc((100vw - 64px) / 12 - 1px),
+        var(--grid) calc((100vw - 64px) / 12)
+      );
+      font-family: "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+    }
+
+    button, input { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button:focus-visible, a:focus-visible, input:focus-visible {
+      outline: 3px solid var(--a1);
+      outline-offset: 3px;
+    }
+
+    .skip-link {
+      position: fixed;
+      top: 8px;
+      left: 8px;
+      z-index: 100;
+      transform: translateY(-160%);
+      background: var(--ink);
+      color: white;
+      padding: 12px 16px;
+    }
+    .skip-link:focus { transform: translateY(0); }
+
+    .shell { min-height: 100vh; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: grid;
+      grid-template-columns: minmax(210px, 1fr) auto minmax(210px, 1fr);
+      align-items: center;
+      min-height: 72px;
+      padding: 0 32px;
+      border-bottom: 2px solid var(--ink);
+      background: rgba(243, 239, 230, 0.96);
+      backdrop-filter: blur(10px);
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      border: 0;
+      background: none;
+      color: var(--ink);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      cursor: pointer;
+    }
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--ink);
+      background: var(--a2);
+      box-shadow: 6px 6px 0 var(--ink);
+    }
+    .main-nav { display: flex; align-items: stretch; height: 70px; }
+    .nav-button {
+      border: 0;
+      border-left: 1px solid var(--soft);
+      background: transparent;
+      padding: 0 20px;
+      font-size: 14px;
+      font-weight: 750;
+      cursor: pointer;
+    }
+    .nav-button:last-child { border-right: 1px solid var(--soft); }
+    .nav-button[aria-current="page"] { background: var(--ink); color: white; }
+    .header-actions { justify-self: end; display: flex; gap: 10px; }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 50px;
+      border: 2px solid var(--ink);
+      padding: 0 18px;
+      background: var(--surface);
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 160ms ease, background 160ms ease, color 160ms ease;
+    }
+    .button:hover { transform: translate(-2px, -2px); }
+    .button.primary { background: var(--ink); color: white; }
+    .button.accent { background: var(--a2); color: var(--ink); }
+    .button.small { min-height: 42px; padding-inline: 14px; font-size: 14px; }
+    .button[disabled] { opacity: .46; cursor: not-allowed; transform: none; }
+
+    .preview-bar {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 9px 16px;
+      border-bottom: 1px solid var(--ink);
+      background: var(--a2);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    main { min-height: calc(100vh - 110px); }
+    .view { display: none; }
+    .view.active { display: block; }
+    .container { width: min(var(--max), 100%); margin-inline: auto; padding-inline: 32px; }
+    .section-block { padding-block: 80px; border-bottom: 2px solid var(--ink); }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      border: 1px solid var(--ink);
+      padding: 0 10px;
+      background: var(--surface);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .eyebrow.dark { background: var(--ink); color: white; }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      margin-bottom: 28px;
+      max-width: 1050px;
+      font-size: clamp(48px, 7.7vw, 112px);
+      line-height: .88;
+      letter-spacing: -.065em;
+      text-transform: uppercase;
+    }
+    h2 {
+      margin-bottom: 28px;
+      font-size: clamp(34px, 4vw, 58px);
+      line-height: .98;
+      letter-spacing: -.045em;
+    }
+    h3 { font-size: 24px; line-height: 1.08; letter-spacing: -.025em; }
+    .lead { max-width: 760px; font-size: clamp(18px, 2vw, 24px); line-height: 1.35; }
+    .muted { color: var(--muted); }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 9fr) minmax(260px, 3fr);
+      gap: 24px;
+      padding-top: 64px;
+      padding-bottom: 72px;
+      border-bottom: 2px solid var(--ink);
+    }
+    .hero-main { padding-right: 20px; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 36px; }
+    .hero-aside {
+      align-self: end;
+      border: 2px solid var(--ink);
+      background: var(--a1);
+      color: white;
+      padding: 24px;
+    }
+    .hero-aside .big-number { font-size: 84px; line-height: .9; font-weight: 900; letter-spacing: -.08em; }
+    .hero-aside p { margin: 14px 0 0; font-size: 16px; line-height: 1.35; }
+
+    .section-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    .section-heading p { max-width: 500px; margin-bottom: 6px; font-size: 18px; line-height: 1.4; }
+
+    .section-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .section-card, .track-card {
+      position: relative;
+      overflow: hidden;
+      border: 2px solid var(--ink);
+      background: var(--surface);
+      transition: transform 160ms ease, background 160ms ease;
+    }
+    .section-card:hover, .track-card:hover { transform: translate(-3px, -3px); }
+    .section-card {
+      min-height: 285px;
+      padding: 22px;
+      cursor: pointer;
+      text-align: left;
+    }
+    .section-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 12px;
+      background: var(--accent);
+      border-right: 2px solid var(--ink);
+    }
+    .section-card .meta { margin-left: 14px; }
+    .section-card h3 { margin: 34px 0 18px 14px; font-size: 30px; }
+    .section-card p { margin: 0 20px 0 14px; font-size: 17px; line-height: 1.4; }
+    .section-card .arrow { position: absolute; right: 20px; bottom: 18px; font-size: 34px; }
+    .meta {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .process-grid { display: grid; grid-template-columns: repeat(3, 1fr); border: 2px solid var(--ink); }
+    .process-step { min-height: 250px; padding: 24px; background: var(--surface); }
+    .process-step + .process-step { border-left: 2px solid var(--ink); }
+    .process-index { font-size: 72px; font-weight: 900; line-height: .85; letter-spacing: -.08em; }
+    .process-step h3 { margin-top: 56px; }
+    .process-step p { margin-bottom: 0; color: var(--muted); line-height: 1.45; }
+
+    .page-head { padding-block: 60px 42px; border-bottom: 2px solid var(--ink); }
+    .page-head h1 { max-width: 900px; font-size: clamp(48px, 6vw, 84px); margin-top: 26px; }
+    .page-head-row { display: flex; justify-content: space-between; align-items: end; gap: 28px; }
+
+    .catalog-toolbar {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto;
+      gap: 16px;
+      padding-block: 24px;
+      border-bottom: 2px solid var(--ink);
+    }
+    .search {
+      min-height: 52px;
+      width: 100%;
+      border: 2px solid var(--ink);
+      background: var(--surface);
+      padding: 0 16px;
+      font-size: 17px;
+    }
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; justify-content: end; }
+    .chip {
+      min-height: 42px;
+      border: 1px solid var(--ink);
+      padding: 0 14px;
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .chip.active { background: var(--ink); color: white; }
+    .catalog-meta { display: flex; justify-content: space-between; gap: 20px; padding: 20px 0; }
+    .track-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding-bottom: 80px; }
+    .track-card { min-height: 390px; display: flex; flex-direction: column; }
+    .track-accent { height: 12px; background: var(--accent); border-bottom: 2px solid var(--ink); }
+    .track-body { display: flex; flex-direction: column; flex: 1; padding: 20px; }
+    .track-card h3 { margin: 24px 0 22px; font-size: 27px; }
+    .track-copy { display: grid; gap: 18px; }
+    .track-copy strong { display: block; margin-bottom: 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    .track-copy p { margin: 0; color: var(--muted); line-height: 1.35; }
+    .track-footer { margin-top: auto; padding-top: 24px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .status { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 800; text-transform: uppercase; }
+    .status::before { content: ""; width: 10px; height: 10px; border: 1px solid var(--ink); background: var(--a2); }
+
+    .dashboard-grid { display: grid; grid-template-columns: minmax(0, 8fr) minmax(280px, 4fr); gap: 20px; padding-block: 44px 80px; }
+    .next-action { border: 2px solid var(--ink); background: var(--a2); padding: 30px; }
+    .next-action h2 { max-width: 700px; margin-top: 48px; }
+    .next-action .lead { max-width: 680px; }
+    .side-panel { border: 2px solid var(--ink); background: var(--surface); padding: 24px; }
+    .side-panel h3 { margin-bottom: 22px; }
+    .profile-row { padding-block: 14px; border-top: 1px solid var(--soft); }
+    .profile-row span { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; }
+    .profile-row strong { display: block; margin-top: 6px; }
+    .route-panel { margin-top: 20px; border: 2px solid var(--ink); background: var(--surface); padding: 28px; }
+    .route { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; margin-top: 30px; }
+    .route-node { position: relative; padding: 48px 14px 14px; border-top: 3px solid var(--ink); }
+    .route-node::before {
+      content: "";
+      position: absolute;
+      top: -11px;
+      left: 14px;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--ink);
+      background: var(--surface);
+    }
+    .route-node.current::before { background: var(--a3); }
+    .route-node.future { color: var(--muted); }
+    .route-node .meta { display: block; margin-bottom: 8px; }
+
+    .track-layout { display: grid; grid-template-columns: minmax(0, 8fr) minmax(290px, 4fr); min-height: calc(100vh - 110px); }
+    .track-main { padding: 52px 32px 80px; border-right: 2px solid var(--ink); }
+    .track-side { padding: 52px 26px; background: rgba(255, 253, 248, .76); }
+    .breadcrumbs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 36px; font-size: 13px; font-weight: 750; }
+    .breadcrumbs span { color: var(--muted); }
+    .track-title { max-width: 900px; font-size: clamp(44px, 5.5vw, 76px); line-height: .98; letter-spacing: -.055em; text-transform: none; }
+    .promise-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 36px; }
+    .promise-box { border: 2px solid var(--ink); background: var(--surface); padding: 22px; }
+    .promise-box strong { display: block; margin-bottom: 12px; text-transform: uppercase; font-size: 12px; letter-spacing: .04em; }
+    .promise-box p { margin: 0; font-size: 18px; line-height: 1.4; }
+    .blueprint {
+      min-height: 340px;
+      margin-top: 40px;
+      border: 2px dashed var(--ink);
+      background-color: var(--surface);
+      background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 24px 24px;
+      display: grid;
+      place-items: center;
+      padding: 30px;
+      text-align: center;
+    }
+    .blueprint-inner { max-width: 520px; }
+    .blueprint h2 { font-size: 38px; }
+    .blueprint p { color: var(--muted); font-size: 17px; line-height: 1.45; }
+    .fact-list { display: grid; gap: 0; margin: 24px 0; border-top: 2px solid var(--ink); }
+    .fact { padding-block: 15px; border-bottom: 1px solid var(--soft); }
+    .fact span { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; }
+    .fact strong { display: block; margin-top: 5px; }
+    .next-list { display: grid; gap: 10px; margin-top: 18px; }
+    .next-link { border: 1px solid var(--ink); background: var(--surface); padding: 14px; font-weight: 750; }
+
+    footer { border-top: 2px solid var(--ink); padding: 28px 32px; background: var(--ink); color: white; }
+    .footer-inner { width: min(var(--max), 100%); margin: auto; display: flex; justify-content: space-between; gap: 24px; }
+    .mobile-nav { display: none; }
+
+    @media (max-width: 960px) {
+      .topbar { grid-template-columns: 1fr auto; padding-inline: 20px; }
+      .main-nav { display: none; }
+      .section-grid, .track-grid { grid-template-columns: repeat(2, 1fr); }
+      .hero { grid-template-columns: 1fr; }
+      .hero-aside { max-width: 420px; }
+      .dashboard-grid, .track-layout { grid-template-columns: 1fr; }
+      .track-main { border-right: 0; border-bottom: 2px solid var(--ink); }
+      .route { grid-template-columns: 1fr; margin-left: 10px; }
+      .route-node { padding: 12px 12px 28px 42px; border-top: 0; border-left: 3px solid var(--ink); }
+      .route-node::before { top: 3px; left: -11px; }
+    }
+
+    @media (max-width: 680px) {
+      body { background-image: repeating-linear-gradient(to right, transparent 0, transparent calc((100vw - 32px) / 4 - 1px), var(--grid) calc((100vw - 32px) / 4 - 1px), var(--grid) calc((100vw - 32px) / 4)); }
+      .topbar { min-height: 62px; padding-inline: 16px; }
+      .brand-mark { width: 24px; height: 24px; box-shadow: 4px 4px 0 var(--ink); }
+      .header-actions .button:first-child { display: none; }
+      .container { padding-inline: 16px; }
+      .section-block { padding-block: 56px; }
+      .hero { padding-top: 44px; padding-bottom: 54px; }
+      .hero-main { padding-right: 0; }
+      h1 { margin-bottom: 22px; }
+      .hero-actions { display: grid; }
+      .button { width: 100%; }
+      .section-heading, .page-head-row { display: block; }
+      .section-grid, .track-grid, .process-grid, .promise-grid { grid-template-columns: 1fr; }
+      .process-step + .process-step { border-left: 0; border-top: 2px solid var(--ink); }
+      .catalog-toolbar { grid-template-columns: 1fr; }
+      .filters { justify-content: start; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 5px; }
+      .chip { flex: 0 0 auto; }
+      .catalog-meta { display: block; }
+      .track-main, .track-side { padding: 36px 16px 90px; }
+      .track-title { font-size: 43px; }
+      .footer-inner { display: block; }
+      .mobile-nav {
+        position: fixed;
+        z-index: 30;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        border-top: 2px solid var(--ink);
+        background: var(--paper);
+      }
+      .mobile-nav button { min-height: 62px; border: 0; border-right: 1px solid var(--soft); background: transparent; font-size: 11px; font-weight: 800; }
+      .mobile-nav button[aria-current="page"] { background: var(--ink); color: white; }
+      footer { padding-bottom: 90px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#content">Перейти к содержанию</a>
+  <div class="shell">
+    <header class="topbar">
+      <button class="brand" data-view-target="home" aria-label="MLM Academy — главная">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>MLM ACADEMY</span>
+      </button>
+      <nav class="main-nav" aria-label="Основная навигация">
+        <button class="nav-button" data-view-target="home" aria-current="page">Главная</button>
+        <button class="nav-button" data-view-target="library">Библиотека</button>
+        <button class="nav-button" data-view-target="dashboard">Мой маршрут</button>
+        <button class="nav-button" data-view-target="track">Оболочка трека</button>
+      </nav>
+      <div class="header-actions">
+        <button class="button small" data-view-target="library">Поиск</button>
+        <button class="button small primary" data-view-target="dashboard">Профиль</button>
+      </div>
+    </header>
+
+    <div class="preview-bar">Визуальный референс · метаданные без содержания треков</div>
+
+    <main id="content">
+      <section class="view active" data-view="home">
+        <div class="container hero">
+          <div class="hero-main">
+            <span class="eyebrow">Библиотека действий для MLM</span>
+            <h1>Не просто узнать. Сделать следующий результат.</h1>
+            <p class="lead">Выберите рабочую ситуацию. Платформа покажет конкретный трек, поможет зафиксировать результат и даст следующий шаг.</p>
+            <div class="hero-actions">
+              <button class="button accent" data-view-target="library">Найти следующий шаг →</button>
+              <button class="button" data-view-target="library">Открыть библиотеку</button>
+            </div>
+          </div>
+          <aside class="hero-aside">
+            <span class="meta">Архитектура v0.2</span>
+            <div class="big-number">6</div>
+            <p>входов по живым задачам партнёра. Не главы книги и не длинная учебная лестница.</p>
+          </aside>
+        </div>
+
+        <div class="container section-block">
+          <div class="section-heading">
+            <div>
+              <span class="eyebrow dark">Выберите ситуацию</span>
+              <h2>Где вы сейчас застряли?</h2>
+            </div>
+            <p>Не нужно начинать с первого урока. Входите туда, где сегодня требуется действие.</p>
+          </div>
+          <div class="section-grid">
+            <button class="section-card" style="--accent: var(--a1)" data-view-target="library">
+              <span class="meta">A1 / 16 треков</span>
+              <h3>Старт и система</h3>
+              <p>Мне нужно понять, зачем я здесь и что делать регулярно.</p>
+              <span class="arrow" aria-hidden="true">→</span>
+            </button>
+            <button class="section-card" style="--accent: var(--a2)" data-view-target="library">
+              <span class="meta">A2 / 16 треков</span>
+              <h3>Люди и база</h3>
+              <p>Я не понимаю, с кем начать и где брать людей.</p>
+              <span class="arrow" aria-hidden="true">→</span>
+            </button>
+            <button class="section-card" style="--accent: var(--a3)" data-view-target="library">
+              <span class="meta">A3 / 17 треков</span>
+              <h3>Первый контакт</h3>
+              <p>Я знаю, кому написать, но не знаю, как нормально начать.</p>
+              <span class="arrow" aria-hidden="true">→</span>
+            </button>
+            <button class="section-card" style="--accent: var(--a4)" data-view-target="library">
+              <span class="meta">A4 / 17 треков</span>
+              <h3>Потребность и решение</h3>
+              <p>Я рассказываю о продукте, но не понимаю, что важно человеку.</p>
+              <span class="arrow" aria-hidden="true">→</span>
+            </button>
+            <button class="section-card" style="--accent: var(--a5)" data-view-target="library">
+              <span class="meta">A5 / 14 треков</span>
+              <h3>Сомнения и отказ</h3>
+              <p>Человек откладывает или отказывает, а я теряюсь.</p>
+              <span class="arrow" aria-hidden="true">→</span>
+            </button>
+            <button class="section-card" style="--accent: var(--a6)" data-view-target="library">
+              <span class="meta">A6 / 32 трека</span>
+              <h3>Повтор и рост</h3>
+              <p>Контакты есть, но всё держится в голове и теряется.</p>
+              <span class="arrow" aria-hidden="true">→</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="container section-block">
+          <div class="section-heading">
+            <div>
+              <span class="eyebrow">Производственная логика</span>
+              <h2>Три звена. Никакой имитации обучения.</h2>
+            </div>
+          </div>
+          <div class="process-grid">
+            <article class="process-step">
+              <div class="process-index">01</div>
+              <h3>Ситуация</h3>
+              <p>Пользователь приходит с реальным рабочим стопором, а не с желанием «изучить тему».</p>
+            </article>
+            <article class="process-step">
+              <div class="process-index">02</div>
+              <h3>Действие</h3>
+              <p>Трек ведёт к одному наблюдаемому действию и не прячется за просмотром материалов.</p>
+            </article>
+            <article class="process-step">
+              <div class="process-index">03</div>
+              <h3>Следующий шаг</h3>
+              <p>Результат фиксируется, а система предлагает один главный ход и до трёх альтернатив.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-view="library">
+        <div class="container page-head">
+          <span class="eyebrow dark">Каталог / preview</span>
+          <div class="page-head-row">
+            <div>
+              <h1>Библиотека рабочих ситуаций</h1>
+              <p class="lead">Сейчас карточки показывают только архитектуру. Внутренние треки будут добавляться по одному, не меняя оболочку.</p>
+            </div>
+          </div>
+        </div>
+        <div class="container">
+          <div class="catalog-toolbar">
+            <label>
+              <span class="meta" style="display:block;margin-bottom:8px">Поиск по ситуации и результату</span>
+              <input id="catalog-search" class="search" type="search" placeholder="Например: написать первое сообщение" />
+            </label>
+            <div class="filters" aria-label="Фильтр по разделу">
+              <button class="chip active" data-filter="all">Все</button>
+              <button class="chip" data-filter="A1">A1</button>
+              <button class="chip" data-filter="A2">A2</button>
+              <button class="chip" data-filter="A3">A3</button>
+              <button class="chip" data-filter="A4">A4</button>
+              <button class="chip" data-filter="A5">A5</button>
+              <button class="chip" data-filter="A6">A6</button>
+            </div>
+          </div>
+          <div class="catalog-meta">
+            <strong id="result-count" aria-live="polite">6 карточек в дизайн-референсе</strong>
+            <span class="muted">В production неопубликованные треки скрыты</span>
+          </div>
+          <div class="track-grid" id="track-grid">
+            <article class="track-card" data-section="A1" data-search="выбрать свою роль mlm ближайшие 30 дней ведущая роль границы ответственности">
+              <div class="track-accent" style="--accent: var(--a1)"></div>
+              <div class="track-body">
+                <span class="meta">A1-004 / Старт и система</span>
+                <h3>Выбрать свою роль в MLM на ближайшие 30 дней</h3>
+                <div class="track-copy">
+                  <p><strong>Если</strong>Вы пытаетесь одновременно быть клиентом, продавцом, рекрутером, блогером и лидером.</p>
+                  <p><strong>На выходе</strong>Одна ведущая роль, границы ответственности и ближайший результат.</p>
+                </div>
+                <div class="track-footer"><span class="status">Готовится</span><button class="button small" data-view-target="track">Открыть</button></div>
+              </div>
+            </article>
+            <article class="track-card" data-section="A2" data-search="выбрать пять людей следующее действие контакты база">
+              <div class="track-accent" style="--accent: var(--a2)"></div>
+              <div class="track-body">
+                <span class="meta">A2-008 / Люди и база</span>
+                <h3>Выбрать пять людей для следующего действия</h3>
+                <div class="track-copy">
+                  <p><strong>Если</strong>Контактов много, но вы каждый день решаете заново, кому написать.</p>
+                  <p><strong>На выходе</strong>Пять уместных контактов и следующий шаг по каждому.</p>
+                </div>
+                <div class="track-footer"><span class="status">Готовится</span><button class="button small" data-view-target="track">Открыть</button></div>
+              </div>
+            </article>
+            <article class="track-card" data-section="A3" data-search="написать первое сообщение теплому контакту повод сообщение">
+              <div class="track-accent" style="--accent: var(--a3)"></div>
+              <div class="track-body">
+                <span class="meta">A3-002 / Первый контакт</span>
+                <h3>Написать первое сообщение тёплому контакту</h3>
+                <div class="track-copy">
+                  <p><strong>Если</strong>Вы знаете человека, но боитесь испортить отношения продажей.</p>
+                  <p><strong>На выходе</strong>Короткое сообщение с настоящим поводом и простым следующим шагом.</p>
+                </div>
+                <div class="track-footer"><span class="status">Готовится</span><button class="button small" data-view-target="track">Открыть</button></div>
+              </div>
+            </article>
+            <article class="track-card" data-section="A4" data-search="задать один вопрос дать договорить исследование человека">
+              <div class="track-accent" style="--accent: var(--a4)"></div>
+              <div class="track-body">
+                <span class="meta">A4-002 / Потребность и решение</span>
+                <h3>Задать один вопрос и дать человеку договорить</h3>
+                <div class="track-copy">
+                  <p><strong>Если</strong>Вы начинаете рассказывать раньше, чем понимаете ситуацию человека.</p>
+                  <p><strong>На выходе</strong>Один вопрос, пауза и точная фиксация услышанного.</p>
+                </div>
+                <div class="track-footer"><span class="status">Готовится</span><button class="button small" data-view-target="track">Открыть</button></div>
+              </div>
+            </article>
+            <article class="track-card" data-section="A5" data-search="отличить вопрос сомнение условие отказ возражение">
+              <div class="track-accent" style="--accent: var(--a5)"></div>
+              <div class="track-body">
+                <span class="meta">A5-001 / Сомнения и отказ</span>
+                <h3>Отличить вопрос, сомнение, условие и отказ</h3>
+                <div class="track-copy">
+                  <p><strong>Если</strong>Любая сложная реплика звучит как возражение, которое надо преодолеть.</p>
+                  <p><strong>На выходе</strong>Понятен тип реплики и корректный ответ или остановка.</p>
+                </div>
+                <div class="track-footer"><span class="status">Готовится</span><button class="button small" data-view-target="track">Открыть</button></div>
+              </div>
+            </article>
+            <article class="track-card" data-section="A6" data-search="порядок статусы следующие действия crm контакты">
+              <div class="track-accent" style="--accent: var(--a6)"></div>
+              <div class="track-body">
+                <span class="meta">A6-010 / Повтор и рост</span>
+                <h3>Навести порядок в статусах и следующих действиях</h3>
+                <div class="track-copy">
+                  <p><strong>Если</strong>Контакты и договорённости хранятся в переписках и памяти.</p>
+                  <p><strong>На выходе</strong>У каждого активного контакта есть стадия, дата и next action.</p>
+                </div>
+                <div class="track-footer"><span class="status">Готовится</span><button class="button small" data-view-target="track">Открыть</button></div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-view="dashboard">
+        <div class="container page-head">
+          <span class="eyebrow dark">Личный контур / demo</span>
+          <h1>Один следующий ход, а не сто двенадцать уроков</h1>
+        </div>
+        <div class="container dashboard-grid">
+          <div>
+            <article class="next-action">
+              <span class="meta">Следующее действие / A3-002</span>
+              <h2>Подготовить первое сообщение тёплому контакту</h2>
+              <p class="lead">Сейчас это только демонстрация маршрута. Содержание трека ещё не добавлено.</p>
+              <button class="button primary" data-view-target="track">Открыть оболочку трека →</button>
+            </article>
+            <section class="route-panel">
+              <span class="eyebrow">Текущая ветка</span>
+              <h2 style="margin-top:24px">От роли до первого разговора</h2>
+              <div class="route">
+                <div class="route-node"><span class="meta">A1-004</span><strong>Роль</strong></div>
+                <div class="route-node"><span class="meta">A1-011</span><strong>Продукт</strong></div>
+                <div class="route-node"><span class="meta">A2-008</span><strong>5 людей</strong></div>
+                <div class="route-node current"><span class="meta">A3-002</span><strong>Сообщение</strong></div>
+                <div class="route-node future"><span class="meta">Дальше</span><strong>По результату</strong></div>
+              </div>
+            </section>
+          </div>
+          <aside class="side-panel">
+            <span class="eyebrow dark">Рабочий профиль</span>
+            <h3 style="margin-top:24px">Контекст рекомендации</h3>
+            <div class="profile-row"><span>Текущая задача</span><strong>Начать первый разговор</strong></div>
+            <div class="profile-row"><span>Раздел</span><strong>A3 / Первый контакт</strong></div>
+            <div class="profile-row"><span>Результаты</span><strong>Пока не зафиксированы</strong></div>
+            <div class="profile-row"><span>Режим</span><strong>Демонстрация оболочки</strong></div>
+            <button class="button" style="margin-top:22px">Настроить профиль</button>
+          </aside>
+        </div>
+      </section>
+
+      <section class="view" data-view="track">
+        <div class="track-layout">
+          <div class="track-main">
+            <div class="breadcrumbs"><span>Библиотека</span> / <span>A3 Первый контакт</span> / A3-002</div>
+            <span class="eyebrow" style="background:var(--a3)">A3-002 / Metadata only</span>
+            <h1 class="track-title">Написать первое сообщение тёплому контакту</h1>
+            <div class="promise-grid">
+              <div class="promise-box">
+                <strong>Подходит, если</strong>
+                <p>Вы знаете человека, но боитесь испортить отношения неуместной продажей.</p>
+              </div>
+              <div class="promise-box">
+                <strong>На выходе</strong>
+                <p>Короткое сообщение с настоящим поводом, уважением к отношениям и простым следующим шагом.</p>
+              </div>
+            </div>
+            <div class="blueprint">
+              <div class="blueprint-inner">
+                <span class="eyebrow dark">Структура готова</span>
+                <h2>Содержание трека ещё не добавлено</h2>
+                <p>Здесь появятся шаги, действие и фиксация результата. Оболочка не подменяет их сгенерированным текстом.</p>
+                <button class="button" data-view-target="library">Вернуться в раздел</button>
+              </div>
+            </div>
+          </div>
+          <aside class="track-side">
+            <span class="eyebrow dark">Паспорт трека</span>
+            <div class="fact-list">
+              <div class="fact"><span>Раздел</span><strong>A3 / Первый контакт</strong></div>
+              <div class="fact"><span>Формат</span><strong>Скрипт + практика</strong></div>
+              <div class="fact"><span>Статус</span><strong>Готовится</strong></div>
+              <div class="fact"><span>Прогресс</span><strong>Не считается до появления шагов</strong></div>
+            </div>
+            <button class="button" disabled>Начать трек</button>
+            <h3 style="margin-top:40px">Возможное продолжение</h3>
+            <div class="next-list">
+              <div class="next-link"><span class="meta">A3-016</span><br />Открыть разговор через настоящий повод</div>
+              <div class="next-link"><span class="meta">A3-008</span><br />Зафиксировать результат разговора</div>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-inner"><strong>MLM ACADEMY</strong><span>Рабочий дизайн-референс оболочки · v0.1</span></div>
+    </footer>
+
+    <nav class="mobile-nav" aria-label="Мобильная навигация">
+      <button data-view-target="home" aria-current="page">Главная</button>
+      <button data-view-target="library">Библиотека</button>
+      <button data-view-target="dashboard">Маршрут</button>
+      <button data-view-target="track">Трек</button>
+    </nav>
+  </div>
+
+  <script>
+    const views = [...document.querySelectorAll('[data-view]')];
+    const navButtons = [...document.querySelectorAll('[data-view-target]')];
+
+    function showView(name) {
+      views.forEach((view) => view.classList.toggle('active', view.dataset.view === name));
+      navButtons.forEach((button) => {
+        if (button.closest('.main-nav') || button.closest('.mobile-nav')) {
+          button.setAttribute('aria-current', button.dataset.viewTarget === name ? 'page' : 'false');
+        }
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    navButtons.forEach((button) => button.addEventListener('click', () => showView(button.dataset.viewTarget)));
+
+    const chips = [...document.querySelectorAll('[data-filter]')];
+    const cards = [...document.querySelectorAll('.track-card')];
+    const search = document.querySelector('#catalog-search');
+    const resultCount = document.querySelector('#result-count');
+    let currentFilter = 'all';
+
+    function applyCatalogFilter() {
+      const query = (search?.value || '').trim().toLowerCase();
+      let visible = 0;
+      cards.forEach((card) => {
+        const sectionMatch = currentFilter === 'all' || card.dataset.section === currentFilter;
+        const textMatch = !query || card.dataset.search.includes(query) || card.textContent.toLowerCase().includes(query);
+        const show = sectionMatch && textMatch;
+        card.hidden = !show;
+        if (show) visible += 1;
+      });
+      resultCount.textContent = `${visible} ${visible === 1 ? 'карточка' : visible < 5 ? 'карточки' : 'карточек'} в дизайн-референсе`;
+    }
+
+    chips.forEach((chip) => chip.addEventListener('click', () => {
+      currentFilter = chip.dataset.filter;
+      chips.forEach((item) => item.classList.toggle('active', item === chip));
+      applyCatalogFilter();
+    }));
+
+    search?.addEventListener('input', applyCatalogFilter);
+  </script>
+</body>
+</html>

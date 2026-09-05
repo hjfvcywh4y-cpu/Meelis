@@ -1,0 +1,9 @@
+name = "mlma-search"
+main = "worker.js"
+compatibility_date = "2026-08-01"
+workers_dev = true
+account_id = "1097bdc74e5788fb297506389defcfea"
+
+# Модель для Groq. Ключ GROQ_API_KEY задаётся секретом, не в этом файле.
+[vars]
+SEARCH_RERANK_MODEL = "openai/gpt-oss-20b"

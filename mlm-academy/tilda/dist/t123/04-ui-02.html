@@ -1,0 +1,311 @@
+<!-- Блок T123: рендер оболочки 2/7 Не публиковать. Не вставлять в общесайтовый HEAD. -->
+<script>
+(function (root) {
+  'use strict';
+  var D = root.MLMA;
+  if (!D || !D._ui) return;
+  var esc = D._ui.esc;
+  var btn = D._ui.btn;
+  var pageHead = D._ui.pageHead;
+  var emptyState = D._ui.emptyState;
+  var trackCard = D._ui.trackCard;
+  var trackGrid = D._ui.trackGrid;
+
+  function renderLibrary(state) {
+    var R = state.R;
+    var head = pageHead(
+      {
+        eyebrow: 'Единый каталог',
+        title: 'Библиотека',
+        lead: 'Один реестр треков. Ищите обычным языком, фильтруйте по этапу и цели, отправляйте готовую подборку ссылкой.',
+        crumbs: [
+          { label: 'Academy', href: R.home() },
+          { label: 'Библиотека' },
+        ],
+      },
+      R,
+    );
+    return head + '<div id="mlma-catalog"></div>';
+  }
+
+  function catalogBrowserHtml(state, filters, options) {
+    options = options || {};
+    var R = state.R;
+    var result = options.result || D.searchCatalog(state.tracks, filters);
+    var facets = D.facetOptions ? D.facetOptions(state.tracks) : { sit: [], fmt: [], ch: [], lvl: [], avail: [] };
+    var pageSize = D.PAGE_SIZE || 15;
+    var shown = options.shown || pageSize;
+    var chipsHtml = '';
+    for (var c = 0; c < result.chips.length; c += 1) {
+      chipsHtml +=
+        '<button type="button" class="mlma-chip mlma-chip-on mlma-chip-remove" data-mlma-clear="' +
+        esc(result.chips[c].key) +
+        '" data-mlma-clear-value="' +
+        esc(result.chips[c].value) +
+        '">' +
+        esc(result.chips[c].label) +
+        ' ×</button>';
+    }
+    if (result.chips.length) {
+      chipsHtml += '<button type="button" class="mlma-chip" data-mlma-reset="1">Очистить всё</button>';
+    }
+    function chipGroup(attr, items, selected) {
+      var html = '';
+      var sel = selected || [];
+      for (var i = 0; i < items.length; i += 1) {
+        var on = sel.indexOf(items[i].id) !== -1 || sel.indexOf(items[i].id.toUpperCase()) !== -1;
+        html +=
+          '<button type="button" class="mlma-chip' +
+          (on ? ' mlma-chip-on' : '') +
+          '" ' +
+          attr +
+          '="' +
+          esc(items[i].id) +
+          '">' +
+          esc(items[i].title) +
+          '</button>';
+      }
+      return html;
+    }
+    var stageItems = [];
+    for (var s = 0; s < D.SECTION_IDS.length; s += 1) {
+      var sid = D.SECTION_IDS[s];
+      var section = state.sectionById[sid];
+      stageItems.push({ id: sid, title: sid + ' · ' + (section ? section.shortTitle : sid) });
+    }
+    var stages = filters.stages && filters.stages.length ? filters.stages : (filters.stage ? [filters.stage] : []);
+    var stageChips = chipGroup('data-mlma-stage', stageItems, stages);
+    var sitChips = chipGroup('data-mlma-sit', facets.sit, filters.sit || []);
+    var fmtChips = chipGroup('data-mlma-fmt', facets.fmt, filters.fmt || []);
+    var pending = !!result.pendingAi;
+    var matchType = result.matchType || '';
+    var exactish = matchType === 'exact' || matchType === 'strong';
+    var adjacentish = matchType === 'adjacent';
+    var body;
+    var pendingBanner = '';
+    if ((result.kind === 'need_more' || result.kind === 'zero') && !pending && !(result.featured && result.featured.length) && !(result.items && result.items.length)) {
+      var options = result.clarifyingOptions && result.clarifyingOptions.length
+        ? result.clarifyingOptions
+        : (D.CLARIFY_OPTIONS || []);
+      var optionHtml = '';
+      for (var o = 0; o < options.length && o < 3; o += 1) {
+        optionHtml +=
+          '<a class="mlma-chip mlma-chip-on" href="' +
+          esc(D.libraryHref({ q: options[o].q })) +
+          '">' +
+          esc(options[o].label) +
+          '</a>';
+      }
+      body = emptyState({
+        eyebrow: result.kind === 'need_more' ? 'Уточните запрос' : 'Точного трека пока нет',
+        title: result.clarifyingQuestion || (result.kind === 'need_more' ? 'Опишите ситуацию чуть конкретнее' : 'Точного трека пока нет'),
+        description: result.kind === 'need_more'
+          ? 'Слишком общий запрос. Напишите, что происходит, или выберите один из вариантов.'
+          : 'Уточните ситуацию — так проще найти рабочий трек.',
+        actions: optionHtml,
+      });
+    } else {
+      var featured = result.featured || [];
+      var rest = (filters.q ? result.other : (featured.length ? result.other : result.items)) || [];
+      var searching = !!filters.q;
+      var visible = searching ? rest.slice(0, 5) : rest.slice(0, shown);
+      var more = !searching && rest.length > shown;
+      body = '';
+      if (pending) body += pendingBanner;
+      if (featured.length) {
+        var featTitle = adjacentish ? 'Можно начать с этих треков' : 'Подходит лучше всего';
+        body +=
+          '<section class="mlma-featured"><div class="mlma-section-head"><h2 class="mlma-h3">' +
+          esc(featTitle) +
+          '</h2></div>' +
+          trackGrid(featured, state.sectionById, R, {
+            whyMap: result.whyMap,
+            featured: true,
+            bestFirst: exactish,
+            adjacentFirst: adjacentish,
+            account: state.account,
+          }) +
+          '</section>';
+      }
+      if (result.clarifyingQuestion && featured.length) {
+        body +=
+          '<p class="mlma-muted" style="margin-top:20px;max-width:54ch;font-size:15px;line-height:1.45">' +
+          esc(result.clarifyingQuestion) +
+          '</p>';
+      }
+      if (visible.length) {
+        body +=
+          (searching
+            ? '<section style="margin-top:36px"><div class="mlma-section-head"><h2 class="mlma-h3">Можно начать с этого</h2></div>'
+            : '') +
+          trackGrid(visible, state.sectionById, R, { whyMap: searching ? result.whyMap : null, account: state.account }) +
+          (searching ? '</section>' : '');
+      }
+      if (more) {
+        body +=
+          '<div style="margin-top:28px;text-align:center"><button type="button" class="mlma-btn mlma-btn-primary" data-mlma-more="1">Показать ещё</button></div>';
+      }
+      if (!featured.length && !visible.length) {
+        body = pending
+          ? pendingBanner
+          : emptyState({
+              title: 'Каталог ещё наполняется',
+              description: 'Структура направлений уже есть. Откройте раздел или выберите ситуацию.',
+              actions: btn(R.start(), 'С чего начать', 'primary'),
+            });
+      }
+    }
+    var share = D.libraryHref(filters);
+    var drawerFacets = '';
+    function facetBlock(title, inner) {
+      if (!inner) return '';
+      return '<div class="mlma-facet"><p class="mlma-meta mlma-facet-title">' + esc(title) + '</p><div class="mlma-chip-row">' + inner + '</div></div>';
+    }
+    drawerFacets += facetBlock('Этап', stageChips);
+    drawerFacets += facetBlock('Моя ситуация', sitChips);
+    var goalItems = D.GOALS || [];
+    var goalChips = chipGroup('data-mlma-goal', goalItems, filters.goal ? [filters.goal] : []);
+    drawerFacets += facetBlock('Что хочу получить', goalChips);
+    var expItems = D.EXPERIENCE || [];
+    var expChips = chipGroup('data-mlma-experience', expItems, filters.experience ? [filters.experience] : []);
+    drawerFacets += facetBlock('Опыт', expChips);
+    var typeItems = D.MATERIAL_TYPES || [];
+    var typeChips = chipGroup('data-mlma-type', typeItems, filters.type ? [filters.type] : []);
+    drawerFacets += facetBlock('Тип', typeChips);
+    var timeItems = D.TIME_FILTERS || [];
+    var timeChips = chipGroup('data-mlma-time', timeItems, filters.time ? [filters.time] : []);
+    drawerFacets += facetBlock('Время', timeChips);
+    drawerFacets += facetBlock('Формат', fmtChips);
+    var drawer =
+      '<div class="mlma-drawer-host">' +
+      '<div class="mlma-drawer-backdrop" id="mlma-drawer-backdrop" hidden></div>' +
+      '<div class="mlma-drawer mlma-drawer-bottom" id="mlma-drawer" role="dialog" aria-modal="true" aria-labelledby="mlma-drawer-title" hidden>' +
+      '<div class="mlma-drawer-head"><h2 class="mlma-h3" id="mlma-drawer-title">Фильтры</h2>' +
+      '<button type="button" class="mlma-btn mlma-btn-small" data-mlma-drawer-close="1">Закрыть</button></div>' +
+      drawerFacets +
+      '<div class="mlma-actions"><button type="button" class="mlma-btn" data-mlma-reset="1">Очистить всё</button>' +
+      '<button type="button" class="mlma-btn mlma-btn-primary" data-mlma-drawer-close="1">Показать результаты</button></div></div></div>';
+    return (
+      '<div class="mlma-wrap"><div style="display:grid;gap:16px;padding:24px 0 8px">' +
+      '<form id="mlma-lib-form" action="/library" method="get" role="search"><label class="mlma-meta" style="display:block;margin-bottom:8px" for="mlma-search">Что у тебя сейчас происходит?</label>' +
+      '<div class="mlma-search"><input id="mlma-search" class="mlma-field" type="search" name="q" placeholder="Например: боюсь написать знакомому" value="' +
+      esc(filters.q || '') +
+      '" autocomplete="off"><button class="mlma-btn mlma-btn-primary" type="submit">Найти решение</button></div>' +
+      '<p class="mlma-muted" style="margin-top:8px;font-size:13px">Не указывайте имена, телефоны и другие персональные данные третьих лиц.</p></form>' +
+      (chipsHtml ? '<div class="mlma-chip-row" id="mlma-active-chips">' + chipsHtml + '</div>' : '') +
+      '<div class="mlma-filterbar"><button type="button" class="mlma-btn mlma-btn-small" id="mlma-open-filters" aria-haspopup="dialog" aria-expanded="false">Фильтры</button>' +
+      '<button type="button" class="mlma-btn mlma-btn-small mlma-btn-ghost" id="mlma-share" data-mlma-share="' +
+      esc(share) +
+      '">Ссылка на подборку</button><span id="mlma-share-msg" class="mlma-muted" style="font-size:13px" aria-live="polite"></span></div></div>' +
+      '<div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;padding:12px 0 20px"><p style="font-size:16px;font-weight:700" id="mlma-count">' +
+      esc(pending ? 'Подбираем наиболее подходящий маршрут…' : (filters.q ? '' : (result.label || ''))) +
+      '</p></div><div id="mlma-results" style="padding-bottom:64px">' +
+      body +
+      '</div>' +
+      drawer +
+      '</div>'
+    );
+  }
+
+  function renderSection(state) {
+    var R = state.R;
+    var sectionId = D.normalizeSectionId(state.root.getAttribute('data-mlma-section') || '');
+    var section = sectionId ? state.sectionById[sectionId] : null;
+    if (!section) {
+      return emptyState({
+        title: 'Раздел не найден',
+        description: 'Вернитесь в библиотеку и выберите направление заново.',
+        actions: btn('/library', 'Библиотека', 'primary'),
+      });
+    }
+    var stats = D.sectionStats(state.allTracks, sectionId);
+    var tracks = [];
+    for (var i = 0; i < state.tracks.length; i += 1) {
+      if (state.tracks[i].sectionId === sectionId) tracks.push(state.tracks[i]);
+    }
+    var entries = D.sectionEntryTracks(sectionId, state.tracks);
+    var logic = '';
+    for (var r = 0; r < section.routeLogic.length; r += 1) {
+      if (r) logic += '<span class="mlma-muted" aria-hidden="true">→</span>';
+      logic += '<span class="mlma-card" style="padding:12px 16px;font-size:16px;font-weight:700">' + esc(section.routeLogic[r]) + '</span>';
+    }
+    var modules = {};
+    var moduleList = [];
+    for (var t = 0; t < tracks.length; t += 1) {
+      if (!modules[tracks[t].module]) {
+        modules[tracks[t].module] = [];
+        moduleList.push(tracks[t].module);
+      }
+      modules[tracks[t].module].push(tracks[t]);
+    }
+    var moduleHtml = '';
+    for (var m = 0; m < moduleList.length; m += 1) {
+      moduleHtml +=
+        '<details class="mlma-module" open><summary><span>' +
+        esc(moduleList[m]) +
+        '</span><span class="mlma-meta mlma-muted">' +
+        modules[moduleList[m]].length +
+        ' ' +
+        D.pluralTracks(modules[moduleList[m]].length) +
+        '</span></summary><div style="margin-top:16px">' +
+        trackGrid(modules[moduleList[m]], state.sectionById, R) +
+        '</div></details>';
+    }
+    return (
+      '<div style="' +
+      D.styleAttr(sectionId) +
+      '">' +
+      pageHead(
+        {
+          eyebrow: section.sectionId + ' · ' + stats.total + ' ' + D.pluralTracks(stats.total),
+          title: section.title,
+          lead: section.promise,
+          crumbs: [
+            { label: 'Academy', href: R.home() },
+            { label: 'Библиотека', href: R.library() },
+            { label: section.shortTitle },
+          ],
+          aside:
+            '<div class="mlma-card mlma-pad" style="' +
+            D.styleAttr(sectionId) +
+            '"><span class="mlma-strip" style="display:block;height:8px;width:64px;margin-bottom:16px"></span><span class="mlma-meta">Входная ситуация</span><p style="margin-top:12px;max-width:34ch;font-size:16px;line-height:1.35">' +
+            esc(section.entryQuestion) +
+            '</p></div>',
+        },
+        R,
+      ) +
+      '<div class="mlma-wrap" style="padding-top:40px;padding-bottom:56px">' +
+      '<section><span class="mlma-eyebrow">С чего начать в этом разделе</span><h2 class="mlma-h3" style="margin-top:16px">Три входных трека</h2><p class="mlma-muted" style="margin-top:8px;max-width:62ch">Начните с одного из этих действий.</p><div style="margin-top:20px">' +
+      trackGrid(entries, state.sectionById, R, { featured: true }) +
+      '</div></section>' +
+      '<section style="margin-top:48px"><span class="mlma-eyebrow">Логика раздела</span><h2 class="mlma-h3" style="margin-top:16px">Как обычно идёт работа здесь</h2>' +
+      '<ol style="margin-top:20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center">' +
+      logic +
+      '</ol></section>' +
+      '<form class="mlma-search" style="margin-top:40px;max-width:720px" action="/library" method="get" role="search">' +
+      '<input type="hidden" name="stage" value="' +
+      esc(String(sectionId).toLowerCase()) +
+      '">' +
+      '<label class="mlma-sr" for="mlma-section-q">Поиск внутри раздела</label>' +
+      '<input id="mlma-section-q" class="mlma-field" type="search" name="q" placeholder="Поиск внутри раздела">' +
+      '<button class="mlma-btn mlma-btn-primary" type="submit">Найти</button></form>' +
+      '<section style="margin-top:40px"><div class="mlma-section-head"><h2 class="mlma-h3">Треки по модулям</h2><span class="mlma-meta">' +
+      tracks.length +
+      ' ' +
+      D.pluralTracks(tracks.length) +
+      '</span></div>' +
+      moduleHtml +
+      '</section>' +
+      '<div class="mlma-actions" style="margin-top:48px">' +
+      btn(R.start(), 'Вернуться к своей ситуации', 'primary') +
+      btn(R.library(), 'Вся библиотека') +
+      '</div></div></div>'
+    );
+  }
+
+  D._ui.catalogBrowserHtml = catalogBrowserHtml;
+  D._ui.renderLibrary = renderLibrary;
+  D._ui.renderSection = renderSection;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+
